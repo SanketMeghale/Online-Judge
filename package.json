@@ -1,0 +1,16 @@
+{
+  "name": "online-judge",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:web": "npm --workspace apps/web run dev",
+    "build:web": "npm --workspace apps/web run build",
+    "preview:web": "npm --workspace apps/web run preview"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
