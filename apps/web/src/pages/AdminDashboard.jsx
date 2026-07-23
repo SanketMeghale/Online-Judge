@@ -1,20 +1,25 @@
 import { DatabaseZap, FilePlus2, ShieldAlert, UsersRound } from "lucide-react";
-
-const adminCards = [
-  { title: "Problems", value: "248", icon: FilePlus2, text: "Create, edit, and publish problem sets." },
-  { title: "Users", value: "12.4k", icon: UsersRound, text: "Review learners, teams, and permissions." },
-  { title: "Judge queue", value: "18", icon: DatabaseZap, text: "Monitor queued and running submissions." },
-  { title: "Alerts", value: "3", icon: ShieldAlert, text: "Inspect system errors and failed containers." }
-];
+import { useAppData } from "../data/AppDataContext.jsx";
 
 export default function AdminDashboard() {
+  const { database } = useAppData();
+  const queuedLike = database.submissions.filter((submission) => submission.verdict !== "AC").length;
+  const accepted = database.submissions.filter((submission) => submission.verdict === "AC").length;
+
+  const adminCards = [
+    { title: "Problems", value: String(database.problems.length), icon: FilePlus2, text: "Published coding problems in the local catalog." },
+    { title: "Users", value: String(database.users.length), icon: UsersRound, text: "Registered accounts persisted in local storage." },
+    { title: "Judge activity", value: String(database.submissions.length), icon: DatabaseZap, text: `${accepted} accepted submissions recorded so far.` },
+    { title: "Needs review", value: String(queuedLike), icon: ShieldAlert, text: "Non-AC verdicts that may need debugging." }
+  ];
+
   return (
     <div className="page-stack">
       <section className="page-header">
         <div>
           <span className="section-kicker">Admin</span>
           <h1>Control center.</h1>
-          <p>Optional admin view for content, users, and judge health.</p>
+          <p>This local admin view summarizes the persisted app data and judge activity.</p>
         </div>
       </section>
       <section className="admin-grid">

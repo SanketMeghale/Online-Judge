@@ -1,11 +1,14 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Bell, Code2, Flame, LogOut, Search } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext.jsx";
+import { useAppData } from "../../data/AppDataContext.jsx";
 
 export default function Navbar() {
   const { logout, user } = useAuth();
+  const { getUserById } = useAppData();
   const navigate = useNavigate();
-  const firstName = user?.name?.split(" ")[0] ?? "User";
+  const liveUser = getUserById(user?.id) ?? user;
+  const firstName = liveUser?.name?.split(" ")[0] ?? "User";
 
   function handleLogout() {
     logout();
@@ -30,7 +33,7 @@ export default function Navbar() {
       <div className="topbar-right">
         <div className="streak-chip">
           <Flame size={30} />
-          <strong>{user?.streak ?? 0}</strong>
+          <strong>{liveUser?.streak ?? 0}</strong>
           <span>day streak</span>
         </div>
         <button className="icon-button" aria-label="Notifications" type="button">
@@ -38,7 +41,7 @@ export default function Navbar() {
           <span className="notification-dot">3</span>
         </button>
         <Link className="profile-pill" to="/profile">
-          <span className="mini-avatar">{user?.name?.slice(0, 1) ?? "U"}</span>
+          <span className="mini-avatar">{liveUser?.name?.slice(0, 1) ?? "U"}</span>
           <strong>{firstName}</strong>
         </Link>
         <button className="icon-button" aria-label="Logout" onClick={handleLogout} type="button">
