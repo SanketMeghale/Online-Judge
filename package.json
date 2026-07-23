@@ -6,11 +6,16 @@
     "apps/*"
   ],
   "scripts": {
+    "dev:api": "npm --workspace apps/api run dev",
     "dev:web": "npm --workspace apps/web run dev",
+    "start:api": "npm --workspace apps/api run start",
     "build:web": "npm --workspace apps/web run build",
     "preview:web": "npm --workspace apps/web run preview"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
   }
 }
