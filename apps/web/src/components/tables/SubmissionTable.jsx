@@ -2,10 +2,20 @@ const verdictClass = {
   AC: "verdict-ac",
   WA: "verdict-wa",
   TLE: "verdict-tle",
-  CE: "verdict-ce"
+  CE: "verdict-ce",
+  RE: "verdict-ce"
 };
 
 export default function SubmissionTable({ rows }) {
+  if (!rows.length) {
+    return (
+      <div className="empty-state">
+        <strong>No submissions yet.</strong>
+        <span>Your accepted and failed attempts will appear here.</span>
+      </div>
+    );
+  }
+
   return (
     <div className="table-shell">
       <table>

@@ -1,44 +1,40 @@
-import { ChevronDown, Moon, Settings, TerminalSquare } from "lucide-react";
+import { ChevronDown, Settings, TerminalSquare } from "lucide-react";
 
-const starterCode = `class Solution:
-    def isPalindrome(self, s: str) -> bool:
-        left, right = 0, len(s) - 1
+const languages = ["Python", "JavaScript", "Java"];
 
-        while left < right:
-            while left < right and not s[left].isalnum():
-                left += 1
-
-            while left < right and not s[right].isalnum():
-                right -= 1
-
-            if s[left].lower() != s[right].lower():
-                return False
-
-            left += 1
-            right -= 1
-
-        return True`;
-
-export default function CodeEditor() {
+export default function CodeEditor({
+  code,
+  language,
+  onCodeChange,
+  onLanguageChange
+}) {
   return (
     <section className="editor-panel">
       <div className="editor-toolbar">
-        <div className="editor-title">
+        <label className="editor-title">
           <TerminalSquare size={18} />
-          <span>Python3</span>
+          <select onChange={(event) => onLanguageChange(event.target.value)} value={language}>
+            {languages.map((item) => (
+              <option key={item} value={item}>{item}</option>
+            ))}
+          </select>
           <ChevronDown size={15} />
-        </div>
-        <span className="auto-mode">Auto</span>
+        </label>
+        <span className="auto-mode">Saved locally</span>
         <div className="editor-tools">
-          <Moon size={17} />
           <Settings size={17} />
         </div>
       </div>
-      <textarea className="code-editor" defaultValue={starterCode} spellCheck="false" />
+      <textarea
+        className="code-editor"
+        onChange={(event) => onCodeChange(event.target.value)}
+        spellCheck="false"
+        value={code}
+      />
       <div className="editor-status">
-        <span className="accepted-text">Saved</span>
-        <span>Ln 17, Col 19</span>
-        <span>Spaces: 4</span>
+        <span className="accepted-text">Draft synced</span>
+        <span>{language}</span>
+        <span>{code.split("\n").length} lines</span>
         <span>UTF-8</span>
       </div>
     </section>
