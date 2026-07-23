@@ -1,12 +1,9 @@
-import { user as mockUser } from "../data/mockData.js";
+import { createUserRecord, ensureDatabase, findUserByEmail, findUserById, writeDatabase } from "../data/appData.js";
 
-function buildSession(profile) {
+function buildSession(user) {
   return {
     accessToken: `mock-jwt-${Date.now()}`,
-    user: {
-      ...mockUser,
-      ...profile
-    }
+    user
   };
 }
 
@@ -26,7 +23,14 @@ export async function loginWithEmail({ email, password }) {
   assertEmail(email);
   assertPassword(password);
 
-  return buildSession({ email });
+  const database = ensureDatabase();
+  const user = findUserByEmail(database, email);
+
+  if (!user || user.password !== password) {
+    throw new Error("Invalid email or password.");
+  }
+
+  return buildSession(user);
 }
 
 export async function registerWithEmail({ name, username, email, password }) {
@@ -41,27 +45,48 @@ export async function registerWithEmail({ name, username, email, password }) {
   assertEmail(email);
   assertPassword(password);
 
-  return buildSession({
-    name: name.trim(),
-    username: username.trim(),
-    email
-  });
+  const database = ensureDatabase();
+
+  if (findUserByEmail(database, email)) {
+    throw new Error("An account with this email already exists.");
+  }
+
+  const existingUsername = database.users.find(
+    (user) => user.username.toLowerCase() === username.trim().toLowerCase()
+  );
+
+  if (existingUsername) {
+    throw new Error("That username is already taken.");
+  }
+
+  const user = createUserRecord({ name, username, email, password });
+  const nextDatabase = {
+    ...database,
+    users: [...database.users, user]
+  };
+
+  writeDatabase(nextDatabase);
+
+  return buildSession(user);
 }
 
 export async function refreshCurrentSession(session) {
   const accessToken = session?.accessToken ?? session?.token;
+  const userId = session?.user?.id;
 
-  if (!accessToken) {
+  if (!accessToken || !userId) {
+    return null;
+  }
+
+  const database = ensureDatabase();
+  const user = findUserById(database, userId);
+
+  if (!user) {
     return null;
   }
 
   return {
-    ...session,
     accessToken,
-    token: undefined,
-    user: {
-      ...mockUser,
-      ...session.user
-    }
+    user
   };
 }

@@ -1,10 +1,12 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { clearStoredSession, readStoredSession, writeStoredSession } from "./authStorage.js";
 import { loginWithEmail, refreshCurrentSession, registerWithEmail } from "./authService.js";
+import { useAppData } from "../data/AppDataContext.jsx";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const { refreshDatabase } = useAppData();
   const [session, setSession] = useState(() => readStoredSession());
   const [status, setStatus] = useState("checking");
 
@@ -12,6 +14,7 @@ export function AuthProvider({ children }) {
     let isMounted = true;
 
     async function refreshSession() {
+      refreshDatabase();
       const storedSession = readStoredSession();
 
       if (!storedSession) {
@@ -57,6 +60,7 @@ export function AuthProvider({ children }) {
 
   async function login(credentials) {
     const nextSession = await loginWithEmail(credentials);
+    refreshDatabase();
     writeStoredSession(nextSession);
     setSession(nextSession);
     return nextSession;
@@ -64,6 +68,7 @@ export function AuthProvider({ children }) {
 
   async function register(details) {
     const nextSession = await registerWithEmail(details);
+    refreshDatabase();
     writeStoredSession(nextSession);
     setSession(nextSession);
     return nextSession;
