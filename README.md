@@ -31,9 +31,9 @@ The system is split into focused services:
 ```text
 apps/
   web/                  React + Vite frontend
+  api/                  Node.js + Express REST API
 
 services/
-  api/                  Node.js + Express REST API
   realtime/             Socket.io realtime service
   judge-worker/         RabbitMQ consumer for judging submissions
   ai-service/           Python FastAPI AI interviewer service
@@ -87,6 +87,41 @@ The judge runtime image can be built from:
 docker build -t online-judge-runner:local infra/docker/judge-image
 ```
 
+## Running The Current Repo
+
+Frontend:
+
+```bash
+npm run dev:web
+```
+
+Backend API:
+
+```bash
+npm run dev:api
+```
+
+Current backend endpoints:
+
+- `GET /health`
+- `GET /api/problems`
+- `GET /api/problems/:problemId`
+- `POST /api/compiler/run`
+- `GET /api/submissions`
+- `POST /api/submissions`
+
+Current compiler status:
+
+- JavaScript execution is working through the backend today.
+- Other languages will be added next as part of the judge pipeline.
+
 ## Current Status
 
-This repository currently contains the initial project structure and documentation foundation based on the HLD. Service implementations will be added incrementally, starting with authentication, problem management, submissions, and the judge execution pipeline.
+As of July 23, 2026, this repository contains:
+
+- a working React frontend
+- a first backend API service in `apps/api`
+- a working JavaScript online-compiler endpoint
+- an in-memory submission API for early backend iteration
+
+The next backend milestones are persistent storage, real auth APIs, problem CRUD, and a proper multi-language judge pipeline.
