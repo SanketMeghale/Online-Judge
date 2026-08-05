@@ -1,11 +1,5 @@
+import { api } from "../api/apiClient.js";
 import { createUserRecord, ensureDatabase, findUserByEmail, findUserById, writeDatabase } from "../data/appData.js";
-
-function buildSession(user) {
-  return {
-    accessToken: `mock-jwt-${Date.now()}`,
-    user
-  };
-}
 
 function assertEmail(email) {
   if (!email || !email.includes("@")) {
@@ -23,14 +17,26 @@ export async function loginWithEmail({ email, password }) {
   assertEmail(email);
   assertPassword(password);
 
-  const database = ensureDatabase();
-  const user = findUserByEmail(database, email);
+  try {
+    const res = await api.login({ email, password });
+    return {
+      accessToken: res.token,
+      user: res.user
+    };
+  } catch (err) {
+    // If backend is unavailable or fails, fallback to local storage authentication
+    const database = ensureDatabase();
+    const user = findUserByEmail(database, email);
 
-  if (!user || user.password !== password) {
-    throw new Error("Invalid email or password.");
+    if (!user || user.password !== password) {
+      throw new Error(err.message || "Invalid email or password.");
+    }
+
+    return {
+      accessToken: `mock-jwt-${Date.now()}`,
+      user
+    };
   }
-
-  return buildSession(user);
 }
 
 export async function registerWithEmail({ name, username, email, password }) {
@@ -45,48 +51,67 @@ export async function registerWithEmail({ name, username, email, password }) {
   assertEmail(email);
   assertPassword(password);
 
-  const database = ensureDatabase();
+  try {
+    const res = await api.register({ name, username, email, password });
+    return {
+      accessToken: res.token,
+      user: res.user
+    };
+  } catch (err) {
+    // Fallback to local database storage if backend API is not available
+    const database = ensureDatabase();
 
-  if (findUserByEmail(database, email)) {
-    throw new Error("An account with this email already exists.");
+    if (findUserByEmail(database, email)) {
+      throw new Error("An account with this email already exists.");
+    }
+
+    const existingUsername = database.users.find(
+      (user) => user.username.toLowerCase() === username.trim().toLowerCase()
+    );
+
+    if (existingUsername) {
+      throw new Error("That username is already taken.");
+    }
+
+    const user = createUserRecord({ name, username, email, password });
+    const nextDatabase = {
+      ...database,
+      users: [...database.users, user]
+    };
+
+    writeDatabase(nextDatabase);
+
+    return {
+      accessToken: `mock-jwt-${Date.now()}`,
+      user
+    };
   }
-
-  const existingUsername = database.users.find(
-    (user) => user.username.toLowerCase() === username.trim().toLowerCase()
-  );
-
-  if (existingUsername) {
-    throw new Error("That username is already taken.");
-  }
-
-  const user = createUserRecord({ name, username, email, password });
-  const nextDatabase = {
-    ...database,
-    users: [...database.users, user]
-  };
-
-  writeDatabase(nextDatabase);
-
-  return buildSession(user);
 }
 
 export async function refreshCurrentSession(session) {
   const accessToken = session?.accessToken ?? session?.token;
-  const userId = session?.user?.id;
+  if (!accessToken) return null;
 
-  if (!accessToken || !userId) {
-    return null;
+  try {
+    const res = await api.getMe();
+    if (res && res.user) {
+      return {
+        accessToken,
+        user: res.user
+      };
+    }
+  } catch {
+    // Fallback for dev mode / offline backend
   }
+
+  const userId = session?.user?.id;
+  if (!userId) return session;
 
   const database = ensureDatabase();
   const user = findUserById(database, userId);
 
-  if (!user) {
-    return null;
-  }
-
   return {
     accessToken,
-    user
+    user: user || session.user
   };
 }

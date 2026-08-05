@@ -1,0 +1,37 @@
+{
+  "name": "@online-judge/judge-service",
+  "version": "1.0.0",
+  "description": "Standalone Worker Microservice for Safe Sandboxed Multi-Language Code Compilation & Execution",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
+  },
+  "keywords": [
+    "online-judge",
+    "compiler",
+    "docker-sandbox",
+    "rabbitmq",
+    "code-evaluator"
+  ],
+  "author": "Senior Software Architect",
+  "license": "MIT",
+  "dependencies": {
+    "amqplib": "^0.10.4",
+    "cors": "^2.8.6",
+    "dockerode": "^4.0.12",
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1",
+    "mongoose": "^9.9.1",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "jest": "^30.4.2",
+    "nodemon": "^3.1.9"
+  }
+}

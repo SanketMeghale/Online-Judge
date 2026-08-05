@@ -100,13 +100,15 @@ const baseProblems = [
 const seedUsers = [
   {
     id: "u-demo-1",
-    name: "Nadia Rao",
-    username: "nadia.codes",
-    email: "nadia@example.com",
+    name: "Sanket Meghale",
+    username: "sanket.codes",
+    email: "sanket@onlinejudge.com",
     password: "password123",
     ranking: 87,
     xp: 8420,
-    streak: 7,
+    streak: 5,
+    solved: 3,
+    accuracy: 72,
     badges: ["7 Day Streak", "Graph Sprinter", "Contest Finisher"],
     solvedProblemIds: ["two-sum"],
     attemptedProblemIds: ["cache-stampede", "binary-lift"],
@@ -438,3 +440,24 @@ export function updateUserAfterSubmission(user, problem, verdict) {
     }
   };
 }
+
+export function getProblemsForUser(database, userId) {
+  const user = findUserById(database, userId);
+  if (!user) return [];
+  return listProblemsForUser(database, user);
+}
+
+export function getSubmissionsForUser(database, userId) {
+  return listSubmissionsForUser(database, userId);
+}
+
+export function getUserById(database, userId) {
+  return findUserById(database, userId);
+}
+
+export function getSavedCode(savedCodeMap, problemId, language, starter = "") {
+  const key = `${problemId}:${language}`;
+  return savedCodeMap && savedCodeMap[key] ? savedCodeMap[key] : starter;
+}
+
+

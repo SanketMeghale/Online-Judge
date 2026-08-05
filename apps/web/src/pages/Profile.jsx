@@ -30,10 +30,10 @@ export default function Profile() {
   const topicProgress = Object.values(solvedByTopic);
   const rank = leaderboard.find((entry) => entry.id === user.id)?.rank ?? "-";
   const profileStats = [
-    { label: "Solved", value: liveUser.solved, icon: Trophy, tone: "green" },
+    { label: "Solved", value: liveUser.solved ?? 0, icon: Trophy, tone: "green" },
     { label: "Ranking", value: `#${rank}`, icon: Medal, tone: "purple" },
-    { label: "Accuracy", value: `${liveUser.accuracy}%`, icon: Target, tone: "blue" },
-    { label: "Streak", value: `${liveUser.streak}d`, icon: Flame, tone: "orange" }
+    { label: "Accuracy", value: `${liveUser.accuracy ?? 0}%`, icon: Target, tone: "blue" },
+    { label: "Streak", value: `${liveUser.streak ?? 0}d`, icon: Flame, tone: "orange" }
   ];
 
   return (
@@ -45,7 +45,7 @@ export default function Profile() {
           <h1>{liveUser.name}</h1>
           <p>@{liveUser.username} · {liveUser.email}</p>
           <div className="profile-badges">
-            {liveUser.badges.map((badge) => (
+            {(liveUser.badges ?? []).map((badge) => (
               <span key={badge}>
                 <BadgeCheck size={14} />
                 {badge}
@@ -54,12 +54,12 @@ export default function Profile() {
           </div>
         </div>
         <div className="level-panel">
-          <span>Level {Math.max(1, Math.ceil(liveUser.xp / 1000))}</span>
-          <strong>{liveUser.xp.toLocaleString()} XP</strong>
+          <span>Level {Math.max(1, Math.ceil((liveUser.xp ?? 0) / 1000))}</span>
+          <strong>{(liveUser.xp ?? 0).toLocaleString()} XP</strong>
           <div className="xp-track">
-            <span style={{ width: `${Math.min(100, ((liveUser.xp % 3000) / 3000) * 100)}%` }} />
+            <span style={{ width: `${Math.min(100, (((liveUser.xp ?? 0) % 3000) / 3000) * 100)}%` }} />
           </div>
-          <small>{liveUser.xp % 3000} / 3,000 XP to next milestone</small>
+          <small>{(liveUser.xp ?? 0) % 3000} / 3,000 XP to next milestone</small>
         </div>
       </section>
 

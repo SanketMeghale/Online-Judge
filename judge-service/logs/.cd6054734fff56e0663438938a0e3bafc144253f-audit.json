@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\Admin\\Desktop\\Online-Judge\\judge-service\\logs\\.cd6054734fff56e0663438938a0e3bafc144253f-audit.json",
+    "files": [
+        {
+            "date": 1785638727429,
+            "name": "C:\\Users\\Admin\\Desktop\\Online-Judge\\judge-service\\logs\\application-2026-08-02.log",
+            "hash": "e9a0a199f61f81034f8adace638283abd26bd10468c033553dc7b548f1e147e1"
+        },
+        {
+            "date": 1785829524700,
+            "name": "C:\\Users\\Admin\\Desktop\\Online-Judge\\judge-service\\logs\\application-2026-08-04.log",
+            "hash": "d6e91403e11bc5d148f52b84cf1eb518026cd303191a05ec8493397f43622370"
+        }
+    ],
+    "hashType": "sha256"
+}
