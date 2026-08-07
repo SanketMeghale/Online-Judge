@@ -17,6 +17,108 @@ export const problems = [
     constraints: ["2 <= nums.length <= 10^4", "-10^9 <= nums[i] <= 10^9"]
   },
   {
+    id: "valid-parentheses",
+    title: "Valid Parentheses",
+    difficulty: "Easy",
+    topic: "Strings",
+    acceptance: 88,
+    submissions: 24500,
+    status: "Unsolved",
+    points: 10,
+    statement:
+      "Given a string `s` containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
+    examples: [
+      { input: 's = "()[]{}"', output: "true" },
+      { input: 's = "(]"', output: "false" }
+    ],
+    constraints: ["1 <= s.length <= 10^4", "s consists of parentheses only '()[]{}'"]
+  },
+  {
+    id: "palindrome-number",
+    title: "Palindrome Number",
+    difficulty: "Easy",
+    topic: "Math",
+    acceptance: 82,
+    submissions: 19800,
+    status: "Unsolved",
+    points: 10,
+    statement:
+      "Given an integer `x`, return `true` if `x` is a palindrome integer, and `false` otherwise.",
+    examples: [
+      { input: "x = 121", output: "true" },
+      { input: "x = -121", output: "false" }
+    ],
+    constraints: ["-2^31 <= x <= 2^31 - 1"]
+  },
+  {
+    id: "reverse-string",
+    title: "Reverse String",
+    difficulty: "Easy",
+    topic: "Strings",
+    acceptance: 91,
+    submissions: 31200,
+    status: "Unsolved",
+    points: 10,
+    statement:
+      "Write a function that reverses an array of characters `s` in-place with O(1) extra memory.",
+    examples: [
+      { input: 's = ["h","e","l","l","o"]', output: '["o","l","l","e","h"]' },
+      { input: 's = ["H","a","n","n","a","h"]', output: '["h","a","n","n","a","H"]' }
+    ],
+    constraints: ["1 <= s.length <= 10^5"]
+  },
+  {
+    id: "best-time-to-buy-and-sell-stock",
+    title: "Best Time to Buy and Sell Stock",
+    difficulty: "Easy",
+    topic: "Arrays",
+    acceptance: 79,
+    submissions: 28400,
+    status: "Unsolved",
+    points: 10,
+    statement:
+      "You are given an array `prices` where `prices[i]` is the price of a given stock on the i-th day. Return the maximum profit you can achieve from one transaction.",
+    examples: [
+      { input: "prices = [7,1,5,3,6,4]", output: "5" },
+      { input: "prices = [7,6,4,3,1]", output: "0" }
+    ],
+    constraints: ["1 <= prices.length <= 10^5", "0 <= prices[i] <= 10^4"]
+  },
+  {
+    id: "single-number",
+    title: "Single Number",
+    difficulty: "Easy",
+    topic: "Bit Manipulation",
+    acceptance: 85,
+    submissions: 22100,
+    status: "Unsolved",
+    points: 10,
+    statement:
+      "Given a non-empty array of integers `nums`, every element appears twice except for one. Find that single element.",
+    examples: [
+      { input: "nums = [2,2,1]", output: "1" },
+      { input: "nums = [4,1,2,1,2]", output: "4" }
+    ],
+    constraints: ["1 <= nums.length <= 3 * 10^4", "-3 * 10^4 <= nums[i] <= 3 * 10^4"]
+  },
+  {
+    id: "climbing-stairs",
+    title: "Climbing Stairs",
+    difficulty: "Easy",
+    topic: "Dynamic Programming",
+    acceptance: 84,
+    submissions: 26700,
+    status: "Unsolved",
+    points: 10,
+    statement:
+      "You are climbing a staircase. It takes `n` steps to reach the top. Each time you can either climb 1 or 2 steps. In how many distinct ways can you climb to the top?",
+    examples: [
+      { input: "n = 2", output: "2" },
+      { input: "n = 3", output: "3" }
+    ],
+    constraints: ["1 <= n <= 45"]
+  },
+  {
     id: "cache-stampede",
     title: "Prevent Cache Stampede",
     difficulty: "Medium",
@@ -31,20 +133,6 @@ export const problems = [
     constraints: ["1 <= keys.length <= 10^5", "Keys are non-empty strings"]
   },
   {
-    id: "merge-islands",
-    title: "Merge Dynamic Islands",
-    difficulty: "Hard",
-    topic: "Graphs",
-    acceptance: 31,
-    submissions: 3788,
-    status: "Unsolved",
-    points: 50,
-    statement:
-      "A stream of land additions arrives for an empty grid. Return the number of islands after each operation.",
-    examples: [{ input: "m = 3, n = 3, positions = [[0,0],[0,1],[1,2]]", output: "[1,1,2]" }],
-    constraints: ["1 <= m, n <= 10^4", "1 <= positions.length <= 10^5"]
-  },
-  {
     id: "binary-lift",
     title: "Binary Lift Ancestors",
     difficulty: "Medium",
@@ -57,6 +145,20 @@ export const problems = [
       "Preprocess a rooted tree so each query returns the k-th ancestor of a node in logarithmic time.",
     examples: [{ input: "parent = [-1,0,0,1,1], query = (4,2)", output: "0" }],
     constraints: ["1 <= n <= 10^5", "1 <= q <= 10^5"]
+  },
+  {
+    id: "merge-islands",
+    title: "Merge Dynamic Islands",
+    difficulty: "Hard",
+    topic: "Graphs",
+    acceptance: 31,
+    submissions: 3788,
+    status: "Unsolved",
+    points: 50,
+    statement:
+      "A stream of land additions arrives for an empty grid. Return the number of islands after each operation.",
+    examples: [{ input: "m = 3, n = 3, positions = [[0,0],[0,1],[1,2]]", output: "[1,1,2]" }],
+    constraints: ["1 <= m, n <= 10^4", "1 <= positions.length <= 10^5"]
   }
 ];
 

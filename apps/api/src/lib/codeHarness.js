@@ -97,93 +97,321 @@ if __name__ == '__main__':
 })();
 `;
     }
+  }
 
-    if (normLang === "cpp" || normLang === "c++") {
-      return `#include <iostream>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <algorithm>
-using namespace std;
+  // ==========================================
+  // Problem 2: VALID-PARENTHESES
+  // ==========================================
+  if (pid === "valid-parentheses") {
+    if (normLang === "python" || normLang === "python3" || normLang === "py") {
+      return `${code}
 
-${code}
+import json
 
-int main() {
-    string raw = "${safeStdin}";
-    vector<int> nums = {2, 7, 11, 15};
-    int target = 9;
+def _run_harness():
+    stdin_raw = "${safeStdin}".strip()
+    s = "()[]{}"
+    if stdin_raw and "s = " in stdin_raw:
+        try:
+            s_val = stdin_raw.replace("s = ", "").strip()
+            if s_val.startswith('"') and s_val.endswith('"'): s_val = json.loads(s_val)
+            s = s_val
+        except Exception: pass
 
-    size_t targetPos = raw.find("target = ");
-    if (targetPos != string::npos) {
-        string targetStr = raw.substr(targetPos + 9);
-        try { target = stoi(targetStr); } catch(...) {}
+    sol = Solution() if 'Solution' in globals() else None
+    if sol and hasattr(sol, 'isValid'):
+        print(str(sol.isValid(s)).lower())
+    elif 'isValid' in globals():
+        print(str(isValid(s)).lower())
 
-        size_t numsPos = raw.find("nums = [");
-        if (numsPos != string::npos) {
-            size_t endBracket = raw.find("]", numsPos);
-            if (endBracket != string::npos) {
-                string arrContent = raw.substr(numsPos + 8, endBracket - (numsPos + 8));
-                stringstream ss(arrContent);
-                nums.clear();
-                string val;
-                while (getline(ss, val, ',')) {
-                    val.erase(remove(val.begin(), val.end(), ' '), val.end());
-                    if (!val.empty()) {
-                        try { nums.push_back(stoi(val)); } catch(...) {}
-                    }
-                }
-            }
-        }
-    }
-
-    Solution sol;
-    vector<int> res = sol.twoSum(nums, target);
-    cout << "[";
-    for (size_t i = 0; i < res.size(); ++i) {
-        cout << res[i] << (i + 1 < res.size() ? ", " : "");
-    }
-    cout << "]" << endl;
-    return 0;
-}
+if __name__ == '__main__':
+    _run_harness()
 `;
     }
 
-    if (normLang === "java") {
-      return `import java.util.*;
+    if (normLang === "javascript" || normLang === "js") {
+      return `${code}
 
-${code}
+(function _runHarness() {
+  let s = "()[]{}";
+  const stdinRaw = "${safeStdin}".trim();
+  if (stdinRaw && stdinRaw.includes("s = ")) {
+    try {
+      let sVal = stdinRaw.replace("s = ", "").trim();
+      if (sVal.startsWith('"')) sVal = JSON.parse(sVal);
+      s = sVal;
+    } catch(e) {}
+  }
 
-class Harness {
-    public static void main(String[] args) {
-        String raw = "${safeStdin}";
-        int[] nums = new int[]{2, 7, 11, 15};
-        int target = 9;
-
-        if (raw.contains("target = ")) {
-            try {
-                String[] parts = raw.split("target = ");
-                target = Integer.parseInt(parts[1].trim());
-                String numsStr = parts[0].replace("nums = ", "").trim();
-                numsStr = numsStr.replace("[", "").replace("]", "").replace(" ", "");
-                String[] valStrs = numsStr.split(",");
-                nums = new int[valStrs.length];
-                for (int i = 0; i < valStrs.length; i++) {
-                    nums[i] = Integer.parseInt(valStrs[i]);
-                }
-            } catch (Exception e) {}
-        }
-
-        Solution sol = new Solution();
-        int[] res = sol.twoSum(nums, target);
-        System.out.println(Arrays.toString(res));
+  if (typeof isValid === "function") {
+    console.log(isValid(s));
+  } else if (typeof Solution === "function") {
+    const sol = new Solution();
+    if (typeof sol.isValid === "function") {
+      console.log(sol.isValid(s));
     }
-}
+  }
+})();
 `;
     }
   }
 
   // ==========================================
-  // Problem 2: CACHE-STAMPEDE
+  // Problem 3: PALINDROME-NUMBER
+  // ==========================================
+  if (pid === "palindrome-number") {
+    if (normLang === "python" || normLang === "python3" || normLang === "py") {
+      return `${code}
+
+import json
+
+def _run_harness():
+    stdin_raw = "${safeStdin}".strip()
+    x = 121
+    if stdin_raw and "x = " in stdin_raw:
+        try: x = int(stdin_raw.replace("x = ", "").strip())
+        except Exception: pass
+
+    sol = Solution() if 'Solution' in globals() else None
+    if sol and hasattr(sol, 'isPalindrome'):
+        print(str(sol.isPalindrome(x)).lower())
+    elif 'isPalindrome' in globals():
+        print(str(isPalindrome(x)).lower())
+
+if __name__ == '__main__':
+    _run_harness()
+`;
+    }
+
+    if (normLang === "javascript" || normLang === "js") {
+      return `${code}
+
+(function _runHarness() {
+  let x = 121;
+  const stdinRaw = "${safeStdin}".trim();
+  if (stdinRaw && stdinRaw.includes("x = ")) {
+    try { x = parseInt(stdinRaw.replace("x = ", "").trim(), 10); } catch(e) {}
+  }
+
+  if (typeof isPalindrome === "function") {
+    console.log(isPalindrome(x));
+  } else if (typeof Solution === "function") {
+    const sol = new Solution();
+    if (typeof sol.isPalindrome === "function") {
+      console.log(sol.isPalindrome(x));
+    }
+  }
+})();
+`;
+    }
+  }
+
+  // ==========================================
+  // Problem 4: REVERSE-STRING
+  // ==========================================
+  if (pid === "reverse-string") {
+    if (normLang === "python" || normLang === "python3" || normLang === "py") {
+      return `${code}
+
+import json
+
+def _run_harness():
+    stdin_raw = "${safeStdin}".strip()
+    s = ["h","e","l","l","o"]
+    if stdin_raw and "s = " in stdin_raw:
+        try: s = json.loads(stdin_raw.replace("s = ", "").strip())
+        except Exception: pass
+
+    sol = Solution() if 'Solution' in globals() else None
+    if sol and hasattr(sol, 'reverseString'):
+        sol.reverseString(s)
+        print(json.dumps(s))
+    elif 'reverseString' in globals():
+        res = reverseString(s)
+        print(json.dumps(s if res is None else res))
+
+if __name__ == '__main__':
+    _run_harness()
+`;
+    }
+
+    if (normLang === "javascript" || normLang === "js") {
+      return `${code}
+
+(function _runHarness() {
+  let s = ["h","e","l","l","o"];
+  const stdinRaw = "${safeStdin}".trim();
+  if (stdinRaw && stdinRaw.includes("s = ")) {
+    try { s = JSON.parse(stdinRaw.replace("s = ", "").trim()); } catch(e) {}
+  }
+
+  if (typeof reverseString === "function") {
+    const res = reverseString(s);
+    console.log(JSON.stringify(res !== undefined ? res : s));
+  } else if (typeof Solution === "function") {
+    const sol = new Solution();
+    if (typeof sol.reverseString === "function") {
+      const res = sol.reverseString(s);
+      console.log(JSON.stringify(res !== undefined ? res : s));
+    }
+  }
+})();
+`;
+    }
+  }
+
+  // ==========================================
+  // Problem 5: BEST-TIME-TO-BUY-AND-SELL-STOCK
+  // ==========================================
+  if (pid === "best-time-to-buy-and-sell-stock") {
+    if (normLang === "python" || normLang === "python3" || normLang === "py") {
+      return `${code}
+
+import json
+
+def _run_harness():
+    stdin_raw = "${safeStdin}".strip()
+    prices = [7,1,5,3,6,4]
+    if stdin_raw and "prices = " in stdin_raw:
+        try: prices = json.loads(stdin_raw.replace("prices = ", "").strip())
+        except Exception: pass
+
+    sol = Solution() if 'Solution' in globals() else None
+    if sol and hasattr(sol, 'maxProfit'):
+        print(sol.maxProfit(prices))
+    elif 'maxProfit' in globals():
+        print(maxProfit(prices))
+
+if __name__ == '__main__':
+    _run_harness()
+`;
+    }
+
+    if (normLang === "javascript" || normLang === "js") {
+      return `${code}
+
+(function _runHarness() {
+  let prices = [7,1,5,3,6,4];
+  const stdinRaw = "${safeStdin}".trim();
+  if (stdinRaw && stdinRaw.includes("prices = ")) {
+    try { prices = JSON.parse(stdinRaw.replace("prices = ", "").trim()); } catch(e) {}
+  }
+
+  if (typeof maxProfit === "function") {
+    console.log(maxProfit(prices));
+  } else if (typeof Solution === "function") {
+    const sol = new Solution();
+    if (typeof sol.maxProfit === "function") {
+      console.log(sol.maxProfit(prices));
+    }
+  }
+})();
+`;
+    }
+  }
+
+  // ==========================================
+  // Problem 6: SINGLE-NUMBER
+  // ==========================================
+  if (pid === "single-number") {
+    if (normLang === "python" || normLang === "python3" || normLang === "py") {
+      return `${code}
+
+import json
+
+def _run_harness():
+    stdin_raw = "${safeStdin}".strip()
+    nums = [2,2,1]
+    if stdin_raw and "nums = " in stdin_raw:
+        try: nums = json.loads(stdin_raw.replace("nums = ", "").strip())
+        except Exception: pass
+
+    sol = Solution() if 'Solution' in globals() else None
+    if sol and hasattr(sol, 'singleNumber'):
+        print(sol.singleNumber(nums))
+    elif 'singleNumber' in globals():
+        print(singleNumber(nums))
+
+if __name__ == '__main__':
+    _run_harness()
+`;
+    }
+
+    if (normLang === "javascript" || normLang === "js") {
+      return `${code}
+
+(function _runHarness() {
+  let nums = [2,2,1];
+  const stdinRaw = "${safeStdin}".trim();
+  if (stdinRaw && stdinRaw.includes("nums = ")) {
+    try { nums = JSON.parse(stdinRaw.replace("nums = ", "").trim()); } catch(e) {}
+  }
+
+  if (typeof singleNumber === "function") {
+    console.log(singleNumber(nums));
+  } else if (typeof Solution === "function") {
+    const sol = new Solution();
+    if (typeof sol.singleNumber === "function") {
+      console.log(sol.singleNumber(nums));
+    }
+  }
+})();
+`;
+    }
+  }
+
+  // ==========================================
+  // Problem 7: CLIMBING-STAIRS
+  // ==========================================
+  if (pid === "climbing-stairs") {
+    if (normLang === "python" || normLang === "python3" || normLang === "py") {
+      return `${code}
+
+import json
+
+def _run_harness():
+    stdin_raw = "${safeStdin}".strip()
+    n = 2
+    if stdin_raw and "n = " in stdin_raw:
+        try: n = int(stdin_raw.replace("n = ", "").strip())
+        except Exception: pass
+
+    sol = Solution() if 'Solution' in globals() else None
+    if sol and hasattr(sol, 'climbStairs'):
+        print(sol.climbStairs(n))
+    elif 'climbStairs' in globals():
+        print(climbStairs(n))
+
+if __name__ == '__main__':
+    _run_harness()
+`;
+    }
+
+    if (normLang === "javascript" || normLang === "js") {
+      return `${code}
+
+(function _runHarness() {
+  let n = 2;
+  const stdinRaw = "${safeStdin}".trim();
+  if (stdinRaw && stdinRaw.includes("n = ")) {
+    try { n = parseInt(stdinRaw.replace("n = ", "").trim(), 10); } catch(e) {}
+  }
+
+  if (typeof climbStairs === "function") {
+    console.log(climbStairs(n));
+  } else if (typeof Solution === "function") {
+    const sol = new Solution();
+    if (typeof sol.climbStairs === "function") {
+      console.log(sol.climbStairs(n));
+    }
+  }
+})();
+`;
+    }
+  }
+
+  // ==========================================
+  // Problem 8: CACHE-STAMPEDE
   // ==========================================
   if (pid === "cache-stampede") {
     if (normLang === "python" || normLang === "python3" || normLang === "py") {
@@ -265,7 +493,7 @@ if __name__ == '__main__':
   }
 
   // ==========================================
-  // Problem 3: MERGE-ISLANDS (numIslands2)
+  // Problem 9: MERGE-ISLANDS (numIslands2)
   // ==========================================
   if (pid === "merge-islands") {
     if (normLang === "python" || normLang === "python3" || normLang === "py") {
@@ -338,7 +566,7 @@ if __name__ == '__main__':
   }
 
   // ==========================================
-  // Problem 4: BINARY-LIFT (TreeAncestor)
+  // Problem 10: BINARY-LIFT (TreeAncestor)
   // ==========================================
   if (pid === "binary-lift") {
     if (normLang === "python" || normLang === "python3" || normLang === "py") {
