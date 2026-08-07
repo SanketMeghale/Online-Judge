@@ -27,7 +27,8 @@ export function executePython({ code, stdin = "", timeoutMs = DEFAULT_TIMEOUT_MS
       return;
     }
 
-    const child = spawn("python", [filePath], {
+    const pyCmd = process.platform === "win32" ? (process.env.PYTHON_PATH || "python") : "python3";
+    const child = spawn(pyCmd, [filePath], {
       stdio: "pipe",
       windowsHide: true
     });

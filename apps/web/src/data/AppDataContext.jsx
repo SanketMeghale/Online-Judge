@@ -210,18 +210,29 @@ export function AppDataProvider({ children }) {
         }
       }
 
-      const verdict = sub.verdict || exec.verdict || "AC";
+      const rawVerdict = sub.verdict || exec.verdict || "WA";
+      const verdict = (rawVerdict === "OK" || rawVerdict === "AC") ? "AC" : rawVerdict;
       const isAc = verdict === "AC";
+
       const passCount = sub.passedCount ?? sub.passCount ?? exec.passedCount ?? (isAc ? (problem.hiddenTestCases?.length || problem.examples.length) : 0);
       const totalCount = sub.totalCases ?? sub.totalCount ?? exec.totalCases ?? (problem.hiddenTestCases?.length || problem.examples.length);
       const testResults = sub.testcases || sub.testResults || exec.testResults || [];
       const firstTc = testResults[0] || {};
 
+      let defaultStatusText = "Accepted";
+      if (!isAc) {
+        if (verdict === "WA") defaultStatusText = `Wrong Answer on testcase ${passCount + 1}`;
+        else if (verdict === "TLE") defaultStatusText = "Time Limit Exceeded";
+        else if (verdict === "MLE") defaultStatusText = "Memory Limit Exceeded";
+        else if (verdict === "CE") defaultStatusText = "Compilation Error";
+        else defaultStatusText = "Runtime Error";
+      }
+
       result = {
         id: subId,
         submissionId: subId,
         verdict,
-        statusText: sub.statusText || exec.statusText || (isAc ? "Accepted" : `Wrong Answer on testcase ${passCount + 1}`),
+        statusText: sub.statusText || exec.statusText || defaultStatusText,
         runtime: `${sub.runtimeMs || exec.runtimeMs || 25} ms`,
         runtimeMs: sub.runtimeMs || exec.runtimeMs || 25,
         memory: `${sub.memoryMb || exec.memoryMb || 14.2} MB`,
@@ -235,7 +246,7 @@ export function AppDataProvider({ children }) {
         stderr: firstTc.stderr || sub.stderr || exec.stderr || "",
         expectedOutput: firstTc.expectedOutput || sub.expectedOutput || exec.expectedOutput || problem.examples[0]?.output || "",
         testResults,
-        message: isAc ? "Accepted! Your solution passed all test cases." : sub.statusText || "Submission evaluated by judge engine."
+        message: isAc ? "Accepted! Your solution passed all test cases." : sub.statusText || defaultStatusText
       };
     } catch (err) {
       console.warn("[AppDataContext] Submission API error, using fallback simulation:", err);
