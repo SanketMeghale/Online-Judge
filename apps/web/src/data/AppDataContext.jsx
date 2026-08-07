@@ -157,7 +157,12 @@ export function AppDataProvider({ children }) {
         runtimeMs: response.runtimeMs || 15,
         memory: response.memory || "14.2 MB",
         output: response.output || response.stdout || response.stderr || "Execution completed.",
+        stdout: response.stdout || "",
+        stderr: response.stderr || "",
         expectedOutput: problem?.examples?.[0]?.output ?? "",
+        passedCount: response.passedCount ?? (response.verdict === "AC" ? (problem?.examples?.length || 1) : 0),
+        totalCases: response.totalCases ?? (problem?.examples?.length || 1),
+        testResults: response.testResults || [],
         message: response.ok ? "Code executed via backend compiler engine." : response.stderr || "Execution completed."
       };
     } catch {

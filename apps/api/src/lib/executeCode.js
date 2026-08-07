@@ -16,6 +16,7 @@ export async function executeCode({ language, code, stdin = "", timeoutMs }) {
     case "python3":
       return executePython({ code, stdin, timeoutMs });
 
+    case "c":
     case "cpp":
     case "c++":
       return executeCpp({ code, stdin, timeoutMs });

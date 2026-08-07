@@ -54,9 +54,11 @@ export async function evaluateSubmission({ submission, problem }) {
 
   console.log(`[JudgeWorker] [STAGE 4: WORKER_PICKED] Evaluating submission '${submissionId}' for problem '${problem?.id}'`);
 
-  const testCases = problem?.hiddenTestCases && problem.hiddenTestCases.length > 0 
-    ? problem.hiddenTestCases 
-    : problem?.examples || [];
+  const sampleCases = problem?.examples || [];
+  const hiddenCases = problem?.hiddenTestCases || [];
+
+  // Combine sample cases and hidden testcases for full testsuite evaluation
+  const testCases = [...sampleCases, ...hiddenCases];
 
   if (!testCases.length) {
     console.log(`[JudgeWorker] [STAGE 5: CONTAINER_STARTED] Running single testcase execution`);

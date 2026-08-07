@@ -101,12 +101,17 @@ export default function ProblemDetails() {
   }
 
   async function handleRun() {
+    if (!code || !code.trim()) {
+      setError("Please write some code before running.");
+      return;
+    }
+    if (isRunning || isSubmitting) return;
+
     setIsRunning(true);
     setError("");
     setActiveConsoleTab("result");
 
-    const activeExampleInput = problemWithStatus.examples[selectedCaseIndex]?.input || problemWithStatus.examples[0]?.input || "";
-    const stdinToPass = activeConsoleTab === "custom" ? customInput : activeExampleInput;
+    const stdinToPass = activeConsoleTab === "custom" ? customInput : "";
 
     try {
       const nextResult = await runSolution({
@@ -127,6 +132,12 @@ export default function ProblemDetails() {
   }
 
   async function handleSubmit() {
+    if (!code || !code.trim()) {
+      setError("Please write some code before submitting.");
+      return;
+    }
+    if (isRunning || isSubmitting) return;
+
     setIsSubmitting(true);
     setError("");
     setActiveConsoleTab("result");

@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { wrapCodeWithHarness } from "../lib/codeHarness.js";
 import { executeCode } from "../lib/executeCode.js";
+import { isDatabaseConnected } from "../lib/db.js";
+import { Problem } from "../models/Problem.js";
+import { problems as seedProblems } from "../data/problems.js";
 
 const router = Router();
 
@@ -8,41 +11,185 @@ function cleanStderr(stderr = "") {
   return stderr
     .replace(/C:\\Users\\[^\\]+\\AppData\\Local\\Temp\\/gi, "")
     .replace(/\/tmp\//g, "")
-    .replace(/solution_[a-z0-9_]+\.(py|cpp|java|js)/gi, "Solution");
+    .replace(/solution_[a-z0-9_]+\.(py|cpp|java|js|c)/gi, "Solution");
+}
+
+function normalize(str) {
+  if (typeof str !== "string") return "";
+  return str
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n")
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .join("\n")
+    .trim();
+}
+
+function compareOutputs(actual, expected) {
+  const normActual = normalize(actual);
+  const normExpected = normalize(expected);
+
+  if (!normActual) return false;
+  if (normActual === normExpected) return true;
+
+  const lines = normActual.split("\n").map((l) => l.trim()).filter(Boolean);
+  const lastLine = lines[lines.length - 1] || normActual;
+
+  for (const candidate of [normActual, lastLine]) {
+    try {
+      const jsonActual = JSON.parse(candidate);
+      const jsonExpected = JSON.parse(normExpected);
+      if (JSON.stringify(jsonActual) === JSON.stringify(jsonExpected)) {
+        return true;
+      }
+    } catch (e) {}
+
+    const stripCandidate = candidate.replace(/\s+/g, "");
+    const stripExpected = normExpected.replace(/\s+/g, "");
+    if (stripCandidate === stripExpected) return true;
+  }
+
+  return false;
 }
 
 router.post("/run", async (request, response) => {
   const { problemId, language, code, stdin = "", timeoutMs } = request.body ?? {};
 
-  if (!language || !code) {
-    response.status(400).json({ error: "Both 'language' and 'code' are required." });
+  // 1. Validations
+  if (!code || !code.trim()) {
+    response.status(400).json({ error: "Code cannot be empty." });
     return;
   }
 
-  const wrappedCode = wrapCodeWithHarness({ code, language, problemId, stdin });
+  if (!language) {
+    response.status(400).json({ error: "Language is required." });
+    return;
+  }
 
-  const result = await executeCode({
-    language,
-    code: wrappedCode,
-    stdin,
-    timeoutMs: Number.isFinite(timeoutMs) ? timeoutMs : undefined
-  });
+  const normLang = language.toLowerCase().trim();
+  const supportedLangs = ["javascript", "js", "python", "py", "python3", "cpp", "c++", "java", "c"];
+  if (!supportedLangs.includes(normLang)) {
+    response.status(400).json({
+      error: `Unsupported language: '${language}'. Supported languages: Python, JavaScript, C++, Java, C.`
+    });
+    return;
+  }
 
-  const cleanErr = cleanStderr(result.stderr);
-  const runtime = result.runtimeMs || 10;
-  const memory = `${(12 + (runtime % 7)).toFixed(1)} MB`;
+  // 2. Fetch Problem
+  let problem = null;
+  if (isDatabaseConnected()) {
+    try {
+      problem = await Problem.findOne({ id: problemId }).lean();
+    } catch {}
+  }
+  if (!problem) {
+    problem = seedProblems.find((p) => p.id === problemId);
+  }
+
+  // If custom STDIN is provided or problem has no examples, run single execution
+  if (stdin || !problem || !problem.examples || problem.examples.length === 0) {
+    const wrappedCode = wrapCodeWithHarness({ code, language: normLang, problemId, stdin });
+    const result = await executeCode({ language: normLang, code: wrappedCode, stdin, timeoutMs });
+    const cleanErr = cleanStderr(result.stderr);
+    const runtimeMs = result.runtimeMs || 10;
+    const memory = `${(12 + (runtimeMs % 7)).toFixed(1)} MB`;
+
+    response.json({
+      language: normLang,
+      ok: result.ok,
+      verdict: result.ok ? "AC" : result.verdict || "RE",
+      statusText: result.ok
+        ? "Code executed successfully"
+        : result.verdict === "CE"
+        ? "Compilation Error"
+        : result.verdict === "TLE"
+        ? "Time Limit Exceeded"
+        : "Runtime Error",
+      runtime: `${runtimeMs} ms`,
+      runtimeMs,
+      memory,
+      stdout: result.stdout || "",
+      stderr: cleanErr,
+      output: result.stdout.trim() || cleanErr || "Code executed successfully.",
+      testResults: []
+    });
+    return;
+  }
+
+  // 3. Evaluate against all sample testcases
+  const sampleCases = problem.examples;
+  const testResults = [];
+  let passedCount = 0;
+  let totalRuntimeMs = 0;
+  let overallVerdict = "AC";
+
+  for (let i = 0; i < sampleCases.length; i++) {
+    const tc = sampleCases[i];
+    const wrappedCode = wrapCodeWithHarness({ code, language: normLang, problemId, stdin: tc.input });
+    const res = await executeCode({ language: normLang, code: wrappedCode, stdin: tc.input, timeoutMs });
+
+    totalRuntimeMs += res.runtimeMs || 10;
+    const cleanErr = cleanStderr(res.stderr);
+
+    if (!res.ok) {
+      const v = res.verdict || "RE";
+      if (overallVerdict === "AC") overallVerdict = v;
+      testResults.push({
+        testCase: i + 1,
+        passed: false,
+        input: tc.input,
+        expectedOutput: tc.output,
+        actualOutput: res.stdout || cleanErr || "(No output)",
+        verdict: v,
+        stdout: res.stdout || "",
+        stderr: cleanErr
+      });
+      continue;
+    }
+
+    const passed = compareOutputs(res.stdout, tc.output);
+    if (passed) {
+      passedCount++;
+    } else if (overallVerdict === "AC") {
+      overallVerdict = "WA";
+    }
+
+    testResults.push({
+      testCase: i + 1,
+      passed,
+      input: tc.input,
+      expectedOutput: tc.output,
+      actualOutput: res.stdout.trim() || "(No output)",
+      verdict: passed ? "AC" : "WA",
+      stdout: res.stdout || "",
+      stderr: cleanErr
+    });
+  }
+
+  const avgRuntime = Math.max(1, Math.round(totalRuntimeMs / sampleCases.length));
+  const memory = `${(12.5 + (avgRuntime % 5)).toFixed(1)} MB`;
 
   response.json({
-    language,
-    ok: result.ok,
-    verdict: result.ok ? "AC" : result.verdict || "RE",
-    statusText: result.ok ? "Code executed successfully" : result.verdict === "CE" ? "Compilation error" : result.verdict === "TLE" ? "Time limit exceeded" : "Runtime error",
-    runtime: `${runtime} ms`,
-    runtimeMs: runtime,
+    language: normLang,
+    ok: overallVerdict === "AC",
+    verdict: overallVerdict,
+    statusText:
+      overallVerdict === "AC"
+        ? "Accepted"
+        : overallVerdict === "WA"
+        ? "Wrong Answer on sample case"
+        : overallVerdict === "CE"
+        ? "Compilation Error"
+        : overallVerdict === "TLE"
+        ? "Time Limit Exceeded"
+        : "Runtime Error",
+    passedCount,
+    totalCases: sampleCases.length,
+    runtime: `${avgRuntime} ms`,
+    runtimeMs: avgRuntime,
     memory,
-    stdout: result.stdout || "",
-    stderr: cleanErr,
-    output: result.stdout.trim() || cleanErr || "Code executed successfully."
+    output: testResults[0]?.actualOutput || "",
+    testResults
   });
 });
 

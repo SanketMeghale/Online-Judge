@@ -50,9 +50,14 @@ def _run_harness():
             pass
     elif stdin_raw:
         try:
-            data = json.loads(stdin_raw)
-            if isinstance(data, list) and len(data) == 2:
-                nums, target = data[0], data[1]
+            lines = [l.strip() for l in stdin_raw.splitlines() if l.strip()]
+            if len(lines) >= 2:
+                nums = json.loads(lines[0])
+                target = int(lines[1])
+            else:
+                data = json.loads(stdin_raw)
+                if isinstance(data, list) and len(data) == 2:
+                    nums, target = data[0], data[1]
         except Exception:
             pass
 
@@ -82,6 +87,14 @@ if __name__ == '__main__':
       const numsPart = parts[0].replace("nums = ", "").trim().replace(/,$/, "");
       nums = JSON.parse(numsPart);
       target = parseInt(parts[1].trim(), 10);
+    } catch (e) {}
+  } else if (stdinRaw) {
+    try {
+      const lines = stdinRaw.split("\\n").map(l => l.trim()).filter(Boolean);
+      if (lines.length >= 2) {
+        nums = JSON.parse(lines[0]);
+        target = parseInt(lines[1], 10);
+      }
     } catch (e) {}
   }
 
