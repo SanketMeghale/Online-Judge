@@ -33,8 +33,8 @@ export default function Sidebar() {
     <aside className="sidebar">
       {/* Brand Logo Header */}
       <div className="sidebar-brand">
-        <div className="judgo-mark">
-          <span>J</span>
+        <div className="judgo-mark" style={{ background: "transparent", border: "none", boxShadow: "0 0 16px rgba(120, 80, 255, 0.4)", width: "36px", height: "36px", padding: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <img src="/logo.png" alt="Judgo Logo" style={{ width: "36px", height: "36px", objectFit: "contain" }} />
         </div>
         <span className="judgo-title">Judgo</span>
       </div>

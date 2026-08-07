@@ -23,8 +23,8 @@ export default function Navbar() {
   return (
     <header className="navbar">
       <Link className="brand" to="/">
-        <span className="brand-mark">
-          <Code2 size={22} />
+        <span className="brand-mark" style={{ background: "transparent", boxShadow: "0 0 16px rgba(120, 80, 255, 0.4)", width: "36px", height: "36px", padding: 0 }}>
+          <img src="/logo.png" alt="Judgo Logo" style={{ width: "36px", height: "36px", objectFit: "contain" }} />
         </span>
         <span>Judgo</span>
       </Link>
