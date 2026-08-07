@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const REALTIME_STREAM_URL = "http://localhost:4001/api/realtime/stream";
+const REALTIME_STREAM_URL = (import.meta.env.VITE_REALTIME_STREAM_URL || "/api/realtime/stream");
 
 export function useRealtime(onEvent) {
   const [isConnected, setIsConnected] = useState(false);

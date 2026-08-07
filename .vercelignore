@@ -1,0 +1,11 @@
+# Ignored files for Vercel deployment payload
+infra/
+judge-service/
+services/judge-worker/
+services/ai-service/
+scratch/
+artifacts/
+.agents/
+.codex/
+*.log
+coverage/
