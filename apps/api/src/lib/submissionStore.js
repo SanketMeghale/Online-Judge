@@ -5,15 +5,15 @@ import mongoose from "mongoose";
 const memorySubmissions = [];
 
 export async function createSubmissionRecord(record) {
-  const generatedId = record._id || record.id || new mongoose.Types.ObjectId().toString();
+  const generatedId = record.id || new mongoose.Types.ObjectId().toString();
   const initial = {
     _id: generatedId,
-    id: String(generatedId),
-    submissionId: String(generatedId),
+    id: generatedId,
+    submissionId: generatedId,
     status: record.status || "QUEUED",
     verdict: record.verdict || "PENDING",
     statusText: record.statusText || "Queued for evaluation",
-    createdAt: record.createdAt || new Date(),
+    createdAt: new Date(),
     ...record
   };
 
@@ -21,15 +21,13 @@ export async function createSubmissionRecord(record) {
     try {
       const doc = await Submission.create(initial);
       const obj = doc.toObject();
-      const formattedObj = {
+      return {
         ...obj,
-        id: String(obj._id),
-        submissionId: String(obj._id)
+        id: String(obj.id || obj._id),
+        submissionId: String(obj.id || obj._id)
       };
-      memorySubmissions.unshift(formattedObj);
-      return formattedObj;
     } catch (err) {
-      // Fallback to memory below
+      console.error("[SubmissionStore] Submission.create DB error:", err);
     }
   }
 
@@ -37,22 +35,27 @@ export async function createSubmissionRecord(record) {
   return initial;
 }
 
-export async function updateSubmissionRecord(submissionId, updates) {
-  const cleanId = String(submissionId).trim();
-  if (isDatabaseConnected() && mongoose.Types.ObjectId.isValid(cleanId)) {
+export async function updateSubmissionRecord(id, updates) {
+  if (!id) return null;
+
+  if (isDatabaseConnected() && mongoose.Types.ObjectId.isValid(String(id))) {
     try {
-      await Submission.findByIdAndUpdate(cleanId, updates);
+      const doc = await Submission.findByIdAndUpdate(id, updates, { new: true }).lean();
+      if (doc) {
+        return { ...doc, id: String(doc._id), submissionId: String(doc._id) };
+      }
     } catch (err) {}
   }
 
-  const idx = memorySubmissions.findIndex((s) => String(s.id || s._id) === cleanId);
-  if (idx !== -1) {
-    memorySubmissions[idx] = {
-      ...memorySubmissions[idx],
+  const index = memorySubmissions.findIndex((s) => s.id === id || s._id === id || s.submissionId === id);
+  if (index !== -1) {
+    memorySubmissions[index] = {
+      ...memorySubmissions[index],
       ...updates
     };
-    return memorySubmissions[idx];
+    return memorySubmissions[index];
   }
+
   return null;
 }
 
@@ -61,13 +64,10 @@ export async function listSubmissionRecords() {
     try {
       const docs = await Submission.find().sort({ createdAt: -1 }).lean();
       if (docs && docs.length > 0) {
-        return docs.map((doc) => ({
-          ...doc,
-          id: String(doc._id),
-          submissionId: String(doc._id)
-        }));
+        return docs.map((d) => ({ ...d, id: String(d._id), submissionId: String(d._id) }));
       }
-    } catch (err) {}
+    } catch {}
   }
+
   return memorySubmissions;
 }

@@ -20,15 +20,15 @@ async function request(endpoint, options = {}) {
   };
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    credentials: "include",
     ...options,
-    credentials: "include", // Transmit HTTP-only cookies
     headers
   });
 
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.error || `API request failed with status ${response.status}`);
+    throw new Error(data.error || data.message || `API request failed with status ${response.status}`);
   }
 
   return data;
@@ -41,21 +41,13 @@ export const api = {
   logout: () => request("/auth/logout", { method: "POST" }),
   getMe: () => request("/auth/me"),
 
-  // User & Dashboard
-  getUserDashboard: () => request("/users/dashboard"),
-
   // Problems
   getProblems: () => request("/problems"),
   getProblemById: (id) => request(`/problems/${id}`),
 
   // Compiler & Submissions
   runCode: (body) => request("/compiler/run", { method: "POST", body: JSON.stringify(body) }),
-  submitCode: (body) => request("/submissions", { method: "POST", body: JSON.stringify(body) }),
-  getSubmissions: (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    return request(`/submissions/history${queryString ? `?${queryString}` : ""}`);
-  },
+  submitCode: (body) => request("/submissions/submit", { method: "POST", body: JSON.stringify(body) }),
+  getSubmissions: (query = "") => request(`/submissions/history${query ? `?${query}` : ""}`),
   getSubmissionById: (id) => request(`/submissions/${id}`)
 };
-
-export default api;

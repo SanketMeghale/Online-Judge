@@ -138,11 +138,6 @@ export default function ProblemDetails() {
         language,
         code
       });
-      if (nextResult.verdict !== "AC" && nextResult.failedTestCase) {
-        setSelectedCaseIndex(Math.max(0, nextResult.failedTestCase - 1));
-      } else {
-        setSelectedCaseIndex(0);
-      }
       setResult({
         ...nextResult,
         type: "submit"
@@ -532,21 +527,21 @@ export default function ProblemDetails() {
                     <div style={{ background: "#080c14", padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
                       <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: "bold" }}>Input</span>
                       <pre style={{ margin: "4px 0 0 0", color: "#cbd5e1", fontFamily: "monospace", fontSize: "0.82rem" }}>
-                        {currentTestResult?.input || result.input || activeExample?.input}
+                        {currentTestResult?.input || activeExample?.input}
                       </pre>
                     </div>
 
                     <div style={{ background: "#080c14", padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
                       <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: "bold" }}>Expected Output</span>
                       <pre style={{ margin: "4px 0 0 0", color: "#4ade80", fontFamily: "monospace", fontSize: "0.82rem" }}>
-                        {currentTestResult?.expectedOutput || result.expectedOutput || activeExample?.output}
+                        {currentTestResult?.expectedOutput || activeExample?.output}
                       </pre>
                     </div>
 
                     <div style={{ background: "#080c14", padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
                       <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: "bold" }}>Your Output</span>
                       <pre style={{ margin: "4px 0 0 0", color: (currentTestResult?.passed || result.verdict === "AC") ? "#4ade80" : "#f87171", fontFamily: "monospace" }}>
-                        {currentTestResult?.actualOutput || currentTestResult?.stdout || result.output || "(No output)"}
+                        {currentTestResult?.stdout || currentTestResult?.actualOutput || result.stdout || (result.output && result.output !== "Evaluation finished" ? result.output : "") || "(No output)"}
                       </pre>
                     </div>
                   </div>

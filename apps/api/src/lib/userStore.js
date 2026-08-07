@@ -1,23 +1,29 @@
-import { isDatabaseConnected } from "./db.js";
-import { hashPassword, verifyPassword } from "./jwt.js";
-import { User } from "../models/User.js";
 import mongoose from "mongoose";
+import { isDatabaseConnected } from "./db.js";
+import { hashPassword, hashPasswordSync, verifyPassword } from "./jwt.js";
+import { User } from "../models/User.js";
+
 
 const memoryUsers = [
   {
     id: "u-demo-1",
-    _id: "65b9e2f81234567890abcdef",
     name: "Nadia Rao",
     username: "nadia.codes",
     email: "nadia@example.com",
-    passwordHash: "$2a$10$e8w.x.N07H39.o0s7Z6Eue6vKjW1pG/4vX50Y.kQ1H0J5kZ7b8hSm", // bcrypt for 'password123'
+    passwordHash: hashPasswordSync("password123"),
     ranking: 87,
     xp: 8420,
     streak: 7,
     badges: ["7 Day Streak", "Graph Sprinter", "Contest Finisher"],
     solvedProblemIds: ["two-sum"],
     attemptedProblemIds: ["cache-stampede", "binary-lift"],
-    bookmarkedProblemIds: ["two-sum"],
+    stats: {
+      totalSubmissions: 5,
+      acceptedSubmissions: 3,
+      waCount: 1,
+      reCount: 1,
+      tleCount: 0
+    },
     createdAt: new Date("2026-01-15T00:00:00.000Z")
   }
 ];
@@ -30,7 +36,7 @@ export async function findUserByEmail(email) {
     try {
       const doc = await User.findOne({ email: cleanEmail }).lean();
       return doc ? sanitizeUser(doc) : null;
-    } catch (err) {}
+    } catch {}
   }
 
   const u = memoryUsers.find((item) => item.email.toLowerCase() === cleanEmail);
@@ -45,7 +51,7 @@ export async function findUserByUsername(username) {
     try {
       const doc = await User.findOne({ username: cleanUser }).lean();
       return doc ? sanitizeUser(doc) : null;
-    } catch (err) {}
+    } catch {}
   }
 
   const u = memoryUsers.find((item) => item.username.toLowerCase() === cleanUser);
@@ -54,22 +60,22 @@ export async function findUserByUsername(username) {
 
 export async function findUserById(id) {
   if (!id) return null;
-  const cleanId = String(id).trim();
 
   if (isDatabaseConnected()) {
     try {
-      let doc = null;
-      if (mongoose.Types.ObjectId.isValid(cleanId)) {
-        doc = await User.findById(cleanId).lean();
-      }
-      if (!doc) {
-        doc = await User.findOne({ id: cleanId }).lean();
-      }
+      const isObjId = mongoose.Types.ObjectId.isValid(String(id));
+      const query = isObjId ? { $or: [{ id: String(id) }, { _id: id }] } : { id: String(id) };
+      const doc = await User.findOne(query).lean();
       if (doc) return sanitizeUser(doc);
-    } catch (err) {}
+      // Fallback query by ObjectId
+      const docByObjId = await User.findById(id).lean().catch(() => null);
+      if (docByObjId) return sanitizeUser(docByObjId);
+    } catch (e) {
+      console.error("[UserStore] findUserById error:", e);
+    }
   }
 
-  const u = memoryUsers.find((item) => String(item.id) === cleanId || String(item._id) === cleanId);
+  const u = memoryUsers.find((item) => String(item.id) === String(id) || String(item._id) === String(id));
   return u ? sanitizeUser(u) : null;
 }
 
@@ -87,7 +93,13 @@ export async function createUser({ name, username, email, password }) {
     badges: ["New Challenger"],
     solvedProblemIds: [],
     attemptedProblemIds: [],
-    bookmarkedProblemIds: [],
+    stats: {
+      totalSubmissions: 0,
+      acceptedSubmissions: 0,
+      waCount: 0,
+      reCount: 0,
+      tleCount: 0
+    },
     createdAt: new Date()
   };
 
@@ -95,22 +107,26 @@ export async function createUser({ name, username, email, password }) {
     try {
       const doc = await User.create(userObj);
       return sanitizeUser(doc.toObject());
-    } catch (err) {}
+    } catch (e) {
+      console.error("[UserStore] createUser DB error:", e);
+    }
   }
 
   memoryUsers.push(userObj);
   return sanitizeUser(userObj);
 }
 
+
 export async function validateUserCredentials(email, password) {
   if (!email || !password) return null;
   const cleanEmail = email.trim().toLowerCase();
 
   let rawUser = null;
+
   if (isDatabaseConnected()) {
     try {
       rawUser = await User.findOne({ email: cleanEmail }).lean();
-    } catch (err) {}
+    } catch {}
   }
 
   if (!rawUser) {
@@ -129,11 +145,21 @@ export async function validateUserCredentials(email, password) {
 
 export function sanitizeUser(user) {
   if (!user) return null;
-  const { passwordHash, password, _id, __v, ...safeUser } = user;
-  const idStr = String(_id || user.id);
+  const { passwordHash, _id, __v, ...safeUser } = user;
+  const primaryId = String(user.id || _id || "");
+  const mongoId = _id ? String(_id) : primaryId;
   return {
     ...safeUser,
-    id: idStr,
-    submissionId: idStr
+    id: primaryId,
+    _id: mongoId,
+    solved: safeUser.solvedProblemIds?.length || 0,
+    stats: safeUser.stats || {
+      totalSubmissions: 0,
+      acceptedSubmissions: 0,
+      waCount: 0,
+      reCount: 0,
+      tleCount: 0
+    }
   };
 }
+

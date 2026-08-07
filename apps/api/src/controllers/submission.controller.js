@@ -1,14 +1,19 @@
 import { submissionService } from "../services/submission.service.js";
 
+/**
+ * SubmissionController - HTTP Request Handler for Submissions
+ */
 export class SubmissionController {
   async submit(req, res) {
     try {
-      if (!req.user || !req.user.id) {
-        return res.status(401).json({ success: false, error: "Authentication required." });
+      const userId = req.user?.id || req.user?._id;
+      if (!userId) {
+        return res.status(401).json({ success: false, error: "Authentication required to submit code." });
       }
 
-      const userId = req.user.id;
-      const { problemId, language, code, stdin, expectedOutput } = req.body;
+      const { problemId, language, code, stdin, expectedOutput } = req.body ?? {};
+
+      console.log(`[SubmissionController] [STAGE 1: SUBMISSION_RECEIVED] problemId: '${problemId}', language: '${language}', userId: '${userId}'`);
 
       if (!problemId || !language || !code) {
         return res.status(400).json({
@@ -17,7 +22,7 @@ export class SubmissionController {
         });
       }
 
-      const submission = await submissionService.submitCode({
+      const queuedSubmission = await submissionService.submitCode({
         userId,
         problemId,
         language,
@@ -26,10 +31,10 @@ export class SubmissionController {
         expectedOutput
       });
 
-      return res.status(200).json({
+      return res.status(202).json({
         success: true,
-        message: "Submission evaluated successfully.",
-        submission
+        message: "Submission queued for evaluation successfully.",
+        submission: queuedSubmission
       });
     } catch (err) {
       return res.status(500).json({
@@ -42,13 +47,14 @@ export class SubmissionController {
   async getSubmission(req, res) {
     try {
       const { id } = req.params;
-      const userId = req.user?.id;
+      const userId = req.user?.id || req.user?._id;
       const submission = await submissionService.getSubmissionById(id);
 
-      if (submission && userId && String(submission.userId) !== String(userId)) {
+      // Verify user ownership or guest access
+      if (submission.userId && userId && submission.userId !== userId) {
         return res.status(403).json({
           success: false,
-          error: "Access denied. You can only view your own submissions."
+          error: "Unauthorized access: You cannot view submissions belonging to another user."
         });
       }
 
@@ -66,21 +72,22 @@ export class SubmissionController {
 
   async getHistory(req, res) {
     try {
-      if (!req.user || !req.user.id) {
+      const userIds = [req.user?.id, req.user?._id].filter(Boolean);
+      if (!userIds.length) {
         return res.status(401).json({ success: false, error: "Authentication required." });
       }
 
-      const userId = req.user.id;
       const { problemId, verdict, language, limit = 50, page = 1 } = req.query;
 
       const historyData = await submissionService.getUserSubmissionHistory({
-        userId,
+        userId: userIds,
         problemId,
         verdict,
         language,
         limit: Number(limit),
         page: Number(page)
       });
+
 
       return res.status(200).json({
         success: true,

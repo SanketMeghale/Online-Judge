@@ -138,27 +138,11 @@ export function AppDataProvider({ children }) {
   }
 
   async function submitSolution({ userId, problemId, language, code, stdin = "" }) {
-    const problem = getProblemById(database, problemId) || {
-      id: problemId,
-      title: problemId,
-      hiddenTestCases: [{ input: "", output: "" }],
-      examples: [{ input: "", output: "" }]
-    };
+    const problem = getProblemById(database, problemId);
+    const user = database.users.find((item) => item.id === userId);
 
-    let userObj = database.users.find(
-      (item) => String(item.id) === String(userId) || String(item._id) === String(userId) || item.email === userId
-    );
-
-    if (!userObj) {
-      userObj = {
-        id: String(userId),
-        _id: String(userId),
-        name: "Developer",
-        username: "developer",
-        email: "user@onlinejudge.com",
-        solvedProblemIds: [],
-        attemptedProblemIds: []
-      };
+    if (!problem || !user) {
+      throw new Error("Unable to submit right now.");
     }
 
     let result;
@@ -192,20 +176,16 @@ export function AppDataProvider({ children }) {
 
       const verdict = sub.verdict || exec.verdict || "AC";
       const isAc = verdict === "AC";
-      const passCount = sub.passedCount ?? sub.passCount ?? exec.passedCount ?? (isAc ? (problem.hiddenTestCases?.length || problem.examples?.length || 5) : 0);
-      const totalCount = sub.totalCases ?? sub.totalCount ?? exec.totalCases ?? (problem.hiddenTestCases?.length || problem.examples?.length || 5);
+      const passCount = sub.passedCount ?? sub.passCount ?? exec.passedCount ?? (isAc ? (problem.hiddenTestCases?.length || problem.examples.length) : 0);
+      const totalCount = sub.totalCases ?? sub.totalCount ?? exec.totalCases ?? (problem.hiddenTestCases?.length || problem.examples.length);
       const testResults = sub.testcases || sub.testResults || exec.testResults || [];
-      const firstFailedTc = testResults.find((t) => t.passed === false) || {};
-      const firstTc = firstFailedTc.input ? firstFailedTc : (testResults[0] || {});
-
-      const failedTestCaseNum = sub.failedTestCase || firstFailedTc.testCase || (isAc ? null : passCount + 1);
+      const firstTc = testResults[0] || {};
 
       result = {
         id: subId,
         submissionId: subId,
         verdict,
         statusText: sub.statusText || exec.statusText || (isAc ? "Accepted" : `Wrong Answer on testcase ${passCount + 1}`),
-        failedTestCase: failedTestCaseNum,
         runtime: `${sub.runtimeMs || exec.runtimeMs || 25} ms`,
         runtimeMs: sub.runtimeMs || exec.runtimeMs || 25,
         memory: `${sub.memoryMb || exec.memoryMb || 14.2} MB`,
@@ -214,11 +194,10 @@ export function AppDataProvider({ children }) {
         memoryPercentile: sub.memoryPercentile || exec.memoryPercentile || 76.2,
         passedCount: passCount,
         totalCases: totalCount,
-        input: sub.input || firstTc.input || problem.examples?.[0]?.input || "",
-        expectedOutput: sub.expectedOutput || firstTc.expectedOutput || problem.examples?.[0]?.output || "",
-        output: firstTc.actualOutput || firstTc.stdout || sub.stdout || sub.output || exec.stdout || exec.output || "(No output)",
+        output: firstTc.actualOutput || firstTc.stdout || sub.stdout || sub.output || exec.stdout || exec.output || "",
         stdout: firstTc.actualOutput || firstTc.stdout || sub.stdout || exec.stdout || "",
         stderr: firstTc.stderr || sub.stderr || exec.stderr || "",
+        expectedOutput: firstTc.expectedOutput || sub.expectedOutput || exec.expectedOutput || problem.examples[0]?.output || "",
         testResults,
         message: isAc ? "Accepted! Your solution passed all test cases." : sub.statusText || "Submission evaluated by judge engine."
       };
@@ -227,28 +206,17 @@ export function AppDataProvider({ children }) {
       result = simulateRun(problem, language, code);
     }
 
-    const { submission, nextSubmissionId } = createSubmission(database, String(userId), problem, language, result);
 
-    updateDatabase((current) => {
-      const existingUserIdx = current.users.findIndex(
-        (item) => String(item.id) === String(userId) || String(item._id) === String(userId)
-      );
+    const { submission, nextSubmissionId } = createSubmission(database, userId, problem, language, result);
 
-      let updatedUsers = [...current.users];
-      if (existingUserIdx >= 0) {
-        updatedUsers[existingUserIdx] = updateUserAfterSubmission(updatedUsers[existingUserIdx], problem, result.verdict);
-      } else {
-        const newUserObj = updateUserAfterSubmission(userObj, problem, result.verdict);
-        updatedUsers.push(newUserObj);
-      }
-
-      return {
-        ...current,
-        nextSubmissionId,
-        submissions: [submission, ...current.submissions],
-        users: updatedUsers
-      };
-    });
+    updateDatabase((current) => ({
+      ...current,
+      nextSubmissionId,
+      submissions: [submission, ...current.submissions],
+      users: current.users.map((item) =>
+        item.id === userId ? updateUserAfterSubmission(item, problem, result.verdict) : item
+      )
+    }));
 
     return result;
   }

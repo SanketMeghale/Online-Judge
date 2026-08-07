@@ -14,11 +14,14 @@ const difficultyFilters = ["All", "Easy", "Medium", "Hard"];
 
 export default function ProblemsList() {
   const { user } = useAuth();
-  const { getProblemsForUser } = useAppData();
+  const { getProblemsForUser, getSubmissionsForUser } = useAppData();
   const [query, setQuery] = useState("");
   const [difficulty, setDifficulty] = useState("All");
   const [topic, setTopic] = useState("All");
-  const problems = getProblemsForUser(user.id);
+
+  const problems = getProblemsForUser(user?.id);
+  const userSubmissions = getSubmissionsForUser(user?.id) || [];
+
   const topics = useMemo(
     () => ["All", ...new Set(problems.map((problem) => problem.topic))],
     [problems]
@@ -86,11 +89,15 @@ export default function ProblemsList() {
           <span>Difficulty</span>
           <span>Topic</span>
           <span>Acceptance</span>
+          <span>My Submissions</span>
           <span>Status</span>
         </div>
 
         {filteredProblems.map((problem, index) => {
           const Icon = statusIcon[problem.status] ?? CircleDashed;
+          const subCount = userSubmissions.filter(
+            (s) => (s.problemId || s.problem || "").toLowerCase() === (problem.id || problem.slug || "").toLowerCase() || (s.problem || "").toLowerCase() === problem.title.toLowerCase()
+          ).length;
 
           return (
             <Link className="problem-row" key={problem.id} to={`/problems/${problem.id}`}>
@@ -102,7 +109,8 @@ export default function ProblemsList() {
               <span className={`difficulty difficulty-${problem.difficulty.toLowerCase()}`}>{problem.difficulty}</span>
               <span>{problem.topic}</span>
               <span>{problem.acceptance}%</span>
-              <span className="problem-status">
+              <span style={{ fontSize: "0.85rem", color: "#a8b3d6" }}>{subCount} attempt{subCount === 1 ? "" : "s"}</span>
+              <span className={`problem-status status-${(problem.status || "unsolved").toLowerCase()}`}>
                 <Icon size={15} />
                 {problem.status}
               </span>

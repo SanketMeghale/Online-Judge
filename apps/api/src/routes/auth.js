@@ -2,143 +2,136 @@ import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { signToken } from "../lib/jwt.js";
 import { createUser, findUserByEmail, findUserByUsername, validateUserCredentials } from "../lib/userStore.js";
-import { requireAuth } from "../middleware/authMiddleware.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
-// Rate limiter for authentication attempts
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 login requests per windowMs
+// Rate limiter for auth endpoints (max 10 requests per 15 minutes per IP)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
     success: false,
-    error: "Too many login attempts. Please try again after 15 minutes."
+    error: "Too many login/registration attempts. Please try again in 15 minutes."
   }
 });
 
-const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: {
-    success: false,
-    error: "Too many accounts created from this IP. Please try again later."
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+};
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME_REGEX = /^[a-zA-Z0-9_.-]{3,30}$/;
+
+router.post("/register", authLimiter, async (request, response) => {
+  const { name, username, email, password } = request.body ?? {};
+
+  if (!name || !username || !email || !password) {
+    response.status(400).json({
+      success: false,
+      error: "Missing required fields: name, username, email, and password are required."
+    });
+    return;
   }
-});
 
-function isValidEmail(email) {
-  return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-}
+  const cleanEmail = String(email).trim().toLowerCase();
+  const cleanUsername = String(username).trim();
+  const cleanName = String(name).trim();
 
-function isValidUsername(username) {
-  return typeof username === "string" && /^[a-zA-Z0-9._-]{3,30}$/.test(username.trim());
-}
-
-router.post("/register", registerLimiter, async (req, res) => {
-  try {
-    const { name, username, email, password } = req.body ?? {};
-
-    if (!name || !username || !email || !password) {
-      return res.status(400).json({ success: false, error: "Name, username, email, and password are required." });
-    }
-
-    if (!isValidEmail(email)) {
-      return res.status(400).json({ success: false, error: "Please enter a valid email address." });
-    }
-
-    if (!isValidUsername(username)) {
-      return res.status(400).json({
-        success: false,
-        error: "Username must be 3-30 characters and contain only letters, numbers, underscores, or hyphens."
-      });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, error: "Password must be at least 6 characters long." });
-    }
-
-    if (await findUserByEmail(email)) {
-      return res.status(409).json({ success: false, error: "An account with this email address already exists." });
-    }
-
-    if (await findUserByUsername(username)) {
-      return res.status(409).json({ success: false, error: "Username is already taken." });
-    }
-
-    const user = await createUser({ name, username, email, password });
-    const token = signToken({ userId: user.id });
-
-    // Set secure HTTP-Only Cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    });
-
-    return res.status(201).json({
-      success: true,
-      token,
-      user
-    });
-  } catch (err) {
-    return res.status(500).json({ success: false, error: err.message || "Registration failed." });
+  if (!EMAIL_REGEX.test(cleanEmail)) {
+    response.status(400).json({ success: false, error: "Please enter a valid email address." });
+    return;
   }
-});
 
-router.post("/login", loginLimiter, async (req, res) => {
-  try {
-    const { email, password } = req.body ?? {};
-
-    if (!email || !password) {
-      return res.status(400).json({ success: false, error: "Both email and password are required." });
-    }
-
-    if (!isValidEmail(email)) {
-      return res.status(400).json({ success: false, error: "Please enter a valid email address." });
-    }
-
-    const user = await validateUserCredentials(email, password);
-    if (!user) {
-      return res.status(401).json({ success: false, error: "Invalid email address or password." });
-    }
-
-    const token = signToken({ userId: user.id });
-
-    // Set secure HTTP-Only Cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  if (!USERNAME_REGEX.test(cleanUsername)) {
+    response.status(400).json({
+      success: false,
+      error: "Username must be 3-30 characters long and contain only letters, numbers, underscores, dots, or hyphens."
     });
-
-    return res.status(200).json({
-      success: true,
-      token,
-      user
-    });
-  } catch (err) {
-    return res.status(500).json({ success: false, error: err.message || "Login failed." });
+    return;
   }
-});
 
-router.post("/logout", (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/"
+  if (password.length < 6) {
+    response.status(400).json({ success: false, error: "Password must be at least 6 characters long." });
+    return;
+  }
+
+  const existingEmail = await findUserByEmail(cleanEmail);
+  if (existingEmail) {
+    response.status(409).json({ success: false, error: "An account with this email address already exists." });
+    return;
+  }
+
+  const existingUsername = await findUserByUsername(cleanUsername);
+  if (existingUsername) {
+    response.status(409).json({ success: false, error: "This username is already taken. Please choose another." });
+    return;
+  }
+
+  const user = await createUser({
+    name: cleanName,
+    username: cleanUsername,
+    email: cleanEmail,
+    password
   });
-  return res.status(200).json({ success: true, message: "Logged out successfully." });
+
+  const token = signToken({ userId: user.id, email: user.email, username: user.username });
+  response.cookie("token", token, COOKIE_OPTIONS);
+
+  response.status(201).json({
+    success: true,
+    message: "Account registered successfully.",
+    token,
+    accessToken: token,
+    user
+  });
 });
 
-router.get("/me", requireAuth, (req, res) => {
-  return res.status(200).json({
+router.post("/login", authLimiter, async (request, response) => {
+  const { email, password } = request.body ?? {};
+
+  if (!email || !password) {
+    response.status(400).json({ success: false, error: "Both email and password are required." });
+    return;
+  }
+
+  const cleanEmail = String(email).trim().toLowerCase();
+  const user = await validateUserCredentials(cleanEmail, password);
+
+  if (!user) {
+    response.status(401).json({ success: false, error: "Invalid email address or password. Please try again." });
+    return;
+  }
+
+  const token = signToken({ userId: user.id, email: user.email, username: user.username });
+  response.cookie("token", token, COOKIE_OPTIONS);
+
+  response.json({
     success: true,
-    user: req.user
+    message: "Logged in successfully.",
+    token,
+    accessToken: token,
+    user
+  });
+});
+
+router.post("/logout", (request, response) => {
+  response.clearCookie("token", COOKIE_OPTIONS);
+  response.json({
+    success: true,
+    message: "Logged out successfully."
+  });
+});
+
+router.get("/me", requireAuth, (request, response) => {
+  response.json({
+    success: true,
+    user: request.user
   });
 });
 

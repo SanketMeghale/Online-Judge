@@ -1,8 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { api } from "../api/apiClient.js";
 import { clearStoredSession, readStoredSession, writeStoredSession } from "./authStorage.js";
 import { loginWithEmail, refreshCurrentSession, registerWithEmail } from "./authService.js";
 import { useAppData } from "../data/AppDataContext.jsx";
-import { api } from "../api/apiClient.js";
+
+
 
 const AuthContext = createContext(null);
 
@@ -18,10 +20,20 @@ export function AuthProvider({ children }) {
       refreshDatabase();
       const storedSession = readStoredSession();
 
+      if (!storedSession) {
+        if (isMounted) {
+          setSession(null);
+          setStatus("idle");
+        }
+        return;
+      }
+
       try {
         const nextSession = await refreshCurrentSession(storedSession);
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
         if (nextSession) {
           writeStoredSession(nextSession);
@@ -68,10 +80,11 @@ export function AuthProvider({ children }) {
   async function logout() {
     try {
       await api.logout();
-    } catch (err) {}
+    } catch {}
     clearStoredSession();
     setSession(null);
   }
+
 
   const value = useMemo(
     () => ({

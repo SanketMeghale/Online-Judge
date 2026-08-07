@@ -1,34 +1,28 @@
-import { Submission } from "../models/Submission.js";
-import { queueProducer } from "../../../../judge-service/src/queue/producer.js";
-import { createSubmissionRecord, updateSubmissionRecord, listSubmissionRecords } from "../lib/submissionStore.js";
-import { languageRegistry } from "../../../../config/languages.js";
-import { evaluateSubmission } from "../../../../services/judge-worker/src/judgeEvaluator.js";
-import { Problem } from "../models/Problem.js";
-import { problems as defaultProblems } from "../data/problems.js";
-import { isDatabaseConnected } from "../lib/db.js";
 import mongoose from "mongoose";
+import { Submission } from "../models/Submission.js";
+import { Problem } from "../models/Problem.js";
+import { isDatabaseConnected } from "../lib/db.js";
+import { createSubmissionRecord, updateSubmissionRecord, listSubmissionRecords } from "../lib/submissionStore.js";
+import { queueProducer } from "../../../../judge-service/src/queue/producer.js";
+import { evaluateSubmission } from "../../../../services/judge-worker/src/judgeEvaluator.js";
+import { problems as defaultProblems } from "../data/problems.js";
 
 /**
- * SubmissionService - Asynchronous & Fallback Synchronous Submission Processing Service
+ * SubmissionService - Coordinates Submission Queuing and Lifecycle
  */
 export class SubmissionService {
-  async submitCode({ userId, problemId, language, code, stdin = "", expectedOutput = "" }) {
-    console.log(`[SubmissionService] [STAGE 1: SUBMISSION_RECEIVED] problemId: '${problemId}', language: '${language}', userId: '${userId}'`);
-
+  async submitCode({ userId, problemId, language, code, stdin, expectedOutput }) {
     if (!problemId || !language || !code) {
-      throw new Error("Missing required fields: problemId, language, and code are required.");
+      throw new Error("Missing required parameters for submission.");
     }
 
-    const langConfig = languageRegistry.get(language);
-    if (!langConfig) {
-      throw new Error(`Unsupported programming language: '${language}'`);
-    }
+    const cleanLanguage = String(language).toLowerCase().trim();
 
     // 1. Save Initial Submission Record
     const submissionData = {
       userId,
       problemId,
-      language: langConfig.id,
+      language: cleanLanguage,
       code,
       status: "QUEUED",
       verdict: "PENDING",
@@ -41,7 +35,7 @@ export class SubmissionService {
     };
 
     const newSubmission = await createSubmissionRecord(submissionData);
-    const submissionId = String(newSubmission.id || newSubmission._id);
+    const submissionId = String(newSubmission._id || newSubmission.id || newSubmission.submissionId);
     console.log(`[SubmissionService] [STAGE 2: CODE_SAVED] Saved submission ID: ${submissionId}`);
 
     // 2. Attempt publishing job to RabbitMQ queue
@@ -49,7 +43,7 @@ export class SubmissionService {
       submissionId,
       problemId,
       userId,
-      language: langConfig.id,
+      language: cleanLanguage,
       code,
       stdin,
       expectedOutput
@@ -69,7 +63,7 @@ export class SubmissionService {
         submissionId,
         problemId,
         userId,
-        language: langConfig.id,
+        language: cleanLanguage,
         status: "QUEUED",
         verdict: "PENDING",
         statusText: "Queued for evaluation",
@@ -77,7 +71,7 @@ export class SubmissionService {
       };
     }
 
-    // 3. Fallback: If RabbitMQ is offline, execute inline synchronously so submission never hangs
+    // 3. Fallback: If RabbitMQ is offline, execute inline synchronously
     console.warn(`[SubmissionService] [STAGE 3: JOB_QUEUED] RabbitMQ offline. Running inline synchronous evaluation for job ${submissionId}...`);
 
     let problem = null;
@@ -94,11 +88,10 @@ export class SubmissionService {
     }
 
     const evaluation = await evaluateSubmission({
-      submission: { id: submissionId, language: langConfig.id, code },
+      submission: { id: submissionId, language: cleanLanguage, code },
       problem
     });
 
-    // Update submission record with full results
     const updatedRecord = {
       status: "COMPLETED",
       verdict: evaluation.verdict,
@@ -116,11 +109,6 @@ export class SubmissionService {
       completedAt: new Date()
     };
 
-    if (isDatabaseConnected() && mongoose.Types.ObjectId.isValid(submissionId)) {
-      try {
-        await Submission.findByIdAndUpdate(submissionId, updatedRecord);
-      } catch (err) {}
-    }
     await updateSubmissionRecord(submissionId, updatedRecord);
 
     console.log(`[SubmissionService] [STAGE 9: DATABASE_UPDATED] Submission ${submissionId} evaluation complete: ${evaluation.verdict} (${evaluation.statusText})`);
@@ -130,7 +118,7 @@ export class SubmissionService {
       submissionId,
       problemId,
       userId,
-      language: langConfig.id,
+      language: cleanLanguage,
       code,
       createdAt: newSubmission.createdAt || new Date(),
       ...updatedRecord,
@@ -142,7 +130,7 @@ export class SubmissionService {
     if (!submissionId) throw new Error("Submission ID is required.");
     const cleanId = String(submissionId).trim();
 
-    if (mongoose.Types.ObjectId.isValid(cleanId)) {
+    if (isDatabaseConnected() && mongoose.Types.ObjectId.isValid(cleanId)) {
       try {
         const submission = await Submission.findById(cleanId).lean();
         if (submission) {
@@ -168,25 +156,30 @@ export class SubmissionService {
     return fallback;
   }
 
-  async getUserSubmissionHistory({ userId, problemId, verdict, language, limit = 20, page = 1 }) {
+  async getUserSubmissionHistory({ userId, problemId, verdict, language, limit = 50, page = 1 }) {
     if (!userId) throw new Error("User ID is required.");
 
-    const query = { userId: String(userId) };
-    if (problemId && problemId !== "all") query.problemId = problemId;
-    if (verdict && verdict !== "all") query.verdict = verdict.toUpperCase();
-    if (language && language !== "all") query.language = language.toLowerCase();
+    const idList = Array.isArray(userId) ? userId : [String(userId)];
+    const query = {
+      userId: { $in: idList }
+    };
+
+
+    if (problemId) query.problemId = problemId;
+    if (verdict && verdict !== "All") query.verdict = verdict;
+    if (language && language !== "All") query.language = language.toLowerCase();
 
     const skip = (page - 1) * limit;
 
-    try {
-      const total = await Submission.countDocuments(query);
-      const dbSubmissions = await Submission.find(query)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .lean();
+    if (isDatabaseConnected()) {
+      try {
+        const total = await Submission.countDocuments(query);
+        const dbSubmissions = await Submission.find(query)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .lean();
 
-      if (dbSubmissions && dbSubmissions.length > 0) {
         return {
           submissions: dbSubmissions.map((s) => ({ ...s, id: String(s._id) })),
           total,
@@ -194,31 +187,31 @@ export class SubmissionService {
           limit,
           totalPages: Math.ceil(total / limit) || 1
         };
-      }
-    } catch (dbErr) {}
+      } catch (dbErr) {}
+    }
+
 
     const memorySubmissions = await listSubmissionRecords();
-    let userSubs = memorySubmissions.filter((s) => String(s.userId) === String(userId));
+    let userSubs = memorySubmissions.filter(
+      (s) => String(s.userId || "") === String(userId) || !s.userId
+    );
 
-    if (problemId && problemId !== "all") {
+    if (problemId) {
       userSubs = userSubs.filter((s) => s.problemId === problemId);
     }
-    if (verdict && verdict !== "all") {
-      userSubs = userSubs.filter((s) => s.verdict === verdict.toUpperCase());
+    if (verdict && verdict !== "All") {
+      userSubs = userSubs.filter((s) => s.verdict === verdict);
     }
-    if (language && language !== "all") {
-      userSubs = userSubs.filter((s) => s.language === language.toLowerCase());
+    if (language && language !== "All") {
+      userSubs = userSubs.filter((s) => (s.language || "").toLowerCase() === language.toLowerCase());
     }
-
-    const total = userSubs.length;
-    const paginated = userSubs.slice(skip, skip + limit);
 
     return {
-      submissions: paginated,
-      total,
-      page,
+      submissions: userSubs,
+      total: userSubs.length,
+      page: 1,
       limit,
-      totalPages: Math.ceil(total / limit) || 1
+      totalPages: 1
     };
   }
 

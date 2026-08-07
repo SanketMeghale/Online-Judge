@@ -135,11 +135,10 @@ export async function evaluateSubmission({ submission, problem }) {
         memory: `${memoryMb} MB`,
         runtimePercentile: percentiles.runtimePercentile,
         memoryPercentile: percentiles.memoryPercentile,
-        input: testcase.input,
-        expectedOutput: testcase.output,
-        output: execResult.stdout || cleanErr || "(No output)",
         stdout: execResult.stdout || "",
         stderr: cleanErr,
+        output: execResult.stdout || cleanErr || "Execution failed",
+        expectedOutput: testcase.output,
         testResults
       };
     }
@@ -173,11 +172,10 @@ export async function evaluateSubmission({ submission, problem }) {
         memory: `${memoryMb} MB`,
         runtimePercentile: percentiles.runtimePercentile,
         memoryPercentile: percentiles.memoryPercentile,
-        input: testcase.input,
-        expectedOutput: testcase.output,
-        output: execResult.stdout.trim() || "Incorrect output",
         stdout: execResult.stdout || "",
         stderr: cleanErr,
+        output: execResult.stdout.trim() || "Incorrect output",
+        expectedOutput: testcase.output,
         testResults
       };
     }
@@ -198,10 +196,9 @@ export async function evaluateSubmission({ submission, problem }) {
     memory: `${memoryMb} MB`,
     runtimePercentile: percentiles.runtimePercentile,
     memoryPercentile: percentiles.memoryPercentile,
-    input: testCases[0]?.input || "",
-    expectedOutput: testCases[0]?.output || "",
     stdout: testResults[0]?.actualOutput || "",
     output: testResults[0]?.actualOutput || testCases[0]?.output || "Success",
+    expectedOutput: testCases[0]?.output ?? "",
     testResults
   };
 }
