@@ -6,13 +6,13 @@ import { requireAuth } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
-// Rate limiter for auth endpoints (max 10 requests per 15 minutes per IP)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 15,
+  max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { trustProxy: false },
+  skip: () => Boolean(process.env.VERCEL) || Boolean(process.env.VERCEL_ENV),
+  validate: { trustProxy: false, xForwardedForHeader: false },
   message: {
     success: false,
     error: "Too many login/registration attempts. Please try again in 15 minutes."
@@ -23,106 +23,128 @@ const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  maxAge: 24 * 60 * 60 * 1000
 };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERNAME_REGEX = /^[a-zA-Z0-9_.-]{3,30}$/;
 
 router.post("/register", authLimiter, async (request, response) => {
-  const { name, username, email, password } = request.body ?? {};
+  try {
+    const { name, username, email, password } = request.body ?? {};
 
-  if (!name || !username || !email || !password) {
-    response.status(400).json({
-      success: false,
-      error: "Missing required fields: name, username, email, and password are required."
+    if (!name || !username || !email || !password) {
+      response.status(400).json({
+        success: false,
+        error: "Missing required fields: name, username, email, and password are required."
+      });
+      return;
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanUsername = String(username).trim();
+    const cleanName = String(name).trim();
+
+    if (!EMAIL_REGEX.test(cleanEmail)) {
+      response.status(400).json({ success: false, error: "Please enter a valid email address." });
+      return;
+    }
+
+    if (!USERNAME_REGEX.test(cleanUsername)) {
+      response.status(400).json({
+        success: false,
+        error: "Username must be 3-30 characters long and contain only letters, numbers, underscores, dots, or hyphens."
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      response.status(400).json({ success: false, error: "Password must be at least 6 characters long." });
+      return;
+    }
+
+    const existingEmail = await findUserByEmail(cleanEmail);
+    if (existingEmail) {
+      response.status(409).json({ success: false, error: "An account with this email address already exists." });
+      return;
+    }
+
+    const existingUsername = await findUserByUsername(cleanUsername);
+    if (existingUsername) {
+      response.status(409).json({ success: false, error: "This username is already taken. Please choose another." });
+      return;
+    }
+
+    const user = await createUser({
+      name: cleanName,
+      username: cleanUsername,
+      email: cleanEmail,
+      password
     });
-    return;
-  }
 
-  const cleanEmail = String(email).trim().toLowerCase();
-  const cleanUsername = String(username).trim();
-  const cleanName = String(name).trim();
+    const token = signToken({ userId: user.id, email: user.email, username: user.username });
+    try {
+      response.cookie("token", token, COOKIE_OPTIONS);
+    } catch {}
 
-  if (!EMAIL_REGEX.test(cleanEmail)) {
-    response.status(400).json({ success: false, error: "Please enter a valid email address." });
-    return;
-  }
-
-  if (!USERNAME_REGEX.test(cleanUsername)) {
-    response.status(400).json({
-      success: false,
-      error: "Username must be 3-30 characters long and contain only letters, numbers, underscores, dots, or hyphens."
+    response.status(201).json({
+      success: true,
+      message: "Account registered successfully.",
+      token,
+      accessToken: token,
+      user
     });
-    return;
+  } catch (err) {
+    console.error("[Auth Register Error]:", err);
+    response.status(500).json({
+      success: false,
+      error: err?.message || "Internal server error during registration."
+    });
   }
-
-  if (password.length < 6) {
-    response.status(400).json({ success: false, error: "Password must be at least 6 characters long." });
-    return;
-  }
-
-  const existingEmail = await findUserByEmail(cleanEmail);
-  if (existingEmail) {
-    response.status(409).json({ success: false, error: "An account with this email address already exists." });
-    return;
-  }
-
-  const existingUsername = await findUserByUsername(cleanUsername);
-  if (existingUsername) {
-    response.status(409).json({ success: false, error: "This username is already taken. Please choose another." });
-    return;
-  }
-
-  const user = await createUser({
-    name: cleanName,
-    username: cleanUsername,
-    email: cleanEmail,
-    password
-  });
-
-  const token = signToken({ userId: user.id, email: user.email, username: user.username });
-  response.cookie("token", token, COOKIE_OPTIONS);
-
-  response.status(201).json({
-    success: true,
-    message: "Account registered successfully.",
-    token,
-    accessToken: token,
-    user
-  });
 });
 
 router.post("/login", authLimiter, async (request, response) => {
-  const { email, password } = request.body ?? {};
+  try {
+    const { email, password } = request.body ?? {};
 
-  if (!email || !password) {
-    response.status(400).json({ success: false, error: "Both email and password are required." });
-    return;
+    if (!email || !password) {
+      response.status(400).json({ success: false, error: "Both email and password are required." });
+      return;
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const user = await validateUserCredentials(cleanEmail, password);
+
+    if (!user) {
+      response.status(401).json({ success: false, error: "Invalid email address or password. Please try again." });
+      return;
+    }
+
+    const token = signToken({ userId: user.id, email: user.email, username: user.username });
+    try {
+      response.cookie("token", token, COOKIE_OPTIONS);
+    } catch {}
+
+    response.json({
+      success: true,
+      message: "Logged in successfully.",
+      token,
+      accessToken: token,
+      user
+    });
+  } catch (err) {
+    console.error("[Auth Login Error]:", err);
+    response.status(500).json({
+      success: false,
+      error: err?.message || "Internal server error during login."
+    });
   }
-
-  const cleanEmail = String(email).trim().toLowerCase();
-  const user = await validateUserCredentials(cleanEmail, password);
-
-  if (!user) {
-    response.status(401).json({ success: false, error: "Invalid email address or password. Please try again." });
-    return;
-  }
-
-  const token = signToken({ userId: user.id, email: user.email, username: user.username });
-  response.cookie("token", token, COOKIE_OPTIONS);
-
-  response.json({
-    success: true,
-    message: "Logged in successfully.",
-    token,
-    accessToken: token,
-    user
-  });
 });
 
 router.post("/logout", (request, response) => {
-  response.clearCookie("token", COOKIE_OPTIONS);
+  try {
+    response.clearCookie("token", COOKIE_OPTIONS);
+  } catch {}
   response.json({
     success: true,
     message: "Logged out successfully."
