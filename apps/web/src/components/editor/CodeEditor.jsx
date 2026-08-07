@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { AlignLeft, ChevronDown, Copy, Maximize2, Play, RotateCcw, Settings, TerminalSquare, Zap } from "lucide-react";
+import { AlignLeft, ChevronDown, Copy, Maximize2, Play, RotateCcw, TerminalSquare, Zap } from "lucide-react";
 
 const languages = [
   { id: "Python", name: "Python 3" },
@@ -7,6 +7,54 @@ const languages = [
   { id: "C++", name: "C++ 20" },
   { id: "Java", name: "Java 24" }
 ];
+
+function highlightSyntax(code = "", language = "Python") {
+  if (!code) return "";
+
+  const lines = code.split("\n");
+
+  const highlightedLines = lines.map((line) => {
+    let escaped = line
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    let commentSpan = "";
+    let codePart = escaped;
+
+    if (escaped.includes("//")) {
+      const idx = escaped.indexOf("//");
+      codePart = escaped.slice(0, idx);
+      commentSpan = `<span style="color:#64748b;font-style:italic;">${escaped.slice(idx)}</span>`;
+    } else if (escaped.includes("#") && (language === "Python" || language === "Python 3")) {
+      const idx = escaped.indexOf("#");
+      codePart = escaped.slice(0, idx);
+      commentSpan = `<span style="color:#64748b;font-style:italic;">${escaped.slice(idx)}</span>`;
+    }
+
+    return highlightLine(codePart) + commentSpan;
+  });
+
+  return highlightedLines.join("\n");
+}
+
+function highlightLine(str) {
+  return str
+    // Strings
+    .replace(/(["'])(?:(?=(\\?))\2[\s\S])*?\1|(`[\s\S]*?`)/g, '<span style="color:#4ade80;">$&</span>')
+    // Numbers & Booleans
+    .replace(/\b(true|false|null|undefined|None|True|False|\d+)\b/g, '<span style="color:#fb923c;font-weight:600;">$&</span>')
+    // Keywords (LeetCode Purple)
+    .replace(/\b(class|def|return|function|if|else|elif|for|while|const|let|var|public|private|protected|static|void|import|export|from|new|async|await|pass|self|this|in|of|try|except|finally|catch|case|switch|break|continue|struct|namespace|using)\b/g, '<span style="color:#c084fc;font-weight:bold;">$&</span>')
+    // Types (LeetCode Cyan)
+    .replace(/\b(Solution|TreeAncestor|String|Integer|List|ArrayList|Vector|vector|map|set|int|bool|boolean|char|double|float|long|short)\b/g, '<span style="color:#38bdf8;font-weight:bold;">$&</span>')
+    // Functions / Methods (LeetCode Yellow)
+    .replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)(?=\s*\()/g, (match, fnName) => {
+      const reserved = ["if", "for", "while", "switch", "catch", "return", "sizeof", "typeof"];
+      if (reserved.includes(fnName)) return match;
+      return `<span style="color:#facc15;font-weight:600;">${fnName}</span>`;
+    });
+}
 
 export default function CodeEditor({
   code,
@@ -19,8 +67,16 @@ export default function CodeEditor({
   isSubmitting
 }) {
   const textareaRef = useRef(null);
+  const preRef = useRef(null);
   const indentStr = language === "Python" ? "    " : "  ";
   const linesCount = (code || "").split("\n").length;
+
+  function handleScroll() {
+    if (preRef.current && textareaRef.current) {
+      preRef.current.scrollTop = textareaRef.current.scrollTop;
+      preRef.current.scrollLeft = textareaRef.current.scrollLeft;
+    }
+  }
 
   function handleKeyDown(e) {
     const textarea = textareaRef.current;
@@ -188,32 +244,73 @@ export default function CodeEditor({
         ) : null}
       </div>
 
-      {/* Editor Body with Line Numbers */}
+      {/* Editor Body with Line Numbers & Multi-Color LeetCode Highlighting */}
       <div style={{ display: "flex", flex: 1, minHeight: "380px", background: "#080c14", position: "relative" }}>
         {/* Line Numbers Column */}
-        <div style={{ padding: "18px 12px", background: "#060910", color: "#475569", fontFamily: "monospace", fontSize: "0.88rem", lineHeight: "1.75", select: "none", textAlign: "right", borderRight: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ padding: "18px 12px", background: "#060910", color: "#475569", fontFamily: "monospace", fontSize: "0.88rem", lineHeight: "1.75", select: "none", textAlign: "right", borderRight: "1px solid rgba(255,255,255,0.05)", minWidth: "44px" }}>
           {Array.from({ length: Math.max(8, linesCount) }, (_, i) => (
             <div key={i + 1}>{i + 1}</div>
           ))}
         </div>
 
-        {/* Textarea Editor */}
-        <textarea
-          ref={textareaRef}
-          className="code-editor"
-          onChange={(event) => onCodeChange(event.target.value)}
-          onKeyDown={handleKeyDown}
-          spellCheck="false"
-          value={code}
-          style={{ flex: 1, background: "transparent", border: "none", color: "#f1f5f9", fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace", fontSize: "0.92rem", lineHeight: "1.75", padding: "18px 16px", outline: "none", resize: "none", width: "100%" }}
-        />
+        {/* Textarea Editor & Syntax Highlight Container */}
+        <div style={{ position: "relative", flex: 1, minHeight: "380px" }}>
+          {/* Syntax Highlighted View (Behind) */}
+          <pre
+            ref={preRef}
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              inset: 0,
+              margin: 0,
+              padding: "18px 16px",
+              fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace",
+              fontSize: "0.92rem",
+              lineHeight: "1.75",
+              whiteSpace: "pre",
+              wordWrap: "normal",
+              overflow: "hidden",
+              pointerEvents: "none",
+              color: "#f1f5f9",
+              background: "transparent"
+            }}
+            dangerouslySetInnerHTML={{ __html: highlightSyntax(code, language) }}
+          />
+
+          {/* Editable Textarea (Front, Transparent Text with Caret) */}
+          <textarea
+            ref={textareaRef}
+            className="code-editor"
+            onChange={(event) => onCodeChange(event.target.value)}
+            onKeyDown={handleKeyDown}
+            onScroll={handleScroll}
+            spellCheck="false"
+            value={code}
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "transparent",
+              border: "none",
+              color: "transparent",
+              caretColor: "#38bdf8",
+              fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace",
+              fontSize: "0.92rem",
+              lineHeight: "1.75",
+              padding: "18px 16px",
+              outline: "none",
+              resize: "none",
+              width: "100%",
+              height: "100%"
+            }}
+          />
+        </div>
       </div>
 
       {/* Editor Status Bar */}
       <div className="editor-status" style={{ background: "#070b13", padding: "4px 14px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center", color: "#64748b", fontSize: "0.78rem" }}>
         <div style={{ display: "flex", gap: "12px" }}>
-          <span>Ln 8, Col 1</span>
-          <span>Spaces: 4</span>
+          <span>Ln {linesCount}, Col 1</span>
+          <span>Spaces: {language === "Python" ? 4 : 2}</span>
           <span>UTF-8</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#4ade80" }}>
