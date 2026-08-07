@@ -23,6 +23,7 @@ function parseCookies(cookieHeader = "") {
 
 export function createApp() {
   const app = express();
+  app.set("trust proxy", 1);
 
   const allowedOrigins = [
     process.env.CLIENT_ORIGIN,

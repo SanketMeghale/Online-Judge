@@ -12,6 +12,7 @@ const authLimiter = rateLimit({
   max: 15,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false },
   message: {
     success: false,
     error: "Too many login/registration attempts. Please try again in 15 minutes."
