@@ -44,10 +44,10 @@ a {
   background: rgba(4, 9, 22, 0.88);
   border-bottom: 1px solid #172443;
   display: grid;
-  gap: 24px;
-  grid-template-columns: 284px minmax(360px, 560px) 1fr auto;
-  height: 82px;
-  padding: 0 28px 0 48px;
+  gap: 20px;
+  grid-template-columns: 210px minmax(360px, 560px) 1fr auto;
+  height: 68px;
+  padding: 0 24px 0 24px;
   position: sticky;
   top: 0;
   z-index: 20;
@@ -217,7 +217,7 @@ kbd {
 
 .app-grid {
   display: grid;
-  grid-template-columns: 284px minmax(0, 1fr);
+  grid-template-columns: 210px minmax(0, 1fr);
 }
 
 .sidebar {
@@ -225,23 +225,23 @@ kbd {
   border-right: 1px solid #172443;
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 82px);
-  padding: 22px 20px 28px;
+  min-height: calc(100vh - 68px);
+  padding: 16px 12px 20px;
 }
 
 .sidebar-links {
   display: grid;
-  gap: 8px;
+  gap: 5px;
 }
 
 .sidebar-link {
-  border-radius: 10px;
+  border-radius: 8px;
   color: #c2cbe7;
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 700;
-  gap: 16px;
-  min-height: 50px;
-  padding: 0 18px;
+  gap: 12px;
+  min-height: 42px;
+  padding: 0 14px;
   transition: 180ms ease;
 }
 
