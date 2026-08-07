@@ -85,6 +85,7 @@ export default function ProblemsList() {
 
       <section className="problem-list-panel">
         <div className="problem-list-head">
+          <span>#</span>
           <span>Problem</span>
           <span>Difficulty</span>
           <span>Topic</span>

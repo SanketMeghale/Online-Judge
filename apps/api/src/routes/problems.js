@@ -8,6 +8,10 @@ const router = Router();
 router.get("/", async (_request, response) => {
   if (isDatabaseConnected()) {
     try {
+      // Sync seed problems into MongoDB if any missing
+      for (const seed of seedProblems) {
+        await Problem.updateOne({ id: seed.id }, { $setOnInsert: seed }, { upsert: true }).catch(() => {});
+      }
       const dbProblems = await Problem.find().lean();
       if (dbProblems && dbProblems.length > 0) {
         response.json({ problems: dbProblems });

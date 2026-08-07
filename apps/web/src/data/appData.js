@@ -21,12 +21,162 @@ const baseProblems = [
     constraints: ["2 <= nums.length <= 10^4", "-10^9 <= nums[i] <= 10^9"],
     starterCode: {
       Python: "class Solution:\n    def twoSum(self, nums, target):\n        pass",
-      JavaScript: "function twoSum(nums, target) {\n  \n}",
-      Java: "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        return new int[]{};\n    }\n}"
+      JavaScript: "function twoSum(nums, target) {\n  return [0, 1];\n}",
+      Java: "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        return new int[]{0, 1};\n    }\n}"
     },
     judge: {
       acceptedTokens: ["hash", "map", "dict", "indices", "target -"],
       output: "[0, 1]"
+    }
+  },
+  {
+    id: "valid-parentheses",
+    title: "Valid Parentheses",
+    difficulty: "Easy",
+    topic: "Strings",
+    acceptance: 88,
+    submissions: 24500,
+    points: 10,
+    statement:
+      "Given a string `s` containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
+    examples: [
+      { input: 's = "()[]{}"', output: "true" },
+      { input: 's = "(]"', output: "false" }
+    ],
+    constraints: ["1 <= s.length <= 10^4", "s consists of parentheses only '()[]{}'"],
+    starterCode: {
+      Python: "class Solution:\n    def isValid(self, s: str) -> bool:\n        pass",
+      JavaScript: "function isValid(s) {\n  return true;\n}",
+      Java: "class Solution {\n    public boolean isValid(String s) {\n        return true;\n    }\n}"
+    },
+    judge: {
+      acceptedTokens: ["stack", "pop", "push", "isValid", "matching"],
+      output: "true"
+    }
+  },
+  {
+    id: "palindrome-number",
+    title: "Palindrome Number",
+    difficulty: "Easy",
+    topic: "Math",
+    acceptance: 82,
+    submissions: 19800,
+    points: 10,
+    statement:
+      "Given an integer `x`, return `true` if `x` is a palindrome integer, and `false` otherwise.",
+    examples: [
+      { input: "x = 121", output: "true" },
+      { input: "x = -121", output: "false" }
+    ],
+    constraints: ["-2^31 <= x <= 2^31 - 1"],
+    starterCode: {
+      Python: "class Solution:\n    def isPalindrome(self, x: int) -> bool:\n        pass",
+      JavaScript: "function isPalindrome(x) {\n  return true;\n}",
+      Java: "class Solution {\n    public boolean isPalindrome(int x) {\n        return true;\n    }\n}"
+    },
+    judge: {
+      acceptedTokens: ["reverse", "mod", "div", "string", "isPalindrome"],
+      output: "true"
+    }
+  },
+  {
+    id: "reverse-string",
+    title: "Reverse String",
+    difficulty: "Easy",
+    topic: "Strings",
+    acceptance: 91,
+    submissions: 31200,
+    points: 10,
+    statement:
+      "Write a function that reverses an array of characters `s` in-place with O(1) extra memory.",
+    examples: [
+      { input: 's = ["h","e","l","l","o"]', output: '["o","l","l","e","h"]' },
+      { input: 's = ["H","a","n","n","a","h"]', output: '["h","a","n","n","a","H"]' }
+    ],
+    constraints: ["1 <= s.length <= 10^5"],
+    starterCode: {
+      Python: "class Solution:\n    def reverseString(self, s: list) -> None:\n        pass",
+      JavaScript: "function reverseString(s) {\n  return s.reverse();\n}",
+      Java: "class Solution {\n    public void reverseString(char[] s) {\n        \n    }\n}"
+    },
+    judge: {
+      acceptedTokens: ["reverse", "swap", "left", "right", "two pointers"],
+      output: '["o","l","l","e","h"]'
+    }
+  },
+  {
+    id: "best-time-to-buy-and-sell-stock",
+    title: "Best Time to Buy and Sell Stock",
+    difficulty: "Easy",
+    topic: "Arrays",
+    acceptance: 79,
+    submissions: 28400,
+    points: 10,
+    statement:
+      "You are given an array `prices` where `prices[i]` is the price of a given stock on the i-th day. Return the maximum profit you can achieve from one transaction.",
+    examples: [
+      { input: "prices = [7,1,5,3,6,4]", output: "5" },
+      { input: "prices = [7,6,4,3,1]", output: "0" }
+    ],
+    constraints: ["1 <= prices.length <= 10^5", "0 <= prices[i] <= 10^4"],
+    starterCode: {
+      Python: "class Solution:\n    def maxProfit(self, prices: list) -> int:\n        pass",
+      JavaScript: "function maxProfit(prices) {\n  return 0;\n}",
+      Java: "class Solution {\n    public int maxProfit(int[] prices) {\n        return 0;\n    }\n}"
+    },
+    judge: {
+      acceptedTokens: ["min", "max", "profit", "price", "buy"],
+      output: "5"
+    }
+  },
+  {
+    id: "single-number",
+    title: "Single Number",
+    difficulty: "Easy",
+    topic: "Bit Manipulation",
+    acceptance: 85,
+    submissions: 22100,
+    points: 10,
+    statement:
+      "Given a non-empty array of integers `nums`, every element appears twice except for one. Find that single element.",
+    examples: [
+      { input: "nums = [2,2,1]", output: "1" },
+      { input: "nums = [4,1,2,1,2]", output: "4" }
+    ],
+    constraints: ["1 <= nums.length <= 3 * 10^4", "-3 * 10^4 <= nums[i] <= 3 * 10^4"],
+    starterCode: {
+      Python: "class Solution:\n    def singleNumber(self, nums: list) -> int:\n        pass",
+      JavaScript: "function singleNumber(nums) {\n  return 0;\n}",
+      Java: "class Solution {\n    public int singleNumber(int[] nums) {\n        return 0;\n    }\n}"
+    },
+    judge: {
+      acceptedTokens: ["xor", "^", "hash", "set", "single"],
+      output: "1"
+    }
+  },
+  {
+    id: "climbing-stairs",
+    title: "Climbing Stairs",
+    difficulty: "Easy",
+    topic: "Dynamic Programming",
+    acceptance: 84,
+    submissions: 26700,
+    points: 10,
+    statement:
+      "You are climbing a staircase. It takes `n` steps to reach the top. Each time you can either climb 1 or 2 steps. In how many distinct ways can you climb to the top?",
+    examples: [
+      { input: "n = 2", output: "2" },
+      { input: "n = 3", output: "3" }
+    ],
+    constraints: ["1 <= n <= 45"],
+    starterCode: {
+      Python: "class Solution:\n    def climbStairs(self, n: int) -> int:\n        pass",
+      JavaScript: "function climbStairs(n) {\n  return 0;\n}",
+      Java: "class Solution {\n    public int climbStairs(int n) {\n        return 0;\n    }\n}"
+    },
+    judge: {
+      acceptedTokens: ["fibonacci", "dp", "steps", "ways", "prev"],
+      output: "2"
     }
   },
   {
@@ -52,28 +202,6 @@ const baseProblems = [
     }
   },
   {
-    id: "merge-islands",
-    title: "Merge Dynamic Islands",
-    difficulty: "Hard",
-    topic: "Graphs",
-    acceptance: 31,
-    submissions: 3788,
-    points: 50,
-    statement:
-      "A stream of land additions arrives for an empty grid. Return the number of islands after each operation.",
-    examples: [{ input: "m = 3, n = 3, positions = [[0,0],[0,1],[1,2]]", output: "[1,1,2]" }],
-    constraints: ["1 <= m, n <= 10^4", "1 <= positions.length <= 10^5"],
-    starterCode: {
-      Python: "class Solution:\n    def numIslands2(self, m, n, positions):\n        pass",
-      JavaScript: "function numIslands2(m, n, positions) {\n  \n}",
-      Java: "class Solution {\n    public List<Integer> numIslands2(int m, int n, int[][] positions) {\n        return new ArrayList<>();\n    }\n}"
-    },
-    judge: {
-      acceptedTokens: ["union", "parent", "rank", "find", "positions"],
-      output: "[1,1,2]"
-    }
-  },
-  {
     id: "binary-lift",
     title: "Binary Lift Ancestors",
     difficulty: "Medium",
@@ -93,6 +221,28 @@ const baseProblems = [
     judge: {
       acceptedTokens: ["ancestor", "lift", "table", "log", "parent"],
       output: "0"
+    }
+  },
+  {
+    id: "merge-islands",
+    title: "Merge Dynamic Islands",
+    difficulty: "Hard",
+    topic: "Graphs",
+    acceptance: 31,
+    submissions: 3788,
+    points: 50,
+    statement:
+      "A stream of land additions arrives for an empty grid. Return the number of islands after each operation.",
+    examples: [{ input: "m = 3, n = 3, positions = [[0,0],[0,1],[1,2]]", output: "[1,1,2]" }],
+    constraints: ["1 <= m, n <= 10^4", "1 <= positions.length <= 10^5"],
+    starterCode: {
+      Python: "class Solution:\n    def numIslands2(self, m, n, positions):\n        pass",
+      JavaScript: "function numIslands2(m, n, positions) {\n  \n}",
+      Java: "class Solution {\n    public List<Integer> numIslands2(int m, int n, int[][] positions) {\n        return new ArrayList<>();\n    }\n}"
+    },
+    judge: {
+      acceptedTokens: ["union", "parent", "rank", "find", "positions"],
+      output: "[1,1,2]"
     }
   }
 ];
@@ -180,9 +330,19 @@ export function readDatabase() {
     }
 
     const parsed = JSON.parse(raw);
+    const existingIds = new Set((parsed.problems || []).map((p) => p.id));
+    const mergedProblems = [...(parsed.problems || [])];
+
+    for (const bp of baseProblems) {
+      if (!existingIds.has(bp.id)) {
+        mergedProblems.push(bp);
+      }
+    }
+
     return {
       ...seedDatabase(),
-      ...parsed
+      ...parsed,
+      problems: mergedProblems
     };
   } catch {
     return seedDatabase();
@@ -459,5 +619,3 @@ export function getSavedCode(savedCodeMap, problemId, language, starter = "") {
   const key = `${problemId}:${language}`;
   return savedCodeMap && savedCodeMap[key] ? savedCodeMap[key] : starter;
 }
-
-

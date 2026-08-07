@@ -23,6 +23,37 @@ export function AppDataProvider({ children }) {
   const [database, setDatabase] = useState(() => ensureDatabase());
   const [savedCode, setSavedCode] = useState(() => readSavedCode());
 
+  // Fetch & sync problems from backend API
+  useEffect(() => {
+    let isMounted = true;
+    api.getProblems().then((res) => {
+      const fetched = res?.problems || res;
+      if (Array.isArray(fetched) && fetched.length > 0 && isMounted) {
+        setDatabase((current) => {
+          const existingIds = new Set(current.problems.map((p) => p.id));
+          let changed = false;
+          const merged = [...current.problems];
+
+          for (const item of fetched) {
+            if (!existingIds.has(item.id)) {
+              merged.push(item);
+              changed = true;
+            }
+          }
+
+          if (!changed) return current;
+          const next = { ...current, problems: merged };
+          writeDatabase(next);
+          return next;
+        });
+      }
+    }).catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Listen for real-time Socket.IO submission:update events emitted by Judge Worker
   useEffect(() => {
     const unsubscribe = subscribeToSubmissionUpdates((payload) => {
