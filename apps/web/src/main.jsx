@@ -8,6 +8,7 @@ import AuthLayout from "./components/layout/AuthLayout.jsx";
 import { AppDataProvider } from "./data/AppDataContext.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
+import AICoachPage from "./pages/AICoachPage.jsx";
 import ContestPage from "./pages/ContestPage.jsx";
 import FeaturePage from "./pages/FeaturePage.jsx";
 import LeaderboardPage from "./pages/LeaderboardPage.jsx";
@@ -36,7 +37,8 @@ createRoot(document.getElementById("root")).render(
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/contests" element={<ContestPage />} />
                 <Route path="/collaboration" element={<FeaturePage title="Collaboration" />} />
-                <Route path="/interviewer" element={<FeaturePage title="AI Coach" />} />
+                <Route path="/interviewer" element={<AICoachPage />} />
+                <Route path="/ai-coach" element={<AICoachPage />} />
                 <Route path="/stats" element={<FeaturePage title="Progress & Stats" />} />
                 <Route path="/settings" element={<FeaturePage title="Settings" />} />
                 <Route path="/bookmarks" element={<FeaturePage title="Bookmarks" />} />
