@@ -1,4 +1,4 @@
-import fetch from "node-fetch";
+const fetch = globalThis.fetch;
 
 const JUDGE0_LANGUAGE_IDS = {
   python: 71,
