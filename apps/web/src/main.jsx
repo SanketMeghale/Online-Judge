@@ -17,6 +17,7 @@ import Login from "./pages/Login.jsx";
 import ProblemDetails from "./pages/ProblemDetails.jsx";
 import ProblemsList from "./pages/ProblemsList.jsx";
 import Profile from "./pages/Profile.jsx";
+import ProgressPage from "./pages/ProgressPage.jsx";
 import Register from "./pages/Register.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import Settings from "./pages/Settings.jsx";
@@ -67,8 +68,8 @@ createRoot(document.getElementById("root")).render(
                 <Route path="/collaboration" element={<FeaturePage title="Collaboration" />} />
                 <Route path="/interviewer" element={<AICoachPage />} />
                 <Route path="/ai-coach" element={<AICoachPage />} />
-                <Route path="/stats" element={<FeaturePage title="Progress & Stats" />} />
-                <Route path="/progress" element={<FeaturePage title="Progress & Stats" />} />
+                <Route path="/stats" element={<ProgressPage />} />
+                <Route path="/progress" element={<ProgressPage />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/bookmarks" element={<FeaturePage title="Bookmarks" />} />
                 <Route path="/discuss" element={<FeaturePage title="Discuss" />} />
