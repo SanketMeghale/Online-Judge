@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { isDatabaseConnected } from "./db.js";
+import { connectDatabase, isDatabaseConnected } from "./db.js";
 import { hashPassword, hashPasswordSync, verifyPassword } from "./jwt.js";
 import { User } from "../models/User.js";
 
