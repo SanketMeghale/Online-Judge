@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  AlertTriangle,
   Bell,
   Check,
   CheckCircle2,
@@ -11,6 +12,7 @@ import {
   KeyRound,
   Laptop,
   Lock,
+  LogOut,
   Moon,
   Palette,
   Save,
@@ -20,51 +22,46 @@ import {
   Sun,
   Trash2,
   User,
+  X,
   Zap
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
+import { api } from "../api/apiClient.js";
+import { applyThemeAndAppearance } from "../utils/themeApplier.js";
+import { writeStoredSession, readStoredSession } from "../auth/authStorage.js";
 
 const SETTINGS_STORAGE_KEY = "judgo-user-settings-v1";
 
-const defaultSettings = {
-  // General
-  displayName: "",
-  username: "",
-  email: "",
-  bio: "Full-stack developer mastering data structures & algorithms on Judgo.",
-  language: "en-US",
-  timezone: "UTC-5 (Eastern Time)",
+const TIMEZONES = [
+  "UTC-8 (Pacific Time / US & Canada)",
+  "UTC-7 (Mountain Time / US & Canada)",
+  "UTC-6 (Central Time / US & Canada)",
+  "UTC-5 (Eastern Time / US & Canada)",
+  "UTC+0 (GMT / London / Dublin)",
+  "UTC+1 (Central European Time / Berlin / Paris)",
+  "UTC+2 (Eastern European Time / Athens / Cairo)",
+  "UTC+3 (Moscow / Riyadh / Istanbul)",
+  "UTC+4 (Dubai / Baku / Samara)",
+  "UTC+5:30 (IST / India / Mumbai / Delhi)",
+  "UTC+6 (Dhaka / Almaty / Omsk)",
+  "UTC+7 (Bangkok / Jakarta / Hanoi)",
+  "UTC+8 (Singapore / Beijing / Perth)",
+  "UTC+9 (Tokyo / Seoul / Yakutsk)",
+  "UTC+10 (Sydney / Melbourne / Brisbane)",
+  "UTC+12 (Auckland / Fiji)"
+];
 
-  // Appearance
-  theme: "dark",
-  accentColor: "indigo",
-  compactMode: false,
-
-  // Editor
-  fontSize: 14,
-  tabSize: 4,
-  wordWrap: true,
-  autoSave: true,
-  showLineNumbers: true,
-  editorTheme: "judgo-dark",
-
-  // Notifications
-  contestReminders: true,
-  submissionResults: true,
-  achievementAlerts: true,
-  dailyStreakReminders: true,
-
-  // Privacy
-  publicProfile: true,
-  showSolvedProblems: true,
-  showActivity: true,
-  showContestRanking: true
-};
+const LANGUAGES = [
+  { id: "en-US", name: "English (United States)" },
+  { id: "hi-IN", name: "Hindi (हिंदी)" },
+  { id: "mr-IN", name: "Marathi (मराठी)" }
+];
 
 export default function Settings() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { getUserById, updateDatabase } = useAppData();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const currentUserId = user?.id || user?._id || "";
@@ -72,114 +69,334 @@ export default function Settings() {
 
   const initialTab = searchParams.get("tab") || "general";
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // Settings State
-  const [settings, setSettings] = useState(() => {
-    try {
-      const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
-      const parsed = stored ? JSON.parse(stored) : {};
-      return {
-        ...defaultSettings,
-        displayName: liveUser?.name || "Developer",
-        username: liveUser?.username || "coder",
-        email: liveUser?.email || "developer@judgo.io",
-        ...parsed
-      };
-    } catch {
-      return {
-        ...defaultSettings,
-        displayName: liveUser?.name || "Developer",
-        username: liveUser?.username || "coder",
-        email: liveUser?.email || "developer@judgo.io"
-      };
-    }
-  });
+  // Status & Feedback States
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState("");
+  const [saveErrorMsg, setSaveErrorMsg] = useState("");
+
+  // Username validation state
+  const [usernameCheck, setUsernameCheck] = useState({ checking: false, available: null, message: "" });
+  const checkTimeoutRef = useRef(null);
+
+  // Delete modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   // Password state
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordMessage, setPasswordMessage] = useState({ type: "", text: "" });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordStatus, setPasswordStatus] = useState({ type: "", text: "" });
 
+  // Initial Form State loaded from live user & storage
+  const [formData, setFormData] = useState(() => {
+    let localPrefs = {};
+    try {
+      const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
+      if (stored) localPrefs = JSON.parse(stored);
+    } catch {}
+
+    const userPrefs = liveUser?.preferences || {};
+
+    return {
+      displayName: liveUser?.name || "Developer",
+      username: liveUser?.username || "coder",
+      email: liveUser?.email || "developer@judgo.io",
+      bio: liveUser?.bio || "",
+      language: liveUser?.language || localPrefs?.language || "en-US",
+      timezone: liveUser?.timezone || localPrefs?.timezone || "UTC-5 (Eastern Time / US & Canada)",
+      theme: userPrefs?.theme || localPrefs?.theme || "dark",
+      accentColor: userPrefs?.accentColor || localPrefs?.accentColor || "indigo",
+      density: userPrefs?.density || localPrefs?.density || "comfortable",
+      compactMode: userPrefs?.compactMode ?? localPrefs?.compactMode ?? false,
+      fontSize: userPrefs?.fontSize || localPrefs?.fontSize || 14,
+      tabSize: userPrefs?.tabSize || localPrefs?.tabSize || 4,
+      wordWrap: userPrefs?.wordWrap ?? localPrefs?.wordWrap ?? true,
+      lineNumbers: userPrefs?.lineNumbers ?? localPrefs?.lineNumbers ?? true,
+      autoSave: userPrefs?.autoSave ?? localPrefs?.autoSave ?? true,
+      editorTheme: userPrefs?.editorTheme || localPrefs?.editorTheme || "judgo-dark",
+      contestReminders: userPrefs?.contestReminders ?? localPrefs?.contestReminders ?? true,
+      submissionResults: userPrefs?.submissionResults ?? localPrefs?.submissionResults ?? true,
+      achievementAlerts: userPrefs?.achievementAlerts ?? localPrefs?.achievementAlerts ?? true,
+      dailyStreakReminders: userPrefs?.dailyStreakReminders ?? localPrefs?.dailyStreakReminders ?? true,
+      aiCoachNotifications: userPrefs?.aiCoachNotifications ?? localPrefs?.aiCoachNotifications ?? true,
+      publicProfile: userPrefs?.publicProfile ?? localPrefs?.publicProfile ?? true,
+      showSolvedProblems: userPrefs?.showSolvedProblems ?? localPrefs?.showSolvedProblems ?? true,
+      showActivity: userPrefs?.showActivity ?? localPrefs?.showActivity ?? true,
+      showContestRanking: userPrefs?.showContestRanking ?? localPrefs?.showContestRanking ?? true
+    };
+  });
+
+  // Saved baseline for detecting changes
+  const [savedBaseline, setSavedBaseline] = useState(formData);
+
+  // Sync baseline if liveUser initializes after mount
   useEffect(() => {
-    if (searchParams.get("tab")) {
-      setActiveTab(searchParams.get("tab"));
+    if (liveUser?.name && !savedBaseline.displayName) {
+      const updated = {
+        ...formData,
+        displayName: liveUser.name || formData.displayName,
+        username: liveUser.username || formData.username,
+        email: liveUser.email || formData.email,
+        bio: liveUser.bio || formData.bio
+      };
+      setFormData(updated);
+      setSavedBaseline(updated);
+    }
+  }, [liveUser?.name, liveUser?.username]);
+
+  // Tab Sync with URL search params
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab);
     }
   }, [searchParams]);
+
+  // Apply theme & appearance immediately when appearance settings change
+  useEffect(() => {
+    applyThemeAndAppearance({
+      theme: formData.theme,
+      accentColor: formData.accentColor,
+      density: formData.density,
+      compactMode: formData.compactMode
+    });
+  }, [formData.theme, formData.accentColor, formData.density, formData.compactMode]);
+
+  // Compute if form is dirty
+  const isDirty = useMemo(() => {
+    return JSON.stringify(formData) !== JSON.stringify(savedBaseline);
+  }, [formData, savedBaseline]);
 
   function handleTabChange(tabKey) {
     setActiveTab(tabKey);
     setSearchParams({ tab: tabKey });
   }
 
-  function updateSetting(key, value) {
-    setSettings((prev) => ({
+  function handleChange(key, value) {
+    setFormData((prev) => ({
       ...prev,
       [key]: value
     }));
-  }
 
-  function handleSaveAll(e) {
-    if (e) e.preventDefault();
-    try {
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-
-      // Synchronize name & username into AppDataContext if modified
-      if (currentUserId) {
-        updateDatabase((current) => {
-          return {
-            ...current,
-            users: (current.users || []).map((u) => {
-              if (String(u.id) === String(currentUserId) || String(u._id) === String(currentUserId)) {
-                return {
-                  ...u,
-                  name: settings.displayName || u.name,
-                  username: settings.username || u.username,
-                  email: settings.email || u.email
-                };
-              }
-              return u;
-            })
-          };
-        });
+    // Check username availability when typing username
+    if (key === "username") {
+      const cleanUser = String(value).trim();
+      if (cleanUser === savedBaseline.username) {
+        setUsernameCheck({ checking: false, available: true, message: "Current username" });
+        return;
+      }
+      if (cleanUser.length < 3) {
+        setUsernameCheck({ checking: false, available: false, message: "Must be at least 3 characters" });
+        return;
       }
 
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 3000);
-    } catch (err) {
-      console.warn("[Settings Save Error]:", err);
+      if (checkTimeoutRef.current) clearTimeout(checkTimeoutRef.current);
+      setUsernameCheck({ checking: true, available: null, message: "Checking availability..." });
+
+      checkTimeoutRef.current = setTimeout(async () => {
+        try {
+          const res = await api.checkUsername(cleanUser, currentUserId);
+          if (res?.available) {
+            setUsernameCheck({ checking: false, available: true, message: "Username available" });
+          } else {
+            setUsernameCheck({ checking: false, available: false, message: "Username already taken" });
+          }
+        } catch {
+          setUsernameCheck({ checking: false, available: null, message: "" });
+        }
+      }, 350);
     }
   }
 
-  function handlePasswordChange(e) {
+  async function handleSaveAll(e) {
+    if (e) e.preventDefault();
+    if (!isDirty || isSaving) return;
+
+    if (!formData.displayName.trim()) {
+      setSaveErrorMsg("Display Name cannot be empty.");
+      return;
+    }
+
+    if (!formData.username.trim()) {
+      setSaveErrorMsg("Username cannot be empty.");
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveErrorMsg("");
+    setSaveSuccessMsg("");
+
+    try {
+      const preferences = {
+        theme: formData.theme,
+        accentColor: formData.accentColor,
+        density: formData.density,
+        compactMode: formData.compactMode,
+        fontSize: formData.fontSize,
+        tabSize: formData.tabSize,
+        wordWrap: formData.wordWrap,
+        lineNumbers: formData.lineNumbers,
+        autoSave: formData.autoSave,
+        editorTheme: formData.editorTheme,
+        contestReminders: formData.contestReminders,
+        submissionResults: formData.submissionResults,
+        achievementAlerts: formData.achievementAlerts,
+        dailyStreakReminders: formData.dailyStreakReminders,
+        aiCoachNotifications: formData.aiCoachNotifications,
+        publicProfile: formData.publicProfile,
+        showSolvedProblems: formData.showSolvedProblems,
+        showActivity: formData.showActivity,
+        showContestRanking: formData.showContestRanking
+      };
+
+      // 1. Send update to Backend API
+      let updatedUser = null;
+      try {
+        const apiRes = await api.updateSettings({
+          displayName: formData.displayName.trim(),
+          name: formData.displayName.trim(),
+          username: formData.username.trim(),
+          bio: formData.bio.trim(),
+          language: formData.language,
+          timezone: formData.timezone,
+          preferences
+        });
+        if (apiRes?.user) {
+          updatedUser = apiRes.user;
+        }
+      } catch (apiErr) {
+        console.warn("[Settings API Update Warning]:", apiErr);
+      }
+
+      // 2. Persist to localStorage
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(formData));
+
+      // 3. Update session storage & trigger cross-component updates
+      const currentSession = readStoredSession();
+      if (currentSession && currentSession.user) {
+        const nextUser = {
+          ...currentSession.user,
+          name: formData.displayName.trim(),
+          username: formData.username.trim(),
+          bio: formData.bio.trim(),
+          language: formData.language,
+          timezone: formData.timezone,
+          preferences,
+          ...(updatedUser || {})
+        };
+        writeStoredSession({ ...currentSession, user: nextUser });
+      }
+
+      // 4. Update AppDataContext global database
+      if (currentUserId) {
+        updateDatabase((current) => ({
+          ...current,
+          users: (current.users || []).map((u) => {
+            if (String(u.id) === String(currentUserId) || String(u._id) === String(currentUserId)) {
+              return {
+                ...u,
+                name: formData.displayName.trim(),
+                username: formData.username.trim(),
+                bio: formData.bio.trim(),
+                language: formData.language,
+                timezone: formData.timezone,
+                preferences,
+                ...(updatedUser || {})
+              };
+            }
+            return u;
+          })
+        }));
+      }
+
+      // 5. Update local state baseline
+      setSavedBaseline(formData);
+      setSaveSuccessMsg("✓ Changes saved successfully");
+      setTimeout(() => setSaveSuccessMsg(""), 3500);
+    } catch (err) {
+      console.error("[Save Settings Error]:", err);
+      setSaveErrorMsg(err?.message || "Unable to save preferences. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handlePasswordChange(e) {
     e.preventDefault();
     if (!currentPassword) {
-      setPasswordMessage({ type: "error", text: "Please enter your current password." });
+      setPasswordStatus({ type: "error", text: "Please enter your current password." });
       return;
     }
     if (newPassword.length < 6) {
-      setPasswordMessage({ type: "error", text: "New password must be at least 6 characters." });
+      setPasswordStatus({ type: "error", text: "New password must be at least 6 characters long." });
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setPasswordStatus({ type: "error", text: "New password cannot equal your current password." });
       return;
     }
     if (newPassword !== confirmPassword) {
-      setPasswordMessage({ type: "error", text: "New passwords do not match." });
+      setPasswordStatus({ type: "error", text: "New passwords do not match." });
       return;
     }
 
-    setPasswordMessage({ type: "success", text: "Password updated successfully." });
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setTimeout(() => setPasswordMessage({ type: "", text: "" }), 3500);
+    setIsChangingPassword(true);
+    setPasswordStatus({ type: "", text: "" });
+
+    try {
+      const res = await api.changePassword({
+        currentPassword,
+        newPassword,
+        confirmPassword
+      });
+
+      setPasswordStatus({ type: "success", text: "✓ Password changed successfully" });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => setPasswordStatus({ type: "", text: "" }), 4000);
+    } catch (err) {
+      setPasswordStatus({ type: "error", text: err?.message || "Failed to update password. Please check your current password." });
+    } finally {
+      setIsChangingPassword(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    if (deleteConfirmText.trim() !== "DELETE") {
+      setDeleteError("Please type 'DELETE' in all caps to confirm.");
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError("");
+
+    try {
+      await api.deleteAccount({ confirmation: "DELETE" });
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (err) {
+      setDeleteError(err?.message || "Failed to delete account. Please try again.");
+      setIsDeleting(false);
+    }
+  }
+
+  async function handleLogout() {
+    await logout();
+    navigate("/login", { replace: true });
   }
 
   const tabs = [
-    { key: "general", label: "General", icon: User, desc: "Personal info & profile defaults" },
-    { key: "appearance", label: "Appearance", icon: Palette, desc: "Themes, colors & visual density" },
-    { key: "editor", label: "Editor", icon: Code2, desc: "Code font, tabs & behavior" },
-    { key: "notifications", label: "Notifications", icon: Bell, desc: "Alerts & contest reminders" },
-    { key: "privacy", label: "Privacy", icon: Shield, desc: "Profile & solved problem visibility" },
+    { key: "general", label: "General", icon: User, desc: "Personal info & profile identity" },
+    { key: "appearance", label: "Appearance", icon: Palette, desc: "Themes, accent colors & density" },
+    { key: "editor", label: "Editor", icon: Code2, desc: "Font size, tabs, wrap & keybindings" },
+    { key: "notifications", label: "Notifications", icon: Bell, desc: "Contest, streak & coach alerts" },
+    { key: "privacy", label: "Privacy", icon: Shield, desc: "Public profile & solved visibility" },
     { key: "account", label: "Account", icon: Lock, desc: "Security, password & danger zone" }
   ];
 
@@ -201,33 +418,66 @@ export default function Settings() {
             Settings
           </h1>
           <p style={{ color: "#94a3b8", fontSize: "0.92rem", margin: 0 }}>
-            Customize your Judgo coding experience, workspace defaults, and profile details.
+            Customize your Judgo experience.
           </p>
         </div>
 
-        <button
-          onClick={handleSaveAll}
-          type="button"
-          style={{
-            background: savedSuccess ? "#10b981" : "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
-            color: "#ffffff",
-            border: "1px solid rgba(255,255,255,0.15)",
-            padding: "10px 20px",
-            borderRadius: "8px",
-            fontSize: "0.88rem",
-            fontWeight: "600",
-            cursor: "pointer",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            boxShadow: "0 4px 14px rgba(79, 70, 229, 0.3)",
-            transition: "all 0.2s ease"
-          }}
-        >
-          {savedSuccess ? <Check size={16} /> : <Save size={16} />}
-          <span>{savedSuccess ? "Saved Changes!" : "Save Changes"}</span>
-        </button>
+        {/* Global Save Button */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {isDirty && !saveSuccessMsg && (
+            <span style={{ fontSize: "0.78rem", color: "#fbbf24", fontWeight: "600", display: "flex", alignItems: "center", gap: "4px" }}>
+              ● Unsaved changes
+            </span>
+          )}
+
+          <button
+            onClick={handleSaveAll}
+            disabled={!isDirty || isSaving}
+            type="button"
+            style={{
+              background: saveSuccessMsg
+                ? "#10b981"
+                : isDirty
+                ? "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)"
+                : "rgba(255, 255, 255, 0.05)",
+              color: isDirty || saveSuccessMsg ? "#ffffff" : "#64748b",
+              border: isDirty || saveSuccessMsg ? "1px solid rgba(255,255,255,0.15)" : "1px solid rgba(255,255,255,0.06)",
+              padding: "10px 22px",
+              borderRadius: "8px",
+              fontSize: "0.88rem",
+              fontWeight: "600",
+              cursor: !isDirty || isSaving ? "not-allowed" : "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              boxShadow: isDirty ? "0 4px 14px rgba(79, 70, 229, 0.3)" : "none",
+              transition: "all 0.2s ease"
+            }}
+          >
+            {saveSuccessMsg ? (
+              <>
+                <Check size={16} />
+                <span>{saveSuccessMsg}</span>
+              </>
+            ) : isSaving ? (
+              <span>Saving...</span>
+            ) : (
+              <>
+                <Save size={16} />
+                <span>Save Changes</span>
+              </>
+            )}
+          </button>
+        </div>
       </header>
+
+      {/* Global Error Banner if any */}
+      {saveErrorMsg && (
+        <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid #ef4444", color: "#f87171", padding: "10px 16px", borderRadius: "8px", fontSize: "0.86rem", display: "flex", alignItems: "center", gap: "8px" }}>
+          <AlertTriangle size={16} />
+          <span>{saveErrorMsg}</span>
+        </div>
+      )}
 
       {/* Main Two-Column Layout */}
       <div className="settings-grid" style={{ display: "grid", gridTemplateColumns: "260px minmax(0, 1fr)", gap: "24px", alignItems: "start" }}>
@@ -277,7 +527,7 @@ export default function Settings() {
           })}
         </nav>
 
-        {/* RIGHT COLUMN: Tab Content Panel */}
+        {/* RIGHT COLUMN: Interactive Settings Panels */}
         <main
           className="settings-content-card"
           style={{
@@ -294,17 +544,18 @@ export default function Settings() {
           {activeTab === "general" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
               <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "14px" }}>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 4px 0" }}>General Information</h2>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 4px 0" }}>General Settings</h2>
                 <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Manage your personal identity, bio, and locale settings.</p>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
+                {/* Display Name */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Display Name</label>
                   <input
                     type="text"
-                    value={settings.displayName}
-                    onChange={(e) => updateSetting("displayName", e.target.value)}
+                    value={formData.displayName}
+                    onChange={(e) => handleChange("displayName", e.target.value)}
                     style={{
                       background: "#080c14",
                       border: "1px solid rgba(255,255,255,0.1)",
@@ -315,17 +566,26 @@ export default function Settings() {
                     }}
                     placeholder="Jane Doe"
                   />
+                  <span style={{ fontSize: "0.72rem", color: "#64748b" }}>Appears on leaderboard, submissions & profile badge.</span>
                 </div>
 
+                {/* Username */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Username</label>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Username</label>
+                    {usernameCheck.message && (
+                      <span style={{ fontSize: "0.72rem", color: usernameCheck.available ? "#4ade80" : "#f87171", fontWeight: "600" }}>
+                        {usernameCheck.message}
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
-                    value={settings.username}
-                    onChange={(e) => updateSetting("username", e.target.value)}
+                    value={formData.username}
+                    onChange={(e) => handleChange("username", e.target.value)}
                     style={{
                       background: "#080c14",
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      border: usernameCheck.available === false ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)",
                       borderRadius: "8px",
                       padding: "10px 14px",
                       color: "#ffffff",
@@ -333,33 +593,44 @@ export default function Settings() {
                     }}
                     placeholder="janedoe"
                   />
+                  <span style={{ fontSize: "0.72rem", color: "#64748b" }}>Unique handle for your coding track and profile URL.</span>
                 </div>
               </div>
 
+              {/* Email Address (Read-only / Authenticated) */}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Email Address</label>
                 <input
                   type="email"
-                  value={settings.email}
-                  onChange={(e) => updateSetting("email", e.target.value)}
+                  disabled
+                  value={formData.email}
                   style={{
-                    background: "#080c14",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: "rgba(8, 12, 20, 0.6)",
+                    border: "1px solid rgba(255,255,255,0.06)",
                     borderRadius: "8px",
                     padding: "10px 14px",
-                    color: "#ffffff",
-                    fontSize: "0.88rem"
+                    color: "#94a3b8",
+                    fontSize: "0.88rem",
+                    cursor: "not-allowed"
                   }}
                   placeholder="developer@example.com"
                 />
+                <span style={{ fontSize: "0.72rem", color: "#64748b" }}>Connected authentication email (contact support to modify).</span>
               </div>
 
+              {/* Bio / Headline */}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Bio / Headline</label>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Bio / Headline</label>
+                  <span style={{ fontSize: "0.72rem", color: formData.bio.length > 280 ? "#f59e0b" : "#64748b" }}>
+                    {formData.bio.length}/300
+                  </span>
+                </div>
                 <textarea
                   rows={3}
-                  value={settings.bio}
-                  onChange={(e) => updateSetting("bio", e.target.value)}
+                  maxLength={300}
+                  value={formData.bio}
+                  onChange={(e) => handleChange("bio", e.target.value)}
                   style={{
                     background: "#080c14",
                     border: "1px solid rgba(255,255,255,0.1)",
@@ -369,16 +640,17 @@ export default function Settings() {
                     fontSize: "0.88rem",
                     resize: "vertical"
                   }}
-                  placeholder="Tell other competitive programmers a little about your journey..."
+                  placeholder="Tell other competitive programmers a little about your journey, favorite algorithms & tech stack..."
                 />
               </div>
 
+              {/* Language & Time Zone */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Interface Language</label>
                   <select
-                    value={settings.language}
-                    onChange={(e) => updateSetting("language", e.target.value)}
+                    value={formData.language}
+                    onChange={(e) => handleChange("language", e.target.value)}
                     style={{
                       background: "#080c14",
                       border: "1px solid rgba(255,255,255,0.1)",
@@ -388,20 +660,19 @@ export default function Settings() {
                       fontSize: "0.88rem"
                     }}
                   >
-                    <option value="en-US">English (United States)</option>
-                    <option value="en-GB">English (UK)</option>
-                    <option value="es-ES">Español</option>
-                    <option value="fr-FR">Français</option>
-                    <option value="de-DE">Deutsch</option>
-                    <option value="ja-JP">日本語 (Japanese)</option>
+                    {LANGUAGES.map((lang) => (
+                      <option key={lang.id} value={lang.id}>
+                        {lang.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Time Zone</label>
                   <select
-                    value={settings.timezone}
-                    onChange={(e) => updateSetting("timezone", e.target.value)}
+                    value={formData.timezone}
+                    onChange={(e) => handleChange("timezone", e.target.value)}
                     style={{
                       background: "#080c14",
                       border: "1px solid rgba(255,255,255,0.1)",
@@ -411,12 +682,11 @@ export default function Settings() {
                       fontSize: "0.88rem"
                     }}
                   >
-                    <option value="UTC-5 (Eastern Time)">UTC-5 (Eastern Time)</option>
-                    <option value="UTC-8 (Pacific Time)">UTC-8 (Pacific Time)</option>
-                    <option value="UTC+0 (GMT / London)">UTC+0 (GMT / London)</option>
-                    <option value="UTC+1 (Central Europe)">UTC+1 (Central Europe)</option>
-                    <option value="UTC+5:30 (IST / India)">UTC+5:30 (IST / India)</option>
-                    <option value="UTC+9 (Tokyo)">UTC+9 (Tokyo)</option>
+                    {TIMEZONES.map((tz) => (
+                      <option key={tz} value={tz}>
+                        {tz}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -431,21 +701,21 @@ export default function Settings() {
                 <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Customize color palette, system theme, and UI density.</p>
               </div>
 
-              {/* Theme Mode Selector */}
+              {/* Theme Mode Selector (Dark / Light / System) */}
               <div>
                 <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "#cbd5e1", display: "block", marginBottom: "10px" }}>Theme Mode</label>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
                   {[
-                    { id: "dark", label: "Dark Modern", icon: Moon, desc: "Default charcoal navy" },
-                    { id: "system", label: "System Sync", icon: Laptop, desc: "Matches OS preference" },
-                    { id: "light", label: "High Contrast", icon: Sun, desc: "Crisp readability" }
+                    { id: "dark", label: "Dark", icon: Moon, desc: "Default charcoal navy" },
+                    { id: "light", label: "Light", icon: Sun, desc: "Crisp light contrast" },
+                    { id: "system", label: "System", icon: Laptop, desc: "Matches OS preference" }
                   ].map((t) => {
-                    const isSelected = settings.theme === t.id;
+                    const isSelected = formData.theme === t.id;
                     const Icon = t.icon;
                     return (
                       <div
                         key={t.id}
-                        onClick={() => updateSetting("theme", t.id)}
+                        onClick={() => handleChange("theme", t.id)}
                         style={{
                           background: isSelected ? "rgba(99, 102, 241, 0.15)" : "#080c14",
                           border: isSelected ? "1.5px solid #6366f1" : "1px solid rgba(255,255,255,0.08)",
@@ -466,22 +736,22 @@ export default function Settings() {
                 </div>
               </div>
 
-              {/* Accent Color Palette */}
+              {/* Accent Color Palette (Blue, Purple, Indigo, Green) */}
               <div>
-                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "#cbd5e1", display: "block", marginBottom: "10px" }}>Accent Accent</label>
-                <div style={{ display: "flex", gap: "14px" }}>
+                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "#cbd5e1", display: "block", marginBottom: "10px" }}>Accent Color</label>
+                <div style={{ display: "flex", gap: "14px", flexWrap: "wrap" }}>
                   {[
-                    { id: "indigo", color: "#6366f1", label: "Indigo" },
-                    { id: "purple", color: "#a855f7", label: "Purple" },
                     { id: "blue", color: "#3b82f6", label: "Blue" },
-                    { id: "emerald", color: "#10b981", label: "Emerald" }
+                    { id: "purple", color: "#a855f7", label: "Purple" },
+                    { id: "indigo", color: "#6366f1", label: "Indigo" },
+                    { id: "emerald", color: "#10b981", label: "Green" }
                   ].map((c) => {
-                    const isSelected = settings.accentColor === c.id;
+                    const isSelected = formData.accentColor === c.id;
                     return (
                       <button
                         key={c.id}
                         type="button"
-                        onClick={() => updateSetting("accentColor", c.id)}
+                        onClick={() => handleChange("accentColor", c.id)}
                         style={{
                           display: "flex",
                           alignItems: "center",
@@ -503,18 +773,36 @@ export default function Settings() {
                 </div>
               </div>
 
-              {/* Compact Mode Toggle */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#080c14", border: "1px solid rgba(255,255,255,0.08)", padding: "14px 18px", borderRadius: "10px" }}>
-                <div>
-                  <strong style={{ color: "#f8fafc", fontSize: "0.9rem", display: "block" }}>Compact Mode</strong>
-                  <span style={{ color: "#64748b", fontSize: "0.78rem" }}>Reduces padding in tables and problem lists for higher screen density.</span>
+              {/* Display Density Mode (Comfortable vs Compact) */}
+              <div>
+                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "#cbd5e1", display: "block", marginBottom: "10px" }}>Display Density</label>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  {[
+                    { id: "comfortable", label: "Comfortable", desc: "Standard spacing for relaxed reading" },
+                    { id: "compact", label: "Compact", desc: "Tight row heights for maximum information density" }
+                  ].map((d) => {
+                    const isSelected = formData.density === d.id;
+                    return (
+                      <div
+                        key={d.id}
+                        onClick={() => {
+                          handleChange("density", d.id);
+                          handleChange("compactMode", d.id === "compact");
+                        }}
+                        style={{
+                          background: isSelected ? "rgba(99, 102, 241, 0.15)" : "#080c14",
+                          border: isSelected ? "1.5px solid #6366f1" : "1px solid rgba(255,255,255,0.08)",
+                          borderRadius: "10px",
+                          padding: "14px",
+                          cursor: "pointer"
+                        }}
+                      >
+                        <strong style={{ color: isSelected ? "#818cf8" : "#f8fafc", fontSize: "0.88rem", display: "block" }}>{d.label}</strong>
+                        <span style={{ color: "#64748b", fontSize: "0.76rem", marginTop: "2px", display: "block" }}>{d.desc}</span>
+                      </div>
+                    );
+                  })}
                 </div>
-                <input
-                  type="checkbox"
-                  checked={settings.compactMode}
-                  onChange={(e) => updateSetting("compactMode", e.target.checked)}
-                  style={{ width: "18px", height: "18px", accentColor: "#6366f1", cursor: "pointer" }}
-                />
               </div>
             </div>
           )}
@@ -523,37 +811,47 @@ export default function Settings() {
           {activeTab === "editor" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
               <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "14px" }}>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 4px 0" }}>Code Editor Preferences</h2>
-                <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Configure typography, tab indentation, and execution settings.</p>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 4px 0" }}>Code Editor Settings</h2>
+                <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Configure typography, indentation, syntax themes, and editor behaviors.</p>
               </div>
 
-              {/* Font Size Slider */}
+              {/* Font Size (12, 13, 14, 15, 16, 18, 20) */}
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "#cbd5e1" }}>Editor Font Size</label>
-                  <strong style={{ color: "#818cf8", fontSize: "0.85rem" }}>{settings.fontSize}px</strong>
+                  <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "#cbd5e1" }}>Font Size</label>
+                  <strong style={{ color: "#818cf8", fontSize: "0.85rem" }}>{formData.fontSize}px</strong>
                 </div>
-                <input
-                  type="range"
-                  min={12}
-                  max={20}
-                  value={settings.fontSize}
-                  onChange={(e) => updateSetting("fontSize", Number(e.target.value))}
-                  style={{ width: "100%", accentColor: "#6366f1", cursor: "pointer" }}
-                />
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", color: "#64748b" }}>
-                  <span>12px (Compact)</span>
-                  <span>14px (Standard)</span>
-                  <span>20px (Large)</span>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  {[12, 13, 14, 15, 16, 18, 20].map((size) => (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => handleChange("fontSize", size)}
+                      style={{
+                        flex: 1,
+                        background: formData.fontSize === size ? "rgba(99, 102, 241, 0.2)" : "#080c14",
+                        border: formData.fontSize === size ? "1.5px solid #6366f1" : "1px solid rgba(255,255,255,0.08)",
+                        color: formData.fontSize === size ? "#ffffff" : "#94a3b8",
+                        borderRadius: "6px",
+                        padding: "8px 0",
+                        fontSize: "0.84rem",
+                        fontWeight: formData.fontSize === size ? "700" : "500",
+                        cursor: "pointer"
+                      }}
+                    >
+                      {size}px
+                    </button>
+                  ))}
                 </div>
               </div>
 
+              {/* Tab Size & Editor Theme */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Tab Size</label>
                   <select
-                    value={settings.tabSize}
-                    onChange={(e) => updateSetting("tabSize", Number(e.target.value))}
+                    value={formData.tabSize}
+                    onChange={(e) => handleChange("tabSize", Number(e.target.value))}
                     style={{
                       background: "#080c14",
                       border: "1px solid rgba(255,255,255,0.1)",
@@ -563,16 +861,17 @@ export default function Settings() {
                       fontSize: "0.88rem"
                     }}
                   >
-                    <option value={2}>2 Spaces (JavaScript / Python standard)</option>
-                    <option value={4}>4 Spaces (C++ / Java standard)</option>
+                    <option value={2}>2 Spaces</option>
+                    <option value={4}>4 Spaces (Standard)</option>
+                    <option value={8}>8 Spaces</option>
                   </select>
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Editor Theme</label>
                   <select
-                    value={settings.editorTheme}
-                    onChange={(e) => updateSetting("editorTheme", e.target.value)}
+                    value={formData.editorTheme}
+                    onChange={(e) => handleChange("editorTheme", e.target.value)}
                     style={{
                       background: "#080c14",
                       border: "1px solid rgba(255,255,255,0.1)",
@@ -586,16 +885,17 @@ export default function Settings() {
                     <option value="monokai">Monokai Pro</option>
                     <option value="github-dark">GitHub Dark</option>
                     <option value="dracula">Dracula</option>
+                    <option value="light">High Contrast Light</option>
                   </select>
                 </div>
               </div>
 
-              {/* Toggles Grid */}
+              {/* Toggles Grid: Word Wrap, Line Numbers, Auto Save */}
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {[
                   { key: "wordWrap", label: "Word Wrap", desc: "Wrap code lines that exceed editor horizontal boundary." },
-                  { key: "autoSave", label: "Auto-Save Drafts", desc: "Save code changes to local storage every 5 seconds." },
-                  { key: "showLineNumbers", label: "Show Line Numbers", desc: "Display numbered gutter along left edge of editor." }
+                  { key: "lineNumbers", label: "Line Numbers", desc: "Display numbered gutter along the left edge of the code editor." },
+                  { key: "autoSave", label: "Auto Save Drafts", desc: "Automatically save code buffer to local storage on problem change." }
                 ].map((item) => (
                   <div key={item.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", padding: "12px 16px", borderRadius: "8px" }}>
                     <div>
@@ -604,8 +904,8 @@ export default function Settings() {
                     </div>
                     <input
                       type="checkbox"
-                      checked={Boolean(settings[item.key])}
-                      onChange={(e) => updateSetting(item.key, e.target.checked)}
+                      checked={Boolean(formData[item.key])}
+                      onChange={(e) => handleChange(item.key, e.target.checked)}
                       style={{ width: "18px", height: "18px", accentColor: "#6366f1", cursor: "pointer" }}
                     />
                   </div>
@@ -619,15 +919,16 @@ export default function Settings() {
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
               <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "14px" }}>
                 <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 4px 0" }}>Notification Preferences</h2>
-                <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Choose which system events and reminders you wish to receive.</p>
+                <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Control platform alerts, contest notifications, and streak reminders.</p>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {[
                   { key: "contestReminders", label: "Contest Reminders", desc: "Receive alerts 30 minutes before weekly scheduled contests start." },
-                  { key: "submissionResults", label: "Async Submission Completion", desc: "Get notified when background judge worker finishes evaluating your code." },
-                  { key: "achievementAlerts", label: "Achievement & Badge Unlocks", desc: "Notify when you earn new problem sprint or streak milestones." },
-                  { key: "dailyStreakReminders", label: "Daily Streak Reminders", desc: "Daily evening reminder if you haven't solved a problem today." }
+                  { key: "submissionResults", label: "Submission Results", desc: "Get notified when background judge worker finishes evaluating your code." },
+                  { key: "achievementAlerts", label: "Achievement Notifications", desc: "Notify when you earn new problem milestones or streak badges." },
+                  { key: "dailyStreakReminders", label: "Daily Coding Reminders", desc: "Daily evening reminder to solve a problem and protect your streak." },
+                  { key: "aiCoachNotifications", label: "AI Coach Notifications", desc: "Get feedback and interview tips from the AI Coach after solving." }
                 ].map((item) => (
                   <div key={item.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", padding: "14px 18px", borderRadius: "10px" }}>
                     <div>
@@ -636,8 +937,8 @@ export default function Settings() {
                     </div>
                     <input
                       type="checkbox"
-                      checked={Boolean(settings[item.key])}
-                      onChange={(e) => updateSetting(item.key, e.target.checked)}
+                      checked={Boolean(formData[item.key])}
+                      onChange={(e) => handleChange(item.key, e.target.checked)}
                       style={{ width: "18px", height: "18px", accentColor: "#6366f1", cursor: "pointer" }}
                     />
                   </div>
@@ -650,16 +951,16 @@ export default function Settings() {
           {activeTab === "privacy" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
               <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "14px" }}>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 4px 0" }}>Privacy & Visibility</h2>
-                <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Control who can see your statistics, streak, and solved submissions.</p>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 4px 0" }}>Privacy Controls</h2>
+                <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Control who can view your profile, statistics, and leaderboard standings.</p>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                 {[
-                  { key: "publicProfile", label: "Public Profile Page", desc: "Allow other coders to view your profile and achievement badges." },
-                  { key: "showSolvedProblems", label: "Show Solved Problems Breakdown", desc: "Display your topic strength bar charts on your public card." },
-                  { key: "showActivity", label: "Show Practice Activity", desc: "Include your recent submission history in global activity feeds." },
-                  { key: "showContestRanking", label: "Show Global Ranking", desc: "Display your competitive score and rank on the leaderboards." }
+                  { key: "publicProfile", label: "Public Profile", desc: "Allow other coders to view your profile and achievement badges." },
+                  { key: "showSolvedProblems", label: "Show Solved Problems", desc: "Display your topic strength bar charts on your public card." },
+                  { key: "showActivity", label: "Show Activity", desc: "Include your recent submission history in global activity feeds." },
+                  { key: "showContestRanking", label: "Show Contest Ranking", desc: "Display your competitive score and rank on public leaderboards." }
                 ].map((item) => (
                   <div key={item.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", padding: "14px 18px", borderRadius: "10px" }}>
                     <div>
@@ -668,8 +969,8 @@ export default function Settings() {
                     </div>
                     <input
                       type="checkbox"
-                      checked={Boolean(settings[item.key])}
-                      onChange={(e) => updateSetting(item.key, e.target.checked)}
+                      checked={Boolean(formData[item.key])}
+                      onChange={(e) => handleChange(item.key, e.target.checked)}
                       style={{ width: "18px", height: "18px", accentColor: "#6366f1", cursor: "pointer" }}
                     />
                   </div>
@@ -682,17 +983,17 @@ export default function Settings() {
           {activeTab === "account" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
               <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "14px" }}>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 4px 0" }}>Account Security</h2>
-                <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Update your security credentials and connected accounts.</p>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 4px 0" }}>Account Security & Data</h2>
+                <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Change your password, review connected accounts, or delete your account.</p>
               </div>
 
               {/* Password Form */}
               <form onSubmit={handlePasswordChange} style={{ display: "flex", flexDirection: "column", gap: "16px", background: "#080c14", padding: "20px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.08)" }}>
                 <strong style={{ fontSize: "0.95rem", color: "#f8fafc" }}>Change Password</strong>
 
-                {passwordMessage.text && (
-                  <div style={{ padding: "8px 12px", borderRadius: "6px", fontSize: "0.82rem", background: passwordMessage.type === "error" ? "rgba(239,68,68,0.15)" : "rgba(16,185,129,0.15)", color: passwordMessage.type === "error" ? "#f87171" : "#4ade80", border: `1px solid ${passwordMessage.type === "error" ? "#ef4444" : "#10b981"}` }}>
-                    {passwordMessage.text}
+                {passwordStatus.text && (
+                  <div style={{ padding: "8px 12px", borderRadius: "6px", fontSize: "0.82rem", background: passwordStatus.type === "error" ? "rgba(239,68,68,0.15)" : "rgba(16,185,129,0.15)", color: passwordStatus.type === "error" ? "#f87171" : "#4ade80", border: `1px solid ${passwordStatus.type === "error" ? "#ef4444" : "#10b981"}` }}>
+                    {passwordStatus.text}
                   </div>
                 )}
 
@@ -729,6 +1030,7 @@ export default function Settings() {
 
                 <button
                   type="submit"
+                  disabled={isChangingPassword}
                   style={{
                     alignSelf: "flex-start",
                     background: "#4f46e5",
@@ -738,32 +1040,204 @@ export default function Settings() {
                     borderRadius: "6px",
                     fontSize: "0.82rem",
                     fontWeight: "600",
-                    cursor: "pointer"
+                    cursor: isChangingPassword ? "not-allowed" : "pointer"
                   }}
                 >
-                  Update Password
+                  {isChangingPassword ? "Updating..." : "Update Password"}
                 </button>
               </form>
 
-              {/* Danger Zone */}
-              <div style={{ border: "1px solid rgba(239, 68, 68, 0.3)", background: "rgba(239, 68, 68, 0.05)", borderRadius: "10px", padding: "18px 22px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              {/* Connected Accounts */}
+              <div style={{ background: "#080c14", padding: "20px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", gap: "14px" }}>
+                <strong style={{ fontSize: "0.95rem", color: "#f8fafc" }}>Connected Accounts</strong>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.04)", paddingBottom: "10px" }}>
+                  <div>
+                    <strong style={{ fontSize: "0.88rem", color: "#f8fafc", display: "block" }}>Email & Password</strong>
+                    <span style={{ fontSize: "0.76rem", color: "#64748b" }}>Primary authenticated login provider</span>
+                  </div>
+                  <span style={{ fontSize: "0.78rem", color: "#4ade80", background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)", padding: "2px 8px", borderRadius: "999px" }}>
+                    Connected
+                  </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <strong style={{ fontSize: "0.88rem", color: "#f8fafc", display: "block" }}>GitHub OAuth</strong>
+                    <span style={{ fontSize: "0.76rem", color: "#64748b" }}>Fast single sign-on</span>
+                  </div>
+                  <span style={{ fontSize: "0.78rem", color: "#94a3b8", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", padding: "2px 8px", borderRadius: "999px" }}>
+                    Not connected
+                  </span>
+                </div>
+              </div>
+
+              {/* Logout Button */}
+              <div style={{ background: "#080c14", padding: "18px 20px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <strong style={{ color: "#f87171", fontSize: "0.92rem", display: "block" }}>Delete Account</strong>
-                  <span style={{ color: "#94a3b8", fontSize: "0.78rem" }}>Permanently remove your account, profile XP, and historical test submissions.</span>
+                  <strong style={{ fontSize: "0.92rem", color: "#f8fafc", display: "block" }}>Active Session</strong>
+                  <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Log out from this device and clear cached credentials.</span>
                 </div>
                 <button
                   type="button"
-                  onClick={() => alert("To delete your account, please confirm by contacting support@judgo.io.")}
+                  onClick={handleLogout}
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    color: "#f8fafc",
+                    padding: "8px 16px",
+                    borderRadius: "6px",
+                    fontSize: "0.82rem",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px"
+                  }}
+                >
+                  <LogOut size={14} />
+                  <span>Logout</span>
+                </button>
+              </div>
+
+              {/* Danger Zone: Delete Account */}
+              <div style={{ border: "1px solid rgba(239, 68, 68, 0.3)", background: "rgba(239, 68, 68, 0.05)", borderRadius: "10px", padding: "18px 22px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <strong style={{ color: "#f87171", fontSize: "0.92rem", display: "block" }}>Delete Account</strong>
+                  <span style={{ color: "#94a3b8", fontSize: "0.78rem" }}>Permanently remove your account and all associated test submissions.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleteModal(true);
+                    setDeleteConfirmText("");
+                    setDeleteError("");
+                  }}
                   style={{ background: "#ef4444", color: "#ffffff", border: "none", padding: "8px 16px", borderRadius: "6px", fontSize: "0.82rem", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
                 >
                   <Trash2 size={14} />
-                  <span>Delete</span>
+                  <span>Delete Account</span>
                 </button>
               </div>
             </div>
           )}
         </main>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0, 0, 0, 0.75)",
+              backdropFilter: "blur(6px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 300,
+              padding: "16px"
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              style={{
+                background: "#0f1628",
+                border: "1px solid rgba(239, 68, 68, 0.4)",
+                borderRadius: "14px",
+                padding: "24px",
+                maxWidth: "440px",
+                width: "100%",
+                boxShadow: "0 20px 50px rgba(0, 0, 0, 0.8)",
+                display: "flex",
+                flexDirection: "column",
+                gap: "14px"
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <strong style={{ fontSize: "1.1rem", color: "#f87171", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <AlertTriangle size={18} />
+                  Delete your Judgo account?
+                </strong>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer" }}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <p style={{ fontSize: "0.85rem", color: "#cbd5e1", margin: 0, lineHeight: "1.5" }}>
+                This action permanently removes your account, coding XP, ranking, and all historical submissions. <strong>This cannot be undone.</strong>
+              </p>
+
+              {deleteError && (
+                <div style={{ padding: "8px 12px", background: "rgba(239,68,68,0.15)", border: "1px solid #ef4444", borderRadius: "6px", color: "#f87171", fontSize: "0.8rem" }}>
+                  {deleteError}
+                </div>
+              )}
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "0.78rem", color: "#94a3b8" }}>
+                  Type <strong>DELETE</strong> to confirm:
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="DELETE"
+                  style={{
+                    background: "#080c14",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                    borderRadius: "6px",
+                    padding: "8px 12px",
+                    color: "#ffffff",
+                    fontSize: "0.88rem",
+                    textTransform: "uppercase"
+                  }}
+                />
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteModal(false)}
+                  style={{
+                    background: "rgba(255,255,255,0.06)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "6px",
+                    padding: "8px 16px",
+                    color: "#cbd5e1",
+                    fontSize: "0.84rem",
+                    cursor: "pointer"
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={deleteConfirmText !== "DELETE" || isDeleting}
+                  onClick={handleDeleteAccount}
+                  style={{
+                    background: deleteConfirmText === "DELETE" ? "#ef4444" : "rgba(239,68,68,0.3)",
+                    border: "none",
+                    borderRadius: "6px",
+                    padding: "8px 16px",
+                    color: "#ffffff",
+                    fontSize: "0.84rem",
+                    fontWeight: "600",
+                    cursor: deleteConfirmText === "DELETE" && !isDeleting ? "pointer" : "not-allowed"
+                  }}
+                >
+                  {isDeleting ? "Deleting..." : "Delete Account"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

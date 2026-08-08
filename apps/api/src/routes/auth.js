@@ -1,7 +1,18 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { signToken } from "../lib/jwt.js";
-import { createUser, findUserByEmail, findUserByUsername, validateUserCredentials } from "../lib/userStore.js";
+import {
+  createUser,
+  deleteUser,
+  findUserByEmail,
+  findUserById,
+  findUserByUsername,
+  isUsernameAvailable,
+  updateUserPassword,
+  updateUserProfile,
+  validateUserCredentials,
+  verifyUserRawPassword
+} from "../lib/userStore.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 
 const router = Router();
@@ -151,11 +162,184 @@ router.post("/logout", (request, response) => {
   });
 });
 
-router.get("/me", requireAuth, (request, response) => {
-  response.json({
-    success: true,
-    user: request.user
-  });
+router.get("/me", requireAuth, async (request, response) => {
+  try {
+    const latestUser = await findUserById(request.user.id);
+    response.json({
+      success: true,
+      user: latestUser || request.user
+    });
+  } catch (err) {
+    response.json({
+      success: true,
+      user: request.user
+    });
+  }
+});
+
+// Check username availability
+router.get("/check-username", async (request, response) => {
+  try {
+    const { username, currentUserId } = request.query;
+    if (!username || !USERNAME_REGEX.test(String(username).trim())) {
+      return response.status(400).json({
+        success: false,
+        available: false,
+        message: "Username must be 3-30 characters (letters, numbers, '.', '_', '-')."
+      });
+    }
+
+    const available = await isUsernameAvailable(String(username).trim(), currentUserId);
+    response.json({
+      success: true,
+      available,
+      message: available ? "Username available" : "Username already taken"
+    });
+  } catch (err) {
+    console.error("[Check Username Error]:", err);
+    response.status(500).json({ success: false, error: "Error checking username." });
+  }
+});
+
+// Update Profile & Settings
+router.patch("/settings", requireAuth, async (request, response) => {
+  try {
+    const userId = request.user.id;
+    const { name, displayName, username, bio, language, timezone, preferences } = request.body || {};
+
+    const cleanName = String(displayName || name || "").trim();
+    if (cleanName && cleanName.length < 2) {
+      return response.status(400).json({ success: false, error: "Display name must be at least 2 characters." });
+    }
+
+    const cleanUsername = String(username || "").trim();
+    if (cleanUsername) {
+      if (!USERNAME_REGEX.test(cleanUsername)) {
+        return response.status(400).json({
+          success: false,
+          error: "Username must be 3-30 characters and contain only letters, numbers, underscores, dots, or hyphens."
+        });
+      }
+
+      const available = await isUsernameAvailable(cleanUsername, userId);
+      if (!available) {
+        return response.status(409).json({ success: false, error: "Username is already in use by another account." });
+      }
+    }
+
+    const updatedUser = await updateUserProfile(userId, {
+      name: cleanName,
+      username: cleanUsername,
+      bio: typeof bio === "string" ? bio : undefined,
+      language: typeof language === "string" ? language : undefined,
+      timezone: typeof timezone === "string" ? timezone : undefined,
+      preferences: preferences && typeof preferences === "object" ? preferences : undefined
+    });
+
+    if (!updatedUser) {
+      return response.status(404).json({ success: false, error: "User account not found." });
+    }
+
+    // Refresh token in case username changed
+    const token = signToken({ userId: updatedUser.id, email: updatedUser.email, username: updatedUser.username });
+    try {
+      response.cookie("token", token, COOKIE_OPTIONS);
+    } catch {}
+
+    response.json({
+      success: true,
+      message: "Changes saved successfully",
+      token,
+      accessToken: token,
+      user: updatedUser
+    });
+  } catch (err) {
+    console.error("[Update Settings Error]:", err);
+    response.status(500).json({
+      success: false,
+      error: err?.message || "Failed to save settings."
+    });
+  }
+});
+
+// Change Password
+router.post("/change-password", requireAuth, async (request, response) => {
+  try {
+    const userId = request.user.id;
+    const { currentPassword, newPassword, confirmPassword } = request.body || {};
+
+    if (!currentPassword || !newPassword) {
+      return response.status(400).json({ success: false, error: "Current password and new password are required." });
+    }
+
+    if (newPassword.length < 6) {
+      return response.status(400).json({ success: false, error: "New password must be at least 6 characters long." });
+    }
+
+    if (newPassword === currentPassword) {
+      return response.status(400).json({ success: false, error: "New password cannot equal your current password." });
+    }
+
+    if (confirmPassword && newPassword !== confirmPassword) {
+      return response.status(400).json({ success: false, error: "New passwords do not match." });
+    }
+
+    const isCurrentValid = await verifyUserRawPassword(userId, currentPassword);
+    if (!isCurrentValid) {
+      return response.status(400).json({ success: false, error: "Current password is incorrect." });
+    }
+
+    const updated = await updateUserPassword(userId, newPassword);
+    if (!updated) {
+      return response.status(500).json({ success: false, error: "Failed to update password." });
+    }
+
+    response.json({
+      success: true,
+      message: "Password changed successfully"
+    });
+  } catch (err) {
+    console.error("[Change Password Error]:", err);
+    response.status(500).json({
+      success: false,
+      error: err?.message || "Failed to change password."
+    });
+  }
+});
+
+// Delete Account Danger Zone
+router.delete("/account", requireAuth, async (request, response) => {
+  try {
+    const userId = request.user.id;
+    const { confirmation } = request.body || {};
+
+    if (String(confirmation).trim() !== "DELETE") {
+      return response.status(400).json({
+        success: false,
+        error: "Confirmation failed. Please type 'DELETE' to confirm account deletion."
+      });
+    }
+
+    const deleted = await deleteUser(userId);
+    if (!deleted) {
+      return response.status(404).json({ success: false, error: "User account could not be found." });
+    }
+
+    try {
+      response.clearCookie("token", COOKIE_OPTIONS);
+    } catch {}
+
+    response.json({
+      success: true,
+      message: "Account permanently deleted."
+    });
+  } catch (err) {
+    console.error("[Delete Account Error]:", err);
+    response.status(500).json({
+      success: false,
+      error: err?.message || "Failed to delete account."
+    });
+  }
 });
 
 export default router;

@@ -3,7 +3,6 @@ import { connectDatabase, isDatabaseConnected } from "./db.js";
 import { hashPassword, hashPasswordSync, verifyPassword } from "./jwt.js";
 import { User } from "../models/User.js";
 
-
 const memoryUsers = [];
 
 export async function findUserByEmail(email) {
@@ -31,7 +30,9 @@ export async function findUserByUsername(username) {
 
   if (isDatabaseConnected()) {
     try {
-      const doc = await User.findOne({ username: { $regex: new RegExp(`^${cleanUser.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`, "i") } }).lean();
+      const doc = await User.findOne({
+        username: { $regex: new RegExp(`^${cleanUser.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")}$`, "i") }
+      }).lean();
       return doc ? sanitizeUser(doc) : null;
     } catch (e) {
       console.error("[UserStore] findUserByUsername DB error:", e);
@@ -64,6 +65,34 @@ export async function findUserById(id) {
   return u ? sanitizeUser(u) : null;
 }
 
+export async function isUsernameAvailable(username, currentUserId = null) {
+  if (!username) return false;
+  await connectDatabase();
+  const clean = username.trim().toLowerCase();
+
+  if (isDatabaseConnected()) {
+    try {
+      const query = {
+        username: { $regex: new RegExp(`^${clean.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")}$`, "i") }
+      };
+      if (currentUserId) {
+        query.$and = [
+          { id: { $ne: String(currentUserId) } }
+        ];
+      }
+      const existing = await User.findOne(query).lean();
+      return !existing;
+    } catch (e) {
+      console.error("[UserStore] isUsernameAvailable DB error:", e);
+    }
+  }
+
+  const found = memoryUsers.find(
+    (u) => u.username.toLowerCase() === clean && String(u.id) !== String(currentUserId) && String(u._id) !== String(currentUserId)
+  );
+  return !found;
+}
+
 export async function createUser({ name, username, email, password }) {
   await connectDatabase();
   const hashedPassword = await hashPassword(password);
@@ -73,6 +102,29 @@ export async function createUser({ name, username, email, password }) {
     username: username.trim(),
     email: email.trim().toLowerCase(),
     passwordHash: hashedPassword,
+    bio: "",
+    language: "en-US",
+    timezone: "UTC-5 (Eastern Time)",
+    preferences: {
+      theme: "dark",
+      accentColor: "indigo",
+      density: "comfortable",
+      fontSize: 14,
+      tabSize: 4,
+      wordWrap: true,
+      lineNumbers: true,
+      autoSave: true,
+      editorTheme: "judgo-dark",
+      contestReminders: true,
+      submissionResults: true,
+      achievementAlerts: true,
+      dailyStreakReminders: true,
+      aiCoachNotifications: true,
+      publicProfile: true,
+      showSolvedProblems: true,
+      showActivity: true,
+      showContestRanking: true
+    },
     ranking: 999,
     xp: 0,
     streak: 1,
@@ -103,6 +155,122 @@ export async function createUser({ name, username, email, password }) {
   return sanitizeUser(userObj);
 }
 
+export async function updateUserProfile(userId, updateData) {
+  if (!userId) return null;
+  await connectDatabase();
+
+  const allowedFields = {};
+  if (typeof updateData.name === "string" && updateData.name.trim()) {
+    allowedFields.name = updateData.name.trim();
+  }
+  if (typeof updateData.displayName === "string" && updateData.displayName.trim()) {
+    allowedFields.name = updateData.displayName.trim();
+  }
+  if (typeof updateData.username === "string" && updateData.username.trim()) {
+    allowedFields.username = updateData.username.trim();
+  }
+  if (typeof updateData.bio === "string") {
+    allowedFields.bio = updateData.bio.slice(0, 300);
+  }
+  if (typeof updateData.language === "string") {
+    allowedFields.language = updateData.language;
+  }
+  if (typeof updateData.timezone === "string") {
+    allowedFields.timezone = updateData.timezone;
+  }
+  if (updateData.preferences && typeof updateData.preferences === "object") {
+    allowedFields.preferences = updateData.preferences;
+  }
+
+  if (isDatabaseConnected()) {
+    try {
+      const isObjId = mongoose.Types.ObjectId.isValid(String(userId));
+      const query = isObjId ? { $or: [{ id: String(userId) }, { _id: userId }] } : { id: String(userId) };
+
+      const doc = await User.findOneAndUpdate(
+        query,
+        { $set: allowedFields },
+        { new: true, runValidators: true }
+      ).lean();
+
+      if (doc) return sanitizeUser(doc);
+    } catch (e) {
+      console.error("[UserStore] updateUserProfile DB error:", e);
+    }
+  }
+
+  // Fallback in-memory
+  const idx = memoryUsers.findIndex(
+    (u) => String(u.id) === String(userId) || String(u._id) === String(userId)
+  );
+  if (idx !== -1) {
+    memoryUsers[idx] = {
+      ...memoryUsers[idx],
+      ...allowedFields,
+      preferences: {
+        ...(memoryUsers[idx].preferences || {}),
+        ...(allowedFields.preferences || {})
+      }
+    };
+    return sanitizeUser(memoryUsers[idx]);
+  }
+
+  return null;
+}
+
+export async function updateUserPassword(userId, newPassword) {
+  if (!userId || !newPassword) return false;
+  await connectDatabase();
+  const hashedPassword = await hashPassword(newPassword);
+
+  if (isDatabaseConnected()) {
+    try {
+      const isObjId = mongoose.Types.ObjectId.isValid(String(userId));
+      const query = isObjId ? { $or: [{ id: String(userId) }, { _id: userId }] } : { id: String(userId) };
+      const res = await User.updateOne(query, { $set: { passwordHash: hashedPassword } });
+      return res.modifiedCount > 0;
+    } catch (e) {
+      console.error("[UserStore] updateUserPassword DB error:", e);
+    }
+  }
+
+  const u = memoryUsers.find(
+    (item) => String(item.id) === String(userId) || String(item._id) === String(userId)
+  );
+  if (u) {
+    u.passwordHash = hashedPassword;
+    return true;
+  }
+
+  return false;
+}
+
+export async function deleteUser(userId) {
+  if (!userId) return false;
+  await connectDatabase();
+
+  if (isDatabaseConnected()) {
+    try {
+      const isObjId = mongoose.Types.ObjectId.isValid(String(userId));
+      const query = isObjId ? { $or: [{ id: String(userId) }, { _id: userId }] } : { id: String(userId) };
+      const res = await User.deleteOne(query);
+      return res.deletedCount > 0;
+    } catch (e) {
+      console.error("[UserStore] deleteUser DB error:", e);
+    }
+  }
+
+  const idx = memoryUsers.findIndex(
+    (u) => String(u.id) === String(userId) || String(u._id) === String(userId)
+  );
+  if (idx !== -1) {
+    memoryUsers.splice(idx, 1);
+    return true;
+  }
+
+  return false;
+}
+
 export async function validateUserCredentials(identifier, password) {
   if (!identifier || !password) return null;
   await connectDatabase();
@@ -115,7 +283,7 @@ export async function validateUserCredentials(identifier, password) {
       rawUser = await User.findOne({
         $or: [
           { email: clean },
-          { username: { $regex: new RegExp(`^${clean.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`, "i") } }
+          { username: { $regex: new RegExp(`^${clean.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")}$`, "i") } }
         ]
       }).lean();
     } catch (e) {
@@ -139,6 +307,31 @@ export async function validateUserCredentials(identifier, password) {
   return null;
 }
 
+export async function verifyUserRawPassword(userId, currentPassword) {
+  if (!userId || !currentPassword) return false;
+  await connectDatabase();
+
+  let rawUser = null;
+  if (isDatabaseConnected()) {
+    try {
+      const isObjId = mongoose.Types.ObjectId.isValid(String(userId));
+      const query = isObjId ? { $or: [{ id: String(userId) }, { _id: userId }] } : { id: String(userId) };
+      rawUser = await User.findOne(query).lean();
+    } catch (e) {
+      console.error("[UserStore] verifyUserRawPassword DB error:", e);
+    }
+  }
+
+  if (!rawUser) {
+    rawUser = memoryUsers.find(
+      (u) => String(u.id) === String(userId) || String(u._id) === String(userId)
+    );
+  }
+
+  if (!rawUser || !rawUser.passwordHash) return false;
+  return await verifyPassword(currentPassword, rawUser.passwordHash);
+}
+
 export function sanitizeUser(user) {
   if (!user) return null;
   const { passwordHash, _id, __v, ...safeUser } = user;
@@ -148,6 +341,29 @@ export function sanitizeUser(user) {
     ...safeUser,
     id: primaryId,
     _id: mongoId,
+    bio: safeUser.bio || "",
+    language: safeUser.language || "en-US",
+    timezone: safeUser.timezone || "UTC-5 (Eastern Time)",
+    preferences: safeUser.preferences || {
+      theme: "dark",
+      accentColor: "indigo",
+      density: "comfortable",
+      fontSize: 14,
+      tabSize: 4,
+      wordWrap: true,
+      lineNumbers: true,
+      autoSave: true,
+      editorTheme: "judgo-dark",
+      contestReminders: true,
+      submissionResults: true,
+      achievementAlerts: true,
+      dailyStreakReminders: true,
+      aiCoachNotifications: true,
+      publicProfile: true,
+      showSolvedProblems: true,
+      showActivity: true,
+      showContestRanking: true
+    },
     solved: safeUser.solvedProblemIds?.length || 0,
     stats: safeUser.stats || {
       totalSubmissions: 0,
@@ -158,4 +374,3 @@ export function sanitizeUser(user) {
     }
   };
 }
-

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { AlignLeft, ChevronDown, Copy, Maximize2, Play, RotateCcw, TerminalSquare, Zap } from "lucide-react";
 
 const languages = [
@@ -8,7 +8,50 @@ const languages = [
   { id: "Java", name: "Java 24" }
 ];
 
-function highlightSyntax(code = "", language = "Python") {
+const THEME_STYLES = {
+  "judgo-dark": {
+    bg: "#080c14",
+    gutterBg: "#060910",
+    gutterColor: "#475569",
+    gutterBorder: "rgba(255,255,255,0.05)",
+    textColor: "#f1f5f9",
+    caretColor: "#38bdf8"
+  },
+  monokai: {
+    bg: "#272822",
+    gutterBg: "#1e1f1c",
+    gutterColor: "#75715e",
+    gutterBorder: "rgba(255,255,255,0.08)",
+    textColor: "#f8f8f2",
+    caretColor: "#fd971f"
+  },
+  "github-dark": {
+    bg: "#0d1117",
+    gutterBg: "#010409",
+    gutterColor: "#484f58",
+    gutterBorder: "rgba(255,255,255,0.06)",
+    textColor: "#c9d1d9",
+    caretColor: "#58a6ff"
+  },
+  dracula: {
+    bg: "#282a36",
+    gutterBg: "#21222c",
+    gutterColor: "#6272a4",
+    gutterBorder: "rgba(255,255,255,0.08)",
+    textColor: "#f8f8f2",
+    caretColor: "#bd93f9"
+  },
+  light: {
+    bg: "#f8fafc",
+    gutterBg: "#f1f5f9",
+    gutterColor: "#94a3b8",
+    gutterBorder: "rgba(0,0,0,0.08)",
+    textColor: "#0f172a",
+    caretColor: "#2563eb"
+  }
+};
+
+function highlightSyntax(code = "", language = "Python", theme = "judgo-dark") {
   if (!code) return "";
 
   const lines = code.split("\n");
@@ -32,27 +75,34 @@ function highlightSyntax(code = "", language = "Python") {
       commentSpan = `<span style="color:#64748b;font-style:italic;">${escaped.slice(idx)}</span>`;
     }
 
-    return highlightLine(codePart) + commentSpan;
+    return highlightLine(codePart, theme) + commentSpan;
   });
 
   return highlightedLines.join("\n");
 }
 
-function highlightLine(str) {
+function highlightLine(str, theme) {
+  const isLight = theme === "light";
+  const strColor = isLight ? "#16a34a" : "#4ade80";
+  const numColor = isLight ? "#d97706" : "#fb923c";
+  const kwColor = isLight ? "#9333ea" : "#c084fc";
+  const typeColor = isLight ? "#0284c7" : "#38bdf8";
+  const fnColor = isLight ? "#ca8a04" : "#facc15";
+
   return str
     // Strings
-    .replace(/(["'])(?:(?=(\\?))\2[\s\S])*?\1|(`[\s\S]*?`)/g, '<span style="color:#4ade80;">$&</span>')
+    .replace(/(["'])(?:(?=(\\?))\2[\s\S])*?\1|(`[\s\S]*?`)/g, `<span style="color:${strColor};">$&</span>`)
     // Numbers & Booleans
-    .replace(/\b(true|false|null|undefined|None|True|False|\d+)\b/g, '<span style="color:#fb923c;font-weight:600;">$&</span>')
-    // Keywords (LeetCode Purple)
-    .replace(/\b(class|def|return|function|if|else|elif|for|while|const|let|var|public|private|protected|static|void|import|export|from|new|async|await|pass|self|this|in|of|try|except|finally|catch|case|switch|break|continue|struct|namespace|using)\b/g, '<span style="color:#c084fc;font-weight:bold;">$&</span>')
-    // Types (LeetCode Cyan)
-    .replace(/\b(Solution|TreeAncestor|String|Integer|List|ArrayList|Vector|vector|map|set|int|bool|boolean|char|double|float|long|short)\b/g, '<span style="color:#38bdf8;font-weight:bold;">$&</span>')
-    // Functions / Methods (LeetCode Yellow)
+    .replace(/\b(true|false|null|undefined|None|True|False|\d+)\b/g, `<span style="color:${numColor};font-weight:600;">$&</span>`)
+    // Keywords
+    .replace(/\b(class|def|return|function|if|else|elif|for|while|const|let|var|public|private|protected|static|void|import|export|from|new|async|await|pass|self|this|in|of|try|except|finally|catch|case|switch|break|continue|struct|namespace|using)\b/g, `<span style="color:${kwColor};font-weight:bold;">$&</span>`)
+    // Types
+    .replace(/\b(Solution|TreeAncestor|String|Integer|List|ArrayList|Vector|vector|map|set|int|bool|boolean|char|double|float|long|short)\b/g, `<span style="color:${typeColor};font-weight:bold;">$&</span>`)
+    // Functions
     .replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)(?=\s*\()/g, (match, fnName) => {
       const reserved = ["if", "for", "while", "switch", "catch", "return", "sizeof", "typeof"];
       if (reserved.includes(fnName)) return match;
-      return `<span style="color:#facc15;font-weight:600;">${fnName}</span>`;
+      return `<span style="color:${fnColor};font-weight:600;">${fnName}</span>`;
     });
 }
 
@@ -68,7 +118,36 @@ export default function CodeEditor({
 }) {
   const textareaRef = useRef(null);
   const preRef = useRef(null);
-  const indentStr = language === "Python" ? "    " : "  ";
+
+  // Read live editor settings from localStorage
+  const [editorSettings, setEditorSettings] = useState(() => {
+    try {
+      const stored = localStorage.getItem("judgo-user-settings-v1");
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    function handleStorageChange() {
+      try {
+        const stored = localStorage.getItem("judgo-user-settings-v1");
+        if (stored) setEditorSettings(JSON.parse(stored));
+      } catch {}
+    }
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  const fontSize = editorSettings.fontSize || 14;
+  const tabSize = editorSettings.tabSize || (language === "Python" ? 4 : 2);
+  const wordWrap = editorSettings.wordWrap !== false;
+  const showLineNumbers = editorSettings.showLineNumbers !== false;
+  const currentEditorTheme = editorSettings.editorTheme || "judgo-dark";
+  const themePalette = THEME_STYLES[currentEditorTheme] || THEME_STYLES["judgo-dark"];
+
+  const indentStr = " ".repeat(tabSize);
   const linesCount = (code || "").split("\n").length;
 
   function handleScroll() {
@@ -164,16 +243,16 @@ export default function CodeEditor({
   }
 
   return (
-    <section className="editor-panel" style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+    <section className="editor-panel" style={{ background: themePalette.bg, border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
       {/* Editor Header Bar */}
-      <div className="editor-toolbar" style={{ background: "#131826", padding: "8px 14px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div className="editor-toolbar" style={{ background: themePalette.gutterBg, padding: "8px 14px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <label className="editor-title" style={{ background: "#1c2234", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "4px 10px", display: "flex", alignItems: "center", gap: "6px", color: "#fff", cursor: "pointer" }}>
+          <label className="editor-title" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "4px 10px", display: "flex", alignItems: "center", gap: "6px", color: themePalette.textColor, cursor: "pointer" }}>
             <TerminalSquare size={15} style={{ color: "#a855f7" }} />
             <select
               onChange={(event) => onLanguageChange(event.target.value)}
               value={language}
-              style={{ background: "transparent", border: "none", color: "#fff", fontSize: "0.85rem", fontWeight: "bold", cursor: "pointer", outline: "none" }}
+              style={{ background: "transparent", border: "none", color: themePalette.textColor, fontSize: "0.85rem", fontWeight: "bold", cursor: "pointer", outline: "none" }}
             >
               {languages.map((item) => (
                 <option key={item.id} value={item.id} style={{ background: "#131826", color: "#fff" }}>{item.name}</option>
@@ -244,14 +323,29 @@ export default function CodeEditor({
         ) : null}
       </div>
 
-      {/* Editor Body with Line Numbers & Multi-Color LeetCode Highlighting */}
-      <div style={{ display: "flex", flex: 1, minHeight: "380px", background: "#080c14", position: "relative" }}>
-        {/* Line Numbers Column */}
-        <div style={{ padding: "18px 12px", background: "#060910", color: "#475569", fontFamily: "monospace", fontSize: "0.88rem", lineHeight: "1.75", select: "none", textAlign: "right", borderRight: "1px solid rgba(255,255,255,0.05)", minWidth: "44px" }}>
-          {Array.from({ length: Math.max(8, linesCount) }, (_, i) => (
-            <div key={i + 1}>{i + 1}</div>
-          ))}
-        </div>
+      {/* Editor Body with Dynamic Line Numbers, Font Size & Theme */}
+      <div style={{ display: "flex", flex: 1, minHeight: "380px", background: themePalette.bg, position: "relative" }}>
+        {/* Line Numbers Column (Conditionally Rendered by showLineNumbers setting) */}
+        {showLineNumbers && (
+          <div
+            style={{
+              padding: "18px 12px",
+              background: themePalette.gutterBg,
+              color: themePalette.gutterColor,
+              fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace",
+              fontSize: `${fontSize}px`,
+              lineHeight: "1.75",
+              userSelect: "none",
+              textAlign: "right",
+              borderRight: `1px solid ${themePalette.gutterBorder}`,
+              minWidth: "44px"
+            }}
+          >
+            {Array.from({ length: Math.max(8, linesCount) }, (_, i) => (
+              <div key={i + 1}>{i + 1}</div>
+            ))}
+          </div>
+        )}
 
         {/* Textarea Editor & Syntax Highlight Container */}
         <div style={{ position: "relative", flex: 1, minHeight: "380px" }}>
@@ -265,16 +359,16 @@ export default function CodeEditor({
               margin: 0,
               padding: "18px 16px",
               fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace",
-              fontSize: "0.92rem",
+              fontSize: `${fontSize}px`,
               lineHeight: "1.75",
-              whiteSpace: "pre",
-              wordWrap: "normal",
+              whiteSpace: wordWrap ? "pre-wrap" : "pre",
+              wordWrap: wordWrap ? "break-word" : "normal",
               overflow: "hidden",
               pointerEvents: "none",
-              color: "#f1f5f9",
+              color: themePalette.textColor,
               background: "transparent"
             }}
-            dangerouslySetInnerHTML={{ __html: highlightSyntax(code, language) }}
+            dangerouslySetInnerHTML={{ __html: highlightSyntax(code, language, currentEditorTheme) }}
           />
 
           {/* Editable Textarea (Front, Transparent Text with Caret) */}
@@ -292,10 +386,11 @@ export default function CodeEditor({
               background: "transparent",
               border: "none",
               color: "transparent",
-              caretColor: "#38bdf8",
+              caretColor: themePalette.caretColor,
               fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace",
-              fontSize: "0.92rem",
+              fontSize: `${fontSize}px`,
               lineHeight: "1.75",
+              whiteSpace: wordWrap ? "pre-wrap" : "pre",
               padding: "18px 16px",
               outline: "none",
               resize: "none",
@@ -307,11 +402,11 @@ export default function CodeEditor({
       </div>
 
       {/* Editor Status Bar */}
-      <div className="editor-status" style={{ background: "#070b13", padding: "4px 14px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center", color: "#64748b", fontSize: "0.78rem" }}>
+      <div className="editor-status" style={{ background: themePalette.gutterBg, padding: "4px 14px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center", color: "#64748b", fontSize: "0.78rem" }}>
         <div style={{ display: "flex", gap: "12px" }}>
           <span>Ln {linesCount}, Col 1</span>
-          <span>Spaces: {language === "Python" ? 4 : 2}</span>
-          <span>UTF-8</span>
+          <span>Tab: {tabSize}</span>
+          <span>Size: {fontSize}px</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#4ade80" }}>
           <span>{language}</span>

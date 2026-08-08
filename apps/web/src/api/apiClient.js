@@ -44,6 +44,11 @@ export const api = {
   login: (body) => request("/auth/login", { method: "POST", body: JSON.stringify(body) }),
   logout: () => request("/auth/logout", { method: "POST" }),
   getMe: () => request("/auth/me"),
+  updateSettings: (body) => request("/auth/settings", { method: "PATCH", body: JSON.stringify(body) }),
+  checkUsername: (username, currentUserId = "") =>
+    request(`/auth/check-username?username=${encodeURIComponent(username)}${currentUserId ? `&currentUserId=${encodeURIComponent(currentUserId)}` : ""}`),
+  changePassword: (body) => request("/auth/change-password", { method: "POST", body: JSON.stringify(body) }),
+  deleteAccount: (body) => request("/auth/account", { method: "DELETE", body: JSON.stringify(body) }),
 
   // Problems
   getProblems: () => request("/problems"),
