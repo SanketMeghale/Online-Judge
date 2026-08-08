@@ -95,12 +95,20 @@ export function executePython({ code, stdin = "", timeoutMs = DEFAULT_TIMEOUT_MS
 
     child.on("close", (exitCode) => {
       if (timedOut) return;
+      let verdict = "OK";
+      if (exitCode !== 0) {
+        if (stderr.includes("SyntaxError") || stderr.includes("IndentationError")) {
+          verdict = "CE";
+        } else {
+          verdict = "RUNTIME_ERROR";
+        }
+      }
       finish({
         ok: exitCode === 0,
         exitCode,
         stdout,
         stderr,
-        verdict: exitCode === 0 ? "OK" : "RUNTIME_ERROR"
+        verdict
       });
     });
 

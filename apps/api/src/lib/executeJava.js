@@ -28,19 +28,38 @@ export function executeJava({ code, stdin = "", timeoutMs = DEFAULT_TIMEOUT_MS }
       return;
     }
 
-    // Identify class containing main method (prefer Harness), public class, or first class
-    let className = "Solution";
-    if (code.includes("class Harness")) {
-      className = "Harness";
-    } else {
-      const publicMatch = code.match(/public\s+class\s+([A-Za-z0-9_]+)/);
-      const anyMatch = code.match(/class\s+([A-Za-z0-9_]+)/);
-      if (publicMatch) className = publicMatch[1];
-      else if (anyMatch) className = anyMatch[1];
+    // Determine source file name and main execution class
+    let fileClassName = "Main";
+    let runClassName = "Main";
+
+    const publicClassMatch = code.match(/public\s+class\s+([A-Za-z0-9_]+)/);
+    if (publicClassMatch) {
+      fileClassName = publicClassMatch[1];
+    } else if (code.includes("class Main")) {
+      fileClassName = "Main";
+    } else if (code.includes("class Solution")) {
+      fileClassName = "Solution";
     }
 
+    // Determine which class has the main method to run
+    if (code.includes("class Main") && (code.includes("static void main") || code.includes("static public void main"))) {
+      runClassName = "Main";
+    } else if (code.includes("class Harness")) {
+      runClassName = "Harness";
+    } else if (publicClassMatch && (code.includes("static void main") || code.includes("static public void main"))) {
+      runClassName = publicClassMatch[1];
+    } else {
+      const mainClassMatch = code.match(/class\s+([A-Za-z0-9_]+)[\s\S]*?static\s+(?:public\s+)?void\s+main/);
+      if (mainClassMatch) {
+        runClassName = mainClassMatch[1];
+      } else if (code.includes("class Main")) {
+        runClassName = "Main";
+      } else {
+        runClassName = fileClassName;
+      }
+    }
 
-    const sourcePath = path.join(tempDirPath, `${className}.java`);
+    const sourcePath = path.join(tempDirPath, `${fileClassName}.java`);
 
     try {
       fs.writeFileSync(sourcePath, code, "utf8");
@@ -79,8 +98,8 @@ export function executeJava({ code, stdin = "", timeoutMs = DEFAULT_TIMEOUT_MS }
         return;
       }
 
-      // 2. Run Java class file with java
-      const child = spawn("java", ["-cp", tempDirPath, className], {
+      // 2. Run Java class containing main method
+      const child = spawn("java", ["-cp", tempDirPath, runClassName], {
         stdio: "pipe",
         windowsHide: true
       });
