@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "build": "echo 'shared ready'",
+    "build:web": "echo 'shared ready'"
+  },
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js"
