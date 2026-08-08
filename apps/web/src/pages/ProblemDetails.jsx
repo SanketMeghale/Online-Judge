@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Bookmark, CheckCircle2, ChevronDown, ChevronRight, Clock, Cpu, Database, Flame, Gauge, HelpCircle, History, Layers, Lightbulb, Play, Sliders, Sparkles, XCircle, Zap } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { api } from "../api/apiClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import CodeEditor from "../components/editor/CodeEditor.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";

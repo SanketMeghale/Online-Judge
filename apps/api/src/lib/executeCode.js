@@ -6,9 +6,10 @@ import { executePython } from "./executePython.js";
 
 export async function executeCode({ language, code, stdin = "", timeoutMs = 5000 }) {
   const normalizedLang = (language || "").toLowerCase().trim();
+  const isServerlessRuntime = Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.NODE_ENV === "production");
 
   // 1. Attempt Judge0 execution first if configured or in production
-  if (process.env.JUDGE0_URL || process.env.RAPIDAPI_KEY || process.env.VERCEL || process.env.NODE_ENV === "production") {
+  if (process.env.JUDGE0_URL || process.env.RAPIDAPI_KEY || process.env.JUDGE0_API_KEY || isServerlessRuntime) {
     try {
       const judge0Result = await executeWithJudge0({ language: normalizedLang, code, stdin, timeoutMs });
       if (judge0Result && judge0Result.verdict) {
@@ -16,6 +17,16 @@ export async function executeCode({ language, code, stdin = "", timeoutMs = 5000
       }
     } catch (judge0Err) {
       console.warn(`[executeCode] Judge0 execution unavailable (${judge0Err.message}). Falling back to local engine...`);
+      if (isServerlessRuntime) {
+        return {
+          ok: false,
+          exitCode: null,
+          stdout: "",
+          stderr: `Judge0 execution unavailable: ${judge0Err.message}. Configure JUDGE0_URL or RAPIDAPI_KEY in Vercel environment variables.`,
+          verdict: "SYSTEM_ERROR",
+          runtimeMs: 0
+        };
+      }
     }
   }
 

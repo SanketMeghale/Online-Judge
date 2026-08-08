@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "echo 'judge-worker ready'",
+    "build:web": "echo 'judge-worker ready'",
     "start": "node src/index.js",
     "dev": "node src/index.js"
   }

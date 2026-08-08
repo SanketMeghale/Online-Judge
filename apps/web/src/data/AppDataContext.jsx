@@ -166,7 +166,11 @@ export function AppDataProvider({ children }) {
         testResults: response.testResults || [],
         message: response.ok ? "Code executed via backend compiler engine." : response.stderr || "Execution completed."
       };
-    } catch {
+    } catch (err) {
+      if (import.meta.env.PROD) {
+        throw new Error(err.message || "Compiler service unavailable. Please check the deployment API and Judge0 configuration.");
+      }
+
       if (!problem) {
         throw new Error("Problem not found.");
       }
@@ -250,6 +254,10 @@ export function AppDataProvider({ children }) {
         message: isAc ? "Accepted! Your solution passed all test cases." : sub.statusText || defaultStatusText
       };
     } catch (err) {
+      if (import.meta.env.PROD) {
+        throw new Error(err.message || "Submission service unavailable. Please check the deployment API and Judge0 configuration.");
+      }
+
       console.warn("[AppDataContext] Submission API error, using fallback simulation:", err);
       result = simulateRun(problem, language, code);
     }

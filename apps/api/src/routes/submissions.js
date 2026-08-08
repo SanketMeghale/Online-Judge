@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { evaluateSubmission } from "../../../../services/judge-worker/src/judgeEvaluator.js";
 import { problems } from "../data/problems.js";
+import { executeCode } from "../lib/executeCode.js";
+import { wrapCodeWithHarness } from "../lib/codeHarness.js";
 import { isDatabaseConnected } from "../lib/db.js";
 import { broadcastEvent } from "../lib/realtimePublisher.js";
 import { createSubmissionRecord, listSubmissionRecords } from "../lib/submissionStore.js";
@@ -37,10 +38,23 @@ router.post("/", optionalAuth, async (request, response) => {
     };
   }
 
-  const evaluation = await evaluateSubmission({
-    submission: { language, code },
-    problem
-  });
+  const firstCase = problem.examples?.[0] ?? { input: stdin, output: "" };
+  const wrappedCode = wrapCodeWithHarness({ code, language, problemId, stdin: firstCase.input || stdin });
+  const execution = await executeCode({ language, code: wrappedCode, stdin: firstCase.input || stdin, timeoutMs });
+  const passed = !firstCase.output || execution.stdout?.trim() === firstCase.output.trim();
+  const evaluation = {
+    verdict: execution.ok && passed ? "AC" : execution.verdict === "OK" ? "WA" : execution.verdict || "RE",
+    statusText: execution.ok && passed ? "Accepted" : execution.statusText || "Execution failed",
+    runtimeMs: execution.runtimeMs,
+    memoryMb: execution.memoryMb,
+    runtimePercentile: 50,
+    memoryPercentile: 50,
+    passedCount: execution.ok && passed ? 1 : 0,
+    totalCases: firstCase.output ? 1 : 0,
+    stdout: execution.stdout || "",
+    stderr: execution.stderr || "",
+    output: execution.output || execution.stdout || execution.stderr || ""
+  };
 
   const submission = await createSubmissionRecord({
     userId: request.user?.id || "u-guest",

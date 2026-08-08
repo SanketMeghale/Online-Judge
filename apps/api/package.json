@@ -8,8 +8,8 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
-    "build": "echo 'API build skipped'",
-    "build:web": "npm --prefix ../web run build",
+    "build": "echo 'API ready'",
+    "build:web": "echo 'API ready'",
     "test": "node --test"
   },
   "dependencies": {

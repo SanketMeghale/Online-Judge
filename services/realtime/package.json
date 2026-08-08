@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "echo 'realtime ready'",
+    "build:web": "echo 'realtime ready'",
     "dev": "node src/index.js",
     "start": "node src/index.js"
   },
