@@ -1,9 +1,7 @@
-const APP_DB_KEY = "online-judge-db";
-const SAVED_CODE_KEY = "online-judge-saved-code";
+export const APP_DB_KEY = "online-judge-database-v2";
+export const SAVED_CODE_KEY = "online-judge-saved-code-v2";
 
-const nowIso = () => new Date().toISOString();
-
-const baseProblems = [
+export const baseProblems = [
   {
     id: "two-sum",
     title: "Two Sum Revisited",
@@ -12,20 +10,31 @@ const baseProblems = [
     acceptance: 72,
     submissions: 18420,
     points: 10,
+    companyTags: ["Google", "Amazon", "Meta", "Microsoft", "Apple"],
+    timeLimitMs: 2000,
+    memoryLimitMb: 256,
     statement:
-      "Given an array of integers and a target, return indices of two numbers that add up to the target. Each input has exactly one valid answer.",
+      "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. Each input has exactly one valid answer.",
     examples: [
       { input: "nums = [2, 7, 11, 15], target = 9", output: "[0, 1]" },
       { input: "nums = [3, 2, 4], target = 6", output: "[1, 2]" }
     ],
-    constraints: ["2 <= nums.length <= 10^4", "-10^9 <= nums[i] <= 10^9"],
+    hiddenTestCases: [
+      { input: "nums = [2, 7, 11, 15], target = 9", output: "[0, 1]" },
+      { input: "nums = [3, 2, 4], target = 6", output: "[1, 2]" },
+      { input: "nums = [3, 3], target = 6", output: "[0, 1]" },
+      { input: "nums = [-1, -8, 14, 7], target = 6", output: "[1, 2]" },
+      { input: "nums = [0, 4, 3, 0], target = 0", output: "[0, 3]" }
+    ],
+    constraints: ["2 <= nums.length <= 10^4", "-10^9 <= nums[i] <= 10^9", "-10^9 <= target <= 10^9"],
     starterCode: {
-      Python: "class Solution:\n    def twoSum(self, nums, target):\n        pass",
-      JavaScript: "function twoSum(nums, target) {\n  return [0, 1];\n}",
-      Java: "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        return new int[]{0, 1};\n    }\n}"
+      python: "class Solution:\n    def twoSum(self, nums, target):\n        pass",
+      javascript: "function twoSum(nums, target) {\n  return [0, 1];\n}",
+      java: "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        return new int[]{0, 1};\n    }\n}",
+      cpp: "class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        return {0, 1};\n    }\n};"
     },
     judge: {
-      acceptedTokens: ["hash", "map", "dict", "indices", "target -"],
+      acceptedTokens: ["map", "dict", "target", "complement", "hash", "seen"],
       output: "[0, 1]"
     }
   },
@@ -37,20 +46,30 @@ const baseProblems = [
     acceptance: 88,
     submissions: 24500,
     points: 10,
+    companyTags: ["Meta", "Google", "Amazon", "Microsoft", "Bloomberg"],
+    timeLimitMs: 2000,
+    memoryLimitMb: 256,
     statement:
       "Given a string `s` containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
     examples: [
       { input: 's = "()[]{}"', output: "true" },
       { input: 's = "(]"', output: "false" }
     ],
+    hiddenTestCases: [
+      { input: 's = "()[]{}"', output: "true" },
+      { input: 's = "(]"', output: "false" },
+      { input: 's = "([{}])"', output: "true" },
+      { input: 's = "(((())"', output: "false" }
+    ],
     constraints: ["1 <= s.length <= 10^4", "s consists of parentheses only '()[]{}'"],
     starterCode: {
-      Python: "class Solution:\n    def isValid(self, s: str) -> bool:\n        pass",
-      JavaScript: "function isValid(s) {\n  return true;\n}",
-      Java: "class Solution {\n    public boolean isValid(String s) {\n        return true;\n    }\n}"
+      python: "class Solution:\n    def isValid(self, s: str) -> bool:\n        pass",
+      javascript: "function isValid(s) {\n  return true;\n}",
+      java: "class Solution {\n    public boolean isValid(String s) {\n        return true;\n    }\n}",
+      cpp: "class Solution {\npublic:\n    bool isValid(string s) {\n        return true;\n    }\n};"
     },
     judge: {
-      acceptedTokens: ["stack", "pop", "push", "isValid", "matching"],
+      acceptedTokens: ["stack", "pop", "push", "bracket", "pair", "dict", "{}"],
       output: "true"
     }
   },
@@ -62,20 +81,30 @@ const baseProblems = [
     acceptance: 82,
     submissions: 19800,
     points: 10,
+    companyTags: ["Amazon", "Google", "Adobe", "Apple"],
+    timeLimitMs: 2000,
+    memoryLimitMb: 256,
     statement:
       "Given an integer `x`, return `true` if `x` is a palindrome integer, and `false` otherwise.",
     examples: [
       { input: "x = 121", output: "true" },
       { input: "x = -121", output: "false" }
     ],
+    hiddenTestCases: [
+      { input: "x = 121", output: "true" },
+      { input: "x = -121", output: "false" },
+      { input: "x = 10", output: "false" },
+      { input: "x = 12321", output: "true" }
+    ],
     constraints: ["-2^31 <= x <= 2^31 - 1"],
     starterCode: {
-      Python: "class Solution:\n    def isPalindrome(self, x: int) -> bool:\n        pass",
-      JavaScript: "function isPalindrome(x) {\n  return true;\n}",
-      Java: "class Solution {\n    public boolean isPalindrome(int x) {\n        return true;\n    }\n}"
+      python: "class Solution:\n    def isPalindrome(self, x: int) -> bool:\n        pass",
+      javascript: "function isPalindrome(x) {\n  return true;\n}",
+      java: "class Solution {\n    public boolean isPalindrome(int x) {\n        return true;\n    }\n}",
+      cpp: "class Solution {\npublic:\n    bool isPalindrome(int x) {\n        return true;\n    }\n};"
     },
     judge: {
-      acceptedTokens: ["reverse", "mod", "div", "string", "isPalindrome"],
+      acceptedTokens: ["str", "reverse", "rev", "%", "//", "10", "palindrome"],
       output: "true"
     }
   },
@@ -87,20 +116,29 @@ const baseProblems = [
     acceptance: 91,
     submissions: 31200,
     points: 10,
+    companyTags: ["Amazon", "Microsoft", "Apple", "Adobe"],
+    timeLimitMs: 2000,
+    memoryLimitMb: 256,
     statement:
-      "Write a function that reverses an array of characters `s` in-place with O(1) extra memory.",
+      "Write a function that reverses a string. The input string is given as an array of characters `s`. You must do this by modifying the input array in-place with `O(1)` extra memory.",
     examples: [
       { input: 's = ["h","e","l","l","o"]', output: '["o","l","l","e","h"]' },
       { input: 's = ["H","a","n","n","a","h"]', output: '["h","a","n","n","a","H"]' }
     ],
-    constraints: ["1 <= s.length <= 10^5"],
+    hiddenTestCases: [
+      { input: 's = ["h","e","l","l","o"]', output: '["o","l","l","e","h"]' },
+      { input: 's = ["H","a","n","n","a","h"]', output: '["h","a","n","n","a","H"]' },
+      { input: 's = ["a"]', output: '["a"]' }
+    ],
+    constraints: ["1 <= s.length <= 10^5", "s[i] is a printable ascii character."],
     starterCode: {
-      Python: "class Solution:\n    def reverseString(self, s: list) -> None:\n        pass",
-      JavaScript: "function reverseString(s) {\n  return s.reverse();\n}",
-      Java: "class Solution {\n    public void reverseString(char[] s) {\n        \n    }\n}"
+      python: "class Solution:\n    def reverseString(self, s: list[str]) -> None:\n        pass",
+      javascript: "function reverseString(s) {\n  s.reverse();\n}",
+      java: "class Solution {\n    public void reverseString(char[] s) {\n        \n    }\n}",
+      cpp: "class Solution {\npublic:\n    void reverseString(vector<char>& s) {\n        \n    }\n};"
     },
     judge: {
-      acceptedTokens: ["reverse", "swap", "left", "right", "two pointers"],
+      acceptedTokens: ["reverse", "left", "right", "swap", "two pointers", "[::-1]"],
       output: '["o","l","l","e","h"]'
     }
   },
@@ -108,24 +146,34 @@ const baseProblems = [
     id: "best-time-to-buy-and-sell-stock",
     title: "Best Time to Buy and Sell Stock",
     difficulty: "Easy",
-    topic: "Arrays",
-    acceptance: 79,
+    topic: "Dynamic Programming",
+    acceptance: 76,
     submissions: 28400,
     points: 10,
+    companyTags: ["Amazon", "Meta", "Google", "Microsoft", "Apple"],
+    timeLimitMs: 2000,
+    memoryLimitMb: 256,
     statement:
-      "You are given an array `prices` where `prices[i]` is the price of a given stock on the i-th day. Return the maximum profit you can achieve from one transaction.",
+      "You are given an array `prices` where `prices[i]` is the price of a given stock on the `i-th` day. You want to maximize your profit by choosing a single day to buy one stock and choosing a different day in the future to sell that stock. Return the maximum profit you can achieve from this transaction.",
     examples: [
       { input: "prices = [7,1,5,3,6,4]", output: "5" },
       { input: "prices = [7,6,4,3,1]", output: "0" }
     ],
+    hiddenTestCases: [
+      { input: "prices = [7,1,5,3,6,4]", output: "5" },
+      { input: "prices = [7,6,4,3,1]", output: "0" },
+      { input: "prices = [2,4,1]", output: "2" },
+      { input: "prices = [1,2]", output: "1" }
+    ],
     constraints: ["1 <= prices.length <= 10^5", "0 <= prices[i] <= 10^4"],
     starterCode: {
-      Python: "class Solution:\n    def maxProfit(self, prices: list) -> int:\n        pass",
-      JavaScript: "function maxProfit(prices) {\n  return 0;\n}",
-      Java: "class Solution {\n    public int maxProfit(int[] prices) {\n        return 0;\n    }\n}"
+      python: "class Solution:\n    def maxProfit(self, prices: list[int]) -> int:\n        pass",
+      javascript: "function maxProfit(prices) {\n  return 0;\n}",
+      java: "class Solution {\n    public int maxProfit(int[] prices) {\n        return 0;\n    }\n}",
+      cpp: "class Solution {\npublic:\n    int maxProfit(vector<int>& prices) {\n        return 0;\n    }\n};"
     },
     judge: {
-      acceptedTokens: ["min", "max", "profit", "price", "buy"],
+      acceptedTokens: ["min", "max", "profit", "buy", "sell", "dp"],
       output: "5"
     }
   },
@@ -134,23 +182,32 @@ const baseProblems = [
     title: "Single Number",
     difficulty: "Easy",
     topic: "Bit Manipulation",
-    acceptance: 85,
+    acceptance: 84,
     submissions: 22100,
     points: 10,
+    companyTags: ["Amazon", "Google", "Meta", "Microsoft"],
+    timeLimitMs: 2000,
+    memoryLimitMb: 256,
     statement:
-      "Given a non-empty array of integers `nums`, every element appears twice except for one. Find that single element.",
+      "Given a non-empty array of integers `nums`, every element appears twice except for one. Find that single one. You must implement a solution with a linear runtime complexity and use only constant extra space.",
     examples: [
       { input: "nums = [2,2,1]", output: "1" },
       { input: "nums = [4,1,2,1,2]", output: "4" }
     ],
+    hiddenTestCases: [
+      { input: "nums = [2,2,1]", output: "1" },
+      { input: "nums = [4,1,2,1,2]", output: "4" },
+      { input: "nums = [1]", output: "1" }
+    ],
     constraints: ["1 <= nums.length <= 3 * 10^4", "-3 * 10^4 <= nums[i] <= 3 * 10^4"],
     starterCode: {
-      Python: "class Solution:\n    def singleNumber(self, nums: list) -> int:\n        pass",
-      JavaScript: "function singleNumber(nums) {\n  return 0;\n}",
-      Java: "class Solution {\n    public int singleNumber(int[] nums) {\n        return 0;\n    }\n}"
+      python: "class Solution:\n    def singleNumber(self, nums: list[int]) -> int:\n        pass",
+      javascript: "function singleNumber(nums) {\n  return 0;\n}",
+      java: "class Solution {\n    public int singleNumber(int[] nums) {\n        return 0;\n    }\n}",
+      cpp: "class Solution {\npublic:\n    int singleNumber(vector<int>& nums) {\n        return 0;\n    }\n};"
     },
     judge: {
-      acceptedTokens: ["xor", "^", "hash", "set", "single"],
+      acceptedTokens: ["^", "xor", "reduce", "accumulate", "bit"],
       output: "1"
     }
   },
@@ -159,97 +216,119 @@ const baseProblems = [
     title: "Climbing Stairs",
     difficulty: "Easy",
     topic: "Dynamic Programming",
-    acceptance: 84,
+    acceptance: 78,
     submissions: 26700,
     points: 10,
+    companyTags: ["Amazon", "Google", "Microsoft", "Apple", "Adobe"],
+    timeLimitMs: 2000,
+    memoryLimitMb: 256,
     statement:
-      "You are climbing a staircase. It takes `n` steps to reach the top. Each time you can either climb 1 or 2 steps. In how many distinct ways can you climb to the top?",
+      "You are climbing a staircase. It takes `n` steps to reach the top. Each time you can either climb `1` or `2` steps. In how many distinct ways can you climb to the top?",
     examples: [
       { input: "n = 2", output: "2" },
       { input: "n = 3", output: "3" }
     ],
+    hiddenTestCases: [
+      { input: "n = 2", output: "2" },
+      { input: "n = 3", output: "3" },
+      { input: "n = 4", output: "5" },
+      { input: "n = 5", output: "8" }
+    ],
     constraints: ["1 <= n <= 45"],
     starterCode: {
-      Python: "class Solution:\n    def climbStairs(self, n: int) -> int:\n        pass",
-      JavaScript: "function climbStairs(n) {\n  return 0;\n}",
-      Java: "class Solution {\n    public int climbStairs(int n) {\n        return 0;\n    }\n}"
+      python: "class Solution:\n    def climbStairs(self, n: int) -> int:\n        pass",
+      javascript: "function climbStairs(n) {\n  return 0;\n}",
+      java: "class Solution {\n    public int climbStairs(int n) {\n        return 0;\n    }\n}",
+      cpp: "class Solution {\npublic:\n    int climbStairs(int n) {\n        return 0;\n    }\n};"
     },
     judge: {
-      acceptedTokens: ["fibonacci", "dp", "steps", "ways", "prev"],
+      acceptedTokens: ["dp", "fib", "ways", "a, b", "range", "memo"],
       output: "2"
     }
   },
   {
-    id: "cache-stampede",
-    title: "Prevent Cache Stampede",
-    difficulty: "Medium",
-    topic: "Hashing",
-    acceptance: 48,
+    id: "cache-stampede-lock",
+    title: "Cache Stampede Lock",
+    difficulty: "Hard",
+    topic: "Concurrency",
+    acceptance: 39,
     submissions: 5912,
-    points: 20,
+    points: 30,
+    companyTags: ["Netflix", "Uber", "Stripe", "Cloudflare"],
+    timeLimitMs: 4000,
+    memoryLimitMb: 512,
     statement:
-      "Design a function that batches repeated key lookups and prevents duplicate expensive fetches while preserving response order.",
-    examples: [{ input: "keys = [a, b, a, c]", output: "fetch(a), fetch(b), fetch(c)" }],
-    constraints: ["1 <= keys.length <= 10^5", "Keys are non-empty strings"],
+      "Design a cache wrapper that coalesces simultaneous lookups for the same key into a single backend fetch using single-flight mutex synchronization.",
+    examples: [
+      { input: 'keys = ["a", "b", "a", "c"]', output: '["fetch(a)", "fetch(b)", "fetch(c)"]' }
+    ],
+    constraints: ["10^5 concurrent requests", "Keys must be locked under 2ms", "Zero duplicate fetches"],
     starterCode: {
-      Python: "def prevent_cache_stampede(keys, fetch):\n    pass",
-      JavaScript: "async function preventCacheStampede(keys, fetch) {\n  \n}",
-      Java: "class Solution {\n    public List<String> preventCacheStampede(List<String> keys) {\n        return new ArrayList<>();\n    }\n}"
+      python: "def prevent_cache_stampede(keys, fetcher):\n    pass",
+      javascript: "async function preventCacheStampede(keys, fetcher) {\n  return [];\n}"
     },
     judge: {
-      acceptedTokens: ["cache", "promise", "pending", "dedupe", "fetch"],
-      output: "fetch(a), fetch(b), fetch(c)"
+      acceptedTokens: ["lock", "mutex", "promise", "singleflight", "map"],
+      output: '["fetch(a)", "fetch(b)", "fetch(c)"]'
     }
   },
   {
-    id: "binary-lift",
-    title: "Binary Lift Ancestors",
+    id: "distributed-rate-limiter",
+    title: "Distributed Rate Limiter",
     difficulty: "Medium",
-    topic: "Trees",
-    acceptance: 55,
+    topic: "System Design",
+    acceptance: 54,
     submissions: 8641,
     points: 20,
+    companyTags: ["Amazon", "Stripe", "Datadog", "Meta"],
+    timeLimitMs: 3000,
+    memoryLimitMb: 256,
     statement:
-      "Preprocess a rooted tree so each query returns the k-th ancestor of a node in logarithmic time.",
-    examples: [{ input: "parent = [-1,0,0,1,1], query = (4,2)", output: "0" }],
-    constraints: ["1 <= n <= 10^5", "1 <= q <= 10^5"],
+      "Implement a sliding-window counter rate limiter supporting multi-region Redis synchronization without Race Conditions.",
+    examples: [
+      { input: "requests = [100, 102, 105, 109], limit = 3", output: "[true, true, true, false]" }
+    ],
+    constraints: ["Window = 60s", "Sub-millisecond latency", "Atomic counter increment"],
     starterCode: {
-      Python: "class TreeAncestor:\n    def __init__(self, n, parent):\n        pass\n\n    def getKthAncestor(self, node, k):\n        pass",
-      JavaScript: "class TreeAncestor {\n  constructor(n, parent) {\n    \n  }\n\n  getKthAncestor(node, k) {\n    \n  }\n}",
-      Java: "class TreeAncestor {\n    public TreeAncestor(int n, int[] parent) {\n    }\n\n    public int getKthAncestor(int node, int k) {\n        return -1;\n    }\n}"
+      python: "class RateLimiter:\n    def allow_request(self, client_id, timestamp):\n        pass",
+      javascript: "class RateLimiter {\n  allowRequest(clientId, timestamp) {\n    return true;\n  }\n}"
     },
     judge: {
-      acceptedTokens: ["ancestor", "lift", "table", "log", "parent"],
-      output: "0"
+      acceptedTokens: ["window", "sliding", "timestamp", "count", "expire"],
+      output: "[true, true, true, false]"
     }
   },
   {
     id: "merge-islands",
-    title: "Merge Dynamic Islands",
+    title: "Merge Islands Dynamic",
     difficulty: "Hard",
     topic: "Graphs",
-    acceptance: 31,
+    acceptance: 41,
     submissions: 3788,
-    points: 50,
+    points: 30,
+    companyTags: ["Google", "Palantir", "Databricks", "Amazon"],
+    timeLimitMs: 3000,
+    memoryLimitMb: 512,
     statement:
-      "A stream of land additions arrives for an empty grid. Return the number of islands after each operation.",
-    examples: [{ input: "m = 3, n = 3, positions = [[0,0],[0,1],[1,2]]", output: "[1,1,2]" }],
-    constraints: ["1 <= m, n <= 10^4", "1 <= positions.length <= 10^5"],
+      "You are given dynamic land additions in an m x n grid. Return the number of islands after each addLand operation in optimal O(k log*(mn)) time.",
+    examples: [
+      { input: "m = 3, n = 3, positions = [[0,0],[0,1],[1,2],[2,1]]", output: "[1, 1, 2, 3]" }
+    ],
+    constraints: ["1 <= m, n <= 500", "1 <= positions.length <= 10^4"],
     starterCode: {
-      Python: "class Solution:\n    def numIslands2(self, m, n, positions):\n        pass",
-      JavaScript: "function numIslands2(m, n, positions) {\n  \n}",
-      Java: "class Solution {\n    public List<Integer> numIslands2(int m, int n, int[][] positions) {\n        return new ArrayList<>();\n    }\n}"
+      python: "class Solution:\n    def numIslands2(self, m: int, n: int, positions: list[list[int]]) -> list[int]:\n        pass",
+      javascript: "function numIslands2(m, n, positions) {\n  return [];\n}"
     },
     judge: {
-      acceptedTokens: ["union", "parent", "rank", "find", "positions"],
-      output: "[1,1,2]"
+      acceptedTokens: ["union", "find", "parent", "rank", "disjoint"],
+      output: "[1, 1, 2, 3]"
     }
   }
 ];
 
-const seedUsers = [];
-
-const seedSubmissions = [];
+export function nowIso() {
+  return new Date().toISOString();
+}
 
 function seedDatabase() {
   return {
@@ -288,7 +367,9 @@ export function readDatabase() {
 }
 
 export function writeDatabase(database) {
-  window.localStorage.setItem(APP_DB_KEY, JSON.stringify(database));
+  try {
+    window.localStorage.setItem(APP_DB_KEY, JSON.stringify(database));
+  } catch (_) {}
 }
 
 export function ensureDatabase() {
@@ -307,15 +388,17 @@ export function readSavedCode() {
 }
 
 export function writeSavedCode(codeMap) {
-  window.localStorage.setItem(SAVED_CODE_KEY, JSON.stringify(codeMap));
+  try {
+    window.localStorage.setItem(SAVED_CODE_KEY, JSON.stringify(codeMap));
+  } catch (_) {}
 }
 
 export function createUserRecord({ name, username, email, password }) {
   return {
     id: `u-${Date.now()}`,
-    name: name.trim(),
-    username: username.trim(),
-    email: email.trim().toLowerCase(),
+    name: (name || "").trim(),
+    username: (username || "").trim(),
+    email: (email || "").trim().toLowerCase(),
     password,
     ranking: 999,
     xp: 0,
@@ -332,11 +415,13 @@ export function createUserRecord({ name, username, email, password }) {
 }
 
 export function findUserByEmail(database, email) {
-  return database.users.find((user) => user.email.toLowerCase() === email.trim().toLowerCase()) ?? null;
+  if (!database || !Array.isArray(database.users) || !email) return null;
+  const target = String(email).trim().toLowerCase();
+  return database.users.find((user) => String(user.email || "").toLowerCase() === target) ?? null;
 }
 
 export function findUserById(database, userId) {
-  if (!database || !database.users || !userId) return null;
+  if (!database || !Array.isArray(database.users) || !userId) return null;
   const uid = String(userId);
   return database.users.find((user) => String(user.id) === uid || String(user._id) === uid) ?? null;
 }
@@ -350,40 +435,52 @@ export function getProblemById(database, problemId) {
 }
 
 export function formatRelativeDate(value) {
-  const date = new Date(value);
-  const diffMs = Date.now() - date.getTime();
-  const dayMs = 24 * 60 * 60 * 1000;
-  const diffDays = Math.floor(diffMs / dayMs);
+  if (!value) return "Just now";
+  try {
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return "Recently";
+    const diffMs = Date.now() - date.getTime();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const diffDays = Math.floor(diffMs / dayMs);
 
-  if (diffDays <= 0) {
-    return "Today";
+    if (diffDays <= 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    return `${diffDays} days ago`;
+  } catch (_) {
+    return "Recently";
   }
-
-  if (diffDays === 1) {
-    return "Yesterday";
-  }
-
-  return `${diffDays} days ago`;
 }
 
 export function enrichUser(database, user) {
-  const solved = user.solvedProblemIds.length;
-  const submissions = database.submissions.filter((submission) => submission.userId === user.id);
+  if (!user) return null;
+  const solvedList = Array.isArray(user.solvedProblemIds) ? user.solvedProblemIds : [];
+  const solved = solvedList.length;
+  const submissions = Array.isArray(database?.submissions)
+    ? database.submissions.filter((submission) => String(submission.userId) === String(user.id || user._id))
+    : [];
   const accepted = submissions.filter((submission) => submission.verdict === "AC").length;
 
   return {
     ...user,
     solved,
+    solvedProblemIds: solvedList,
+    attemptedProblemIds: Array.isArray(user.attemptedProblemIds) ? user.attemptedProblemIds : [],
+    xp: typeof user.xp === "number" ? user.xp : 0,
+    streak: typeof user.streak === "number" ? user.streak : 1,
+    badges: Array.isArray(user.badges) ? user.badges : [],
     accuracy: submissions.length ? Math.round((accepted / submissions.length) * 100) : 0
   };
 }
 
 export function getProblemStatusForUser(user, problemId) {
-  if (user.solvedProblemIds.includes(problemId)) {
+  if (!user) return "Unsolved";
+  const solvedList = Array.isArray(user.solvedProblemIds) ? user.solvedProblemIds : [];
+  if (solvedList.includes(problemId)) {
     return "Solved";
   }
 
-  if (user.attemptedProblemIds.includes(problemId)) {
+  const attemptedList = Array.isArray(user.attemptedProblemIds) ? user.attemptedProblemIds : [];
+  if (attemptedList.includes(problemId)) {
     return "Attempted";
   }
 
@@ -391,56 +488,59 @@ export function getProblemStatusForUser(user, problemId) {
 }
 
 export function listProblemsForUser(database, user) {
-  return database.problems.map((problem) => ({
+  const problems = Array.isArray(database?.problems) && database.problems.length > 0 ? database.problems : baseProblems;
+  return problems.map((problem) => ({
     ...problem,
     status: getProblemStatusForUser(user, problem.id)
   }));
 }
 
 export function listSubmissionsForUser(database, userId) {
+  if (!database || !Array.isArray(database.submissions)) return [];
   return database.submissions
-    .filter((submission) => submission.userId === userId)
-    .sort((left, right) => new Date(right.submittedAt) - new Date(left.submittedAt))
+    .filter((submission) => !userId || String(submission.userId) === String(userId))
+    .sort((left, right) => new Date(right.submittedAt || right.createdAt || 0) - new Date(left.submittedAt || left.createdAt || 0))
     .map((submission) => ({
       ...submission,
-      problem: getProblemById(database, submission.problemId)?.title ?? submission.problemId,
-      submitted: formatRelativeDate(submission.submittedAt)
+      problem: getProblemById(database, submission.problemId)?.title ?? submission.problemTitle ?? submission.problemId,
+      submitted: formatRelativeDate(submission.submittedAt || submission.createdAt)
     }));
 }
 
 export function computeLeaderboard(database) {
+  if (!database || !Array.isArray(database.users)) return [];
   return database.users
     .map((user) => enrichUser(database, user))
+    .filter(Boolean)
     .sort((left, right) => {
       if (right.xp !== left.xp) {
         return right.xp - left.xp;
       }
-
       return right.solved - left.solved;
     })
     .map((user, index) => ({
       rank: index + 1,
-      id: user.id,
-      name: user.name,
-      score: user.xp,
-      solved: user.solved,
-      streak: user.streak
+      id: user.id || user._id || `user_${index}`,
+      name: user.name || user.username || "Developer",
+      score: user.xp || 0,
+      solved: user.solved || 0,
+      streak: user.streak || 1
     }));
 }
 
 export function simulateRun(problem, language, code) {
-  const normalizedCode = code.toLowerCase();
-  const tokens = problem.judge.acceptedTokens;
+  const normalizedCode = (code || "").toLowerCase();
+  const tokens = problem?.judge?.acceptedTokens || ["solution", "return"];
   const hits = tokens.filter((token) => normalizedCode.includes(token)).length;
 
-  if (!code.trim()) {
+  if (!code || !code.trim()) {
     return {
       verdict: "CE",
       statusText: "No code to run",
       runtime: "-",
       memory: "-",
       output: "No code provided.",
-      expectedOutput: problem.examples[0]?.output ?? "",
+      expectedOutput: problem?.examples?.[0]?.output ?? "",
       message: "Add code before running."
     };
   }
@@ -452,72 +552,66 @@ export function simulateRun(problem, language, code) {
       runtime: "-",
       memory: "-",
       output: "Compilation failed: expected class declaration.",
-      expectedOutput: problem.examples[0]?.output ?? "",
+      expectedOutput: problem?.examples?.[0]?.output ?? "",
       message: "Java submissions need a class declaration."
     };
   }
 
-  if (hits >= 2) {
+  if (hits >= 1) {
     return {
       verdict: "AC",
       statusText: "All test cases passed",
-      runtime: `${20 + problem.points} ms`,
-      memory: `${12 + Math.floor(problem.points / 4)} MB`,
-      output: problem.judge.output,
-      expectedOutput: problem.examples[0]?.output ?? "",
+      runtime: `${20 + (problem?.points || 10)} ms`,
+      memory: `${12 + Math.floor((problem?.points || 10) / 4)} MB`,
+      output: problem?.judge?.output || "true",
+      expectedOutput: problem?.examples?.[0]?.output ?? "",
       message: "Accepted. Your solution passed all visible test cases."
     };
   }
 
-  if (hits === 1) {
-    return {
-      verdict: "WA",
-      statusText: "Test case 1 failed",
-      runtime: `${35 + problem.points} ms`,
-      memory: `${14 + Math.floor(problem.points / 4)} MB`,
-      output: "Incorrect output",
-      expectedOutput: problem.examples[0]?.output ?? "",
-      message: "Wrong answer. Your output did not match the expected result."
-    };
-  }
-
   return {
-    verdict: "TLE",
-    statusText: "Time limit exceeded",
-    runtime: "2.0 s",
-    memory: "64 MB",
-    output: "Execution exceeded the time limit.",
-    expectedOutput: problem.examples[0]?.output ?? "",
-    message: "Time limit exceeded on visible test cases. Try a faster approach."
+    verdict: "WA",
+    statusText: "Test case 1 failed",
+    runtime: `${35 + (problem?.points || 10)} ms`,
+    memory: `${14 + Math.floor((problem?.points || 10) / 4)} MB`,
+    output: "Incorrect output",
+    expectedOutput: problem?.examples?.[0]?.output ?? "",
+    message: "Wrong answer. Your output did not match the expected result."
   };
 }
 
 export function createSubmission(database, userId, problem, language, result) {
-  const id = `S-${database.nextSubmissionId}`;
+  const nextSubId = database?.nextSubmissionId || 1001;
+  const id = `S-${nextSubId}`;
 
   return {
     submission: {
       id,
       userId,
-      problemId: problem.id,
+      problemId: problem?.id || "problem",
       language,
-      verdict: result.verdict,
-      runtime: result.runtime,
-      memory: result.memory,
+      verdict: result?.verdict || "AC",
+      runtime: result?.runtime || "25 ms",
+      memory: result?.memory || "14 MB",
       submittedAt: nowIso()
     },
-    nextSubmissionId: database.nextSubmissionId + 1
+    nextSubmissionId: nextSubId + 1
   };
 }
 
 export function updateUserAfterSubmission(user, problem, verdict) {
-  const attemptedProblemIds = Array.from(new Set([...user.attemptedProblemIds, problem.id]));
+  if (!user) return user;
+  const attemptedProblemIds = Array.from(
+    new Set([...(Array.isArray(user.attemptedProblemIds) ? user.attemptedProblemIds : []), problem?.id || ""])
+  ).filter(Boolean);
+
+  const currentStats = user.stats || { activeDays: 1, totalSubmissions: 0, acceptedSubmissions: 0 };
   const nextUser = {
     ...user,
     attemptedProblemIds,
     stats: {
-      ...user.stats,
-      totalSubmissions: user.stats.totalSubmissions + 1
+      ...currentStats,
+      totalSubmissions: (currentStats.totalSubmissions || 0) + 1
     }
   };
 
@@ -525,28 +619,32 @@ export function updateUserAfterSubmission(user, problem, verdict) {
     return nextUser;
   }
 
-  const alreadySolved = user.solvedProblemIds.includes(problem.id);
-  const solvedProblemIds = alreadySolved ? user.solvedProblemIds : [...user.solvedProblemIds, problem.id];
-  const badges = new Set(user.badges);
+  const solvedList = Array.isArray(user.solvedProblemIds) ? user.solvedProblemIds : [];
+  const alreadySolved = solvedList.includes(problem?.id);
+  const solvedProblemIds = alreadySolved ? solvedList : [...solvedList, problem?.id].filter(Boolean);
+  const badges = new Set(Array.isArray(user.badges) ? user.badges : ["New Challenger"]);
 
   if (solvedProblemIds.length >= 3) {
     badges.add("Three Problem Sprint");
   }
 
+  const currentXp = typeof user.xp === "number" ? user.xp : 0;
+  const points = typeof problem?.points === "number" ? problem.points : 10;
+
   return {
     ...nextUser,
     solvedProblemIds,
-    xp: alreadySolved ? user.xp + Math.floor(problem.points / 3) : user.xp + problem.points * 10,
+    xp: alreadySolved ? currentXp + Math.floor(points / 3) : currentXp + points * 10,
     badges: Array.from(badges),
     stats: {
       ...nextUser.stats,
-      acceptedSubmissions: user.stats.acceptedSubmissions + 1
+      acceptedSubmissions: (currentStats.acceptedSubmissions || 0) + 1
     }
   };
 }
 
 export function getProblemsForUser(database, userId) {
-  const problems = (database?.problems && database.problems.length > 0) ? database.problems : baseProblems;
+  const problems = Array.isArray(database?.problems) && database.problems.length > 0 ? database.problems : baseProblems;
   const user = findUserById(database, userId);
   if (!user) {
     return problems.map((problem) => ({
@@ -558,7 +656,7 @@ export function getProblemsForUser(database, userId) {
 }
 
 export function getSubmissionsForUser(database, userId) {
-  if (!database || !database.submissions) return seedSubmissions;
+  if (!database || !Array.isArray(database.submissions)) return [];
   if (!userId) return database.submissions;
   return listSubmissionsForUser(database, userId);
 }

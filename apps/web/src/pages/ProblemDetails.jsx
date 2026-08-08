@@ -239,10 +239,13 @@ function ProblemDetailsInner() {
         code
       });
 
+      console.log("[2] NORMALIZED RESULT", nextResult);
+
       if (!nextResult) {
         throw new Error("No evaluation response received from submission service.");
       }
 
+      console.log("[3] SETTING RESULT", nextResult);
       setResult({
         ...nextResult,
         type: "submit"
@@ -268,6 +271,10 @@ function ProblemDetailsInner() {
   const displayMemory = formatDisplayValue(result?.memory, "14.2 MB");
   const passedCountNum = typeof result?.passedCount === "number" ? result.passedCount : (displayVerdict === "AC" ? problemWithStatus.examples.length : 0);
   const totalCasesNum = typeof result?.totalCases === "number" ? result.totalCases : problemWithStatus.examples.length;
+
+  if (result) {
+    console.log("[4] RESULT STATE RENDER", { result, displayVerdict, displayStatusText, testResults });
+  }
 
   return (
     <div
@@ -416,7 +423,7 @@ function ProblemDetailsInner() {
                 borderRadius: "8px",
                 padding: "10px 14px",
                 display: "flex",
-                justifySpace: "space-between",
+                justifyContent: "space-between",
                 alignItems: "center",
                 cursor: "pointer"
               }}

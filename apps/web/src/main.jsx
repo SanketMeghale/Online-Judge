@@ -22,6 +22,15 @@ import ForgotPassword from "./pages/ForgotPassword.jsx";
 import SubmissionHistoryPage from "./pages/SubmissionHistoryPage.jsx";
 import "./styles/main.css";
 
+// Global error handlers for diagnostics
+window.onerror = (...args) => {
+  console.error("[GLOBAL ERROR]", args);
+};
+
+window.onunhandledrejection = (event) => {
+  console.error("[UNHANDLED PROMISE]", event.reason);
+};
+
 function RootPage() {
   const { isAuthenticated, isCheckingSession } = useAuth();
   if (isCheckingSession) return null;
@@ -68,11 +77,11 @@ createRoot(document.getElementById("root")).render(
               <Route element={<AuthLayout />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/signup" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
               </Route>
             </Route>
 
+            {/* Fallback Catch-All Route */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>

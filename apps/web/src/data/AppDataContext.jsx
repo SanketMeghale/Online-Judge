@@ -276,6 +276,7 @@ export function AppDataProvider({ children }) {
       username: "Coder",
       stats: { totalSubmissions: 0, acceptedSubmissions: 0 },
       solvedProblemIds: [],
+      attemptedProblemIds: [],
       badges: [],
       xp: 0
     };
@@ -292,7 +293,7 @@ export function AppDataProvider({ children }) {
         stdin
       });
 
-      console.log("[Submit] API response received:", response);
+      console.log("[1] API RESPONSE", response);
 
       if (!response) {
         throw new Error("Empty submission response from API.");
