@@ -49,5 +49,7 @@ export const api = {
   runCode: (body) => request("/compiler/run", { method: "POST", body: JSON.stringify(body) }),
   submitCode: (body) => request("/submissions/submit", { method: "POST", body: JSON.stringify(body) }),
   getSubmissions: (query = "") => request(`/submissions/history${query ? `?${query}` : ""}`),
-  getSubmissionById: (id) => request(`/submissions/${id}`)
+  getSubmissionById: (id) => request(`/submissions/${id}`),
+  // Alias used in polling logic (AppDataContext + ProblemDetails)
+  getSubmission: (id) => request(`/submissions/${id}`)
 };

@@ -140,7 +140,8 @@ export function AppDataProvider({ children }) {
 
   async function runSolution({ problemId, language, code, stdin = "" }) {
     const problem = getProblemById(database, problemId);
-    const effectiveStdin = stdin || problem?.examples?.[0]?.input || "";
+    // Only use problem example input if user didn't provide custom stdin
+    const effectiveStdin = stdin || "";
 
     try {
       const response = await api.runCode({
@@ -195,10 +196,10 @@ export function AppDataProvider({ children }) {
       let sub = response.submission || response;
       const subId = String(sub._id || sub.id || sub.submissionId || response.submissionId || "");
 
-      // Poll if needed until evaluation completes (up to 10 attempts, 300ms apart)
+      // Poll until evaluation completes (up to 20 attempts, 600ms apart = 12s max)
       if (subId && (sub.verdict === "PENDING" || sub.status === "QUEUED" || !sub.verdict)) {
-        for (let attempt = 0; attempt < 10; attempt++) {
-          await new Promise((resolve) => setTimeout(resolve, 300));
+        for (let attempt = 0; attempt < 20; attempt++) {
+          await new Promise((resolve) => setTimeout(resolve, 600));
           try {
             const fetched = await api.getSubmission(subId);
             const s = fetched?.submission || fetched;

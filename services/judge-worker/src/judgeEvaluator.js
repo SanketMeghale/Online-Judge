@@ -2,6 +2,60 @@ import { executeCode } from "../../../apps/api/src/lib/executeCode.js";
 import { calculatePercentile } from "../../../apps/api/src/lib/benchmarkEngine.js";
 import { wrapCodeWithHarness } from "../../../apps/api/src/lib/codeHarness.js";
 
+/**
+ * Convert LeetCode-style problem input to programmatic stdin for C++ / Java harnesses.
+ * e.g. "nums = [2, 7, 11, 15], target = 9" → "4\n2 7 11 15\n9"
+ */
+function buildCppJavaStdin(problemId, lcInput) {
+  if (!lcInput || !lcInput.trim()) return "";
+  const raw = lcInput.trim();
+  const pid = (problemId || "").toLowerCase();
+  try {
+    if (pid === "two-sum") {
+      const numsMatch = raw.match(/nums\s*=\s*(\[.*?\])/);
+      const targetMatch = raw.match(/target\s*=\s*(-?\d+)/);
+      if (numsMatch && targetMatch) {
+        const nums = JSON.parse(numsMatch[1]);
+        return `${nums.length}\n${nums.join(" ")}\n${targetMatch[1]}`;
+      }
+    }
+    if (pid === "valid-parentheses") {
+      const sMatch = raw.match(/s\s*=\s*"([^"]*)"/);
+      if (sMatch) return sMatch[1];
+    }
+    if (pid === "palindrome-number") {
+      const xMatch = raw.match(/x\s*=\s*(-?\d+)/);
+      if (xMatch) return xMatch[1];
+    }
+    if (pid === "best-time-to-buy-and-sell-stock") {
+      const pricesMatch = raw.match(/prices\s*=\s*(\[.*?\])/);
+      if (pricesMatch) {
+        const prices = JSON.parse(pricesMatch[1]);
+        return `${prices.length}\n${prices.join(" ")}`;
+      }
+    }
+    if (pid === "single-number") {
+      const numsMatch = raw.match(/nums\s*=\s*(\[.*?\])/);
+      if (numsMatch) {
+        const nums = JSON.parse(numsMatch[1]);
+        return `${nums.length}\n${nums.join(" ")}`;
+      }
+    }
+    if (pid === "climbing-stairs") {
+      const nMatch = raw.match(/n\s*=\s*(\d+)/);
+      if (nMatch) return nMatch[1];
+    }
+    if (pid === "reverse-string") {
+      const sMatch = raw.match(/s\s*=\s*(\[.*?\])/);
+      if (sMatch) {
+        const s = JSON.parse(sMatch[1]);
+        return `${s.length}\n${s.join(" ")}`;
+      }
+    }
+  } catch (e) {}
+  return raw;
+}
+
 function normalize(str) {
   if (typeof str !== "string") return "";
   return str
@@ -88,18 +142,23 @@ export async function evaluateSubmission({ submission, problem }) {
 
   let totalRuntimeMs = 0;
   const testResults = [];
+  const needsConvertedStdin = ["cpp", "c++", "java", "c"].includes((language || "").toLowerCase());
 
   for (let i = 0; i < testCases.length; i++) {
     const testcase = testCases[i];
     console.log(`[JudgeWorker] [STAGE 5: CONTAINER_STARTED] Testcase ${i + 1}/${testCases.length}`);
 
-    const wrappedCode = wrapCodeWithHarness({ code, language, problemId: problem?.id, stdin: testcase.input });
-    console.log(`[JudgeWorker] [STAGE 6: INPUT_PASSED] Input: "${testcase.input}"`);
+    const tcStdin = needsConvertedStdin
+      ? buildCppJavaStdin(problem?.id, testcase.input)
+      : testcase.input;
+
+    const wrappedCode = wrapCodeWithHarness({ code, language, problemId: problem?.id, stdin: tcStdin });
+    console.log(`[JudgeWorker] [STAGE 6: INPUT_PASSED] Input: "${testcase.input}" -> stdin: "${tcStdin}"`);
 
     const execResult = await executeCode({
       language,
       code: wrappedCode,
-      stdin: testcase.input
+      stdin: tcStdin
     });
 
     const runtime = execResult.runtimeMs || 10;
