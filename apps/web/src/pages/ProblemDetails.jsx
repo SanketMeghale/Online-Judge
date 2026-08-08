@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bookmark,
   CheckCircle2,
@@ -73,6 +73,9 @@ function ProblemDetailsInner() {
   const [selectedCaseIndex, setSelectedCaseIndex] = useState(0);
   const [customInput, setCustomInput] = useState("");
   const [showHint, setShowHint] = useState(false);
+  const [scrollTrigger, setScrollTrigger] = useState(0);
+
+  const resultPanelRef = useRef(null);
 
   const userSubmissions = useMemo(() => {
     if (!problemId) return [];
@@ -98,6 +101,22 @@ function ProblemDetailsInner() {
     setResult(null);
     setError("");
   }, [language, problemId]);
+
+  // Smoothly scroll to the Run/Submit Result section when a new execution result renders
+  useEffect(() => {
+    if (!scrollTrigger || !result) return;
+
+    const timer = setTimeout(() => {
+      if (resultPanelRef.current) {
+        resultPanelRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      }
+    }, 60);
+
+    return () => clearTimeout(timer);
+  }, [scrollTrigger, result]);
 
   // Polling fallback to update PENDING / QUEUED submission result in real time
   useEffect(() => {
@@ -130,6 +149,7 @@ function ProblemDetailsInner() {
               firstTc.expectedOutput || sub.expectedOutput || problemWithStatus?.examples?.[0]?.output || "",
             testResults: sub.testcases || sub.testResults || []
           }));
+          setScrollTrigger((prev) => prev + 1);
           clearInterval(interval);
         }
       } catch (e) {
@@ -212,6 +232,7 @@ function ProblemDetailsInner() {
         ...nextResult,
         type: "run"
       });
+      setScrollTrigger((prev) => prev + 1);
     } catch (runError) {
       console.error("[handleRun error]:", runError);
       setError(runError?.message || "Failed to execute code. Please check your syntax.");
@@ -250,6 +271,7 @@ function ProblemDetailsInner() {
         ...nextResult,
         type: "submit"
       });
+      setScrollTrigger((prev) => prev + 1);
     } catch (submitError) {
       console.error("[handleSubmit error]:", submitError);
       setError(submitError?.message || "Failed to submit code for evaluation. Please try again.");
@@ -518,9 +540,20 @@ function ProblemDetailsInner() {
             isSubmitting={isSubmitting}
           />
 
-          {/* Console Results Panel */}
-          <section className="console-results-panel" style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-            
+          {/* Console Results Panel (Smoothly Scrolled into View upon Run / Submit) */}
+          <section
+            ref={resultPanelRef}
+            className="console-results-panel"
+            style={{
+              scrollMarginTop: "90px",
+              background: "#0d111a",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "14px",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column"
+            }}
+          >
             {/* Console Tab Bar */}
             <div style={{ background: "#131826", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 10px" }}>
               <div style={{ display: "flex", gap: "2px" }}>
