@@ -29,7 +29,7 @@ export default function Register() {
 
     try {
       await register(form);
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (authError) {
       setError(authError.message);
     } finally {

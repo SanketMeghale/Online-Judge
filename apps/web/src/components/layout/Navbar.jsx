@@ -17,7 +17,7 @@ export default function Navbar() {
   async function handleLogout() {
     setDropdownOpen(false);
     await logout();
-    navigate("/login", { replace: true });
+    navigate("/", { replace: true });
   }
 
   return (

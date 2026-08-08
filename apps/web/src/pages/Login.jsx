@@ -10,7 +10,7 @@ export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const redirectTo = location.state?.from?.pathname ?? "/";
+  const redirectTo = location.state?.from?.pathname && location.state.from.pathname !== "/" ? location.state.from.pathname : "/dashboard";
 
   function updateField(event) {
     setForm((current) => ({
