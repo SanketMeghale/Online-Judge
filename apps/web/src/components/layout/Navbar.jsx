@@ -128,18 +128,16 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                 rotate: { duration: 0.2 }
               }}
               style={{
-                width: "38px",
-                height: "38px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                filter: "drop-shadow(0 2px 8px rgba(120, 80, 255, 0.6)) drop-shadow(0 0 16px rgba(59,130,246,0.3))"
+                filter: "drop-shadow(0 2px 10px rgba(100, 80, 255, 0.7)) drop-shadow(0 0 18px rgba(59,130,246,0.35))"
               }}
             >
               <img
                 src="/logo.png"
                 alt="Judgo Logo"
-                style={{ width: "38px", height: "38px", objectFit: "contain", display: "block" }}
+                style={{ width: "38px", height: "38px", objectFit: "cover", display: "block", borderRadius: "9px" }}
               />
             </motion.div>
             <span style={{ fontSize: "1.22rem", fontWeight: "800", letterSpacing: "-0.02em", color: "#ffffff" }}>
