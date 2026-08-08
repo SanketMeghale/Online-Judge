@@ -129,12 +129,25 @@
 .lp-brand-logo {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #7850ff, #00c3ff);
+  border-radius: 8px;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 16px rgba(120, 80, 255, 0.4);
+  overflow: hidden;
+  filter: drop-shadow(0 4px 12px rgba(120, 80, 255, 0.5));
+  animation: logo-float 3s ease-in-out infinite;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.lp-brand-logo:hover {
+  filter: drop-shadow(0 6px 18px rgba(120, 80, 255, 0.75));
+  transform: rotate(6deg) scale(1.1);
+}
+
+@keyframes logo-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
 }
 
 .lp-nav-links {

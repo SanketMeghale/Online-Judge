@@ -119,21 +119,30 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
           {/* Logo & Wordmark */}
           <Link to="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
             <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.1, rotate: 6 }}
+              whileTap={{ scale: 0.92 }}
+              animate={{ y: [0, -2, 0] }}
+              transition={{
+                y: { duration: 3, repeat: Infinity, ease: "easeInOut" },
+                scale: { duration: 0.15 },
+                rotate: { duration: 0.15 }
+              }}
               style={{
-                width: "34px",
-                height: "34px",
+                width: "36px",
+                height: "36px",
                 borderRadius: "8px",
-                background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#ffffff",
-                boxShadow: "0 4px 14px rgba(79, 70, 229, 0.35)"
+                overflow: "hidden",
+                filter: "drop-shadow(0 4px 12px rgba(120, 80, 255, 0.45))"
               }}
             >
-              <Code2 size={18} />
+              <img
+                src="/logo.png"
+                alt="Judgo Logo"
+                style={{ width: "36px", height: "36px", objectFit: "contain", display: "block" }}
+              />
             </motion.div>
             <span style={{ fontSize: "1.22rem", fontWeight: "800", letterSpacing: "-0.02em", color: "#ffffff" }}>
               Judgo

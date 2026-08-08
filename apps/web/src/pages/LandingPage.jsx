@@ -286,7 +286,7 @@ export default function LandingPage() {
           <div className="lp-nav-inner">
             <Link to="/" className="lp-brand">
               <span className="lp-brand-logo">
-                <Code2 size={20} color="#fff" />
+                <img src="/logo.png" alt="Judgo Logo" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
               </span>
               <span>Judgo</span>
             </Link>
@@ -814,7 +814,7 @@ export default function LandingPage() {
             <div>
               <Link to="/" className="lp-brand" style={{ marginBottom: "12px", display: "inline-flex" }}>
                 <span className="lp-brand-logo">
-                  <Code2 size={20} color="#fff" />
+                  <img src="/logo.png" alt="Judgo Logo" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
                 </span>
                 <span>Judgo</span>
               </Link>

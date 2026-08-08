@@ -153,13 +153,27 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(120, 80, 255, 0.2), rgba(0, 195, 255, 0.2));
-  border: 1px solid rgba(120, 80, 255, 0.4);
-  box-shadow: 0 0 20px rgba(120, 80, 255, 0.35);
+  background: transparent;
+  border: none;
+  box-shadow: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px;
+  padding: 0;
+  overflow: hidden;
+  filter: drop-shadow(0 4px 16px rgba(120, 80, 255, 0.55));
+  animation: auth-logo-float 3.5s ease-in-out infinite;
+  transition: filter 0.2s ease, transform 0.2s ease;
+}
+
+.auth-logo-box:hover {
+  filter: drop-shadow(0 6px 22px rgba(120, 80, 255, 0.8));
+  transform: rotate(8deg) scale(1.08);
+}
+
+@keyframes auth-logo-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
 }
 
 .auth-logo-box img {
