@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   BarChart3,
@@ -35,14 +36,40 @@ export default function Sidebar() {
       <div className="sidebar-links">
         {navItems.map(({ label, to, icon: Icon }) => (
           <NavLink key={label} className="sidebar-link" to={to} end={to === "/"}>
-            <Icon size={19} />
-            <span>{label}</span>
+            {({ isActive }) => (
+              <motion.div
+                whileHover={{ x: 4 }}
+                whileTap={{ scale: 0.98 }}
+                style={{ display: "flex", alignItems: "center", gap: "12px", width: "100%" }}
+              >
+                <motion.div whileHover={{ scale: 1.15, rotate: 3 }} transition={{ type: "spring", stiffness: 400 }}>
+                  <Icon size={19} />
+                </motion.div>
+                <span>{label}</span>
+                {isActive && (
+                  <motion.div
+                    layoutId="sidebarActiveIndicator"
+                    style={{
+                      marginLeft: "auto",
+                      width: "4px",
+                      height: "16px",
+                      borderRadius: "2px",
+                      background: "linear-gradient(180deg, #7850ff, #00c3ff)",
+                      boxShadow: "0 0 8px #7850ff"
+                    }}
+                  />
+                )}
+              </motion.div>
+            )}
           </NavLink>
         ))}
       </div>
 
       {/* Bottom Rocket Card */}
-      <div className="sidebar-rocket-card">
+      <motion.div
+        whileHover={{ y: -3, boxShadow: "0 15px 35px rgba(0,0,0,0.5), 0 0 20px rgba(120,80,255,0.3)" }}
+        className="sidebar-rocket-card"
+      >
         <div className="rocket-icon-wrapper">
           <Rocket size={26} className="rocket-svg" />
         </div>
@@ -52,7 +79,7 @@ export default function Sidebar() {
           <span>View Progress</span>
           <ArrowRight size={14} />
         </NavLink>
-      </div>
+      </motion.div>
     </aside>
   );
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Sparkles,
   Bot,
@@ -296,7 +297,13 @@ export default function AICoachPage() {
   }
 
   return (
-    <div className="ai-coach-container" style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "1600px", width: "100%", margin: "0 auto", paddingBottom: "40px" }}>
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="ai-coach-container"
+      style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "1600px", width: "100%", margin: "0 auto", paddingBottom: "40px" }}
+    >
       
       {/* Top Banner Hero Card */}
       <section style={{ background: "linear-gradient(135deg, rgba(120, 80, 255, 0.25), rgba(15, 23, 42, 0.95))", border: "1px solid rgba(120, 80, 255, 0.4)", borderRadius: "18px", padding: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
@@ -792,6 +799,6 @@ export default function AICoachPage() {
         </div>
       )}
 
-    </div>
+    </motion.div>
   );
 }

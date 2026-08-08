@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { ArrowRight, Mail, LockKeyhole } from "lucide-react";
 import { useAuth } from "../auth/AuthContext.jsx";
 
@@ -35,7 +36,12 @@ export default function Login() {
   }
 
   return (
-    <section className="auth-card">
+    <motion.section
+      initial={{ opacity: 0, scale: 0.96, y: 15 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className={`auth-card ${error ? "verdict-shake-wa" : ""}`}
+    >
       <span className="section-kicker">Welcome back</span>
       <h1>Log in to continue solving.</h1>
       <form className="form-grid" onSubmit={handleSubmit}>
@@ -77,6 +83,6 @@ export default function Login() {
       <p className="auth-switch">
         New here? <Link to="/register">Create an account</Link>
       </p>
-    </section>
+    </motion.section>
   );
 }

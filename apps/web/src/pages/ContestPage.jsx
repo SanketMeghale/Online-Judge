@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertCircle,
   Award,
@@ -238,7 +239,13 @@ export default function ContestPage() {
   const liveContest = contests.find((c) => c.status === "LIVE");
 
   return (
-    <div className="contest-hub-page" style={{ color: "#eef3ff", maxWidth: "1280px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "24px" }}>
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="contest-hub-page"
+      style={{ color: "#eef3ff", maxWidth: "1280px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "24px" }}
+    >
       {/* Top Banner Header */}
       <section className="page-header" style={{ background: "linear-gradient(135deg, #0e132c 0%, #17113a 50%, #0d122b 100%)", border: "1px solid rgba(120, 80, 255, 0.25)", borderRadius: "18px", padding: "28px 32px", position: "relative", overflow: "hidden" }}>
         <div style={{ position: "relative", zIndex: 2, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
@@ -578,6 +585,6 @@ export default function ContestPage() {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

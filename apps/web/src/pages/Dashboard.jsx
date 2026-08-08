@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Activity,
   AlertTriangle,
@@ -22,6 +23,7 @@ import {
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
 import { api } from "../api/apiClient.js";
+import { AnimatedCard, AnimatedCounter } from "../components/motion/MotionSystem.jsx";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -86,9 +88,19 @@ export default function Dashboard() {
   const joinDateStr = liveUser?.createdAt ? new Date(liveUser.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" }) : "Jan 2026";
 
   return (
-    <div className="judgo-dashboard">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="judgo-dashboard"
+    >
       {/* 1. Hero Challenge Banner */}
-      <section className="hero-challenge-banner">
+      <motion.section
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="hero-challenge-banner"
+      >
         <div className="hero-content">
           <h1>
             Welcome back, <span className="highlight-text">{liveUser?.name || liveUser?.username || "Coder"}!</span>
@@ -98,7 +110,7 @@ export default function Dashboard() {
           </p>
 
           <div className="hero-stats-row" style={{ marginTop: "20px" }}>
-            <div className="hero-stat-card rating">
+            <motion.div whileHover={{ y: -3 }} className="hero-stat-card rating">
               <div className="stat-icon-box green">
                 <LineChart size={18} />
               </div>
@@ -106,9 +118,9 @@ export default function Dashboard() {
                 <span className="stat-val">{liveUser?.ranking ? `#${liveUser.ranking}` : "Top 8%"}</span>
                 <span className="stat-lbl">Global Rank</span>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="hero-stat-card streak">
+            <motion.div whileHover={{ y: -3 }} className="hero-stat-card streak">
               <div className="stat-icon-box orange">
                 <Flame size={18} />
               </div>
@@ -116,9 +128,9 @@ export default function Dashboard() {
                 <span className="stat-val">{liveUser?.streak ?? 1} Day</span>
                 <span className="stat-lbl">Streak</span>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="hero-stat-card rank">
+            <motion.div whileHover={{ y: -3 }} className="hero-stat-card rank">
               <div className="stat-icon-box purple">
                 <Trophy size={18} />
               </div>
@@ -126,7 +138,7 @@ export default function Dashboard() {
                 <span className="stat-val">{acceptanceRate}%</span>
                 <span className="stat-lbl">Acceptance Rate</span>
               </div>
-            </div>
+            </motion.div>
           </div>
 
           <div className="hero-actions">
@@ -151,7 +163,7 @@ export default function Dashboard() {
             <path d="M0,110 Q120,40 280,120 T500,90" fill="none" stroke="rgba(0, 195, 255, 0.15)" strokeWidth="1.5" />
           </svg>
         </div>
-      </section>
+      </motion.section>
 
       {/* 2. Middle Row 3 Cards Grid */}
       <section className="dash-middle-grid">
@@ -363,6 +375,6 @@ export default function Dashboard() {
           <ChevronRight size={18} className="shortcut-arrow" />
         </Link>
       </section>
-    </div>
+    </motion.div>
   );
 }

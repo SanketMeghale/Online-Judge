@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { CheckCircle2, CircleDashed, Search, SlidersHorizontal, Timer } from "lucide-react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { CheckCircle2, CircleDashed, Search, SlidersHorizontal, Timer, Sparkles } from "lucide-react";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
 
@@ -42,12 +43,17 @@ export default function ProblemsList() {
   );
 
   return (
-    <div className="problems-page">
+    <motion.div
+      initial={{ opacity: 0, y: 14 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="problems-page"
+    >
       <section className="page-header compact-header">
         <div>
           <span className="section-kicker">Problem archive</span>
           <h1>Choose a challenge</h1>
-          <p>{filteredProblems.length} problems ready to solve in this local workspace.</p>
+          <p>{filteredProblems.length} problems ready to solve in this workspace.</p>
         </div>
         <label className="archive-search">
           <Search size={17} />
@@ -67,14 +73,16 @@ export default function ProblemsList() {
           Filters
         </span>
         {difficultyFilters.map((item) => (
-          <button
+          <motion.button
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.96 }}
             className={`button ${difficulty === item ? "button-primary" : "button-muted"}`}
             key={item}
             onClick={() => setDifficulty(item)}
             type="button"
           >
             {item}
-          </button>
+          </motion.button>
         ))}
         <select className="button button-muted topic-select" onChange={(event) => setTopic(event.target.value)} value={topic}>
           {topics.map((item) => (
@@ -101,21 +109,28 @@ export default function ProblemsList() {
           ).length;
 
           return (
-            <Link className="problem-row" key={problem.id} to={`/problems/${problem.id}`}>
-              <span className="problem-index">{String(index + 1).padStart(2, "0")}</span>
-              <span className="problem-title-cell">
-                <strong>{problem.title}</strong>
-                <small>{problem.statement}</small>
-              </span>
-              <span className={`difficulty difficulty-${problem.difficulty.toLowerCase()}`}>{problem.difficulty}</span>
-              <span>{problem.topic}</span>
-              <span>{problem.acceptance}%</span>
-              <span style={{ fontSize: "0.85rem", color: "#a8b3d6" }}>{subCount} attempt{subCount === 1 ? "" : "s"}</span>
-              <span className={`problem-status status-${(problem.status || "unsolved").toLowerCase()}`}>
-                <Icon size={15} />
-                {problem.status}
-              </span>
-            </Link>
+            <motion.div
+              key={problem.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: index * 0.04 }}
+            >
+              <Link className="problem-row" to={`/problems/${problem.id}`}>
+                <span className="problem-index">{String(index + 1).padStart(2, "0")}</span>
+                <span className="problem-title-cell">
+                  <strong>{problem.title}</strong>
+                  <small>{problem.statement}</small>
+                </span>
+                <span className={`difficulty difficulty-${problem.difficulty.toLowerCase()}`}>{problem.difficulty}</span>
+                <span>{problem.topic}</span>
+                <span>{problem.acceptance}%</span>
+                <span style={{ fontSize: "0.85rem", color: "#a8b3d6" }}>{subCount} attempt{subCount === 1 ? "" : "s"}</span>
+                <span className={`problem-status status-${(problem.status || "unsolved").toLowerCase()}`}>
+                  <Icon size={15} />
+                  {problem.status}
+                </span>
+              </Link>
+            </motion.div>
           );
         })}
 
@@ -126,6 +141,6 @@ export default function ProblemsList() {
           </div>
         ) : null}
       </section>
-    </div>
+    </motion.div>
   );
 }

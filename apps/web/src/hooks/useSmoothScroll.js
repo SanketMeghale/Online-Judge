@@ -1,0 +1,39 @@
+import { useEffect } from "react";
+import Lenis from "lenis";
+
+export function useSmoothScroll() {
+  useEffect(() => {
+    // Check if user prefers reduced motion
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReducedMotion) return;
+
+    let lenis;
+    try {
+      lenis = new Lenis({
+        duration: 1.15,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        orientation: "vertical",
+        gestureOrientation: "vertical",
+        smoothWheel: true,
+        wheelMultiplier: 1.0,
+        touchMultiplier: 1.5,
+        infinite: false
+      });
+
+      let animationFrameId;
+      function raf(time) {
+        lenis.raf(time);
+        animationFrameId = requestAnimationFrame(raf);
+      }
+
+      animationFrameId = requestAnimationFrame(raf);
+
+      return () => {
+        if (animationFrameId) cancelAnimationFrame(animationFrameId);
+        lenis.destroy();
+      };
+    } catch (e) {
+      console.warn("[SmoothScroll] Lenis initialization error:", e);
+    }
+  }, []);
+}

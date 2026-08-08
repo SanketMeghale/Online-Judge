@@ -497,8 +497,9 @@ export default function ProblemDetails() {
                 </div>
               ) : result ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {/* Result Banner Box (Matching Reference UI) */}
+                  {/* Result Banner Box with GPU Verdict Animations */}
                   <div
+                    className={result.verdict === "AC" ? "verdict-pop-ac" : result.verdict === "WA" ? "verdict-shake-wa" : result.verdict === "CE" ? "verdict-pulse-ce" : ""}
                     style={{
                       background: result.verdict === "AC" ? "rgba(34, 197, 94, 0.08)" : "rgba(248, 113, 113, 0.08)",
                       border: `1px solid ${result.verdict === "AC" ? "rgba(34, 197, 94, 0.4)" : "rgba(248, 113, 113, 0.4)"}`,

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { ArrowRight, AtSign, Mail, UserRound, LockKeyhole } from "lucide-react";
 import { useAuth } from "../auth/AuthContext.jsx";
 
@@ -38,7 +39,12 @@ export default function Register() {
   }
 
   return (
-    <section className="auth-card auth-card-wide">
+    <motion.section
+      initial={{ opacity: 0, scale: 0.96, y: 15 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className={`auth-card auth-card-wide ${error ? "verdict-shake-wa" : ""}`}
+    >
       <span className="section-kicker">Join the arena</span>
       <h1>Create your coder profile.</h1>
       <form className="form-grid two-column-form" onSubmit={handleSubmit}>
@@ -109,6 +115,6 @@ export default function Register() {
       <p className="auth-switch">
         Already registered? <Link to="/login">Log in</Link>
       </p>
-    </section>
+    </motion.section>
   );
 }
