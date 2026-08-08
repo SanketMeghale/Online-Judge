@@ -67,28 +67,66 @@ function normalize(str) {
     .trim();
 }
 
+function parseTokens(str) {
+  const matches = str.match(/("[^"]*"|'[^']*'|-?\d+(?:\.\d+)?|true|false)/gi);
+  if (!matches) return null;
+  return matches.map((m) => {
+    const s = m.toLowerCase().replace(/^["']|["']$/g, "");
+    if (s === "true") return true;
+    if (s === "false") return false;
+    const num = Number(s);
+    return isNaN(num) ? s : num;
+  });
+}
+
 function compareOutputs(actual, expected) {
   const normActual = normalize(actual);
   const normExpected = normalize(expected);
 
+  if (!normActual && !normExpected) return true;
   if (!normActual) return false;
   if (normActual === normExpected) return true;
 
-  const lines = normActual.split("\n").map((l) => l.trim()).filter(Boolean);
-  const lastLine = lines[lines.length - 1] || normActual;
+  // Case-insensitive / boolean equivalence (e.g. True vs true)
+  if (normActual.toLowerCase() === normExpected.toLowerCase()) return true;
 
-  for (const candidate of [normActual, lastLine]) {
+  // Direct whitespace-stripped comparison
+  const stripActual = normActual.replace(/\s+/g, "");
+  const stripExpected = normExpected.replace(/\s+/g, "");
+  if (stripActual === stripExpected) return true;
+
+  // Try candidate strings (entire output and last non-empty line)
+  const lines = normActual.split("\n").map((l) => l.trim()).filter(Boolean);
+  const candidates = [normActual, lines[lines.length - 1] || normActual];
+
+  for (const candidate of candidates) {
     try {
       const jsonActual = JSON.parse(candidate);
       const jsonExpected = JSON.parse(normExpected);
-      if (JSON.stringify(jsonActual) === JSON.stringify(jsonExpected)) {
-        return true;
-      }
-    } catch (e) {}
+      if (JSON.stringify(jsonActual) === JSON.stringify(jsonExpected)) return true;
+    } catch {}
 
-    const stripCandidate = candidate.replace(/\s+/g, "");
-    const stripExpected = normExpected.replace(/\s+/g, "");
-    if (stripCandidate === stripExpected) return true;
+    const cStrip = candidate.replace(/\s+/g, "");
+    if (cStrip === stripExpected) return true;
+
+    // Handle key-value formatted array outputs e.g. [0: 0, 1: 1]
+    const kvMatch = candidate.match(/\d+:\s*(-?\d+|"[^"]*"|'[^']*'|true|false)/g);
+    if (kvMatch) {
+      const extractedVals = kvMatch.map((kv) => kv.split(":")[1].trim());
+      const extractedStr = `[${extractedVals.join(", ")}]`;
+      if (extractedStr.replace(/\s+/g, "") === stripExpected) return true;
+      try {
+        if (JSON.stringify(JSON.parse(extractedStr)) === JSON.stringify(JSON.parse(normExpected))) return true;
+      } catch {}
+    }
+
+    // Token array comparison (e.g. comparing [0, 1] with "0, 1" or "[0, 1]")
+    const actTokens = parseTokens(candidate);
+    const expTokens = parseTokens(normExpected);
+    if (actTokens && expTokens && actTokens.length === expTokens.length) {
+      const matchesAll = actTokens.every((val, idx) => val === expTokens[idx]);
+      if (matchesAll) return true;
+    }
   }
 
   return false;

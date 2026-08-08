@@ -11,12 +11,18 @@ export async function connectDatabase() {
     return true;
   }
 
+  const rawUri = (process.env.MONGODB_URI || "").trim();
+  if (!rawUri || (!rawUri.startsWith("mongodb://") && !rawUri.startsWith("mongodb+srv://"))) {
+    // Gracefully operate in in-memory dataset mode on serverless / Vercel without MongoDB
+    return false;
+  }
+
   try {
-    await mongoose.connect(MONGODB_URI, {
+    await mongoose.connect(rawUri, {
       serverSelectionTimeoutMS: 3000
     });
     isConnected = true;
-    console.log(`[MongoDB] Successfully connected to database at ${MONGODB_URI}`);
+    console.log(`[MongoDB] Connected to database at ${rawUri.replace(/:([^:@]+)@/, ":****@")}`);
 
     // Seed problems if collection is empty
     const problemCount = await Problem.countDocuments();
@@ -28,7 +34,7 @@ export async function connectDatabase() {
 
     return true;
   } catch (err) {
-    console.warn(`[MongoDB] Connection notice: ${err.message}. Operating with hybrid fallback mode.`);
+    console.warn(`[MongoDB] Connection notice: ${err.message}. Operating with in-memory dataset mode.`);
     return false;
   }
 }
