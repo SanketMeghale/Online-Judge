@@ -105,18 +105,18 @@ router.post("/register", authLimiter, async (request, response) => {
 
 router.post("/login", authLimiter, async (request, response) => {
   try {
-    const { email, password } = request.body ?? {};
+    const { email, username, identifier, password } = request.body ?? {};
+    const userIdentifier = String(email || username || identifier || "").trim();
 
-    if (!email || !password) {
-      response.status(400).json({ success: false, error: "Both email and password are required." });
+    if (!userIdentifier || !password) {
+      response.status(400).json({ success: false, error: "Both email/username and password are required." });
       return;
     }
 
-    const cleanEmail = String(email).trim().toLowerCase();
-    const user = await validateUserCredentials(cleanEmail, password);
+    const user = await validateUserCredentials(userIdentifier, password);
 
     if (!user) {
-      response.status(401).json({ success: false, error: "Invalid email address or password. Please try again." });
+      response.status(401).json({ success: false, error: "Invalid credentials. Please check your email/username and password." });
       return;
     }
 

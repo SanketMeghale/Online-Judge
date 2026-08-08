@@ -117,20 +117,29 @@ export async function createUser({ name, username, email, password }) {
 }
 
 
-export async function validateUserCredentials(email, password) {
-  if (!email || !password) return null;
-  const cleanEmail = email.trim().toLowerCase();
+export async function validateUserCredentials(identifier, password) {
+  if (!identifier || !password) return null;
+  const clean = identifier.trim().toLowerCase();
 
   let rawUser = null;
 
   if (isDatabaseConnected()) {
     try {
-      rawUser = await User.findOne({ email: cleanEmail }).lean();
-    } catch {}
+      rawUser = await User.findOne({
+        $or: [
+          { email: clean },
+          { username: { $regex: new RegExp(`^${clean.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`, "i") } }
+        ]
+      }).lean();
+    } catch (e) {
+      console.error("[UserStore] DB lookup error:", e);
+    }
   }
 
   if (!rawUser) {
-    rawUser = memoryUsers.find((u) => u.email.toLowerCase() === cleanEmail);
+    rawUser = memoryUsers.find(
+      (u) => u.email.toLowerCase() === clean || u.username.toLowerCase() === clean
+    );
   }
 
   if (!rawUser) return null;

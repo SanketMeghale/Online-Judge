@@ -54,11 +54,20 @@ export function createApp() {
     next();
   });
 
+  // Mount API endpoints with and without /api prefix for Vercel Serverless Function routing
   app.use("/health", healthRoutes);
+
   app.use("/api/auth", authRoutes);
+  app.use("/auth", authRoutes);
+
   app.use("/api/problems", problemsRoutes);
+  app.use("/problems", problemsRoutes);
+
   app.use("/api/compiler", compilerRoutes);
+  app.use("/compiler", compilerRoutes);
+
   app.use("/api/submissions", submissionRoutes);
+  app.use("/submissions", submissionRoutes);
 
   app.use((error, _request, response, _next) => {
     console.error("[Unhandled API Error]:", error);

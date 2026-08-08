@@ -40,16 +40,17 @@ export default function Login() {
       <h1>Log in to continue solving.</h1>
       <form className="form-grid" onSubmit={handleSubmit}>
         <label>
-          Email
+          Email or Username
           <span className="input-shell">
             <Mail size={17} />
             <input
-              autoComplete="email"
+              autoComplete="username"
               name="email"
               onChange={updateField}
-              placeholder="you@example.com"
-              type="email"
+              placeholder="Enter your email or username"
+              type="text"
               value={form.email}
+              required
             />
           </span>
         </label>

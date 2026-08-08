@@ -1,9 +1,9 @@
 import { api } from "../api/apiClient.js";
 import { createUserRecord, ensureDatabase, findUserByEmail, findUserById, writeDatabase } from "../data/appData.js";
 
-function assertEmail(email) {
-  if (!email || !email.includes("@")) {
-    throw new Error("Enter a valid email address.");
+function assertIdentifier(identifier) {
+  if (!identifier || !identifier.trim()) {
+    throw new Error("Enter your email address or username.");
   }
 }
 
@@ -13,12 +13,13 @@ function assertPassword(password) {
   }
 }
 
-export async function loginWithEmail({ email, password }) {
-  assertEmail(email);
+export async function loginWithEmail({ email, username, password }) {
+  const identifier = (email || username || "").trim();
+  assertIdentifier(identifier);
   assertPassword(password);
 
   try {
-    const res = await api.login({ email, password });
+    const res = await api.login({ email: identifier, username: identifier, password });
     return {
       accessToken: res.token,
       user: res.user
@@ -26,10 +27,13 @@ export async function loginWithEmail({ email, password }) {
   } catch (err) {
     // If backend is unavailable or fails, fallback to local storage authentication
     const database = ensureDatabase();
-    const user = findUserByEmail(database, email);
+    const clean = identifier.toLowerCase();
+    const user = database.users?.find(
+      (u) => u.email.toLowerCase() === clean || (u.username && u.username.toLowerCase() === clean)
+    );
 
     if (!user || user.password !== password) {
-      throw new Error(err.message || "Invalid email or password.");
+      throw new Error(err.message || "Invalid email/username or password.");
     }
 
     return {
