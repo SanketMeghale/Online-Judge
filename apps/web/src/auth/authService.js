@@ -7,6 +7,12 @@ function assertIdentifier(identifier) {
   }
 }
 
+function assertEmail(email) {
+  if (!email || !email.includes("@")) {
+    throw new Error("Please enter a valid email address.");
+  }
+}
+
 function assertPassword(password) {
   if (!password || password.length < 6) {
     throw new Error("Password must be at least 6 characters.");
