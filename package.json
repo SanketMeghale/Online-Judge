@@ -9,11 +9,12 @@
     "services/*"
   ],
   "scripts": {
+    "build": "npm --workspace apps/web run build",
+    "build:web": "npm --workspace apps/web run build",
     "dev:api": "npm --workspace apps/api run dev",
     "dev:web": "npm --workspace apps/web run dev",
     "dev:realtime": "npm --workspace services/realtime run dev",
     "start:api": "npm --workspace apps/api run start",
-    "build:web": "npm --workspace apps/web run build",
     "preview:web": "npm --workspace apps/web run preview"
   },
   "engines": {
