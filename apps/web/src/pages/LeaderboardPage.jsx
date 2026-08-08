@@ -1,5 +1,5 @@
-import { Trophy, Medal, Flame } from "lucide-react";
 import { motion } from "framer-motion";
+import { Award, Flame, Medal, Sparkles, Trophy } from "lucide-react";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
 
@@ -9,33 +9,27 @@ export default function LeaderboardPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 15 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="page-stack leaderboard-page"
+      className="page-stack"
     >
-      <section className="page-header">
-        <div>
-          <span className="section-kicker">Leaderboard</span>
-          <h1>Top coders</h1>
-          <p>XP and solved counts update automatically as you submit accepted solutions.</p>
-        </div>
-      </section>
-
       <section className="section-block">
-        <div className="section-heading compact">
-          <span className="section-kicker">Rankings</span>
-          <h2>Current standings</h2>
+        <div className="section-heading">
+          <span className="section-kicker">Global rankings</span>
+          <h1>Algorithm Champions</h1>
+          <p>Real-time developer rankings based on accepted submissions, problem difficulty, and consistency streaks.</p>
         </div>
-        <div className="table-shell">
-          <table>
+
+        <div className="table-responsive">
+          <table className="data-table">
             <thead>
               <tr>
                 <th>Rank</th>
-                <th>User</th>
-                <th>XP</th>
-                <th>Solved</th>
-                <th>Streak</th>
+                <th>Developer</th>
+                <th>XP Score</th>
+                <th>Problems Solved</th>
+                <th>Daily Streak</th>
               </tr>
             </thead>
             <tbody>
@@ -43,6 +37,7 @@ export default function LeaderboardPage() {
                 const isPodium1 = entry.rank === 1;
                 const isPodium2 = entry.rank === 2;
                 const isPodium3 = entry.rank === 3;
+                const initialLetter = String(entry.name || "U").slice(0, 1).toUpperCase();
 
                 return (
                   <motion.tr
@@ -56,8 +51,8 @@ export default function LeaderboardPage() {
                       {isPodium1 ? "🥇 #1" : isPodium2 ? "🥈 #2" : isPodium3 ? "🥉 #3" : `#${entry.rank}`}
                     </td>
                     <td className="leader-cell">
-                      <span className="face">{entry.name.slice(0, 1)}</span>
-                      {entry.name}
+                      <span className="face">{initialLetter}</span>
+                      {entry.name || "Developer"}
                       {entry.id === user?.id ? <span className="you-pill"><Trophy size={14} />You</span> : null}
                     </td>
                     <td><strong style={{ color: "#a78bfa" }}>{entry.score} XP</strong></td>

@@ -26,9 +26,10 @@ export default function Navbar() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  const liveUser = getUserById(user?.id) ?? user;
-  const firstName = liveUser?.name?.split(" ")[0] ?? liveUser?.username ?? "Coder";
-  const avatarLetter = (liveUser?.name || liveUser?.username || "C").slice(0, 1).toUpperCase();
+  const liveUser = getUserById(user?.id || user?._id) ?? user ?? {};
+  const name = String(liveUser?.name || liveUser?.username || "User").trim();
+  const firstName = name.split(" ")[0] || "User";
+  const avatarLetter = String(name || "U").slice(0, 1).toUpperCase();
 
   // Scroll listener for smooth glass transition
   useEffect(() => {
@@ -291,23 +292,22 @@ export default function Navbar() {
                       <span>Settings</span>
                     </Link>
 
-                    <div style={{ height: "1px", background: "var(--dash-border-subtle)", margin: "4px 0" }} />
+                    <div style={{ borderTop: "1px solid var(--dash-border-subtle)", margin: "4px 0" }} />
 
                     <button
                       onClick={handleLogout}
                       type="button"
                       style={{
+                        width: "100%",
+                        background: "transparent",
+                        border: "none",
                         display: "flex",
                         alignItems: "center",
                         gap: "8px",
                         padding: "8px 14px",
-                        width: "100%",
-                        background: "transparent",
-                        border: "none",
                         color: "#ef4444",
-                        fontSize: "0.84rem",
                         cursor: "pointer",
-                        textAlign: "left"
+                        fontSize: "0.84rem"
                       }}
                     >
                       <LogOut size={15} />
@@ -318,11 +318,11 @@ export default function Navbar() {
               </AnimatePresence>
             </div>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <Link to="/login" className="dash-btn-secondary" style={{ padding: "7px 14px", fontSize: "0.84rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <Link to="/login" className="btn btn-secondary" style={{ padding: "6px 14px", fontSize: "0.85rem" }}>
                 Log in
               </Link>
-              <Link to="/register" className="dash-btn-primary" style={{ padding: "7px 14px", fontSize: "0.84rem" }}>
+              <Link to="/register" className="btn btn-primary" style={{ padding: "6px 14px", fontSize: "0.85rem" }}>
                 Sign up
               </Link>
             </div>
@@ -330,8 +330,8 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* ⌘ K Command Palette Modal */}
-      <CommandPalette isOpen={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      {/* Command Palette Modal */}
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </>
   );
 }

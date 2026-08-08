@@ -13,12 +13,64 @@ import SubmissionTable from "../components/tables/SubmissionTable.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, isCheckingSession } = useAuth();
   const { getProblemsForUser, getSubmissionsForUser, getUserById, leaderboard } = useAppData();
-  const liveUser = getUserById(user.id) ?? user;
-  const problems = getProblemsForUser(user.id);
-  const submissions = getSubmissionsForUser(user.id);
+
+  // 1. Loading State while session is checking or restoring
+  if (isCheckingSession) {
+    return (
+      <div className="profile-page" style={{ padding: "4rem 2rem", textAlign: "center" }}>
+        <div
+          className="spinner"
+          style={{
+            margin: "0 auto 1.25rem",
+            width: 36,
+            height: 36,
+            border: "3px solid #222",
+            borderTopColor: "#7850ff",
+            borderRadius: "50%",
+            animation: "spin 0.8s linear infinite"
+          }}
+        />
+        <h2 style={{ color: "#fff", fontSize: "1.2rem", fontWeight: "600" }}>Loading profile...</h2>
+      </div>
+    );
+  }
+
+  // 2. Safe User Resolution with fallbacks
+  const currentUserId = user?.id || user?._id || "";
+  const foundInDb = currentUserId ? getUserById(currentUserId) : null;
+  const liveUser = foundInDb || user || {};
+
+  const name = String(liveUser.name || liveUser.username || "User").trim();
+  const username = String(liveUser.username || "user").trim();
+  const email = String(liveUser.email || "").trim();
+  const avatarLetter = String(name || username || "U").slice(0, 1).toUpperCase();
+
+  const xp = typeof liveUser.xp === "number" ? liveUser.xp : 0;
+  const streak = typeof liveUser.streak === "number" ? liveUser.streak : 1;
+  const accuracy = typeof liveUser.accuracy === "number" ? liveUser.accuracy : 0;
+  const solvedCount =
+    typeof liveUser.solved === "number"
+      ? liveUser.solved
+      : Array.isArray(liveUser.solvedProblemIds)
+      ? liveUser.solvedProblemIds.length
+      : 0;
+
+  const stats = liveUser.stats || {
+    activeDays: 1,
+    totalSubmissions: 0,
+    acceptedSubmissions: 0
+  };
+
+  const badges = Array.isArray(liveUser.badges) && liveUser.badges.length > 0 ? liveUser.badges : ["New Challenger"];
+
+  // 3. Problem and Submission Stats
+  const problems = Array.isArray(getProblemsForUser(currentUserId)) ? getProblemsForUser(currentUserId) : [];
+  const submissions = Array.isArray(getSubmissionsForUser(currentUserId)) ? getSubmissionsForUser(currentUserId) : [];
+
   const solvedByTopic = problems.reduce((accumulator, problem) => {
+    if (!problem?.topic) return accumulator;
     const current = accumulator[problem.topic] ?? { label: problem.topic, solved: 0, total: 0 };
     current.total += 1;
     if (problem.status === "Solved") {
@@ -27,25 +79,28 @@ export default function Profile() {
     accumulator[problem.topic] = current;
     return accumulator;
   }, {});
+
   const topicProgress = Object.values(solvedByTopic);
-  const rank = leaderboard.find((entry) => entry.id === user.id)?.rank ?? "-";
+  const leaderboardList = Array.isArray(leaderboard) ? leaderboard : [];
+  const rank = leaderboardList.find((entry) => String(entry.id) === String(currentUserId))?.rank ?? "-";
+
   const profileStats = [
-    { label: "Solved", value: liveUser.solved ?? 0, icon: Trophy, tone: "green" },
+    { label: "Solved", value: solvedCount, icon: Trophy, tone: "green" },
     { label: "Ranking", value: `#${rank}`, icon: Medal, tone: "purple" },
-    { label: "Accuracy", value: `${liveUser.accuracy ?? 0}%`, icon: Target, tone: "blue" },
-    { label: "Streak", value: `${liveUser.streak ?? 0}d`, icon: Flame, tone: "orange" }
+    { label: "Accuracy", value: `${accuracy}%`, icon: Target, tone: "blue" },
+    { label: "Streak", value: `${streak}d`, icon: Flame, tone: "orange" }
   ];
 
   return (
     <div className="profile-page">
       <section className="profile-hero">
-        <div className="profile-avatar">{liveUser.name.slice(0, 1)}</div>
+        <div className="profile-avatar">{avatarLetter}</div>
         <div className="profile-identity">
           <span className="section-kicker">Coder profile</span>
-          <h1>{liveUser.name}</h1>
-          <p>@{liveUser.username} · {liveUser.email}</p>
+          <h1>{name}</h1>
+          <p>@{username} · {email || "Registered Coder"}</p>
           <div className="profile-badges">
-            {(liveUser.badges ?? []).map((badge) => (
+            {badges.map((badge) => (
               <span key={badge}>
                 <BadgeCheck size={14} />
                 {badge}
@@ -54,12 +109,12 @@ export default function Profile() {
           </div>
         </div>
         <div className="level-panel">
-          <span>Level {Math.max(1, Math.ceil((liveUser.xp ?? 0) / 1000))}</span>
-          <strong>{(liveUser.xp ?? 0).toLocaleString()} XP</strong>
+          <span>Level {Math.max(1, Math.ceil(xp / 1000))}</span>
+          <strong>{xp.toLocaleString()} XP</strong>
           <div className="xp-track">
-            <span style={{ width: `${Math.min(100, (((liveUser.xp ?? 0) % 3000) / 3000) * 100)}%` }} />
+            <span style={{ width: `${Math.min(100, ((xp % 3000) / 3000) * 100)}%` }} />
           </div>
-          <small>{(liveUser.xp ?? 0) % 3000} / 3,000 XP to next milestone</small>
+          <small>{xp % 3000} / 3,000 XP to next milestone</small>
         </div>
       </section>
 
@@ -111,17 +166,17 @@ export default function Profile() {
             <div>
               <Activity size={19} />
               <span>Current accuracy</span>
-              <strong>{liveUser.accuracy}%</strong>
+              <strong>{accuracy}%</strong>
             </div>
             <div>
               <CalendarDays size={19} />
               <span>Active days</span>
-              <strong>{liveUser.stats.activeDays}</strong>
+              <strong>{stats.activeDays ?? 1}</strong>
             </div>
             <div>
               <ChartNoAxesCombined size={19} />
               <span>Total submissions</span>
-              <strong>{liveUser.stats.totalSubmissions}</strong>
+              <strong>{stats.totalSubmissions ?? 0}</strong>
             </div>
           </div>
         </article>

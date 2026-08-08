@@ -4,12 +4,10 @@ import { clearStoredSession, readStoredSession, writeStoredSession } from "./aut
 import { loginWithEmail, refreshCurrentSession, registerWithEmail } from "./authService.js";
 import { useAppData } from "../data/AppDataContext.jsx";
 
-
-
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const { refreshDatabase } = useAppData();
+  const { refreshDatabase, updateDatabase } = useAppData();
   const [session, setSession] = useState(() => readStoredSession());
   const [status, setStatus] = useState("checking");
 
@@ -20,7 +18,7 @@ export function AuthProvider({ children }) {
       refreshDatabase();
       const storedSession = readStoredSession();
 
-      if (!storedSession) {
+      if (!storedSession || (!storedSession.accessToken && !storedSession.token)) {
         if (isMounted) {
           setSession(null);
           setStatus("idle");
@@ -31,18 +29,35 @@ export function AuthProvider({ children }) {
       try {
         const nextSession = await refreshCurrentSession(storedSession);
 
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
-        if (nextSession) {
+        if (nextSession && nextSession.user) {
           writeStoredSession(nextSession);
           setSession(nextSession);
+
+          // Synchronize user into database.users
+          updateDatabase((current) => {
+            const uid = String(nextSession.user.id || nextSession.user._id || "");
+            const exists = current.users?.some((u) => String(u.id) === uid || String(u._id) === uid);
+            if (exists) {
+              return {
+                ...current,
+                users: current.users.map((u) =>
+                  String(u.id) === uid || String(u._id) === uid ? { ...u, ...nextSession.user } : u
+                )
+              };
+            }
+            return {
+              ...current,
+              users: [...(current.users || []), nextSession.user]
+            };
+          });
         } else {
           clearStoredSession();
           setSession(null);
         }
-      } catch {
+      } catch (err) {
+        console.warn("[AuthContext refresh error]:", err);
         clearStoredSession();
         if (isMounted) {
           setSession(null);
@@ -66,6 +81,26 @@ export function AuthProvider({ children }) {
     refreshDatabase();
     writeStoredSession(nextSession);
     setSession(nextSession);
+
+    if (nextSession?.user) {
+      updateDatabase((current) => {
+        const uid = String(nextSession.user.id || nextSession.user._id || "");
+        const exists = current.users?.some((u) => String(u.id) === uid || String(u._id) === uid);
+        if (exists) {
+          return {
+            ...current,
+            users: current.users.map((u) =>
+              String(u.id) === uid || String(u._id) === uid ? { ...u, ...nextSession.user } : u
+            )
+          };
+        }
+        return {
+          ...current,
+          users: [...(current.users || []), nextSession.user]
+        };
+      });
+    }
+
     return nextSession;
   }
 
@@ -74,6 +109,26 @@ export function AuthProvider({ children }) {
     refreshDatabase();
     writeStoredSession(nextSession);
     setSession(nextSession);
+
+    if (nextSession?.user) {
+      updateDatabase((current) => {
+        const uid = String(nextSession.user.id || nextSession.user._id || "");
+        const exists = current.users?.some((u) => String(u.id) === uid || String(u._id) === uid);
+        if (exists) {
+          return {
+            ...current,
+            users: current.users.map((u) =>
+              String(u.id) === uid || String(u._id) === uid ? { ...u, ...nextSession.user } : u
+            )
+          };
+        }
+        return {
+          ...current,
+          users: [...(current.users || []), nextSession.user]
+        };
+      });
+    }
+
     return nextSession;
   }
 
@@ -85,10 +140,9 @@ export function AuthProvider({ children }) {
     setSession(null);
   }
 
-
   const value = useMemo(
     () => ({
-      isAuthenticated: Boolean(session?.accessToken),
+      isAuthenticated: Boolean(session?.accessToken || session?.token),
       isCheckingSession: status === "checking",
       session,
       user: session?.user ?? null,
