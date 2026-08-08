@@ -50,9 +50,10 @@ export default function Register() {
               autoComplete="name"
               name="name"
               onChange={updateField}
-              placeholder="Nadia Rao"
+              placeholder="e.g. Alex Smith"
               type="text"
               value={form.name}
+              required
             />
           </span>
         </label>
@@ -64,9 +65,10 @@ export default function Register() {
               autoComplete="username"
               name="username"
               onChange={updateField}
-              placeholder="nadia.codes"
+              placeholder="e.g. alex_smith"
               type="text"
               value={form.username}
+              required
             />
           </span>
         </label>

@@ -247,78 +247,16 @@ const baseProblems = [
   }
 ];
 
-const seedUsers = [
-  {
-    id: "u-demo-1",
-    name: "Sanket Meghale",
-    username: "sanket.codes",
-    email: "sanket@onlinejudge.com",
-    password: "password123",
-    ranking: 87,
-    xp: 8420,
-    streak: 5,
-    solved: 3,
-    accuracy: 72,
-    badges: ["7 Day Streak", "Graph Sprinter", "Contest Finisher"],
-    solvedProblemIds: ["two-sum"],
-    attemptedProblemIds: ["cache-stampede", "binary-lift"],
-    stats: {
-      activeDays: 41,
-      totalSubmissions: 4,
-      acceptedSubmissions: 1
-    }
-  }
-];
+const seedUsers = [];
 
-const seedSubmissions = [
-  {
-    id: "S-1042",
-    userId: "u-demo-1",
-    problemId: "two-sum",
-    language: "Python",
-    verdict: "AC",
-    runtime: "42 ms",
-    memory: "14.2 MB",
-    submittedAt: "2026-07-23T08:15:00.000Z"
-  },
-  {
-    id: "S-1041",
-    userId: "u-demo-1",
-    problemId: "cache-stampede",
-    language: "JavaScript",
-    verdict: "WA",
-    runtime: "118 ms",
-    memory: "18.1 MB",
-    submittedAt: "2026-07-22T10:30:00.000Z"
-  },
-  {
-    id: "S-1038",
-    userId: "u-demo-1",
-    problemId: "binary-lift",
-    language: "Java",
-    verdict: "TLE",
-    runtime: "2.0 s",
-    memory: "52 MB",
-    submittedAt: "2026-07-21T06:40:00.000Z"
-  },
-  {
-    id: "S-1032",
-    userId: "u-demo-1",
-    problemId: "two-sum",
-    language: "Java",
-    verdict: "CE",
-    runtime: "-",
-    memory: "-",
-    submittedAt: "2026-07-19T13:20:00.000Z"
-  }
-];
+const seedSubmissions = [];
 
 function seedDatabase() {
   return {
-    users: seedUsers,
+    users: [],
     problems: baseProblems,
-    submissions: seedSubmissions,
-    nextSubmissionId: 1043
+    submissions: [],
+    nextSubmissionId: 1001
   };
 }
 

@@ -4,29 +4,7 @@ import { hashPassword, hashPasswordSync, verifyPassword } from "./jwt.js";
 import { User } from "../models/User.js";
 
 
-const memoryUsers = [
-  {
-    id: "u-demo-1",
-    name: "Nadia Rao",
-    username: "nadia.codes",
-    email: "nadia@example.com",
-    passwordHash: hashPasswordSync("password123"),
-    ranking: 87,
-    xp: 8420,
-    streak: 7,
-    badges: ["7 Day Streak", "Graph Sprinter", "Contest Finisher"],
-    solvedProblemIds: ["two-sum"],
-    attemptedProblemIds: ["cache-stampede", "binary-lift"],
-    stats: {
-      totalSubmissions: 5,
-      acceptedSubmissions: 3,
-      waCount: 1,
-      reCount: 1,
-      tleCount: 0
-    },
-    createdAt: new Date("2026-01-15T00:00:00.000Z")
-  }
-];
+const memoryUsers = [];
 
 export async function findUserByEmail(email) {
   if (!email) return null;
