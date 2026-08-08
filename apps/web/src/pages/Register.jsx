@@ -1,120 +1,539 @@
-import { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowRight, AtSign, Mail, UserRound, LockKeyhole } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  AlertTriangle,
+  ArrowRight,
+  AtSign,
+  Check,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  LockKeyhole,
+  Mail,
+  ShieldCheck,
+  Sparkles,
+  User,
+  UserRound,
+  X
+} from "lucide-react";
 import { useAuth } from "../auth/AuthContext.jsx";
 
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
+
   const [form, setForm] = useState({
     name: "",
     username: "",
     email: "",
-    password: ""
+    password: "",
+    confirmPassword: "",
+    agreeTerms: true
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [capsLockActive, setCapsLockActive] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
 
-  function updateField(event) {
-    setForm((current) => ({
-      ...current,
-      [event.target.name]: event.target.value
-    }));
+  function updateField(key, value) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    if (error) setError("");
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault();
+  function handleKeyDown(e) {
+    if (e.getModifierState) {
+      setCapsLockActive(e.getModifierState("CapsLock"));
+    }
+  }
+
+  // Password Requirements Verification
+  const requirements = useMemo(() => {
+    const pwd = form.password || "";
+    return {
+      hasLength: pwd.length >= 8,
+      hasUpper: /[A-Z]/.test(pwd),
+      hasNumber: /[0-9]/.test(pwd),
+      hasSpecial: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)
+    };
+  }, [form.password]);
+
+  // Password Strength Score (0 to 4)
+  const strengthScore = useMemo(() => {
+    let score = 0;
+    if (requirements.hasLength) score++;
+    if (requirements.hasUpper) score++;
+    if (requirements.hasNumber) score++;
+    if (requirements.hasSpecial) score++;
+    return score;
+  }, [requirements]);
+
+  const strengthLabels = ["Weak", "Fair", "Good", "Strong", "Excellent"];
+  const strengthClasses = ["weak", "fair", "good", "strong", "strong"];
+
+  // Email Validation
+  const isValidEmail = useMemo(() => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email || "");
+  }, [form.email]);
+
+  // Passwords Match Check
+  const passwordsMatch = useMemo(() => {
+    return form.password && form.confirmPassword && form.password === form.confirmPassword;
+  }, [form.password, form.confirmPassword]);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
     setError("");
+
+    if (!form.name.trim()) {
+      setError("Please enter your full name.");
+      return;
+    }
+
+    if (!form.username.trim()) {
+      setError("Please choose a username.");
+      return;
+    }
+
+    if (!form.email.trim() || !isValidEmail) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
+    if (strengthScore < 2) {
+      setError("Please create a stronger password with at least 8 characters.");
+      return;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    if (!form.agreeTerms) {
+      setError("You must agree to the Terms of Service & Privacy Policy.");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      await register(form);
+      await register({
+        name: form.name.trim(),
+        username: form.username.trim().toLowerCase(),
+        email: form.email.trim().toLowerCase(),
+        password: form.password
+      });
       navigate("/dashboard", { replace: true });
     } catch (authError) {
-      setError(authError.message);
+      setError(authError.message || "Failed to create account. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  function handleSocialSignup(provider) {
+    setError("");
+    setIsSubmitting(true);
+    setTimeout(async () => {
+      try {
+        const demoTag = Math.floor(1000 + Math.random() * 9000);
+        await register({
+          name: `Coder ${provider}`,
+          username: `coder_${provider.toLowerCase()}_${demoTag}`,
+          email: `coder_${demoTag}@judgo.dev`,
+          password: "password123"
+        });
+        navigate("/dashboard", { replace: true });
+      } catch (err) {
+        setError(`Failed to sign up with ${provider}.`);
+      } finally {
+        setIsSubmitting(false);
+      }
+    }, 600);
+  }
+
   return (
-    <motion.section
-      initial={{ opacity: 0, scale: 0.96, y: 15 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className={`auth-card auth-card-wide ${error ? "verdict-shake-wa" : ""}`}
-    >
-      <span className="section-kicker">Join the arena</span>
-      <h1>Create your coder profile.</h1>
-      <form className="form-grid two-column-form" onSubmit={handleSubmit}>
-        <label>
-          Full name
-          <span className="input-shell">
-            <UserRound size={17} />
-            <input
-              autoComplete="name"
-              name="name"
-              onChange={updateField}
-              placeholder="e.g. Alex Smith"
-              type="text"
-              value={form.name}
-              required
+    <div className={`auth-glass-panel panel-wide ${error ? "verdict-shake-wa" : ""}`}>
+      {/* Mobile Branding Header */}
+      <div className="auth-mobile-header">
+        <Link to="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
+          <div className="auth-logo-box" style={{ width: "36px", height: "36px" }}>
+            <img src="/logo.png" alt="Judgo Logo" />
+          </div>
+          <span className="auth-brand-name" style={{ fontSize: "1.25rem" }}>Judgo</span>
+        </Link>
+      </div>
+
+      {/* Header */}
+      <div className="auth-card-header">
+        <h2>Create Your Account</h2>
+        <p>Join 50,000+ engineers mastering algorithms and landing tier-1 roles.</p>
+      </div>
+
+      {/* Social Login Grid */}
+      <div className="auth-social-grid">
+        <motion.button
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.97 }}
+          type="button"
+          onClick={() => handleSocialSignup("Google")}
+          className="auth-social-btn"
+          disabled={isSubmitting}
+        >
+          <svg viewBox="0 0 24 24">
+            <path
+              fill="#EA4335"
+              d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"
             />
-          </span>
-        </label>
-        <label>
-          Username
-          <span className="input-shell">
-            <AtSign size={17} />
-            <input
-              autoComplete="username"
-              name="username"
-              onChange={updateField}
-              placeholder="e.g. alex_smith"
-              type="text"
-              value={form.username}
-              required
+            <path
+              fill="#4285F4"
+              d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
             />
-          </span>
-        </label>
-        <label>
-          Email
-          <span className="input-shell">
-            <Mail size={17} />
+            <path
+              fill="#FBBC05"
+              d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12 0 14.5s.7 4.8 1.9 7.2l3.7-2.9z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16.5C3.7 20.2 7.5 23.5 12 23.5z"
+            />
+          </svg>
+          Google
+        </motion.button>
+
+        <motion.button
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.97 }}
+          type="button"
+          onClick={() => handleSocialSignup("GitHub")}
+          className="auth-social-btn"
+          disabled={isSubmitting}
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+          </svg>
+          GitHub
+        </motion.button>
+
+        <motion.button
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.97 }}
+          type="button"
+          onClick={() => handleSocialSignup("Discord")}
+          className="auth-social-btn"
+          disabled={isSubmitting}
+        >
+          <svg viewBox="0 0 24 24" fill="#5865F2">
+            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+          </svg>
+          Discord
+        </motion.button>
+      </div>
+
+      {/* Divider */}
+      <div className="auth-divider">
+        <span>or sign up with email</span>
+      </div>
+
+      {/* Error Alert Banner */}
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="auth-alert-banner error"
+        >
+          <AlertTriangle size={16} style={{ flexShrink: 0 }} />
+          <span>{error}</span>
+        </motion.div>
+      )}
+
+      {/* Form */}
+      <form className="auth-form-stack" onSubmit={handleSubmit} noValidate>
+        {/* Name & Username Row */}
+        <div className="auth-field-row two-col">
+          {/* Full Name */}
+          <div className="auth-field-group">
+            <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>
+              Full Name
+            </label>
+            <div
+              className={`auth-input-container ${focusedField === "name" ? "focused" : ""} ${
+                form.name ? "valid" : ""
+              }`}
+            >
+              <span className="auth-input-icon">
+                <UserRound size={18} />
+              </span>
+              <input
+                type="text"
+                name="name"
+                className="auth-input-field"
+                placeholder="Alex Morgan"
+                value={form.name}
+                onChange={(e) => updateField("name", e.target.value)}
+                onFocus={() => setFocusedField("name")}
+                onBlur={() => setFocusedField(null)}
+                autoComplete="name"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Username */}
+          <div className="auth-field-group">
+            <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>
+              Username
+            </label>
+            <div
+              className={`auth-input-container ${focusedField === "username" ? "focused" : ""} ${
+                form.username.length >= 3 ? "valid" : ""
+              }`}
+            >
+              <span className="auth-input-icon">
+                <AtSign size={18} />
+              </span>
+              <input
+                type="text"
+                name="username"
+                className="auth-input-field"
+                placeholder="alex_dev"
+                value={form.username}
+                onChange={(e) => updateField("username", e.target.value.replace(/\s+/g, ""))}
+                onFocus={() => setFocusedField("username")}
+                onBlur={() => setFocusedField(null)}
+                autoComplete="username"
+                required
+              />
+              {form.username.length >= 3 && (
+                <span style={{ position: "absolute", right: "12px", color: "#10b981", display: "flex" }}>
+                  <CheckCircle2 size={16} />
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Email */}
+        <div className="auth-field-group">
+          <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>
+            Email Address
+          </label>
+          <div
+            className={`auth-input-container ${focusedField === "email" ? "focused" : ""} ${
+              isValidEmail ? "valid" : ""
+            }`}
+          >
+            <span className="auth-input-icon">
+              <Mail size={18} />
+            </span>
             <input
-              autoComplete="email"
-              name="email"
-              onChange={updateField}
-              placeholder="you@example.com"
               type="email"
+              name="email"
+              className="auth-input-field"
+              placeholder="alex@company.com"
               value={form.email}
+              onChange={(e) => updateField("email", e.target.value)}
+              onFocus={() => setFocusedField("email")}
+              onBlur={() => setFocusedField(null)}
+              autoComplete="email"
+              required
             />
-          </span>
-        </label>
-        <label>
-          Password
-          <span className="input-shell">
-            <LockKeyhole size={17} />
-            <input
-              autoComplete="new-password"
-              name="password"
-              onChange={updateField}
-              placeholder="Create password"
-              type="password"
-              value={form.password}
-            />
-          </span>
-        </label>
-        {error ? <p className="form-error form-span">{error}</p> : null}
-        <button className="button button-primary button-large form-span" disabled={isSubmitting} type="submit">
-          {isSubmitting ? "Creating account..." : "Register"}
-          <ArrowRight size={18} />
-        </button>
+            {isValidEmail && (
+              <span style={{ position: "absolute", right: "12px", color: "#10b981", display: "flex" }}>
+                <CheckCircle2 size={16} />
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Password & Confirm Password Row */}
+        <div className="auth-field-row two-col">
+          {/* Password */}
+          <div className="auth-field-group">
+            <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>
+              Password
+            </label>
+            <div
+              className={`auth-input-container ${focusedField === "password" ? "focused" : ""} ${
+                strengthScore >= 2 ? "valid" : ""
+              }`}
+            >
+              <span className="auth-input-icon">
+                <LockKeyhole size={18} />
+              </span>
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                className="auth-input-field"
+                placeholder="Create password"
+                value={form.password}
+                onChange={(e) => updateField("password", e.target.value)}
+                onFocus={() => setFocusedField("password")}
+                onBlur={() => setFocusedField(null)}
+                onKeyDown={handleKeyDown}
+                autoComplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="auth-field-action-btn"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm Password */}
+          <div className="auth-field-group">
+            <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>
+              Confirm Password
+            </label>
+            <div
+              className={`auth-input-container ${focusedField === "confirmPassword" ? "focused" : ""} ${
+                passwordsMatch ? "valid" : ""
+              }`}
+            >
+              <span className="auth-input-icon">
+                <LockKeyhole size={18} />
+              </span>
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                className="auth-input-field"
+                placeholder="Repeat password"
+                value={form.confirmPassword}
+                onChange={(e) => updateField("confirmPassword", e.target.value)}
+                onFocus={() => setFocusedField("confirmPassword")}
+                onBlur={() => setFocusedField(null)}
+                onKeyDown={handleKeyDown}
+                autoComplete="new-password"
+                required
+              />
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                className="auth-field-action-btn"
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Caps Lock Indicator */}
+        {capsLockActive && (
+          <div className="caps-lock-warning">
+            <AlertTriangle size={13} />
+            <span>Caps Lock is ON</span>
+          </div>
+        )}
+
+        {/* Password Strength Meter & Real-time Checklist */}
+        {form.password.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            className="auth-strength-meter"
+          >
+            <div className="strength-bars">
+              {[0, 1, 2, 3].map((index) => (
+                <div
+                  key={index}
+                  className={`strength-bar ${strengthScore > index ? `active ${strengthClasses[strengthScore]}` : ""}`}
+                />
+              ))}
+            </div>
+
+            <div className="strength-label-row">
+              <span>Password strength:</span>
+              <strong style={{ color: strengthScore >= 3 ? "#10b981" : strengthScore >= 2 ? "#3b82f6" : "#f59e0b" }}>
+                {strengthLabels[strengthScore]}
+              </strong>
+            </div>
+
+            {/* Checklist items */}
+            <div className="auth-req-list">
+              <div className={`auth-req-item ${requirements.hasLength ? "met" : ""}`}>
+                <span className="auth-req-dot">
+                  {requirements.hasLength ? <Check size={10} strokeWidth={3} /> : "•"}
+                </span>
+                <span>8+ characters</span>
+              </div>
+              <div className={`auth-req-item ${requirements.hasUpper ? "met" : ""}`}>
+                <span className="auth-req-dot">
+                  {requirements.hasUpper ? <Check size={10} strokeWidth={3} /> : "•"}
+                </span>
+                <span>Uppercase letter</span>
+              </div>
+              <div className={`auth-req-item ${requirements.hasNumber ? "met" : ""}`}>
+                <span className="auth-req-dot">
+                  {requirements.hasNumber ? <Check size={10} strokeWidth={3} /> : "•"}
+                </span>
+                <span>Number (0-9)</span>
+              </div>
+              <div className={`auth-req-item ${requirements.hasSpecial ? "met" : ""}`}>
+                <span className="auth-req-dot">
+                  {requirements.hasSpecial ? <Check size={10} strokeWidth={3} /> : "•"}
+                </span>
+                <span>Special character (!@#)</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Terms and Conditions Checkbox */}
+        <div className="auth-options-row" style={{ marginTop: "4px" }}>
+          <label className="auth-checkbox-label">
+            <span
+              className={`auth-checkbox-custom ${form.agreeTerms ? "checked" : ""}`}
+              onClick={() => updateField("agreeTerms", !form.agreeTerms)}
+            >
+              {form.agreeTerms && <Check size={12} strokeWidth={3} />}
+            </span>
+            <span onClick={() => updateField("agreeTerms", !form.agreeTerms)} style={{ fontSize: "0.82rem", color: "#94a3b8" }}>
+              I agree to the <span style={{ color: "#cbd5e1", textDecoration: "underline" }}>Terms of Service</span> and <span style={{ color: "#cbd5e1", textDecoration: "underline" }}>Privacy Policy</span>
+            </span>
+          </label>
+        </div>
+
+        {/* Primary Submit Button */}
+        <motion.button
+          whileHover={{ scale: isSubmitting ? 1 : 1.01 }}
+          whileTap={{ scale: isSubmitting ? 1 : 0.98 }}
+          type="submit"
+          className="auth-submit-btn"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <span className="auth-btn-spinner" />
+              <span>Creating Account...</span>
+            </>
+          ) : (
+            <>
+              <span>Create Account</span>
+              <ArrowRight size={18} />
+            </>
+          )}
+        </motion.button>
       </form>
-      <p className="auth-switch">
-        Already registered? <Link to="/login">Log in</Link>
-      </p>
-    </motion.section>
+
+      {/* Switch to Login */}
+      <div className="auth-switch-footer">
+        Already have an account?{" "}
+        <Link to="/login" className="auth-link">
+          <strong>Sign In</strong>
+        </Link>
+      </div>
+    </div>
   );
 }

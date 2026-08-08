@@ -18,6 +18,7 @@ import ProblemDetails from "./pages/ProblemDetails.jsx";
 import ProblemsList from "./pages/ProblemsList.jsx";
 import Profile from "./pages/Profile.jsx";
 import Register from "./pages/Register.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
 import SubmissionHistoryPage from "./pages/SubmissionHistoryPage.jsx";
 import "./styles/main.css";
 
@@ -68,6 +69,7 @@ createRoot(document.getElementById("root")).render(
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/signup" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
               </Route>
             </Route>
 
