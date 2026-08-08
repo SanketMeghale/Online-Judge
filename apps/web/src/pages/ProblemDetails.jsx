@@ -1,51 +1,109 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bookmark, CheckCircle2, ChevronDown, ChevronRight, History, Layers, Lightbulb, Sliders, Sparkles, XCircle } from "lucide-react";
+import {
+  Bookmark,
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  History,
+  Layers,
+  Lightbulb,
+  Sliders,
+  Sparkles,
+  XCircle
+} from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/apiClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import CodeEditor from "../components/editor/CodeEditor.jsx";
+import { ProblemErrorBoundary } from "../components/common/ProblemErrorBoundary.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
 
-export default function ProblemDetails() {
+// Universal safe formatting helper to prevent React render crashes from Objects/Arrays
+function formatDisplayValue(val, fallback = "") {
+  if (val === null || val === undefined) return fallback;
+  if (typeof val === "string") return val;
+  if (typeof val === "number" || typeof val === "boolean") return String(val);
+  try {
+    return JSON.stringify(val, null, 2);
+  } catch (_) {
+    return String(val);
+  }
+}
+
+function ProblemDetailsInner() {
   const { problemId } = useParams();
   const { user } = useAuth();
-  const { getProblemById, getProblemsForUser, getSavedCode, getSubmissionsForUser, runSolution, saveCode, submitSolution } = useAppData();
+  const {
+    getProblemById,
+    getProblemsForUser,
+    getSavedCode,
+    getSubmissionsForUser,
+    runSolution,
+    saveCode,
+    submitSolution
+  } = useAppData();
+
   const problem = getProblemById(problemId);
   const currentUserId = user?.id || user?._id || "guest_coder";
   const userProblems = getProblemsForUser(currentUserId);
-  const problemWithStatus = useMemo(
-    () => userProblems.find((item) => item.id === problemId) ?? problem,
-    [problem, problemId, userProblems]
-  );
+
+  const problemWithStatus = useMemo(() => {
+    const p = userProblems.find((item) => item.id === problemId) ?? problem;
+    if (!p) return null;
+    return {
+      ...p,
+      id: String(p.id || problemId),
+      title: formatDisplayValue(p.title, "Problem Details"),
+      difficulty: formatDisplayValue(p.difficulty, "Easy"),
+      topic: formatDisplayValue(p.topic, "General"),
+      acceptance: typeof p.acceptance === "number" ? p.acceptance : 85,
+      points: typeof p.points === "number" ? p.points : 10,
+      statement: formatDisplayValue(p.statement, "No description available."),
+      examples: Array.isArray(p.examples) && p.examples.length ? p.examples : [{ input: "", output: "" }],
+      constraints: Array.isArray(p.constraints) ? p.constraints : []
+    };
+  }, [problem, problemId, userProblems]);
 
   const [language, setLanguage] = useState("Python");
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeConsoleTab, setActiveConsoleTab] = useState("result"); // 'testcase' | 'custom' | 'result' | 'history' | 'ai'
+  const [activeConsoleTab, setActiveConsoleTab] = useState("result");
   const [selectedCaseIndex, setSelectedCaseIndex] = useState(0);
   const [customInput, setCustomInput] = useState("");
   const [showHint, setShowHint] = useState(false);
 
-  const userSubmissions = useMemo(
-    () => getSubmissionsForUser(currentUserId).filter((s) => s.problemId === problemId),
-    [getSubmissionsForUser, problemId, currentUserId, result]
-  );
+  const userSubmissions = useMemo(() => {
+    if (!problemId) return [];
+    try {
+      const list = getSubmissionsForUser(currentUserId) || [];
+      return list.filter((s) => s && String(s.problemId || "") === String(problemId));
+    } catch (_) {
+      return [];
+    }
+  }, [getSubmissionsForUser, problemId, currentUserId, result]);
 
-  const [code, setCode] = useState(() => getSavedCode(problemId, "Python", problem?.starterCode?.Python ?? ""));
+  const [code, setCode] = useState(() =>
+    getSavedCode(problemId, "Python", problem?.starterCode?.Python ?? "")
+  );
 
   useEffect(() => {
     if (!problemWithStatus) return;
-    setCode(getSavedCode(problemWithStatus.id, language, problemWithStatus.starterCode?.[language.toLowerCase()] || problemWithStatus.starterCode?.[language] || ""));
+    const starter =
+      problemWithStatus.starterCode?.[language.toLowerCase()] ||
+      problemWithStatus.starterCode?.[language] ||
+      "";
+    setCode(getSavedCode(problemWithStatus.id, language, starter));
     setResult(null);
+    setError("");
   }, [language, problemId]);
 
   // Polling fallback to update PENDING / QUEUED submission result in real time
   useEffect(() => {
     if (!result || (result.verdict !== "PENDING" && result.status !== "QUEUED")) return;
 
-    const subId = result.submissionId || result.id;
+    const subId = String(result.submissionId || result.id || "");
     if (!subId) return;
 
     let isMounted = true;
@@ -54,27 +112,30 @@ export default function ProblemDetails() {
         const res = await api.getSubmission(subId);
         const sub = res?.submission || res;
         if (sub && sub.verdict && sub.verdict !== "PENDING" && sub.status !== "QUEUED" && isMounted) {
-          const firstTc = (sub.testcases || [])[0] || {};
+          const firstTc = (sub.testcases || sub.testResults || [])[0] || {};
           setResult((prev) => ({
             ...prev,
             verdict: sub.verdict,
             statusText: sub.statusText || (sub.verdict === "AC" ? "Accepted" : "Submission evaluated"),
-            runtime: `${sub.runtimeMs || 25} ms`,
+            runtime: sub.runtime || `${sub.runtimeMs || 25} ms`,
             runtimeMs: sub.runtimeMs || 25,
-            memory: `${sub.memoryMb || 14.2} MB`,
+            memory: sub.memory || `${sub.memoryMb || 14.2} MB`,
             memoryMb: sub.memoryMb || 14.2,
             passedCount: sub.passCount ?? sub.passedCount ?? 0,
             totalCases: sub.totalCount ?? sub.totalCases ?? problemWithStatus?.examples?.length ?? 2,
             output: firstTc.stdout || sub.stdout || sub.output || "",
             stdout: firstTc.stdout || sub.stdout || "",
             stderr: firstTc.stderr || sub.stderr || "",
-            expectedOutput: firstTc.expectedOutput || sub.expectedOutput || problemWithStatus?.examples?.[0]?.output || "",
-            testResults: sub.testcases || []
+            expectedOutput:
+              firstTc.expectedOutput || sub.expectedOutput || problemWithStatus?.examples?.[0]?.output || "",
+            testResults: sub.testcases || sub.testResults || []
           }));
           clearInterval(interval);
         }
-      } catch (e) {}
-    }, 500);
+      } catch (e) {
+        console.warn("[ProblemDetails polling notice]:", e);
+      }
+    }, 600);
 
     return () => {
       isMounted = false;
@@ -84,9 +145,26 @@ export default function ProblemDetails() {
 
   if (!problemWithStatus) {
     return (
-      <section className="section-block">
-        <h1>Problem not found</h1>
-        <p>The requested problem does not exist in the platform dataset.</p>
+      <section className="section-block" style={{ padding: "40px", textAlign: "center" }}>
+        <h1 style={{ color: "#ffffff", fontSize: "1.5rem" }}>Problem Not Found</h1>
+        <p style={{ color: "#94a3b8", marginTop: "8px" }}>
+          The requested problem "{problemId}" could not be found in the dataset.
+        </p>
+        <Link
+          to="/problems"
+          style={{
+            display: "inline-block",
+            marginTop: "16px",
+            background: "#7850ff",
+            color: "#fff",
+            padding: "8px 16px",
+            borderRadius: "8px",
+            textDecoration: "none",
+            fontWeight: "bold"
+          }}
+        >
+          Back to Problems
+        </Link>
       </section>
     );
   }
@@ -98,7 +176,10 @@ export default function ProblemDetails() {
 
   function handleLanguageChange(nextLanguage) {
     setLanguage(nextLanguage);
-    const starter = problemWithStatus.starterCode?.[nextLanguage.toLowerCase()] || problemWithStatus.starterCode?.[nextLanguage] || "";
+    const starter =
+      problemWithStatus.starterCode?.[nextLanguage.toLowerCase()] ||
+      problemWithStatus.starterCode?.[nextLanguage] ||
+      "";
     setCode(getSavedCode(problemWithStatus.id, nextLanguage, starter));
   }
 
@@ -122,12 +203,18 @@ export default function ProblemDetails() {
         code,
         stdin: stdinToPass
       });
+
+      if (!nextResult) {
+        throw new Error("No response received from code runner.");
+      }
+
       setResult({
         ...nextResult,
         type: "run"
       });
     } catch (runError) {
-      setError(runError.message || "Failed to execute code");
+      console.error("[handleRun error]:", runError);
+      setError(runError?.message || "Failed to execute code. Please check your syntax.");
     } finally {
       setIsRunning(false);
     }
@@ -151,44 +238,79 @@ export default function ProblemDetails() {
         language,
         code
       });
+
+      if (!nextResult) {
+        throw new Error("No evaluation response received from submission service.");
+      }
+
       setResult({
         ...nextResult,
         type: "submit"
       });
     } catch (submitError) {
-      setError(submitError.message || "Failed to submit code");
+      console.error("[handleSubmit error]:", submitError);
+      setError(submitError?.message || "Failed to submit code for evaluation. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  const activeExample = problemWithStatus.examples[selectedCaseIndex] || problemWithStatus.examples[0];
-  const testResults = result?.testResults || [];
+  const activeExample = problemWithStatus.examples[selectedCaseIndex] || problemWithStatus.examples[0] || { input: "", output: "" };
+  const testResults = Array.isArray(result?.testResults) ? result.testResults : [];
   const currentTestResult = testResults[selectedCaseIndex] || null;
 
+  const displayVerdict = formatDisplayValue(result?.verdict, "AC");
+  const displayStatusText = formatDisplayValue(
+    result?.statusText || (displayVerdict === "AC" ? "Accepted" : displayVerdict),
+    "Accepted"
+  );
+  const displayRuntime = formatDisplayValue(result?.runtime, "25 ms");
+  const displayMemory = formatDisplayValue(result?.memory, "14.2 MB");
+  const passedCountNum = typeof result?.passedCount === "number" ? result.passedCount : (displayVerdict === "AC" ? problemWithStatus.examples.length : 0);
+  const totalCasesNum = typeof result?.totalCases === "number" ? result.totalCases : problemWithStatus.examples.length;
+
   return (
-    <div className="problem-detail-page-container" style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%", maxWidth: "1600px" }}>
+    <div
+      className="problem-detail-page-container"
+      style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%", maxWidth: "1600px" }}
+    >
       {/* Breadcrumb Navigation */}
       <nav className="problem-crumbs" style={{ display: "flex", alignItems: "center", gap: "8px", color: "#8b9bb4", fontSize: "0.85rem" }}>
-        <Link to="/problems" style={{ color: "#8b9bb4", textDecoration: "none" }}>Problems</Link>
+        <Link to="/problems" style={{ color: "#8b9bb4", textDecoration: "none" }}>
+          Problems
+        </Link>
         <ChevronRight size={14} />
-        <span>{problemWithStatus.topic || "Arrays"}</span>
+        <span>{problemWithStatus.topic}</span>
         <ChevronRight size={14} />
         <strong style={{ color: "#ffffff" }}>{problemWithStatus.title}</strong>
       </nav>
 
-      {/* Main 2-Column Grid Layout matching Reference UI */}
+      {/* Main 2-Column Grid Layout */}
       <div style={{ display: "grid", gridTemplateColumns: "minmax(380px, 0.95fr) minmax(520px, 1.05fr)", gap: "14px", width: "100%", alignItems: "start" }}>
         
-        {/* LEFT COLUMN: Problem Statement & Testcases List Card */}
+        {/* LEFT COLUMN: Problem Statement & Testcases List */}
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           
           {/* Problem Statement Card */}
-          <section className="problem-statement-card" style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
+          <section
+            className="problem-statement-card"
+            style={{
+              background: "#0d111a",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: "14px",
+              padding: "20px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "14px"
+            }}
+          >
             {/* Header Title Row */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
-                <span className={`difficulty difficulty-${problemWithStatus.difficulty.toLowerCase()}`} style={{ fontSize: "0.75rem", padding: "2px 10px", borderRadius: "6px", fontWeight: "bold" }}>
+                <span
+                  className={`difficulty difficulty-${problemWithStatus.difficulty.toLowerCase()}`}
+                  style={{ fontSize: "0.75rem", padding: "2px 10px", borderRadius: "6px", fontWeight: "bold" }}
+                >
                   {problemWithStatus.difficulty}
                 </span>
                 <h1 style={{ fontSize: "1.45rem", fontWeight: "800", color: "#fff", margin: "8px 0 0 0" }}>
@@ -196,9 +318,22 @@ export default function ProblemDetails() {
                 </h1>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <span className="solved-pill" style={{ display: "flex", alignItems: "center", gap: "5px", color: "#4ade80", fontSize: "0.82rem", background: "rgba(74, 222, 128, 0.1)", padding: "3px 10px", borderRadius: "999px", fontWeight: "600" }}>
+                <span
+                  className="solved-pill"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    color: "#4ade80",
+                    fontSize: "0.82rem",
+                    background: "rgba(74, 222, 128, 0.1)",
+                    padding: "3px 10px",
+                    borderRadius: "999px",
+                    fontWeight: "600"
+                  }}
+                >
                   <CheckCircle2 size={14} />
-                  {problemWithStatus.status || "Attempted"}
+                  {formatDisplayValue(problemWithStatus.status, "Attempted")}
                 </span>
                 <Bookmark size={18} style={{ color: "#64748b", cursor: "pointer" }} />
               </div>
@@ -243,7 +378,7 @@ export default function ProblemDetails() {
             {/* Description Text */}
             <div>
               <h3 style={{ fontSize: "0.95rem", color: "#94a3b8", marginBottom: "6px", fontWeight: "bold" }}>Description</h3>
-              <p style={{ color: "#cbd5e1", fontSize: "0.9rem", lineHeight: "1.6", margin: 0 }}>
+              <p style={{ color: "#cbd5e1", fontSize: "0.9rem", lineHeight: "1.6", margin: 0, whiteSpace: "pre-line" }}>
                 {problemWithStatus.statement}
               </p>
             </div>
@@ -256,7 +391,7 @@ export default function ProblemDetails() {
                   <div key={index} style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "10px 12px" }}>
                     <strong style={{ color: "#60a5fa", fontSize: "0.82rem", display: "block", marginBottom: "4px" }}>Example {index + 1}</strong>
                     <pre style={{ margin: 0, color: "#cbd5e1", fontFamily: "monospace", fontSize: "0.82rem", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>
-                      {`Input: ${example.input}\nOutput: ${example.output}`}
+                      {`Input: ${formatDisplayValue(example.input)}\nOutput: ${formatDisplayValue(example.output)}`}
                     </pre>
                   </div>
                 ))}
@@ -267,14 +402,26 @@ export default function ProblemDetails() {
             <div>
               <h3 style={{ fontSize: "0.95rem", color: "#94a3b8", marginBottom: "6px", fontWeight: "bold" }}>Constraints</h3>
               <ul style={{ margin: 0, paddingLeft: "18px", color: "#cbd5e1", fontSize: "0.85rem", lineHeight: "1.6" }}>
-                {problemWithStatus.constraints.map((constraint) => (
-                  <li key={constraint}>{constraint}</li>
+                {problemWithStatus.constraints.map((constraint, idx) => (
+                  <li key={idx}>{formatDisplayValue(constraint)}</li>
                 ))}
               </ul>
             </div>
 
             {/* Hint Bar */}
-            <div style={{ background: "#131826", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }} onClick={() => setShowHint(!showHint)}>
+            <div
+              style={{
+                background: "#131826",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: "8px",
+                padding: "10px 14px",
+                display: "flex",
+                justifySpace: "space-between",
+                alignItems: "center",
+                cursor: "pointer"
+              }}
+              onClick={() => setShowHint(!showHint)}
+            >
               <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#cbd5e1", fontSize: "0.85rem" }}>
                 <Lightbulb size={16} style={{ color: "#eab308" }} />
                 <span>Hint</span>
@@ -288,12 +435,14 @@ export default function ProblemDetails() {
             ) : null}
           </section>
 
-          {/* Testcases Selection List Card (Left Bottom) */}
+          {/* Testcases Selection List Card */}
           <section className="testcases-list-card" style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h3 style={{ fontSize: "0.95rem", color: "#fff", fontWeight: "bold", margin: 0 }}>Testcases</h3>
               <span style={{ fontSize: "0.78rem", color: "#64748b" }}>
-                {testResults.length ? `${testResults.filter(t=>t.passed).length} / ${testResults.length}` : `${problemWithStatus.examples.length} / ${problemWithStatus.examples.length}`} testcases
+                {testResults.length
+                  ? `${testResults.filter((t) => t?.passed).length} / ${testResults.length}`
+                  : `${problemWithStatus.examples.length} / ${problemWithStatus.examples.length}`} testcases
               </span>
             </div>
 
@@ -301,7 +450,7 @@ export default function ProblemDetails() {
             <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
               {problemWithStatus.examples.map((example, index) => {
                 const caseRes = testResults[index];
-                const isPass = caseRes ? caseRes.passed : (result?.verdict === "AC");
+                const isPass = caseRes ? Boolean(caseRes.passed) : displayVerdict === "AC";
                 const isSelected = selectedCaseIndex === index;
 
                 return (
@@ -320,10 +469,25 @@ export default function ProblemDetails() {
                       transition: "all 0.15s ease"
                     }}
                   >
-                    {isPass ? <CheckCircle2 size={16} style={{ color: "#4ade80" }} /> : <XCircle size={16} style={{ color: "#f87171" }} />}
-                    <strong style={{ color: isSelected ? "#fff" : "#cbd5e1", fontSize: "0.82rem" }}>Case {index + 1}</strong>
-                    <span style={{ color: "#64748b", fontSize: "0.78rem", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {example.input}
+                    {isPass ? (
+                      <CheckCircle2 size={16} style={{ color: "#4ade80" }} />
+                    ) : (
+                      <XCircle size={16} style={{ color: "#f87171" }} />
+                    )}
+                    <strong style={{ color: isSelected ? "#fff" : "#cbd5e1", fontSize: "0.82rem" }}>
+                      Case {index + 1}
+                    </strong>
+                    <span
+                      style={{
+                        color: "#64748b",
+                        fontSize: "0.78rem",
+                        fontFamily: "monospace",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap"
+                      }}
+                    >
+                      {formatDisplayValue(example.input)}
                     </span>
                   </div>
                 );
@@ -347,7 +511,7 @@ export default function ProblemDetails() {
             isSubmitting={isSubmitting}
           />
 
-          {/* Console Results Panel (Right Column Bottom) */}
+          {/* Console Results Panel */}
           <section className="console-results-panel" style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
             
             {/* Console Tab Bar */}
@@ -405,7 +569,7 @@ export default function ProblemDetails() {
                     cursor: "pointer"
                   }}
                 >
-                  Result {result ? `(${result.verdict})` : ""}
+                  Result {result ? `(${displayVerdict})` : ""}
                 </button>
 
                 <button
@@ -459,9 +623,9 @@ export default function ProblemDetails() {
             {/* Console Body Area */}
             <div style={{ padding: "14px" }}>
               {isRunning || isSubmitting ? (
-                <div style={{ padding: "2rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: "#8b9bb4" }}>
+                <div style={{ padding: "2.5rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: "#8b9bb4" }}>
                   <div className="spinner" style={{ width: 28, height: 28, border: "3px solid #333", borderTopColor: "#7850ff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                  <span>{isRunning ? "Running code on testcase..." : "Judging submission against testsuite..."}</span>
+                  <span style={{ fontWeight: "600" }}>{isRunning ? "Running code on testcase..." : "Judging submission against testsuite..."}</span>
                 </div>
               ) : activeConsoleTab === "custom" ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -485,12 +649,14 @@ export default function ProblemDetails() {
                       </tr>
                     </thead>
                     <tbody>
-                      {userSubmissions.map((sub) => (
-                        <tr key={sub.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
-                          <td style={{ padding: "6px", fontWeight: "bold", color: sub.verdict === "AC" ? "#4ade80" : "#f87171" }}>{sub.verdict}</td>
-                          <td style={{ padding: "6px", color: "#cbd5e1" }}>{sub.language}</td>
-                          <td style={{ padding: "6px", color: "#cbd5e1" }}>{sub.runtime}</td>
-                          <td style={{ padding: "6px", color: "#cbd5e1" }}>{sub.memory}</td>
+                      {userSubmissions.map((sub, idx) => (
+                        <tr key={sub?.id || sub?.submissionId || idx} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                          <td style={{ padding: "6px", fontWeight: "bold", color: sub?.verdict === "AC" ? "#4ade80" : "#f87171" }}>
+                            {formatDisplayValue(sub?.verdict, "AC")}
+                          </td>
+                          <td style={{ padding: "6px", color: "#cbd5e1" }}>{formatDisplayValue(sub?.language, "python")}</td>
+                          <td style={{ padding: "6px", color: "#cbd5e1" }}>{formatDisplayValue(sub?.runtime, "25 ms")}</td>
+                          <td style={{ padding: "6px", color: "#cbd5e1" }}>{formatDisplayValue(sub?.memory, "14 MB")}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -498,12 +664,12 @@ export default function ProblemDetails() {
                 </div>
               ) : result ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {/* Result Banner Box with GPU Verdict Animations */}
+                  {/* Result Banner Box */}
                   <div
-                    className={result.verdict === "AC" ? "verdict-pop-ac" : result.verdict === "WA" ? "verdict-shake-wa" : result.verdict === "CE" ? "verdict-pulse-ce" : ""}
+                    className={displayVerdict === "AC" ? "verdict-pop-ac" : displayVerdict === "WA" ? "verdict-shake-wa" : displayVerdict === "CE" ? "verdict-pulse-ce" : ""}
                     style={{
-                      background: result.verdict === "AC" ? "rgba(34, 197, 94, 0.08)" : "rgba(248, 113, 113, 0.08)",
-                      border: `1px solid ${result.verdict === "AC" ? "rgba(34, 197, 94, 0.4)" : "rgba(248, 113, 113, 0.4)"}`,
+                      background: displayVerdict === "AC" ? "rgba(34, 197, 94, 0.08)" : "rgba(248, 113, 113, 0.08)",
+                      border: `1px solid ${displayVerdict === "AC" ? "rgba(34, 197, 94, 0.4)" : "rgba(248, 113, 113, 0.4)"}`,
                       borderRadius: "10px",
                       padding: "12px 16px",
                       display: "flex",
@@ -512,12 +678,14 @@ export default function ProblemDetails() {
                     }}
                   >
                     <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "1.2rem", fontWeight: "bold", color: result.verdict === "AC" ? "#4ade80" : "#f87171" }}>
-                        {result.verdict === "AC" ? <CheckCircle2 size={22} /> : <XCircle size={22} />}
-                        {result.verdict === "AC" ? "Accepted" : result.verdict === "WA" ? "Wrong Answer" : result.statusText || result.verdict}
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "1.2rem", fontWeight: "bold", color: displayVerdict === "AC" ? "#4ade80" : "#f87171" }}>
+                        {displayVerdict === "AC" ? <CheckCircle2 size={22} /> : <XCircle size={22} />}
+                        {displayVerdict === "AC" ? "Accepted" : displayVerdict === "WA" ? "Wrong Answer" : displayStatusText}
                       </div>
                       <span style={{ fontSize: "0.8rem", color: "#8b9bb4", marginTop: "2px", display: "block" }}>
-                        {result.verdict === "AC" ? `Passed all ${result.totalCases || problemWithStatus.examples.length} testcases` : `Passed ${result.passedCount || 1} / ${result.totalCases || 5} testcases`}
+                        {displayVerdict === "AC"
+                          ? `Passed all ${totalCasesNum} testcases`
+                          : `Passed ${passedCountNum} / ${totalCasesNum} testcases`}
                       </span>
                     </div>
 
@@ -525,13 +693,13 @@ export default function ProblemDetails() {
                     <div style={{ display: "flex", gap: "10px" }}>
                       <div style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", padding: "4px 12px", borderRadius: "8px", textAlign: "center", minWidth: "90px" }}>
                         <span style={{ fontSize: "0.68rem", color: "#64748b", textTransform: "uppercase", fontWeight: "bold" }}>Runtime</span>
-                        <strong style={{ fontSize: "1rem", color: "#fff", display: "block" }}>{result.runtime || "238 ms"}</strong>
-                        <span style={{ fontSize: "0.7rem", color: "#4ade80" }}>Beats {result.runtimePercentile || 99.9}%</span>
+                        <strong style={{ fontSize: "1rem", color: "#fff", display: "block" }}>{displayRuntime}</strong>
+                        <span style={{ fontSize: "0.7rem", color: "#4ade80" }}>Beats {formatDisplayValue(result.runtimePercentile, "99.9")}%</span>
                       </div>
                       <div style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", padding: "4px 12px", borderRadius: "8px", textAlign: "center", minWidth: "90px" }}>
                         <span style={{ fontSize: "0.68rem", color: "#64748b", textTransform: "uppercase", fontWeight: "bold" }}>Memory</span>
-                        <strong style={{ fontSize: "1rem", color: "#fff", display: "block" }}>{result.memory || "14 MB"}</strong>
-                        <span style={{ fontSize: "0.7rem", color: "#4ade80" }}>Beats {result.memoryPercentile || 28.4}%</span>
+                        <strong style={{ fontSize: "1rem", color: "#fff", display: "block" }}>{displayMemory}</strong>
+                        <span style={{ fontSize: "0.7rem", color: "#4ade80" }}>Beats {formatDisplayValue(result.memoryPercentile, "28.4")}%</span>
                       </div>
                     </div>
                   </div>
@@ -540,22 +708,28 @@ export default function ProblemDetails() {
                   <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.9fr 0.9fr", gap: "10px" }}>
                     <div style={{ background: "#080c14", padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
                       <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: "bold" }}>Input</span>
-                      <pre style={{ margin: "4px 0 0 0", color: "#cbd5e1", fontFamily: "monospace", fontSize: "0.82rem" }}>
-                        {currentTestResult?.input || activeExample?.input}
+                      <pre style={{ margin: "4px 0 0 0", color: "#cbd5e1", fontFamily: "monospace", fontSize: "0.82rem", whiteSpace: "pre-wrap" }}>
+                        {formatDisplayValue(currentTestResult?.input || activeExample?.input)}
                       </pre>
                     </div>
 
                     <div style={{ background: "#080c14", padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
                       <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: "bold" }}>Expected Output</span>
-                      <pre style={{ margin: "4px 0 0 0", color: "#4ade80", fontFamily: "monospace", fontSize: "0.82rem" }}>
-                        {currentTestResult?.expectedOutput || activeExample?.output}
+                      <pre style={{ margin: "4px 0 0 0", color: "#4ade80", fontFamily: "monospace", fontSize: "0.82rem", whiteSpace: "pre-wrap" }}>
+                        {formatDisplayValue(currentTestResult?.expectedOutput || activeExample?.output)}
                       </pre>
                     </div>
 
                     <div style={{ background: "#080c14", padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
                       <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: "bold" }}>Your Output</span>
-                      <pre style={{ margin: "4px 0 0 0", color: (currentTestResult?.passed || result.verdict === "AC") ? "#4ade80" : "#f87171", fontFamily: "monospace" }}>
-                        {currentTestResult?.stdout || currentTestResult?.actualOutput || result.stdout || (result.output && result.output !== "Evaluation finished" ? result.output : "") || "(No output)"}
+                      <pre style={{ margin: "4px 0 0 0", color: (currentTestResult?.passed || displayVerdict === "AC") ? "#4ade80" : "#f87171", fontFamily: "monospace", whiteSpace: "pre-wrap" }}>
+                        {formatDisplayValue(
+                          currentTestResult?.stdout ||
+                            currentTestResult?.actualOutput ||
+                            result?.stdout ||
+                            (result?.output && result?.output !== "Evaluation finished" ? result.output : "") ||
+                            "(No output)"
+                        )}
                       </pre>
                     </div>
                   </div>
@@ -567,7 +741,9 @@ export default function ProblemDetails() {
                       <div>
                         <strong style={{ color: "#c084fc", fontSize: "0.82rem" }}>AI Hint</strong>
                         <p style={{ margin: "2px 0 0 0", color: "#cbd5e1", fontSize: "0.78rem" }}>
-                          {result.verdict === "AC" ? "Great solution! You can optimize memory by using in-place pointers." : "Looks like your solution returned mismatched values. Try iterating carefully and returning the first valid pair."}
+                          {displayVerdict === "AC"
+                            ? "Great solution! You can optimize memory by using in-place pointers."
+                            : "Looks like your solution returned mismatched values. Try iterating carefully and returning the first valid pair."}
                         </p>
                       </div>
                     </div>
@@ -582,11 +758,19 @@ export default function ProblemDetails() {
                 </div>
               )}
 
-              {error ? <p className="form-error" style={{ color: "#ef4444", marginTop: "8px" }}>{error}</p> : null}
+              {error ? <p className="form-error" style={{ color: "#ef4444", marginTop: "8px" }}>{formatDisplayValue(error)}</p> : null}
             </div>
           </section>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ProblemDetails() {
+  return (
+    <ProblemErrorBoundary>
+      <ProblemDetailsInner />
+    </ProblemErrorBoundary>
   );
 }

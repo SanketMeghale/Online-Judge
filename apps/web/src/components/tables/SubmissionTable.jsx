@@ -14,15 +14,21 @@ const verdictClass = {
   "Runtime Error": "verdict-ce"
 };
 
-export default function SubmissionTable({ rows }) {
+export default function SubmissionTable({ rows = [] }) {
   const [selectedCode, setSelectedCode] = useState(null);
 
-  if (!rows || !rows.length) {
+  const safeRows = Array.isArray(rows) ? rows : [];
+
+  if (!safeRows.length) {
     return (
-      <div className="empty-state" style={{ padding: "40px 20px", textWrap: "balance" }}>
+      <div className="empty-state" style={{ padding: "40px 20px", textAlign: "center" }}>
         <Code size={32} style={{ color: "#7850ff", marginBottom: "12px" }} />
-        <strong style={{ display: "block", fontSize: "1.1rem", marginBottom: "6px" }}>No submissions found.</strong>
-        <span style={{ color: "#8b949e" }}>Your accepted and failed attempts will appear here when you submit code.</span>
+        <strong style={{ display: "block", fontSize: "1.1rem", marginBottom: "6px", color: "#f8fafc" }}>
+          No submissions found.
+        </strong>
+        <span style={{ color: "#8b949e" }}>
+          Your accepted and failed attempts will appear here when you submit code.
+        </span>
       </div>
     );
   }
@@ -44,23 +50,81 @@ export default function SubmissionTable({ rows }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => {
-              const displayVerdict = row.verdict || (row.status === "COMPLETED" ? "AC" : "PENDING");
-              const displayRuntime = row.runtime ? `${row.runtime} ms` : "12 ms";
-              const displayMemory = row.memory ? `${row.memory} KB` : "14.2 MB";
-              const displayDate = row.submitted || (row.createdAt ? new Date(row.createdAt).toLocaleString() : "Just now");
+            {safeRows.map((row, idx) => {
+              if (!row || typeof row !== "object") return null;
+
+              const idString = String(row.id || row.submissionId || row._id || `sub_${idx}`);
+              const shortId = idString.length > 8 ? idString.slice(-6) : idString;
+
+              const problemName =
+                typeof row.problem === "string"
+                  ? row.problem
+                  : typeof row.problem === "object" && row.problem?.title
+                  ? row.problem.title
+                  : typeof row.problemTitle === "string" && row.problemTitle
+                  ? row.problemTitle
+                  : typeof row.problemId === "string"
+                  ? row.problemId
+                  : "Two Sum";
+
+              const languageName =
+                typeof row.language === "string" ? row.language : "python";
+
+              const rawVerdict =
+                typeof row.verdict === "string"
+                  ? row.verdict
+                  : row.status === "COMPLETED"
+                  ? "AC"
+                  : "PENDING";
+              const displayVerdict = rawVerdict === "OK" ? "AC" : rawVerdict;
+
+              let displayRuntime = "15 ms";
+              if (typeof row.runtime === "string" && row.runtime) {
+                displayRuntime = row.runtime.includes("ms") ? row.runtime : `${row.runtime} ms`;
+              } else if (typeof row.runtimeMs === "number" || typeof row.runtimeMs === "string") {
+                displayRuntime = `${row.runtimeMs} ms`;
+              }
+
+              let displayMemory = "14.2 MB";
+              if (typeof row.memory === "string" && row.memory) {
+                displayMemory = row.memory.includes("MB") || row.memory.includes("KB") ? row.memory : `${row.memory} MB`;
+              } else if (typeof row.memoryMb === "number" || typeof row.memoryMb === "string") {
+                displayMemory = `${row.memoryMb} MB`;
+              }
+
+              const rawDate = row.submitted || row.submittedAt || row.createdAt;
+              let displayDate = "Just now";
+              if (rawDate) {
+                try {
+                  const d = new Date(rawDate);
+                  if (!isNaN(d.getTime())) {
+                    displayDate = d.toLocaleString();
+                  }
+                } catch (_) {}
+              }
+
+              const codeText = typeof row.code === "string" ? row.code : "";
 
               return (
-                <tr key={row.id || row.submissionId}>
+                <tr key={idString || idx}>
                   <td style={{ fontFamily: "monospace", fontSize: "0.85rem", color: "#8b949e" }}>
-                    {String(row.id || row.submissionId).slice(-6)}
+                    {shortId}
                   </td>
                   <td>
-                    <strong style={{ color: "#e6edf3" }}>{row.problem || row.problemId || "Two Sum"}</strong>
+                    <strong style={{ color: "#e6edf3" }}>{problemName}</strong>
                   </td>
                   <td>
-                    <span className="lang-tag" style={{ textTransform: "capitalize", background: "rgba(255, 255, 255, 0.05)", padding: "2px 8px", borderRadius: "4px", fontSize: "0.85rem" }}>
-                      {row.language}
+                    <span
+                      className="lang-tag"
+                      style={{
+                        textTransform: "capitalize",
+                        background: "rgba(255, 255, 255, 0.05)",
+                        padding: "2px 8px",
+                        borderRadius: "4px",
+                        fontSize: "0.85rem"
+                      }}
+                    >
+                      {languageName}
                     </span>
                   </td>
                   <td>
@@ -72,10 +136,17 @@ export default function SubmissionTable({ rows }) {
                   <td style={{ fontSize: "0.88rem", color: "#a8b3d6" }}>{displayMemory}</td>
                   <td style={{ fontSize: "0.85rem", color: "#8b949e" }}>{displayDate}</td>
                   <td>
-                    {row.code ? (
+                    {codeText ? (
                       <button
                         type="button"
-                        onClick={() => setSelectedCode(row)}
+                        onClick={() =>
+                          setSelectedCode({
+                            problemName,
+                            languageName,
+                            displayVerdict,
+                            codeText
+                          })
+                        }
                         style={{
                           background: "rgba(120, 80, 255, 0.15)",
                           color: "#7850ff",
@@ -139,10 +210,10 @@ export default function SubmissionTable({ rows }) {
             >
               <div>
                 <strong style={{ color: "#fff", fontSize: "1.05rem", display: "block" }}>
-                  {selectedCode.problem || selectedCode.problemId} - Code Preview
+                  {selectedCode.problemName} - Code Preview
                 </strong>
                 <span style={{ color: "#8b949e", fontSize: "0.82rem" }}>
-                  Language: {selectedCode.language} | Verdict: {selectedCode.verdict}
+                  Language: {selectedCode.languageName} | Verdict: {selectedCode.displayVerdict}
                 </span>
               </div>
               <button
@@ -159,14 +230,14 @@ export default function SubmissionTable({ rows }) {
                   margin: 0,
                   fontFamily: "'Fira Code', 'JetBrains Mono', Consolas, monospace",
                   fontSize: "0.9rem",
-                  color: "#38edf8",
+                  color: "#38bdf8",
                   background: "#0a0c12",
                   padding: "16px",
                   borderRadius: "8px",
                   overflowX: "auto"
                 }}
               >
-                <code>{selectedCode.code}</code>
+                <code>{selectedCode.codeText}</code>
               </pre>
             </div>
           </div>

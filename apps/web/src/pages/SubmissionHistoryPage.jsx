@@ -24,12 +24,18 @@ export default function SubmissionHistoryPage() {
         if (languageFilter !== "All") queryParams.append("language", languageFilter);
 
         const data = await api.getSubmissions(queryParams.toString());
-        if (isMounted && data?.submissions) {
-          setSubmissions(data.submissions);
+        const fetchedList = Array.isArray(data)
+          ? data
+          : data?.submissions || data?.data || null;
+
+        if (isMounted && Array.isArray(fetchedList)) {
+          setSubmissions(fetchedList);
           setLoading(false);
           return;
         }
-      } catch (err) {}
+      } catch (err) {
+        console.warn("[SubmissionHistoryPage] Failed to fetch from API, using local fallback:", err);
+      }
 
       if (isMounted) {
         let fallback = getSubmissionsForUser(user?.id) || [];
@@ -37,7 +43,9 @@ export default function SubmissionHistoryPage() {
           fallback = fallback.filter((s) => s.verdict === verdictFilter);
         }
         if (languageFilter !== "All") {
-          fallback = fallback.filter((s) => (s.language || "").toLowerCase() === languageFilter.toLowerCase());
+          fallback = fallback.filter(
+            (s) => (s.language || "").toLowerCase() === languageFilter.toLowerCase()
+          );
         }
         setSubmissions(fallback);
         setLoading(false);

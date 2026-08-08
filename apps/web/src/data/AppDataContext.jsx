@@ -19,45 +19,145 @@ import {
 
 const AppDataContext = createContext(null);
 
+// Normalize a raw submission object (from API) into a consistent, crash-proof shape
+function normalizeSubmission(raw, problem) {
+  if (!raw) return null;
+
+  // The service may return nested under .submission or flat
+  const sub = raw.submission || raw;
+
+  const rawVerdict = typeof sub.verdict === "string" ? sub.verdict : typeof sub.status === "string" ? sub.status : "";
+  // Map "PENDING"/"QUEUED" → keep as-is; "OK" → "AC"
+  const verdict = rawVerdict === "OK" ? "AC" : rawVerdict || "WA";
+  const isAc = verdict === "AC";
+
+  const passedCount =
+    typeof sub.passedCount === "number"
+      ? sub.passedCount
+      : typeof sub.passCount === "number"
+      ? sub.passCount
+      : typeof sub.passed_count === "number"
+      ? sub.passed_count
+      : isAc
+      ? problem?.hiddenTestCases?.length || problem?.examples?.length || 2
+      : 0;
+
+  const totalCases =
+    typeof sub.totalCases === "number"
+      ? sub.totalCases
+      : typeof sub.totalCount === "number"
+      ? sub.totalCount
+      : typeof sub.total_cases === "number"
+      ? sub.total_cases
+      : problem?.hiddenTestCases?.length || problem?.examples?.length || 2;
+
+  const testResults = Array.isArray(sub.testResults)
+    ? sub.testResults
+    : Array.isArray(sub.testcases)
+    ? sub.testcases
+    : [];
+  const firstTc = testResults[0] || {};
+
+  let statusText = typeof sub.statusText === "string" ? sub.statusText : "";
+  if (!statusText) {
+    if (isAc) statusText = "Accepted";
+    else if (verdict === "WA") statusText = `Wrong Answer on testcase ${passedCount + 1}`;
+    else if (verdict === "TLE") statusText = "Time Limit Exceeded";
+    else if (verdict === "MLE") statusText = "Memory Limit Exceeded";
+    else if (verdict === "CE") statusText = "Compilation Error";
+    else if (verdict === "RE") statusText = "Runtime Error";
+    else statusText = String(verdict || "Evaluated");
+  }
+
+  const subId = String(sub._id || sub.id || sub.submissionId || raw.submissionId || raw.id || "");
+  const runtimeStr = typeof sub.runtime === "string" ? sub.runtime : `${sub.runtimeMs || 25} ms`;
+  const memoryStr = typeof sub.memory === "string" ? sub.memory : `${sub.memoryMb || 14.2} MB`;
+
+  return {
+    id: subId || `sub_${Date.now()}`,
+    submissionId: subId || `sub_${Date.now()}`,
+    verdict: String(verdict),
+    statusText: String(statusText),
+    runtime: String(runtimeStr),
+    runtimeMs: typeof sub.runtimeMs === "number" ? sub.runtimeMs : 25,
+    memory: String(memoryStr),
+    memoryMb: typeof sub.memoryMb === "number" ? sub.memoryMb : 14.2,
+    runtimePercentile: typeof sub.runtimePercentile === "number" ? sub.runtimePercentile : 84.6,
+    memoryPercentile: typeof sub.memoryPercentile === "number" ? sub.memoryPercentile : 76.2,
+    passedCount,
+    totalCases,
+    output: firstTc.actualOutput || firstTc.stdout || sub.stdout || sub.output || "",
+    stdout: firstTc.actualOutput || firstTc.stdout || sub.stdout || "",
+    stderr: firstTc.stderr || sub.stderr || "",
+    expectedOutput:
+      firstTc.expectedOutput || sub.expectedOutput || problem?.examples?.[0]?.output || "",
+    testResults,
+    message: isAc ? "Accepted! Your solution passed all test cases." : String(statusText)
+  };
+}
+
+// Poll the backend until a submission is no longer PENDING/QUEUED
+// Returns the final normalized submission or null on timeout
+async function pollUntilComplete(subId, problem, maxAttempts = 24, intervalMs = 500) {
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise((r) => setTimeout(r, intervalMs));
+    try {
+      const fetched = await api.getSubmission(subId);
+      const raw = fetched?.submission || fetched;
+      const v = raw?.verdict || raw?.status || "";
+      const isDone = v && v !== "PENDING" && v !== "QUEUED" && v !== "processing";
+      if (isDone) {
+        return normalizeSubmission(raw, problem);
+      }
+    } catch (_) {
+      // Network error during polling — keep trying
+    }
+  }
+  return null; // timed out
+}
+
 export function AppDataProvider({ children }) {
   const [database, setDatabase] = useState(() => ensureDatabase());
   const [savedCode, setSavedCode] = useState(() => readSavedCode());
 
-  // Fetch & sync problems from backend API
+  // Fetch & sync problems from backend API on mount
   useEffect(() => {
     let isMounted = true;
-    api.getProblems().then((res) => {
-      const fetched = res?.problems || res;
-      if (Array.isArray(fetched) && fetched.length > 0 && isMounted) {
-        setDatabase((current) => {
-          const existingIds = new Set(current.problems.map((p) => p.id));
-          let changed = false;
-          const merged = [...current.problems];
+    api
+      .getProblems()
+      .then((res) => {
+        const fetched = res?.problems || res;
+        if (Array.isArray(fetched) && fetched.length > 0 && isMounted) {
+          setDatabase((current) => {
+            const existingIds = new Set(current.problems.map((p) => p.id));
+            let changed = false;
+            const merged = [...current.problems];
 
-          for (const item of fetched) {
-            if (!existingIds.has(item.id)) {
-              merged.push(item);
-              changed = true;
+            for (const item of fetched) {
+              if (!existingIds.has(item.id)) {
+                merged.push(item);
+                changed = true;
+              }
             }
-          }
 
-          if (!changed) return current;
-          const next = { ...current, problems: merged };
-          writeDatabase(next);
-          return next;
-        });
-      }
-    }).catch(() => {});
+            if (!changed) return current;
+            const next = { ...current, problems: merged };
+            writeDatabase(next);
+            return next;
+          });
+        }
+      })
+      .catch(() => {});
 
     return () => {
       isMounted = false;
     };
   }, []);
 
-  // Listen for real-time Socket.IO submission:update events emitted by Judge Worker
+  // Real-time Socket.IO updates from Judge Worker
   useEffect(() => {
     const unsubscribe = subscribeToSubmissionUpdates((payload) => {
-      if (!payload || !payload.submissionId) return;
+      if (!payload?.submissionId) return;
 
       setDatabase((current) => {
         const subId = String(payload.submissionId);
@@ -66,31 +166,29 @@ export function AppDataProvider({ children }) {
         );
 
         const updatedVerdict = payload.verdict || "AC";
-        const updatedStatus = payload.status || (updatedVerdict === "AC" ? "ACCEPTED" : "EVALUATED");
-
-        let updatedSubmissions = [...current.submissions];
         const updatedObj = {
           id: subId,
           submissionId: subId,
-          problemId: payload.problemId || "two-sum",
-          userId: payload.userId || "u-demo-1",
-          language: payload.language || "Python",
+          problemId: payload.problemId || "",
+          userId: payload.userId || "",
+          language: payload.language || "python",
           verdict: updatedVerdict,
-          statusText: payload.statusText || updatedStatus,
+          statusText: payload.statusText || (updatedVerdict === "AC" ? "Accepted" : "Evaluated"),
           runtime: payload.runtime || (payload.runtimeMs ? `${payload.runtimeMs} ms` : "25 ms"),
-          runtimeMs: payload.runtimeMs,
+          runtimeMs: payload.runtimeMs || 25,
           memory: payload.memory || (payload.memoryMb ? `${payload.memoryMb} MB` : "14.2 MB"),
-          memoryMb: payload.memoryMb,
-          passCount: payload.passCount ?? payload.passedCount ?? 0,
-          totalCount: payload.totalCount ?? payload.totalCases ?? 0,
+          memoryMb: payload.memoryMb || 14.2,
+          passedCount: payload.passCount ?? payload.passedCount ?? 0,
+          totalCases: payload.totalCount ?? payload.totalCases ?? 0,
           stdout: payload.stdout || "",
           stderr: payload.stderr || "",
-          output: payload.output || payload.stdout || payload.stderr || "",
+          output: payload.output || payload.stdout || "",
           expectedOutput: payload.expectedOutput || "",
-          testcases: payload.testcases || [],
+          testResults: payload.testcases || [],
           submittedAt: new Date().toISOString()
         };
 
+        let updatedSubmissions = [...current.submissions];
         if (existingIdx >= 0) {
           updatedSubmissions[existingIdx] = {
             ...updatedSubmissions[existingIdx],
@@ -100,18 +198,13 @@ export function AppDataProvider({ children }) {
           updatedSubmissions.unshift(updatedObj);
         }
 
-        const nextDb = {
-          ...current,
-          submissions: updatedSubmissions
-        };
+        const nextDb = { ...current, submissions: updatedSubmissions };
         writeDatabase(nextDb);
         return nextDb;
       });
     });
 
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   function refreshDatabase() {
@@ -128,32 +221,29 @@ export function AppDataProvider({ children }) {
 
   function saveCode(problemId, language, code) {
     setSavedCode((current) => {
-      const next = {
-        ...current,
-        [`${problemId}:${language}`]: code
-      };
-
+      const next = { ...current, [`${problemId}:${language}`]: code };
       writeSavedCode(next);
       return next;
     });
   }
 
+  // ── Run Solution ─────────────────────────────────────────────────────────────
   async function runSolution({ problemId, language, code, stdin = "" }) {
     const problem = getProblemById(database, problemId);
-    // Only use problem example input if user didn't provide custom stdin
-    const effectiveStdin = stdin || "";
 
     try {
       const response = await api.runCode({
         problemId,
         language: language.toLowerCase(),
         code,
-        stdin: effectiveStdin
+        stdin
       });
 
       return {
         verdict: response.verdict || (response.ok ? "AC" : "RE"),
-        statusText: response.statusText || (response.ok ? "Code executed successfully" : "Execution failed"),
+        statusText:
+          response.statusText ||
+          (response.ok ? "Code executed successfully" : "Execution failed"),
         runtime: response.runtime || `${response.runtimeMs || 15} ms`,
         runtimeMs: response.runtimeMs || 15,
         memory: response.memory || "14.2 MB",
@@ -161,26 +251,27 @@ export function AppDataProvider({ children }) {
         stdout: response.stdout || "",
         stderr: response.stderr || "",
         expectedOutput: problem?.examples?.[0]?.output ?? "",
-        passedCount: response.passedCount ?? (response.verdict === "AC" ? (problem?.examples?.length || 1) : 0),
-        totalCases: response.totalCases ?? (problem?.examples?.length || 1),
-        testResults: response.testResults || [],
-        message: response.ok ? "Code executed via backend compiler engine." : response.stderr || "Execution completed."
+        passedCount:
+          response.passedCount ??
+          (response.verdict === "AC" ? problem?.examples?.length || 1 : 0),
+        totalCases: response.totalCases ?? problem?.examples?.length ?? 1,
+        testResults: response.testResults || []
       };
     } catch (err) {
-      if (import.meta.env.PROD) {
-        throw new Error(err.message || "Compiler service unavailable. Please check the deployment API and Judge0 configuration.");
-      }
-
-      if (!problem) {
-        throw new Error("Problem not found.");
-      }
+      if (!problem) throw new Error("Problem not found.");
+      console.warn("[AppDataContext] run API unavailable, using simulator:", err.message);
       return simulateRun(problem, language, code);
     }
   }
 
+  // ── Submit Solution ───────────────────────────────────────────────────────────
   async function submitSolution({ userId, problemId, language, code, stdin = "" }) {
     const problem = getProblemById(database, problemId);
-    const user = (database.users && database.users.find((item) => item.id === userId || item._id === userId)) || {
+    if (!problem) throw new Error("Problem not found.");
+
+    const userFallback = (
+      database.users?.find((u) => u.id === userId || u._id === userId)
+    ) || {
       id: userId || "guest_coder",
       username: "Coder",
       stats: { totalSubmissions: 0, acceptedSubmissions: 0 },
@@ -189,13 +280,10 @@ export function AppDataProvider({ children }) {
       xp: 0
     };
 
-    if (!problem) {
-      throw new Error("Problem not found.");
-    }
-
     let result;
 
     try {
+      // 1. POST to backend — may return QUEUED or already-evaluated result
       const response = await api.submitCode({
         userId,
         problemId,
@@ -204,87 +292,83 @@ export function AppDataProvider({ children }) {
         stdin
       });
 
-      const exec = response.execution || {};
-      let sub = response.submission || response;
-      const subId = String(sub._id || sub.id || sub.submissionId || response.submissionId || "");
+      console.log("[Submit] API response received:", response);
 
-      // Poll until evaluation completes (up to 20 attempts, 600ms apart = 12s max)
-      if (subId && (sub.verdict === "PENDING" || sub.status === "QUEUED" || !sub.verdict)) {
-        for (let attempt = 0; attempt < 20; attempt++) {
-          await new Promise((resolve) => setTimeout(resolve, 600));
-          try {
-            const fetched = await api.getSubmission(subId);
-            const s = fetched?.submission || fetched;
-            if (s && s.verdict && s.verdict !== "PENDING" && s.status !== "QUEUED") {
-              sub = s;
-              break;
-            }
-          } catch (e) {}
+      if (!response) {
+        throw new Error("Empty submission response from API.");
+      }
+
+      // 2. Unwrap the submission object
+      const rawSub = response.submission || response;
+      if (!rawSub) {
+        throw new Error("Invalid submission payload structure.");
+      }
+
+      const subId = String(
+        rawSub._id || rawSub.id || rawSub.submissionId || response.submissionId || ""
+      );
+      const currentVerdict = rawSub.verdict || rawSub.status || "";
+      const isPending =
+        !currentVerdict ||
+        currentVerdict === "PENDING" ||
+        currentVerdict === "QUEUED" ||
+        currentVerdict === "processing";
+
+      if (isPending && subId) {
+        // 3a. Result not ready yet — poll until complete
+        console.log(`[Submit] Submission ${subId} is ${currentVerdict}, polling...`);
+        const polled = await pollUntilComplete(subId, problem);
+        if (polled) {
+          result = polled;
+        } else {
+          // Polling timed out — return best-effort normalized from initial response
+          console.warn("[Submit] Polling timed out, using initial response");
+          result = normalizeSubmission(rawSub, problem);
         }
+      } else {
+        // 3b. Already evaluated inline (RabbitMQ offline path)
+        result = normalizeSubmission(rawSub, problem);
       }
-
-      const rawVerdict = sub.verdict || exec.verdict || "WA";
-      const verdict = (rawVerdict === "OK" || rawVerdict === "AC") ? "AC" : rawVerdict;
-      const isAc = verdict === "AC";
-
-      const passCount = sub.passedCount ?? sub.passCount ?? exec.passedCount ?? (isAc ? (problem.hiddenTestCases?.length || problem.examples.length) : 0);
-      const totalCount = sub.totalCases ?? sub.totalCount ?? exec.totalCases ?? (problem.hiddenTestCases?.length || problem.examples.length);
-      const testResults = sub.testcases || sub.testResults || exec.testResults || [];
-      const firstTc = testResults[0] || {};
-
-      let defaultStatusText = "Accepted";
-      if (!isAc) {
-        if (verdict === "WA") defaultStatusText = `Wrong Answer on testcase ${passCount + 1}`;
-        else if (verdict === "TLE") defaultStatusText = "Time Limit Exceeded";
-        else if (verdict === "MLE") defaultStatusText = "Memory Limit Exceeded";
-        else if (verdict === "CE") defaultStatusText = "Compilation Error";
-        else defaultStatusText = "Runtime Error";
-      }
-
-      result = {
-        id: subId,
-        submissionId: subId,
-        verdict,
-        statusText: sub.statusText || exec.statusText || defaultStatusText,
-        runtime: `${sub.runtimeMs || exec.runtimeMs || 25} ms`,
-        runtimeMs: sub.runtimeMs || exec.runtimeMs || 25,
-        memory: `${sub.memoryMb || exec.memoryMb || 14.2} MB`,
-        memoryMb: sub.memoryMb || exec.memoryMb || 14.2,
-        runtimePercentile: sub.runtimePercentile || exec.runtimePercentile || 84.6,
-        memoryPercentile: sub.memoryPercentile || exec.memoryPercentile || 76.2,
-        passedCount: passCount,
-        totalCases: totalCount,
-        output: firstTc.actualOutput || firstTc.stdout || sub.stdout || sub.output || exec.stdout || exec.output || "",
-        stdout: firstTc.actualOutput || firstTc.stdout || sub.stdout || exec.stdout || "",
-        stderr: firstTc.stderr || sub.stderr || exec.stderr || "",
-        expectedOutput: firstTc.expectedOutput || sub.expectedOutput || exec.expectedOutput || problem.examples[0]?.output || "",
-        testResults,
-        message: isAc ? "Accepted! Your solution passed all test cases." : sub.statusText || defaultStatusText
-      };
     } catch (err) {
-      if (import.meta.env.PROD) {
-        throw new Error(err.message || "Submission service unavailable. Please check the deployment API and Judge0 configuration.");
-      }
-
-      console.warn("[AppDataContext] Submission API error, using fallback simulation:", err);
+      // API completely unreachable or failed — run local simulation (offline mode)
+      console.warn("[Submit] API call failed, running local simulation fallback:", err.message);
       result = simulateRun(problem, language, code);
     }
 
-    const { submission, nextSubmissionId } = createSubmission(database, userId, problem, language, result);
+    if (!result) {
+      result = simulateRun(problem, language, code);
+    }
 
-    updateDatabase((current) => {
-      const userExists = current.users && current.users.some((item) => item.id === userId || item._id === userId);
-      const updatedUsers = userExists
-        ? current.users.map((item) => (item.id === userId || item._id === userId ? updateUserAfterSubmission(item, problem, result.verdict) : item))
-        : [...(current.users || []), updateUserAfterSubmission(user, problem, result.verdict)];
+    // 4. Persist submission locally (localStorage) for immediate UI display
+    try {
+      const { submission, nextSubmissionId } = createSubmission(
+        database,
+        userId,
+        problem,
+        language,
+        result
+      );
 
-      return {
-        ...current,
-        nextSubmissionId,
-        submissions: [submission, ...(current.submissions || [])],
-        users: updatedUsers
-      };
-    });
+      updateDatabase((current) => {
+        const userExists = current.users?.some((u) => u.id === userId || u._id === userId);
+        const updatedUsers = userExists
+          ? current.users.map((u) =>
+              u.id === userId || u._id === userId
+                ? updateUserAfterSubmission(u, problem, result.verdict)
+                : u
+            )
+          : [...(current.users || []), updateUserAfterSubmission(userFallback, problem, result.verdict)];
+
+        return {
+          ...current,
+          nextSubmissionId,
+          submissions: [submission, ...(current.submissions || [])],
+          users: updatedUsers
+        };
+      });
+    } catch (dbErr) {
+      console.warn("[Submit] Local DB update notice:", dbErr.message);
+    }
 
     return result;
   }
@@ -292,17 +376,19 @@ export function AppDataProvider({ children }) {
   const value = useMemo(
     () => ({
       database,
-      leaderboard: computeLeaderboard(database),
-      getProblemById: (problemId) => getProblemById(database, problemId),
+      refreshDatabase,
+      updateDatabase,
+      getProblemById: (id) => getProblemById(database, id),
       getProblemsForUser: (userId, query, difficulty, status) =>
         getProblemsForUser(database, userId, query, difficulty, status),
       getSubmissionsForUser: (userId) => getSubmissionsForUser(database, userId),
-      getSavedCode: (problemId, language, starter) => getSavedCode(savedCode, problemId, language, starter),
       getUserById: (userId) => getUserById(database, userId),
+      getSavedCode: (problemId, language, starterCode) =>
+        getSavedCode(savedCode, problemId, language, starterCode),
+      saveCode,
       runSolution,
       submitSolution,
-      saveCode,
-      refreshDatabase
+      leaderboard: computeLeaderboard(database)
     }),
     [database, savedCode]
   );
@@ -311,9 +397,7 @@ export function AppDataProvider({ children }) {
 }
 
 export function useAppData() {
-  const context = useContext(AppDataContext);
-  if (!context) {
-    throw new Error("useAppData must be used within an AppDataProvider");
-  }
-  return context;
+  const ctx = useContext(AppDataContext);
+  if (!ctx) throw new Error("useAppData must be used within an AppDataProvider");
+  return ctx;
 }

@@ -1,3 +1,4 @@
+import "dotenv/config"; // Load .env variables FIRST before any other import
 import { createApp } from "./app.js";
 import { connectDatabase } from "./lib/db.js";
 
@@ -5,9 +6,21 @@ const port = Number(process.env.PORT || 4000);
 const app = createApp();
 
 async function startServer() {
-  await connectDatabase();
+  try {
+    const dbConnected = await connectDatabase();
+    if (dbConnected) {
+      console.log("[Server] MongoDB connected successfully.");
+    } else {
+      console.warn("[Server] MongoDB not connected — running with in-memory fallback.");
+    }
+  } catch (err) {
+    console.warn("[Server] MongoDB connection warning:", err.message);
+  }
+
   app.listen(port, () => {
-    console.log(`Online Judge API listening on http://localhost:${port}`);
+    console.log(`\n🚀 Online Judge API running at http://localhost:${port}`);
+    console.log(`   Environment: ${process.env.NODE_ENV || "development"}`);
+    console.log(`   MongoDB URI: ${process.env.MONGODB_URI ? "✅ Configured" : "⚠️  Not set (in-memory mode)"}\n`);
   });
 }
 

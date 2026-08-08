@@ -2,6 +2,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useSmoothScroll } from "../../hooks/useSmoothScroll.js";
 import { AuroraBackground } from "../motion/MotionSystem.jsx";
+import { ErrorBoundary } from "../common/ErrorBoundary.jsx";
 import Footer from "./Footer.jsx";
 import Navbar from "./Navbar.jsx";
 import Sidebar from "./Sidebar.jsx";
@@ -26,7 +27,9 @@ export default function AppLayout({ children }) {
               transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
               style={{ width: "100%", height: "100%" }}
             >
-              {children || <Outlet />}
+              <ErrorBoundary>
+                {children || <Outlet />}
+              </ErrorBoundary>
             </motion.div>
           </AnimatePresence>
           <Footer />
