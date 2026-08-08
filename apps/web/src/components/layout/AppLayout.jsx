@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useSmoothScroll } from "../../hooks/useSmoothScroll.js";
@@ -10,13 +11,17 @@ import Sidebar from "./Sidebar.jsx";
 export default function AppLayout({ children }) {
   useSmoothScroll();
   const location = useLocation();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   return (
     <div className="app">
       <AuroraBackground />
-      <Navbar />
+      <Navbar onToggleSidebar={() => setMobileSidebarOpen((prev) => !prev)} />
       <div className="app-grid">
-        <Sidebar />
+        <Sidebar
+          mobileOpen={mobileSidebarOpen}
+          onCloseMobile={() => setMobileSidebarOpen(false)}
+        />
         <div className="content-shell">
           <AnimatePresence mode="wait">
             <motion.div

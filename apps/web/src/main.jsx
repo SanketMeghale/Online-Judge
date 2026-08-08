@@ -19,6 +19,7 @@ import ProblemsList from "./pages/ProblemsList.jsx";
 import Profile from "./pages/Profile.jsx";
 import Register from "./pages/Register.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
+import Settings from "./pages/Settings.jsx";
 import SubmissionHistoryPage from "./pages/SubmissionHistoryPage.jsx";
 import "./styles/main.css";
 
@@ -56,16 +57,19 @@ createRoot(document.getElementById("root")).render(
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/problems" element={<ProblemsList />} />
+                <Route path="/practice" element={<ProblemsList />} />
                 <Route path="/problems/:problemId" element={<ProblemDetails />} />
                 <Route path="/submissions" element={<SubmissionHistoryPage />} />
                 <Route path="/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/contests" element={<ContestPage />} />
+                <Route path="/contest" element={<ContestPage />} />
                 <Route path="/collaboration" element={<FeaturePage title="Collaboration" />} />
                 <Route path="/interviewer" element={<AICoachPage />} />
                 <Route path="/ai-coach" element={<AICoachPage />} />
                 <Route path="/stats" element={<FeaturePage title="Progress & Stats" />} />
-                <Route path="/settings" element={<FeaturePage title="Settings" />} />
+                <Route path="/progress" element={<FeaturePage title="Progress & Stats" />} />
+                <Route path="/settings" element={<Settings />} />
                 <Route path="/bookmarks" element={<FeaturePage title="Bookmarks" />} />
                 <Route path="/discuss" element={<FeaturePage title="Discuss" />} />
                 <Route path="/admin" element={<AdminDashboard />} />
