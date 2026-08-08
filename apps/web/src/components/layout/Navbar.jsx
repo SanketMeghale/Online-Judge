@@ -119,29 +119,27 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
           {/* Logo & Wordmark */}
           <Link to="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
             <motion.div
-              whileHover={{ scale: 1.1, rotate: 6 }}
+              whileHover={{ scale: 1.12, rotate: 8 }}
               whileTap={{ scale: 0.92 }}
-              animate={{ y: [0, -2, 0] }}
+              animate={{ y: [0, -2.5, 0] }}
               transition={{
-                y: { duration: 3, repeat: Infinity, ease: "easeInOut" },
-                scale: { duration: 0.15 },
-                rotate: { duration: 0.15 }
+                y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" },
+                scale: { duration: 0.2 },
+                rotate: { duration: 0.2 }
               }}
               style={{
-                width: "36px",
-                height: "36px",
-                borderRadius: "8px",
+                width: "38px",
+                height: "38px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                overflow: "hidden",
-                filter: "drop-shadow(0 4px 12px rgba(120, 80, 255, 0.45))"
+                filter: "drop-shadow(0 2px 8px rgba(120, 80, 255, 0.6)) drop-shadow(0 0 16px rgba(59,130,246,0.3))"
               }}
             >
               <img
                 src="/logo.png"
                 alt="Judgo Logo"
-                style={{ width: "36px", height: "36px", objectFit: "contain", display: "block" }}
+                style={{ width: "38px", height: "38px", objectFit: "contain", display: "block" }}
               />
             </motion.div>
             <span style={{ fontSize: "1.22rem", fontWeight: "800", letterSpacing: "-0.02em", color: "#ffffff" }}>

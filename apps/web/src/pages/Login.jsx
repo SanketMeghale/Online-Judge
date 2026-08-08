@@ -102,7 +102,7 @@ export default function Login() {
       {/* Mobile Branding Header */}
       <div className="auth-mobile-header">
         <Link to="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
-          <div className="auth-logo-box" style={{ width: "36px", height: "36px" }}>
+          <div className="auth-logo-box" style={{ width: "44px", height: "44px" }}>
             <img src="/logo.png" alt="Judgo Logo" />
           </div>
           <span className="auth-brand-name" style={{ fontSize: "1.25rem" }}>Judgo</span>
