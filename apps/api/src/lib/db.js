@@ -16,18 +16,17 @@ export async function connectDatabase() {
     return false;
   }
 
-  // Return existing active connection
-  if (cached.conn && mongoose.connection.readyState === 1) {
+  // Return existing active connection if ready
+  if (mongoose.connection.readyState === 1) {
     return true;
   }
 
   if (!cached.promise) {
     const opts = {
-      bufferCommands: false,
-      serverSelectionTimeoutMS: 2500,
-      connectTimeoutMS: 2500,
-      socketTimeoutMS: 2500,
-      maxPoolSize: 2
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+      socketTimeoutMS: 10000,
+      maxPoolSize: 5
     };
 
     cached.promise = mongoose
@@ -40,7 +39,6 @@ export async function connectDatabase() {
         if (!cached.seeded) {
           cached.seeded = true;
           Problem.estimatedDocumentCount()
-            .maxTimeMS(2000)
             .then(async (count) => {
               if (count === 0) {
                 console.log("[MongoDB] Seeding initial problems collection...");
@@ -62,7 +60,7 @@ export async function connectDatabase() {
 
   try {
     cached.conn = await cached.promise;
-    return !!cached.conn;
+    return mongoose.connection.readyState === 1;
   } catch (err) {
     cached.promise = null;
     return false;
@@ -72,4 +70,5 @@ export async function connectDatabase() {
 export function isDatabaseConnected() {
   return mongoose.connection && mongoose.connection.readyState === 1;
 }
+
 

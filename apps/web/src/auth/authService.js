@@ -27,15 +27,20 @@ export async function loginWithEmail({ email, username, password }) {
   try {
     const res = await api.login({ email: identifier, username: identifier, password });
     return {
-      accessToken: res.token,
+      accessToken: res.token || res.accessToken,
       user: res.user
     };
   } catch (err) {
-    // If backend is unavailable or fails, fallback to local storage authentication
+    // If backend provided an explicit rejection, throw it
+    if (err.message && !err.message.includes("Failed to fetch") && !err.message.includes("NetworkError")) {
+      throw err;
+    }
+
+    // Fallback to local storage only if offline/network failed
     const database = ensureDatabase();
     const clean = identifier.toLowerCase();
     const user = database.users?.find(
-      (u) => u.email.toLowerCase() === clean || (u.username && u.username.toLowerCase() === clean)
+      (u) => u.email?.toLowerCase() === clean || (u.username && u.username.toLowerCase() === clean)
     );
 
     if (!user || user.password !== password) {
@@ -64,19 +69,24 @@ export async function registerWithEmail({ name, username, email, password }) {
   try {
     const res = await api.register({ name, username, email, password });
     return {
-      accessToken: res.token,
+      accessToken: res.token || res.accessToken,
       user: res.user
     };
   } catch (err) {
-    // Fallback to local database storage if backend API is not available
+    // Always propagate server-side validation & duplicate user errors
+    if (err.message && !err.message.includes("Failed to fetch") && !err.message.includes("NetworkError")) {
+      throw err;
+    }
+
+    // Fallback to local database storage if network is truly offline
     const database = ensureDatabase();
 
     if (findUserByEmail(database, email)) {
       throw new Error("An account with this email already exists.");
     }
 
-    const existingUsername = database.users.find(
-      (user) => user.username.toLowerCase() === username.trim().toLowerCase()
+    const existingUsername = database.users?.find(
+      (user) => user.username?.toLowerCase() === username.trim().toLowerCase()
     );
 
     if (existingUsername) {
@@ -86,7 +96,7 @@ export async function registerWithEmail({ name, username, email, password }) {
     const user = createUserRecord({ name, username, email, password });
     const nextDatabase = {
       ...database,
-      users: [...database.users, user]
+      users: [...(database.users || []), user]
     };
 
     writeDatabase(nextDatabase);

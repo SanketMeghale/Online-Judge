@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema(
       tleCount: { type: Number, default: 0 }
     }
   },
-  { timestamps: true }
+  { timestamps: true, collection: "users" }
 );
 
 export const User = mongoose.models.User || mongoose.model("User", userSchema);

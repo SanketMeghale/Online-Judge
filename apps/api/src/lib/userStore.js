@@ -30,13 +30,16 @@ const memoryUsers = [
 
 export async function findUserByEmail(email) {
   if (!email) return null;
+  await connectDatabase();
   const cleanEmail = email.trim().toLowerCase();
 
   if (isDatabaseConnected()) {
     try {
       const doc = await User.findOne({ email: cleanEmail }).lean();
       return doc ? sanitizeUser(doc) : null;
-    } catch {}
+    } catch (e) {
+      console.error("[UserStore] findUserByEmail DB error:", e);
+    }
   }
 
   const u = memoryUsers.find((item) => item.email.toLowerCase() === cleanEmail);
@@ -45,13 +48,16 @@ export async function findUserByEmail(email) {
 
 export async function findUserByUsername(username) {
   if (!username) return null;
+  await connectDatabase();
   const cleanUser = username.trim().toLowerCase();
 
   if (isDatabaseConnected()) {
     try {
-      const doc = await User.findOne({ username: cleanUser }).lean();
+      const doc = await User.findOne({ username: { $regex: new RegExp(`^${cleanUser.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}$`, "i") } }).lean();
       return doc ? sanitizeUser(doc) : null;
-    } catch {}
+    } catch (e) {
+      console.error("[UserStore] findUserByUsername DB error:", e);
+    }
   }
 
   const u = memoryUsers.find((item) => item.username.toLowerCase() === cleanUser);
@@ -60,6 +66,7 @@ export async function findUserByUsername(username) {
 
 export async function findUserById(id) {
   if (!id) return null;
+  await connectDatabase();
 
   if (isDatabaseConnected()) {
     try {
@@ -80,6 +87,7 @@ export async function findUserById(id) {
 }
 
 export async function createUser({ name, username, email, password }) {
+  await connectDatabase();
   const hashedPassword = await hashPassword(password);
   const userObj = {
     id: `u-${Date.now()}`,
@@ -106,6 +114,7 @@ export async function createUser({ name, username, email, password }) {
   if (isDatabaseConnected()) {
     try {
       const doc = await User.create(userObj);
+      console.log(`[UserStore] User '${email || username}' successfully created in MongoDB Atlas.`);
       return sanitizeUser(doc.toObject());
     } catch (e) {
       console.error("[UserStore] createUser DB error:", e);
@@ -116,9 +125,9 @@ export async function createUser({ name, username, email, password }) {
   return sanitizeUser(userObj);
 }
 
-
 export async function validateUserCredentials(identifier, password) {
   if (!identifier || !password) return null;
+  await connectDatabase();
   const clean = identifier.trim().toLowerCase();
 
   let rawUser = null;
