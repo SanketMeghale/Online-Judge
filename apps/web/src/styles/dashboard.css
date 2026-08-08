@@ -854,6 +854,10 @@
   .dash-middle-section {
     grid-template-columns: 1fr 1fr;
   }
+
+  .ai-mentor-grid {
+    grid-template-columns: 40% 60% !important;
+  }
 }
 
 @media (max-width: 768px) {
@@ -874,4 +878,10 @@
   .dash-hero-greeting h1 {
     font-size: 1.35rem;
   }
+
+  .ai-mentor-grid {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+  }
 }
+

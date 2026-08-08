@@ -153,7 +153,7 @@ export default function Dashboard() {
 
           <AICoachCard
             message="You've been practicing Array techniques. Want to try 3 targeted two-pointer challenges to sharpen your runtime efficiency?"
-            actionUrl="/interviewer"
+            actionUrl="/ai-coach"
             actionText="Start Practice"
           />
         </div>

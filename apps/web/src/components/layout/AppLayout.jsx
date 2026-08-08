@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
 import { useSmoothScroll } from "../../hooks/useSmoothScroll.js";
 import { AuroraBackground } from "../motion/MotionSystem.jsx";
 import { ErrorBoundary } from "../common/ErrorBoundary.jsx";
@@ -43,20 +42,15 @@ export default function AppLayout({ children }) {
           onCloseMobile={() => setMobileSidebarOpen(false)}
         />
         <div className="content-shell">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={location.pathname}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
-              style={{ width: "100%", height: "100%" }}
-            >
-              <ErrorBoundary>
-                {children || <Outlet />}
-              </ErrorBoundary>
-            </motion.div>
-          </AnimatePresence>
+          <div
+            key={location.pathname}
+            className="page-enter-fade"
+            style={{ width: "100%", height: "100%" }}
+          >
+            <ErrorBoundary>
+              {children || <Outlet />}
+            </ErrorBoundary>
+          </div>
           <Footer />
         </div>
       </div>

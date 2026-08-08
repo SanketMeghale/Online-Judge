@@ -12,7 +12,7 @@ const searchIndex = [
   { id: "climbing-stairs", title: "Climbing Stairs", category: "Problems", path: "/problems/climbing-stairs", diff: "Easy" },
   { id: "reverse-string", title: "Reverse String", category: "Problems", path: "/problems/reverse-string", diff: "Easy" },
   { id: "codesprint", title: "CodeSprint Biweekly Contest", category: "Contests", path: "/contests", diff: "Live" },
-  { id: "ai-interview", title: "AI Technical Mock Interview", category: "AI Coach", path: "/interviewer", diff: "AI" },
+  { id: "ai-interview", title: "AI Technical Mock Interview", category: "AI Coach", path: "/ai-coach", diff: "AI" },
   { id: "leaderboard", title: "Global Developer Leaderboard", category: "Rankings", path: "/leaderboard", diff: "Stats" }
 ];
 
