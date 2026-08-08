@@ -398,11 +398,17 @@ export function findUserByEmail(database, email) {
 }
 
 export function findUserById(database, userId) {
-  return database.users.find((user) => user.id === userId) ?? null;
+  if (!database || !database.users || !userId) return null;
+  const uid = String(userId);
+  return database.users.find((user) => String(user.id) === uid || String(user._id) === uid) ?? null;
 }
 
 export function getProblemById(database, problemId) {
-  return database.problems.find((problem) => problem.id === problemId) ?? null;
+  return (
+    database?.problems?.find((problem) => problem.id === problemId) ??
+    baseProblems.find((problem) => problem.id === problemId) ??
+    null
+  );
 }
 
 export function formatRelativeDate(value) {
@@ -602,12 +608,20 @@ export function updateUserAfterSubmission(user, problem, verdict) {
 }
 
 export function getProblemsForUser(database, userId) {
+  const problems = (database?.problems && database.problems.length > 0) ? database.problems : baseProblems;
   const user = findUserById(database, userId);
-  if (!user) return [];
-  return listProblemsForUser(database, user);
+  if (!user) {
+    return problems.map((problem) => ({
+      ...problem,
+      status: "Unsolved"
+    }));
+  }
+  return listProblemsForUser({ ...database, problems }, user);
 }
 
 export function getSubmissionsForUser(database, userId) {
+  if (!database || !database.submissions) return seedSubmissions;
+  if (!userId) return database.submissions;
   return listSubmissionsForUser(database, userId);
 }
 
