@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bookmark, CheckCircle2, ChevronDown, ChevronRight, Clock, Cpu, Database, Flame, Gauge, HelpCircle, History, Layers, Lightbulb, Play, Sliders, Sparkles, XCircle, Zap } from "lucide-react";
+import { Bookmark, CheckCircle2, ChevronDown, ChevronRight, History, Layers, Lightbulb, Sliders, Sparkles, XCircle } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/apiClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
@@ -11,7 +11,8 @@ export default function ProblemDetails() {
   const { user } = useAuth();
   const { getProblemById, getProblemsForUser, getSavedCode, getSubmissionsForUser, runSolution, saveCode, submitSolution } = useAppData();
   const problem = getProblemById(problemId);
-  const userProblems = getProblemsForUser(user.id);
+  const currentUserId = user?.id || user?._id || "guest_coder";
+  const userProblems = getProblemsForUser(currentUserId);
   const problemWithStatus = useMemo(
     () => userProblems.find((item) => item.id === problemId) ?? problem,
     [problem, problemId, userProblems]
@@ -28,8 +29,8 @@ export default function ProblemDetails() {
   const [showHint, setShowHint] = useState(false);
 
   const userSubmissions = useMemo(
-    () => getSubmissionsForUser(user.id).filter((s) => s.problemId === problemId),
-    [getSubmissionsForUser, problemId, user.id, result]
+    () => getSubmissionsForUser(currentUserId).filter((s) => s.problemId === problemId),
+    [getSubmissionsForUser, problemId, currentUserId, result]
   );
 
   const [code, setCode] = useState(() => getSavedCode(problemId, "Python", problem?.starterCode?.Python ?? ""));
@@ -145,7 +146,7 @@ export default function ProblemDetails() {
 
     try {
       const nextResult = await submitSolution({
-        userId: user.id,
+        userId: currentUserId,
         problemId: problemWithStatus.id,
         language,
         code

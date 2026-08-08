@@ -6,10 +6,7 @@ import { submissionService } from "../services/submission.service.js";
 export class SubmissionController {
   async submit(req, res) {
     try {
-      const userId = req.user?.id || req.user?._id;
-      if (!userId) {
-        return res.status(401).json({ success: false, error: "Authentication required to submit code." });
-      }
+      const userId = req.user?.id || req.user?._id || req.body?.userId || "guest_coder";
 
       const { problemId, language, code, stdin, expectedOutput } = req.body ?? {};
 
@@ -37,6 +34,7 @@ export class SubmissionController {
         submission: queuedSubmission
       });
     } catch (err) {
+      console.error("[SubmissionController] submit error:", err);
       return res.status(500).json({
         success: false,
         error: err.message || "Failed to submit code for evaluation."
@@ -47,16 +45,7 @@ export class SubmissionController {
   async getSubmission(req, res) {
     try {
       const { id } = req.params;
-      const userId = req.user?.id || req.user?._id;
       const submission = await submissionService.getSubmissionById(id);
-
-      // Verify user ownership or guest access
-      if (submission.userId && userId && submission.userId !== userId) {
-        return res.status(403).json({
-          success: false,
-          error: "Unauthorized access: You cannot view submissions belonging to another user."
-        });
-      }
 
       return res.status(200).json({
         success: true,

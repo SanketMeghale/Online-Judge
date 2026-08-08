@@ -16,13 +16,17 @@ const submissionSchema = new mongoose.Schema(
     memoryPercentile: { type: Number, default: 50.0 },
     passCount: { type: Number, default: 0 },
     totalCount: { type: Number, default: 0 },
+    passedCount: { type: Number, default: 0 },
+    totalCases: { type: Number, default: 0 },
     stdin: { type: String, default: "" },
     stdout: { type: String, default: "" },
     stderr: { type: String, default: "" },
+    output: { type: String, default: "" },
     testcases: { type: Array, default: [] },
+    testResults: { type: Array, default: [] },
     submittedAt: { type: Date, default: Date.now }
   },
-  { timestamps: true }
+  { timestamps: true, strict: false }
 );
 
 export const Submission = mongoose.models.Submission || mongoose.model("Submission", submissionSchema);

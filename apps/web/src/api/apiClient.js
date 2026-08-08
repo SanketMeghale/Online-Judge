@@ -2,12 +2,16 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/$/
 
 function getStoredToken() {
   try {
-    const raw = localStorage.getItem("online-judge-session");
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return parsed?.accessToken ?? parsed?.token ?? null;
+    const raw = localStorage.getItem("online-judge-auth") || localStorage.getItem("online-judge-session");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.accessToken || parsed?.token) {
+        return parsed.accessToken || parsed.token;
+      }
+    }
+    return localStorage.getItem("token") || null;
   } catch {
-    return null;
+    return localStorage.getItem("token") || null;
   }
 }
 

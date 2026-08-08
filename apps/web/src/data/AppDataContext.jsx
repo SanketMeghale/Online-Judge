@@ -180,16 +180,24 @@ export function AppDataProvider({ children }) {
 
   async function submitSolution({ userId, problemId, language, code, stdin = "" }) {
     const problem = getProblemById(database, problemId);
-    const user = database.users.find((item) => item.id === userId);
+    const user = (database.users && database.users.find((item) => item.id === userId || item._id === userId)) || {
+      id: userId || "guest_coder",
+      username: "Coder",
+      stats: { totalSubmissions: 0, acceptedSubmissions: 0 },
+      solvedProblemIds: [],
+      badges: [],
+      xp: 0
+    };
 
-    if (!problem || !user) {
-      throw new Error("Unable to submit right now.");
+    if (!problem) {
+      throw new Error("Problem not found.");
     }
 
     let result;
 
     try {
       const response = await api.submitCode({
+        userId,
         problemId,
         language: language.toLowerCase(),
         code,
@@ -262,17 +270,21 @@ export function AppDataProvider({ children }) {
       result = simulateRun(problem, language, code);
     }
 
-
     const { submission, nextSubmissionId } = createSubmission(database, userId, problem, language, result);
 
-    updateDatabase((current) => ({
-      ...current,
-      nextSubmissionId,
-      submissions: [submission, ...current.submissions],
-      users: current.users.map((item) =>
-        item.id === userId ? updateUserAfterSubmission(item, problem, result.verdict) : item
-      )
-    }));
+    updateDatabase((current) => {
+      const userExists = current.users && current.users.some((item) => item.id === userId || item._id === userId);
+      const updatedUsers = userExists
+        ? current.users.map((item) => (item.id === userId || item._id === userId ? updateUserAfterSubmission(item, problem, result.verdict) : item))
+        : [...(current.users || []), updateUserAfterSubmission(user, problem, result.verdict)];
+
+      return {
+        ...current,
+        nextSubmissionId,
+        submissions: [submission, ...(current.submissions || [])],
+        users: updatedUsers
+      };
+    });
 
     return result;
   }
