@@ -1,30 +1,23 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Activity,
   AlertCircle,
   ArrowRight,
-  ArrowUpRight,
   Award,
   BarChart2,
   Calendar,
   CheckCircle2,
   ChevronDown,
-  Clock,
   Code2,
   Compass,
-  Filter,
   Flame,
-  Layers,
   LineChart,
   Medal,
-  RefreshCw,
   Sparkles,
   Swords,
   Target,
-  Timer,
-  TrendingDown,
   TrendingUp,
   Trophy,
   XCircle,
@@ -45,8 +38,7 @@ const TIME_RANGES = [
 
 export default function ProgressPage() {
   const { user, isCheckingSession } = useAuth();
-  const { getUserById, getProblemsForUser, getSubmissionsForUser, leaderboard } = useAppData();
-  const navigate = useNavigate();
+  const { getUserById, getProblemsForUser, getSubmissionsForUser } = useAppData();
 
   const [timeRange, setTimeRange] = useState("30d");
   const [submissionChartFilter, setSubmissionChartFilter] = useState("All"); // All | Accepted | Failed
@@ -161,7 +153,6 @@ export default function ProgressPage() {
       }
     });
 
-    // Also factor in submissions for topics
     submissions.forEach((s) => {
       const prob = problems.find(
         (p) => (p.id || "").toLowerCase() === (s.problemId || s.problem || "").toLowerCase()
@@ -188,29 +179,24 @@ export default function ProgressPage() {
     }
   }, [problems, submissions, topicSort]);
 
-  // 5. GitHub-Style 52-Week Coding Activity Heatmap Generator
+  // 5. GitHub-Style Coding Activity Heatmap Generator
   const heatmapData = useMemo(() => {
     const days = [];
     const today = new Date();
-    // 52 weeks = 364 days
     for (let i = 363; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const dateStr = d.toISOString().split("T")[0];
 
-      // Count submissions for this day
       const daySubs = submissions.filter((s) => {
         if (!s.createdAt && !s.timestamp) return false;
         const sDate = new Date(s.createdAt || s.timestamp).toISOString().split("T")[0];
         return sDate === dateStr;
       });
 
-      // Count solved for this day
       const daySolved = daySubs.filter((s) => s.verdict === "AC" || s.verdict === "Accepted").length;
 
-      // Active level (0 - 4)
       let count = daySubs.length;
-      // Default to active for current streak day if empty
       if (i === 0 && count === 0 && streak > 0) {
         count = 1;
       }
@@ -352,11 +338,10 @@ export default function ProgressPage() {
     return list;
   }, [totalSolved, streak, totalSubmissions, acceptanceRate, hardSolved]);
 
-  // 8. Smart Recommendations Engine based on actual weak topics & unsolved tiers
+  // 8. Smart Recommendations Engine
   const recommendations = useMemo(() => {
     const list = [];
 
-    // Check for weakest attempted topic
     const weakTopic = topicStats.find((t) => t.attempted > 0 && t.accuracy < 100);
     if (weakTopic) {
       list.push({
@@ -369,7 +354,6 @@ export default function ProgressPage() {
       });
     }
 
-    // Check for topic with low solve count
     const unstartedTopic = topicStats.find((t) => t.solved === 0);
     if (unstartedTopic) {
       list.push({
@@ -382,7 +366,6 @@ export default function ProgressPage() {
       });
     }
 
-    // Recommend Medium or Hard if Easy is mostly solved
     if (easySolved >= 2 && mediumSolved < 5) {
       list.push({
         title: "Medium Problems",
@@ -415,10 +398,9 @@ export default function ProgressPage() {
     return list.slice(0, 3);
   }, [topicStats, easySolved, mediumSolved, hardSolved]);
 
-  // 9. Recent Activity Stream (5-10 items)
+  // 9. Recent Activity Stream (5-7 items)
   const recentActivities = useMemo(() => {
     if (!submissions.length) {
-      // If no recorded submissions, construct from solved problem list
       return problems
         .filter((p) => p.status === "Solved" || p.status === "Attempted")
         .slice(0, 5)
@@ -464,32 +446,32 @@ export default function ProgressPage() {
     });
   }, [submissions, problems, now]);
 
-  // 10. Loading Skeleton
+  // Loading Skeleton
   if (isCheckingSession || loading) {
     return (
-      <div className="progress-page-wrapper" style={{ maxWidth: "1240px", margin: "0 auto", paddingBottom: "60px", display: "flex", flexDirection: "column", gap: "24px" }}>
-        <div style={{ height: "48px", background: "rgba(255,255,255,0.04)", borderRadius: "8px", width: "320px" }} />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+      <div className="progress-page-wrapper" style={{ maxWidth: "1180px", margin: "0 auto", paddingBottom: "24px", display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div style={{ height: "36px", background: "rgba(255,255,255,0.04)", borderRadius: "6px", width: "240px" }} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px" }}>
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} style={{ height: "100px", background: "#0d111a", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.06)" }} />
+            <div key={i} style={{ height: "76px", background: "#0d111a", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }} />
           ))}
         </div>
-        <div style={{ height: "260px", background: "#0d111a", borderRadius: "14px", border: "1px solid rgba(255,255,255,0.06)" }} />
+        <div style={{ height: "200px", background: "#0d111a", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.06)" }} />
       </div>
     );
   }
 
-  // 11. Error State
+  // Error State
   if (error) {
     return (
-      <div style={{ padding: "4rem 2rem", textAlign: "center", maxWidth: "600px", margin: "0 auto" }}>
-        <AlertCircle size={36} style={{ color: "#f87171", margin: "0 auto 12px" }} />
-        <h2 style={{ fontSize: "1.3rem", color: "#f8fafc", fontWeight: "700" }}>Unable to load your progress</h2>
-        <p style={{ color: "#94a3b8", fontSize: "0.88rem", margin: "6px 0 18px" }}>{error}</p>
+      <div style={{ padding: "3rem 1.5rem", textAlign: "center", maxWidth: "500px", margin: "0 auto" }}>
+        <AlertCircle size={32} style={{ color: "#f87171", margin: "0 auto 8px" }} />
+        <h2 style={{ fontSize: "1.15rem", color: "#f8fafc", fontWeight: "700" }}>Unable to load your progress</h2>
+        <p style={{ color: "#94a3b8", fontSize: "0.82rem", margin: "4px 0 14px" }}>{error}</p>
         <button
           type="button"
           onClick={() => window.location.reload()}
-          style={{ background: "#4f46e5", color: "#ffffff", border: "none", padding: "8px 18px", borderRadius: "8px", fontWeight: "600", cursor: "pointer" }}
+          style={{ background: "#4f46e5", color: "#ffffff", border: "none", padding: "6px 14px", borderRadius: "6px", fontWeight: "600", cursor: "pointer", fontSize: "0.82rem" }}
         >
           Try Again
         </button>
@@ -499,38 +481,38 @@ export default function ProgressPage() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       className="progress-page-wrapper"
-      style={{ maxWidth: "1240px", margin: "0 auto", paddingBottom: "60px", display: "flex", flexDirection: "column", gap: "24px" }}
+      style={{ maxWidth: "1180px", margin: "0 auto", paddingBottom: "32px", display: "flex", flexDirection: "column", gap: "14px" }}
     >
-      {/* 1. Page Header with Time Range Dropdown */}
-      <header className="progress-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
+      {/* 1. COMPACT PAGE HEADER (50–65px) */}
+      <header className="progress-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", padding: "2px 0" }}>
         <div>
-          <span className="section-kicker" style={{ fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "#818cf8", fontWeight: "700" }}>
-            Performance Analytics
-          </span>
-          <h1 style={{ fontSize: "1.9rem", fontWeight: "800", color: "#ffffff", margin: "6px 0 4px 0", letterSpacing: "-0.02em" }}>
-            Progress & Stats
-          </h1>
-          <p style={{ color: "#94a3b8", fontSize: "0.92rem", margin: 0 }}>
-            Track your coding journey, analyze your strengths, and discover what to practice next.
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <LineChart size={16} style={{ color: "#818cf8" }} />
+            <h1 style={{ fontSize: "1.45rem", fontWeight: "800", color: "#ffffff", margin: 0, letterSpacing: "-0.02em" }}>
+              Progress & Stats
+            </h1>
+          </div>
+          <p style={{ color: "#94a3b8", fontSize: "0.82rem", margin: "2px 0 0 0" }}>
+            Track your coding journey, analyze strengths, and discover what to practice next.
           </p>
         </div>
 
-        {/* Time Range Filter Pill */}
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        {/* Time Range Filter Dropdown */}
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
             style={{
               background: "#0d111a",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              borderRadius: "8px",
-              padding: "8px 14px",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: "6px",
+              padding: "6px 12px",
               color: "#f8fafc",
-              fontSize: "0.85rem",
+              fontSize: "0.78rem",
               fontWeight: "600",
               cursor: "pointer",
               outline: "none"
@@ -545,124 +527,124 @@ export default function ProgressPage() {
         </div>
       </header>
 
-      {/* 2. Overview Statistics Cards (5 compact cards) */}
+      {/* 2. OVERVIEW STATS CARDS (5 COMPACT CARDS) */}
       <section
         className="progress-stats-grid"
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-          gap: "14px"
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: "10px"
         }}
       >
         {/* Card 1: Problems Solved */}
-        <div style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "16px 18px", display: "flex", flexDirection: "column", gap: "6px" }}>
+        <div style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "4px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.76rem", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>Problems Solved</span>
-            <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "rgba(99, 102, 241, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#818cf8" }}>
-              <Trophy size={15} />
+            <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>Problems Solved</span>
+            <div style={{ width: "24px", height: "24px", borderRadius: "5px", background: "rgba(99, 102, 241, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#818cf8" }}>
+              <Trophy size={13} />
             </div>
           </div>
-          <strong style={{ fontSize: "1.55rem", color: "#f8fafc", fontWeight: "800", lineHeight: "1.1" }}>{totalSolved}</strong>
-          <span style={{ fontSize: "0.74rem", color: "#10b981", display: "flex", alignItems: "center", gap: "3px" }}>
-            <TrendingUp size={12} />
+          <strong style={{ fontSize: "1.35rem", color: "#f8fafc", fontWeight: "800", lineHeight: "1.1" }}>{totalSolved}</strong>
+          <span style={{ fontSize: "0.7rem", color: "#10b981", display: "flex", alignItems: "center", gap: "3px" }}>
+            <TrendingUp size={11} />
             <span>+{totalSolved > 0 ? totalSolved : 0} this period</span>
           </span>
         </div>
 
         {/* Card 2: Total Submissions */}
-        <div style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "16px 18px", display: "flex", flexDirection: "column", gap: "6px" }}>
+        <div style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "4px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.76rem", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>Total Submissions</span>
-            <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "rgba(59, 130, 246, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#3b82f6" }}>
-              <Code2 size={15} />
+            <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>Submissions</span>
+            <div style={{ width: "24px", height: "24px", borderRadius: "5px", background: "rgba(59, 130, 246, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#3b82f6" }}>
+              <Code2 size={13} />
             </div>
           </div>
-          <strong style={{ fontSize: "1.55rem", color: "#f8fafc", fontWeight: "800", lineHeight: "1.1" }}>{totalSubmissions}</strong>
-          <span style={{ fontSize: "0.74rem", color: "#94a3b8" }}>
-            {acceptedSubmissions} Accepted • {waCount + errorCount} Failed
+          <strong style={{ fontSize: "1.35rem", color: "#f8fafc", fontWeight: "800", lineHeight: "1.1" }}>{totalSubmissions}</strong>
+          <span style={{ fontSize: "0.7rem", color: "#94a3b8" }}>
+            {acceptedSubmissions} AC • {waCount + errorCount} Failed
           </span>
         </div>
 
         {/* Card 3: Acceptance Rate */}
-        <div style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "16px 18px", display: "flex", flexDirection: "column", gap: "6px" }}>
+        <div style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "4px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.76rem", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>Acceptance Rate</span>
-            <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "rgba(16, 185, 129, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#10b981" }}>
-              <Target size={15} />
+            <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>Acceptance Rate</span>
+            <div style={{ width: "24px", height: "24px", borderRadius: "5px", background: "rgba(16, 185, 129, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#10b981" }}>
+              <Target size={13} />
             </div>
           </div>
-          <strong style={{ fontSize: "1.55rem", color: "#10b981", fontWeight: "800", lineHeight: "1.1" }}>{acceptanceRate}%</strong>
-          <span style={{ fontSize: "0.74rem", color: "#10b981", display: "flex", alignItems: "center", gap: "3px" }}>
-            <TrendingUp size={12} />
+          <strong style={{ fontSize: "1.35rem", color: "#10b981", fontWeight: "800", lineHeight: "1.1" }}>{acceptanceRate}%</strong>
+          <span style={{ fontSize: "0.7rem", color: "#10b981", display: "flex", alignItems: "center", gap: "3px" }}>
+            <TrendingUp size={11} />
             <span>+4.2% vs platform avg</span>
           </span>
         </div>
 
         {/* Card 4: Current Streak */}
-        <div style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "16px 18px", display: "flex", flexDirection: "column", gap: "6px" }}>
+        <div style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "4px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.76rem", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>Current Streak</span>
-            <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "rgba(245, 158, 11, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#f59e0b" }}>
-              <Flame size={15} />
+            <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>Streak</span>
+            <div style={{ width: "24px", height: "24px", borderRadius: "5px", background: "rgba(245, 158, 11, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#f59e0b" }}>
+              <Flame size={13} />
             </div>
           </div>
-          <strong style={{ fontSize: "1.55rem", color: "#fbbf24", fontWeight: "800", lineHeight: "1.1" }}>{streak} {streak === 1 ? "day" : "days"}</strong>
-          <span style={{ fontSize: "0.74rem", color: "#94a3b8" }}>
-            Personal Best: {Math.max(streak, 14)} days
+          <strong style={{ fontSize: "1.35rem", color: "#fbbf24", fontWeight: "800", lineHeight: "1.1" }}>{streak} {streak === 1 ? "day" : "days"}</strong>
+          <span style={{ fontSize: "0.7rem", color: "#94a3b8" }}>
+            Best: {Math.max(streak, 14)} days
           </span>
         </div>
 
         {/* Card 5: Contest Rating */}
-        <div style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "16px 18px", display: "flex", flexDirection: "column", gap: "6px" }}>
+        <div style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "4px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.76rem", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>Contest Rating</span>
-            <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "rgba(168, 85, 247, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#a855f7" }}>
-              <Swords size={15} />
+            <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: "600", textTransform: "uppercase" }}>Contest Rating</span>
+            <div style={{ width: "24px", height: "24px", borderRadius: "5px", background: "rgba(168, 85, 247, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#a855f7" }}>
+              <Swords size={13} />
             </div>
           </div>
-          <strong style={{ fontSize: "1.55rem", color: "#c084fc", fontWeight: "800", lineHeight: "1.1" }}>{contestRating}</strong>
-          <span style={{ fontSize: "0.74rem", color: "#94a3b8" }}>
-            Global Rank: {liveUser?.ranking ? `#${liveUser.ranking}` : "Top 8%"}
+          <strong style={{ fontSize: "1.35rem", color: "#c084fc", fontWeight: "800", lineHeight: "1.1" }}>{contestRating}</strong>
+          <span style={{ fontSize: "0.7rem", color: "#94a3b8" }}>
+            Rank: {liveUser?.ranking ? `#${liveUser.ranking}` : "Top 8%"}
           </span>
         </div>
       </section>
 
-      {/* 3. Middle Grid: Problem Solving Breakdown + Activity Heatmap */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "20px", alignItems: "start" }}>
+      {/* 3. MIDDLE GRID: DIFFICULTY BREAKDOWN + CODING HEATMAP */}
+      <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: "12px", alignItems: "start" }}>
         
         {/* Card: Problem Solving Progress */}
         <section
           style={{
             background: "#0d111a",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: "14px",
-            padding: "24px",
+            border: "1px solid rgba(255, 255, 255, 0.07)",
+            borderRadius: "10px",
+            padding: "16px 18px",
             display: "flex",
             flexDirection: "column",
-            gap: "20px"
+            gap: "14px"
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <h2 style={{ fontSize: "1.1rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 2px 0" }}>Problem Solving Progress</h2>
-              <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Distribution across difficulty tiers</span>
+              <h2 style={{ fontSize: "0.95rem", fontWeight: "700", color: "#f8fafc", margin: 0 }}>Difficulty Breakdown</h2>
+              <span style={{ fontSize: "0.72rem", color: "#64748b" }}>Progress across tiers</span>
             </div>
-            <span style={{ fontSize: "0.82rem", fontWeight: "700", color: "#818cf8" }}>
-              {totalSolved} / {totalProblemsCount} ({overallCompletionRate}%)
+            <span style={{ fontSize: "0.78rem", fontWeight: "700", color: "#818cf8" }}>
+              {totalSolved}/{totalProblemsCount} ({overallCompletionRate}%)
             </span>
           </div>
 
           {/* Difficulty Progress Bars */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {/* Easy Bar */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem" }}>
                 <span style={{ color: "#34d399", fontWeight: "600" }}>Easy</span>
                 <span style={{ color: "#94a3b8" }}>
-                  <strong>{easySolved}</strong> / {easyProblems.length || 3} ({easyProblems.length ? Math.round((easySolved / easyProblems.length) * 100) : 0}%)
+                  <strong>{easySolved}</strong> / {easyProblems.length || 3}
                 </span>
               </div>
-              <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.06)", borderRadius: "999px", overflow: "hidden" }}>
+              <div style={{ width: "100%", height: "5px", background: "rgba(255,255,255,0.06)", borderRadius: "999px", overflow: "hidden" }}>
                 <div
                   style={{
                     height: "100%",
@@ -676,14 +658,14 @@ export default function ProgressPage() {
             </div>
 
             {/* Medium Bar */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem" }}>
                 <span style={{ color: "#fbbf24", fontWeight: "600" }}>Medium</span>
                 <span style={{ color: "#94a3b8" }}>
-                  <strong>{mediumSolved}</strong> / {mediumProblems.length || 4} ({mediumProblems.length ? Math.round((mediumSolved / mediumProblems.length) * 100) : 0}%)
+                  <strong>{mediumSolved}</strong> / {mediumProblems.length || 4}
                 </span>
               </div>
-              <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.06)", borderRadius: "999px", overflow: "hidden" }}>
+              <div style={{ width: "100%", height: "5px", background: "rgba(255,255,255,0.06)", borderRadius: "999px", overflow: "hidden" }}>
                 <div
                   style={{
                     height: "100%",
@@ -697,14 +679,14 @@ export default function ProgressPage() {
             </div>
 
             {/* Hard Bar */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem" }}>
                 <span style={{ color: "#f87171", fontWeight: "600" }}>Hard</span>
                 <span style={{ color: "#94a3b8" }}>
-                  <strong>{hardSolved}</strong> / {hardProblems.length || 3} ({hardProblems.length ? Math.round((hardSolved / hardProblems.length) * 100) : 0}%)
+                  <strong>{hardSolved}</strong> / {hardProblems.length || 3}
                 </span>
               </div>
-              <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.06)", borderRadius: "999px", overflow: "hidden" }}>
+              <div style={{ width: "100%", height: "5px", background: "rgba(255,255,255,0.06)", borderRadius: "999px", overflow: "hidden" }}>
                 <div
                   style={{
                     height: "100%",
@@ -718,10 +700,9 @@ export default function ProgressPage() {
             </div>
           </div>
 
-          {/* Bottom Summary Pill */}
-          <div style={{ marginTop: "auto", paddingTop: "12px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Overall problem completion:</span>
-            <span style={{ fontSize: "0.85rem", fontWeight: "700", color: "#f8fafc" }}>
+          <div style={{ paddingTop: "6px", borderTop: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: "0.72rem", color: "#64748b" }}>Total completion:</span>
+            <span style={{ fontSize: "0.78rem", fontWeight: "700", color: "#f8fafc" }}>
               {overallCompletionRate}% solved
             </span>
           </div>
@@ -731,34 +712,34 @@ export default function ProgressPage() {
         <section
           style={{
             background: "#0d111a",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: "14px",
-            padding: "24px",
+            border: "1px solid rgba(255, 255, 255, 0.07)",
+            borderRadius: "10px",
+            padding: "16px 18px",
             display: "flex",
             flexDirection: "column",
-            gap: "16px"
+            gap: "10px"
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <h2 style={{ fontSize: "1.1rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 2px 0" }}>Coding Activity</h2>
-              <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Your problem-solving activity over the last year</span>
+              <h2 style={{ fontSize: "0.95rem", fontWeight: "700", color: "#f8fafc", margin: 0 }}>Coding Activity</h2>
+              <span style={{ fontSize: "0.72rem", color: "#64748b" }}>Annual contribution grid</span>
             </div>
-            <span style={{ fontSize: "0.78rem", color: "#818cf8", fontWeight: "600" }}>
-              {totalSubmissions} submissions this year
+            <span style={{ fontSize: "0.74rem", color: "#818cf8", fontWeight: "600" }}>
+              {totalSubmissions} submissions
             </span>
           </div>
 
-          {/* Heatmap Grid (52 weeks x 7 days) */}
-          <div style={{ overflowX: "auto", paddingBottom: "8px" }}>
-            <div style={{ display: "grid", gridAutoFlow: "column", gridTemplateRows: "repeat(7, 12px)", gap: "4px", minWidth: "640px" }}>
+          {/* Heatmap Grid (52 weeks x 7 days - Compact 10px cells) */}
+          <div style={{ overflowX: "auto", paddingBottom: "4px" }}>
+            <div style={{ display: "grid", gridAutoFlow: "column", gridTemplateRows: "repeat(7, 10px)", gap: "3px", minWidth: "560px" }}>
               {heatmapData.map((day, idx) => {
                 const colors = [
-                  "rgba(255,255,255,0.04)", // 0
-                  "#064e3b",                 // 1-2
-                  "#059669",                 // 3-4
-                  "#10b981",                 // 5-6
-                  "#34d399"                  // 7+
+                  "rgba(255,255,255,0.04)",
+                  "#064e3b",
+                  "#059669",
+                  "#10b981",
+                  "#34d399"
                 ];
 
                 return (
@@ -766,8 +747,8 @@ export default function ProgressPage() {
                     key={idx}
                     title={`${day.date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}: ${day.count} submissions (${day.solvedCount} solved)`}
                     style={{
-                      width: "12px",
-                      height: "12px",
+                      width: "10px",
+                      height: "10px",
                       borderRadius: "2px",
                       background: colors[day.level],
                       cursor: "pointer",
@@ -782,44 +763,44 @@ export default function ProgressPage() {
           </div>
 
           {/* Legend */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.72rem", color: "#64748b" }}>
-            <span>Learn how we calculate coding streak</span>
-            <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.68rem", color: "#64748b" }}>
+            <span>Streak metric</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
               <span>Less</span>
-              <span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "rgba(255,255,255,0.04)" }} />
-              <span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#064e3b" }} />
-              <span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#059669" }} />
-              <span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#10b981" }} />
-              <span style={{ width: "10px", height: "10px", borderRadius: "2px", background: "#34d399" }} />
+              <span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "rgba(255,255,255,0.04)" }} />
+              <span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#064e3b" }} />
+              <span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#059669" }} />
+              <span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#10b981" }} />
+              <span style={{ width: "8px", height: "8px", borderRadius: "2px", background: "#34d399" }} />
               <span>More</span>
             </div>
           </div>
         </section>
       </div>
 
-      {/* 4. Submission Performance Chart + Topic Performance */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "20px", alignItems: "start" }}>
+      {/* 4. SUBMISSION PERFORMANCE TIMELINE + TOPIC PERFORMANCE */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", alignItems: "start" }}>
         
         {/* Card: Submission Performance Timeline Chart */}
         <section
           style={{
             background: "#0d111a",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: "14px",
-            padding: "24px",
+            border: "1px solid rgba(255, 255, 255, 0.07)",
+            borderRadius: "10px",
+            padding: "16px 18px",
             display: "flex",
             flexDirection: "column",
-            gap: "18px"
+            gap: "12px"
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "6px" }}>
             <div>
-              <h2 style={{ fontSize: "1.1rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 2px 0" }}>Submission Performance</h2>
-              <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Accepted vs failed evaluations over time</span>
+              <h2 style={{ fontSize: "0.95rem", fontWeight: "700", color: "#f8fafc", margin: 0 }}>Submission Timeline</h2>
+              <span style={{ fontSize: "0.72rem", color: "#64748b" }}>Daily evaluation trend</span>
             </div>
 
             {/* Verdict Filter Pill */}
-            <div style={{ display: "flex", gap: "4px", background: "#080c14", padding: "3px", borderRadius: "6px", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ display: "flex", gap: "3px", background: "#080c14", padding: "2px", borderRadius: "5px", border: "1px solid rgba(255,255,255,0.06)" }}>
               {["All", "Accepted", "Failed"].map((vf) => (
                 <button
                   key={vf}
@@ -829,9 +810,9 @@ export default function ProgressPage() {
                     background: submissionChartFilter === vf ? "rgba(99, 102, 241, 0.2)" : "transparent",
                     border: "none",
                     color: submissionChartFilter === vf ? "#ffffff" : "#94a3b8",
-                    padding: "3px 8px",
-                    borderRadius: "4px",
-                    fontSize: "0.74rem",
+                    padding: "2px 6px",
+                    borderRadius: "3px",
+                    fontSize: "0.7rem",
                     fontWeight: submissionChartFilter === vf ? "700" : "500",
                     cursor: "pointer"
                   }}
@@ -842,8 +823,8 @@ export default function ProgressPage() {
             </div>
           </div>
 
-          {/* 2D Bar & Trendline Visualization */}
-          <div style={{ height: "180px", display: "flex", alignItems: "flex-end", gap: "6px", paddingTop: "20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          {/* 2D Bar Visualization */}
+          <div style={{ height: "120px", display: "flex", alignItems: "flex-end", gap: "4px", paddingTop: "10px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
             {submissionTimeline.slice(-14).map((pt, idx) => {
               const heightValue =
                 submissionChartFilter === "Accepted"
@@ -852,7 +833,7 @@ export default function ProgressPage() {
                   ? pt.failed
                   : pt.total;
 
-              const barHeight = Math.min(100, Math.max(8, heightValue * 22));
+              const barHeight = Math.min(100, Math.max(6, heightValue * 24));
 
               return (
                 <div
@@ -863,7 +844,7 @@ export default function ProgressPage() {
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    gap: "6px",
+                    gap: "4px",
                     height: "100%",
                     justifyContent: "flex-end"
                   }}
@@ -871,7 +852,7 @@ export default function ProgressPage() {
                   <div
                     style={{
                       width: "100%",
-                      maxWidth: "24px",
+                      maxWidth: "18px",
                       height: `${barHeight}%`,
                       background:
                         submissionChartFilter === "Accepted"
@@ -879,11 +860,11 @@ export default function ProgressPage() {
                           : submissionChartFilter === "Failed"
                           ? "#ef4444"
                           : "linear-gradient(180deg, #6366f1 0%, #4f46e5 100%)",
-                      borderRadius: "4px 4px 0 0",
-                      transition: "height 0.3s ease"
+                      borderRadius: "3px 3px 0 0",
+                      transition: "height 0.25s ease"
                     }}
                   />
-                  <span style={{ fontSize: "0.68rem", color: "#64748b", whiteSpace: "nowrap" }}>
+                  <span style={{ fontSize: "0.62rem", color: "#64748b", whiteSpace: "nowrap" }}>
                     {pt.label.split(" ")[1]}
                   </span>
                 </div>
@@ -891,9 +872,9 @@ export default function ProgressPage() {
             })}
           </div>
 
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.76rem", color: "#94a3b8" }}>
-            <span>Showing daily activity for {selectedRangeObj.label.toLowerCase()}</span>
-            <span style={{ color: "#10b981", fontWeight: "600" }}>{acceptedSubmissions} Accepted Submissions</span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.72rem", color: "#94a3b8" }}>
+            <span>{selectedRangeObj.label}</span>
+            <span style={{ color: "#10b981", fontWeight: "600" }}>{acceptedSubmissions} Passed</span>
           </div>
         </section>
 
@@ -901,64 +882,64 @@ export default function ProgressPage() {
         <section
           style={{
             background: "#0d111a",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: "14px",
-            padding: "24px",
+            border: "1px solid rgba(255, 255, 255, 0.07)",
+            borderRadius: "10px",
+            padding: "16px 18px",
             display: "flex",
             flexDirection: "column",
-            gap: "16px"
+            gap: "10px"
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <h2 style={{ fontSize: "1.1rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 2px 0" }}>Topic Performance</h2>
-              <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Proficiency by data structure & algorithm track</span>
+              <h2 style={{ fontSize: "0.95rem", fontWeight: "700", color: "#f8fafc", margin: 0 }}>Topic Proficiency</h2>
+              <span style={{ fontSize: "0.72rem", color: "#64748b" }}>Accuracy by algorithmic track</span>
             </div>
 
-            {/* Sort Toggle (Strongest / Weakest) */}
+            {/* Sort Toggle */}
             <button
               type="button"
               onClick={() => setTopicSort((prev) => (prev === "strongest" ? "weakest" : "strongest"))}
               style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(255,255,255,0.04)",
+                border: "1px solid rgba(255,255,255,0.06)",
                 color: "#818cf8",
-                padding: "4px 10px",
-                borderRadius: "6px",
-                fontSize: "0.76rem",
+                padding: "3px 8px",
+                borderRadius: "5px",
+                fontSize: "0.7rem",
                 fontWeight: "600",
                 cursor: "pointer"
               }}
             >
-              {topicSort === "strongest" ? "Sort: Strongest" : "Sort: Weakest"}
+              {topicSort === "strongest" ? "Strongest" : "Weakest"}
             </button>
           </div>
 
           {/* Topic Progress Bars List */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {topicStats.slice(0, 5).map((t) => (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {topicStats.slice(0, 4).map((t) => (
               <div
                 key={t.topic}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  gap: "12px",
+                  gap: "10px",
                   background: "#080c14",
-                  padding: "8px 12px",
-                  borderRadius: "8px",
+                  padding: "6px 10px",
+                  borderRadius: "6px",
                   border: "1px solid rgba(255,255,255,0.04)"
                 }}
               >
-                <div style={{ width: "120px" }}>
-                  <strong style={{ fontSize: "0.84rem", color: "#f8fafc", display: "block" }}>{t.topic}</strong>
-                  <span style={{ fontSize: "0.72rem", color: "#64748b" }}>
-                    {t.solved} / {t.total} solved
+                <div style={{ width: "100px" }}>
+                  <strong style={{ fontSize: "0.78rem", color: "#f8fafc", display: "block" }}>{t.topic}</strong>
+                  <span style={{ fontSize: "0.68rem", color: "#64748b" }}>
+                    {t.solved}/{t.total} solved
                   </span>
                 </div>
 
-                <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px" }}>
-                  <div style={{ flex: 1, height: "6px", background: "rgba(255,255,255,0.06)", borderRadius: "999px", overflow: "hidden" }}>
+                <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "6px" }}>
+                  <div style={{ flex: 1, height: "5px", background: "rgba(255,255,255,0.06)", borderRadius: "999px", overflow: "hidden" }}>
                     <div
                       style={{
                         height: "100%",
@@ -968,7 +949,7 @@ export default function ProgressPage() {
                       }}
                     />
                   </div>
-                  <span style={{ fontSize: "0.78rem", fontWeight: "700", color: "#cbd5e1", width: "36px", textAlign: "right" }}>
+                  <span style={{ fontSize: "0.72rem", fontWeight: "700", color: "#cbd5e1", width: "30px", textAlign: "right" }}>
                     {t.accuracy || (t.solved ? 100 : 0)}%
                   </span>
                 </div>
@@ -976,12 +957,12 @@ export default function ProgressPage() {
                 <Link
                   to={`/problems?topic=${encodeURIComponent(t.topic)}`}
                   style={{
-                    background: "rgba(99, 102, 241, 0.12)",
-                    border: "1px solid rgba(99, 102, 241, 0.25)",
+                    background: "rgba(99, 102, 241, 0.1)",
+                    border: "1px solid rgba(99, 102, 241, 0.2)",
                     color: "#818cf8",
-                    padding: "4px 8px",
-                    borderRadius: "6px",
-                    fontSize: "0.74rem",
+                    padding: "3px 6px",
+                    borderRadius: "4px",
+                    fontSize: "0.68rem",
                     fontWeight: "600",
                     textDecoration: "none",
                     whiteSpace: "nowrap"
@@ -995,57 +976,57 @@ export default function ProgressPage() {
         </section>
       </div>
 
-      {/* 5. Bottom Grid: Real Achievements + Recent Activity Stream + Recommendations */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "20px", alignItems: "start" }}>
+      {/* 5. BOTTOM GRID: ACHIEVEMENTS + RECENT ACTIVITY + RECOMMENDATIONS */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", alignItems: "start" }}>
         
         {/* Achievements Card */}
         <section
           style={{
             background: "#0d111a",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: "14px",
-            padding: "24px",
+            border: "1px solid rgba(255, 255, 255, 0.07)",
+            borderRadius: "10px",
+            padding: "16px 18px",
             display: "flex",
             flexDirection: "column",
-            gap: "16px"
+            gap: "10px"
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <h2 style={{ fontSize: "1.1rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 2px 0" }}>Achievements</h2>
-              <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Earned coding sprint milestones</span>
+              <h2 style={{ fontSize: "0.95rem", fontWeight: "700", color: "#f8fafc", margin: 0 }}>Achievements</h2>
+              <span style={{ fontSize: "0.72rem", color: "#64748b" }}>Sprint badges</span>
             </div>
-            <span style={{ fontSize: "0.78rem", color: "#10b981", fontWeight: "700" }}>
+            <span style={{ fontSize: "0.72rem", color: "#10b981", fontWeight: "700" }}>
               {achievements.filter((a) => a.unlocked).length} Unlocked
             </span>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {achievements.map((item) => (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {achievements.slice(0, 3).map((item) => (
               <div
                 key={item.id}
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "12px",
-                  background: item.unlocked ? "rgba(99, 102, 241, 0.08)" : "#080c14",
-                  border: item.unlocked ? "1px solid rgba(99, 102, 241, 0.25)" : "1px solid rgba(255,255,255,0.04)",
-                  padding: "10px 14px",
-                  borderRadius: "10px"
+                  gap: "10px",
+                  background: item.unlocked ? "rgba(99, 102, 241, 0.06)" : "#080c14",
+                  border: item.unlocked ? "1px solid rgba(99, 102, 241, 0.2)" : "1px solid rgba(255,255,255,0.04)",
+                  padding: "8px 10px",
+                  borderRadius: "8px"
                 }}
               >
-                <span style={{ fontSize: "1.3rem" }}>{item.icon}</span>
+                <span style={{ fontSize: "1.1rem" }}>{item.icon}</span>
                 <div style={{ flex: 1 }}>
-                  <strong style={{ color: "#f8fafc", fontSize: "0.86rem", display: "block" }}>{item.title}</strong>
-                  <span style={{ color: "#64748b", fontSize: "0.74rem" }}>{item.desc}</span>
+                  <strong style={{ color: "#f8fafc", fontSize: "0.78rem", display: "block" }}>{item.title}</strong>
+                  <span style={{ color: "#64748b", fontSize: "0.68rem" }}>{item.desc}</span>
                 </div>
                 <span
                   style={{
-                    fontSize: "0.72rem",
+                    fontSize: "0.68rem",
                     fontWeight: "600",
                     color: item.unlocked ? "#4ade80" : "#94a3b8",
-                    background: item.unlocked ? "rgba(34,197,94,0.15)" : "rgba(255,255,255,0.04)",
-                    padding: "3px 8px",
+                    background: item.unlocked ? "rgba(34,197,94,0.12)" : "rgba(255,255,255,0.04)",
+                    padding: "2px 6px",
                     borderRadius: "999px"
                   }}
                 >
@@ -1060,26 +1041,26 @@ export default function ProgressPage() {
         <section
           style={{
             background: "#0d111a",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: "14px",
-            padding: "24px",
+            border: "1px solid rgba(255, 255, 255, 0.07)",
+            borderRadius: "10px",
+            padding: "16px 18px",
             display: "flex",
             flexDirection: "column",
-            gap: "16px"
+            gap: "10px"
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <h2 style={{ fontSize: "1.1rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 2px 0" }}>Recent Activity</h2>
-              <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Live submission event stream</span>
+              <h2 style={{ fontSize: "0.95rem", fontWeight: "700", color: "#f8fafc", margin: 0 }}>Recent Activity</h2>
+              <span style={{ fontSize: "0.72rem", color: "#64748b" }}>Live submission events</span>
             </div>
-            <Link to="/submissions" style={{ fontSize: "0.78rem", color: "#818cf8", textDecoration: "none", fontWeight: "600" }}>
+            <Link to="/submissions" style={{ fontSize: "0.72rem", color: "#818cf8", textDecoration: "none", fontWeight: "600" }}>
               View all →
             </Link>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {recentActivities.map((act, idx) => (
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {recentActivities.slice(0, 4).map((act, idx) => (
               <Link
                 key={idx}
                 to={`/problems/${act.id}`}
@@ -1087,107 +1068,101 @@ export default function ProgressPage() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
-                  gap: "10px",
+                  gap: "8px",
                   background: "#080c14",
                   border: "1px solid rgba(255,255,255,0.04)",
-                  padding: "10px 14px",
-                  borderRadius: "8px",
+                  padding: "7px 10px",
+                  borderRadius: "6px",
                   textDecoration: "none",
                   transition: "background 0.15s ease"
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(99, 102, 241, 0.08)")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "#080c14")}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   {act.isSolved ? (
-                    <CheckCircle2 size={16} style={{ color: "#10b981", flexShrink: 0 }} />
+                    <CheckCircle2 size={13} style={{ color: "#10b981", flexShrink: 0 }} />
                   ) : (
-                    <XCircle size={16} style={{ color: "#f87171", flexShrink: 0 }} />
+                    <XCircle size={13} style={{ color: "#f87171", flexShrink: 0 }} />
                   )}
                   <div>
-                    <strong style={{ fontSize: "0.85rem", color: "#f8fafc", display: "block" }}>{act.title}</strong>
-                    <span style={{ fontSize: "0.72rem", color: "#64748b" }}>
+                    <strong style={{ fontSize: "0.76rem", color: "#f8fafc", display: "block" }}>{act.title}</strong>
+                    <span style={{ fontSize: "0.66rem", color: "#64748b" }}>
                       {act.difficulty} • {act.topic}
                     </span>
                   </div>
                 </div>
-                <span style={{ fontSize: "0.74rem", color: "#94a3b8" }}>{act.timeAgo}</span>
+                <span style={{ fontSize: "0.68rem", color: "#94a3b8" }}>{act.timeAgo}</span>
               </Link>
             ))}
-
-            {!recentActivities.length && (
-              <div style={{ padding: "2rem", textAlign: "center", color: "#64748b", fontSize: "0.85rem" }}>
-                Your activity will appear here after your first submission.
-              </div>
-            )}
           </div>
         </section>
 
-        {/* Smart Recommendations Engine ("What should you practice next?") */}
+        {/* Smart Recommendations Engine */}
         <section
           style={{
             background: "#0d111a",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: "14px",
-            padding: "24px",
+            border: "1px solid rgba(255, 255, 255, 0.07)",
+            borderRadius: "10px",
+            padding: "16px 18px",
             display: "flex",
             flexDirection: "column",
-            gap: "16px"
+            gap: "10px"
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <h2 style={{ fontSize: "1.1rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 2px 0" }}>What to Practice Next</h2>
-              <span style={{ fontSize: "0.78rem", color: "#64748b" }}>AI insights tailored to your weak points</span>
+              <h2 style={{ fontSize: "0.95rem", fontWeight: "700", color: "#f8fafc", margin: 0 }}>Practice Next</h2>
+              <span style={{ fontSize: "0.72rem", color: "#64748b" }}>AI tailored recommendations</span>
             </div>
-            <Sparkles size={16} style={{ color: "#a855f7" }} />
+            <Sparkles size={14} style={{ color: "#a855f7" }} />
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {recommendations.map((rec, idx) => (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {recommendations.slice(0, 2).map((rec, idx) => (
               <div
                 key={idx}
                 style={{
                   background: "#080c14",
-                  border: "1px solid rgba(255,255,255,0.06)",
-                  borderRadius: "10px",
-                  padding: "12px 14px",
+                  border: "1px solid rgba(255,255,255,0.04)",
+                  borderRadius: "8px",
+                  padding: "9px 11px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "6px"
+                  gap: "4px"
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <strong style={{ fontSize: "0.88rem", color: "#f8fafc" }}>{rec.title}</strong>
+                  <strong style={{ fontSize: "0.78rem", color: "#f8fafc" }}>{rec.title}</strong>
                   <span
                     style={{
-                      fontSize: "0.7rem",
+                      fontSize: "0.64rem",
                       fontWeight: "700",
                       color: rec.tone === "orange" ? "#fbbf24" : rec.tone === "purple" ? "#c084fc" : "#38bdf8",
                       background: "rgba(255,255,255,0.05)",
-                      padding: "2px 6px",
-                      borderRadius: "4px"
+                      padding: "1px 5px",
+                      borderRadius: "3px"
                     }}
                   >
                     {rec.badge}
                   </span>
                 </div>
-                <p style={{ fontSize: "0.76rem", color: "#94a3b8", margin: 0 }}>{rec.reason}</p>
+                <p style={{ fontSize: "0.7rem", color: "#94a3b8", margin: 0 }}>{rec.reason}</p>
                 <Link
                   to={rec.link}
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: "4px",
-                    fontSize: "0.78rem",
+                    gap: "3px",
+                    fontSize: "0.72rem",
                     fontWeight: "600",
                     color: "#818cf8",
                     textDecoration: "none",
-                    marginTop: "4px"
+                    marginTop: "2px"
                   }}
                 >
                   <span>{rec.action}</span>
-                  <ArrowRight size={13} />
+                  <ArrowRight size={11} />
                 </Link>
               </div>
             ))}
