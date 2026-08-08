@@ -1,804 +1,1025 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
   Bot,
-  BrainCircuit,
   Code2,
-  Terminal,
   Target,
+  ArrowRight,
+  Send,
+  Trash2,
+  Paperclip,
+  Lightbulb,
+  FileCode,
+  Compass,
+  CheckCheck,
+  Play,
+  RotateCcw,
+  Zap,
   TrendingUp,
   Award,
-  BookOpen,
-  Building2,
-  Mic,
-  MessageSquare,
-  CheckCircle2,
-  AlertTriangle,
-  ChevronRight,
-  Play,
-  Lightbulb,
-  Zap,
-  BarChart3,
-  Flame,
-  Clock,
-  ArrowRight,
-  Search,
-  FileText,
-  RotateCcw,
-  Send,
-  Star,
   Layers,
-  HelpCircle,
-  Cpu,
-  ShieldCheck,
-  Check,
-  ZapOff
+  ChevronRight
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext.jsx";
+import { useAppData } from "../data/AppDataContext.jsx";
 
-// Mock AI Knowledge & Dataset
-const initialChatMessages = [
-  {
-    id: "m-1",
-    sender: "ai",
-    text: "Hello Sanket! I'm your Judgo AI Coding Mentor 🤖. I've analyzed your recent 45 submissions. You are excelling in Arrays & Sliding Window, but your accuracy in **Dynamic Programming (42%)** and **Graph BFS/DFS (55%)** has room for improvement. How can I assist you today?",
-    timestamp: "10:30 AM",
-    chips: [
-      "Explain 2D Dynamic Programming",
-      "Suggest 3 DP practice problems",
-      "How to optimize Two Sum to O(N)?",
-      "Mock Interview for Amazon"
-    ]
-  }
-];
-
-const mockRoadmap = [
-  {
-    id: "r-1",
-    topic: "Arrays & Two Pointers",
-    status: "MASTERED",
-    progress: 100,
-    solved: "18 / 18",
-    color: "#4ade80",
-    desc: "Targeting pairs, partitioning, sliding window technique."
-  },
-  {
-    id: "r-2",
-    topic: "Binary Search & Monotonic Stack",
-    status: "MASTERED",
-    progress: 90,
-    solved: "14 / 15",
-    color: "#38bdf8",
-    desc: "Search space reduction and Next Greater Element pattern."
-  },
-  {
-    id: "r-3",
-    topic: "Trees & Graph Traversals (BFS/DFS)",
-    status: "IN_PROGRESS",
-    progress: 65,
-    solved: "13 / 20",
-    color: "#facc15",
-    desc: "Binary Tree depth, LCA, Graph cycle detection, Topological sort."
-  },
-  {
-    id: "r-4",
-    topic: "Dynamic Programming (1D & 2D)",
-    status: "RECOMMENDED",
-    progress: 35,
-    solved: "7 / 20",
-    color: "#c084fc",
-    desc: "Knapsack, LCS, LIS, Grid paths, and state compression."
-  },
-  {
-    id: "r-5",
-    topic: "System Design & Advanced Graphs",
-    status: "LOCKED",
-    progress: 0,
-    solved: "0 / 12",
-    color: "#64748b",
-    desc: "Dijkstra, Segment Trees, Trie, LRU Cache implementation."
-  }
-];
-
-const mockWeakTopics = [
-  { topic: "Dynamic Programming", accuracy: 42, count: 12, status: "Critical Weakness", icon: "🧠" },
-  { topic: "Graph Traversals", accuracy: 55, count: 18, status: "Needs Practice", icon: "🌐" },
-  { topic: "Heaps & Priority Queues", accuracy: 68, count: 10, status: "Moderate", icon: "⛰️" },
-  { topic: "Binary Search Trees", accuracy: 82, count: 15, status: "Strong", icon: "🌲" },
-  { topic: "Sliding Window", accuracy: 94, count: 22, status: "Mastered", icon: "🪟" }
-];
-
-const mockCompanyPrep = [
-  {
-    id: "c-google",
-    company: "Google",
-    logo: "🌐",
-    tagline: "Graphs, Hard DP, Segment Trees & Complex Data Structures",
-    match: "78% Match",
-    color: "#ea4335",
-    problemsCount: 45,
-    freqTopics: ["Dynamic Programming", "Graph BFS", "Trie", "Monotonic Queue"]
-  },
-  {
-    id: "c-amazon",
-    company: "Amazon",
-    logo: "📦",
-    tagline: "Arrays, Hash Maps, Strings, Trees, and Leadership Principles",
-    match: "92% Match",
-    color: "#ff9900",
-    problemsCount: 60,
-    freqTopics: ["Sliding Window", "Heap / Priority Queue", "Tree DFS", "System Design"]
-  },
-  {
-    id: "c-microsoft",
-    company: "Microsoft",
-    logo: "🪟",
-    tagline: "Linked Lists, Stack, Strings, Recursion & Tree Traversals",
-    match: "88% Match",
-    color: "#00a4ef",
-    problemsCount: 50,
-    freqTopics: ["Matrix Traversal", "Binary Search", "Two Pointers", "Hash Set"]
-  },
-  {
-    id: "c-meta",
-    company: "Meta (Facebook)",
-    logo: "♾️",
-    tagline: "High-Speed Coding, Arrays, Interval Merging & Subsets",
-    match: "85% Match",
-    color: "#0668e1",
-    problemsCount: 40,
-    freqTopics: ["Subsets / Backtracking", "Valid Parentheses", "LCA", "Binary Tree"]
-  }
-];
-
-const mockCheatSheets = [
-  {
-    id: "cs-1",
-    title: "Top 14 LeetCode Patterns",
-    category: "Algorithms",
-    reads: "14.2k",
-    desc: "Master Two Pointers, Fast & Slow Pointers, Sliding Window, Merge Intervals, and K-Way Merge."
-  },
-  {
-    id: "cs-2",
-    title: "Dynamic Programming Cheat Sheet",
-    category: "DP Patterns",
-    reads: "19.8k",
-    desc: "Comprehensive breakdown of 0/1 Knapsack, Unbounded Knapsack, LCS, LIS, and Palindromic DP."
-  },
-  {
-    id: "cs-3",
-    title: "Big-O Cheat Sheet & Complexities",
-    category: "Fundamentals",
-    reads: "22.5k",
-    desc: "Time and Space complexity cheat sheet for Arrays, Hash Maps, Heaps, Sorting, and Graphs."
-  },
-  {
-    id: "cs-4",
-    title: "SQL Querying & Window Functions",
-    category: "Database",
-    reads: "11.4k",
-    desc: "RANK(), DENSE_RANK(), PARTITION BY, CTEs, self-joins, and query performance indexing."
-  }
+const QUICK_ACTIONS = [
+  { id: "hint", label: "Give me a hint", icon: Lightbulb, prompt: "Can you give me a subtle hint for the current daily focus problem without spoiling the full solution?" },
+  { id: "review", label: "Review my code", icon: Code2, prompt: "I have a solution in mind. Can you review my time and space complexity and identify any edge cases I might have missed?" },
+  { id: "explain", label: "Explain concept", icon: FileCode, prompt: "Can you explain the intuition behind memoization and state transition with a clean code example?" },
+  { id: "practice", label: "Practice DP", icon: Target, prompt: "Suggest 3 curated Dynamic Programming problems from Easy to Medium to build my confidence." }
 ];
 
 export default function AICoachPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("hub"); // hub, review, topics, company, interview, revision
-  const [chatMessages, setChatMessages] = useState(initialChatMessages);
-  const [inputMsg, setInputMsg] = useState("");
+  const { getUserById, getProblemsForUser, getSubmissionsForUser } = useAppData();
+
+  const currentUserId = user?.id || user?._id || "";
+  const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
+  const displayName = liveUser?.name?.split(" ")[0] || liveUser?.username || "Coder";
+
+  // Tab State: "mentor" | "review" | "weak" | "interview"
+  const [activeTab, setActiveTab] = useState("mentor");
+
+  // Chat State
+  const [messages, setMessages] = useState([
+    {
+      id: "ai-initial",
+      sender: "ai",
+      text: `Hi ${displayName}! 👋\n\nI've reviewed your recent coding activity. You're doing well in Arrays and Sliding Window, but Dynamic Programming and Graph traversal are still areas to focus on.\n\nWhat would you like to work on today?`,
+      time: "10:30 AM"
+    }
+  ]);
+  const [inputVal, setInputVal] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const chatEndRef = useRef(null);
+  const chatBottomRef = useRef(null);
 
-  // AI Code Reviewer State
-  const [reviewCode, setReviewCode] = useState(
-    `def twoSum(nums, target):\n    for i in range(len(nums)):\n        for j in range(i + 1, len(nums)):\n            if nums[i] + nums[j] == target:\n                return [i, j]\n    return []`
+  // Code Review Tab State
+  const [codeReviewSnippet, setCodeReviewSnippet] = useState(
+    `def lengthOfLongestSubstring(s: str) -> int:\n    char_map = {}\n    left = 0\n    max_len = 0\n    for right in range(len(s)):\n        if s[right] in char_map and char_map[s[right]] >= left:\n            left = char_map[s[right]] + 1\n        char_map[s[right]] = right\n        max_len = max(max_len, right - left + 1)\n    return max_len`
   );
-  const [reviewLang, setReviewLang] = useState("python");
   const [reviewResult, setReviewResult] = useState(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isReviewing, setIsReviewing] = useState(false);
 
-  // AI Debugger State
-  const [debugCode, setDebugCode] = useState(
-    `function maxSubArray(nums) {\n  let maxSoFar = nums[0];\n  let curr = 0;\n  for (let i = 0; i <= nums.length; i++) {\n    curr += nums[i];\n    if (curr > maxSoFar) maxSoFar = curr;\n    if (curr < 0) curr = 0;\n  }\n  return maxSoFar;\n}`
-  );
-  const [debugResult, setDebugResult] = useState(null);
-  const [isDebugRunning, setIsDebugRunning] = useState(false);
-
-  // Hints State
-  const [activeHintLevel, setActiveHintLevel] = useState(0);
-
-  // Mock Interview State
-  const [interviewRole, setInterviewRole] = useState("Software Engineer (SDE-1)");
-  const [interviewCompany, setInterviewCompany] = useState("Amazon");
-  const [isInterviewActive, setIsInterviewActive] = useState(false);
-  const [interviewStep, setInterviewStep] = useState(1);
-  const [interviewAns, setInterviewAns] = useState("");
-
+  // Auto-scroll chat to bottom
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages, isTyping]);
+    if (activeTab === "mentor") {
+      chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isTyping, activeTab]);
 
-  function handleSendChat(textToSend = null) {
-    const text = textToSend || inputMsg;
-    if (!text || !text.trim()) return;
+  // Handle Send Message
+  const handleSendMessage = (textToSend) => {
+    const text = (textToSend || inputVal).trim();
+    if (!text) return;
+
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     const userMsg = {
-      id: `m-${Date.now()}`,
+      id: `usr-${Date.now()}`,
       sender: "user",
       text,
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      time: timeStr
     };
 
-    setChatMessages((prev) => [...prev, userMsg]);
-    if (!textToSend) setInputMsg("");
+    setMessages((prev) => [...prev, userMsg]);
+    if (!textToSend) setInputVal("");
     setIsTyping(true);
 
+    // AI Response simulation with smart context
     setTimeout(() => {
-      let responseText = `Great question regarding "${text}"! Here is a structured breakdown:\n\n1. **Core Pattern**: Focus on reducing nested iterations into O(N) using a Hash Map or Two-Pointer approach.\n2. **Time Complexity**: Optimal O(N) time with O(N) space.\n3. **Edge Cases**: Empty input arrays, duplicate elements, negative numbers.\n\nWould you like me to generate a clean solution template in Python or C++?`;
+      let reply = "";
+      const lower = text.toLowerCase();
 
-      if (text.toLowerCase().includes("dp") || text.toLowerCase().includes("dynamic programming")) {
-        responseText = `🤖 **Dynamic Programming Masterclass**:\n\nDP is built on two key properties:\n1. **Overlapping Subproblems**\n2. **Optimal Substructure**\n\n**3-Step Framework**:\n- **Step 1**: Define DP state, e.g., \`dp[i]\` = max profit at day \`i\`.\n- **Step 2**: Write recurrence relation: \`dp[i] = max(dp[i-1], dp[i-2] + val)\`.\n- **Step 3**: Identify base cases and memory optimization (space compression).`;
-      } else if (text.toLowerCase().includes("amazon") || text.toLowerCase().includes("interview")) {
-        responseText = `📦 **Amazon Coding Interview Focus**:\n\nAmazon heavily tests:\n- **Sliding Window** (e.g., Longest Substring Without Repeating Characters)\n- **Heap / Top K Frequent Elements**\n- **Graph BFS / Island count**\n\nPlus: Be ready to explain your code with Amazon's **Customer Obsession & Ownership** principles!`;
+      if (lower.includes("memoization") || lower.includes("dp") || lower.includes("dynamic programming")) {
+        reply = `**Memoization** is top-down Dynamic Programming where you cache the result of recursive subproblems so each unique state is solved exactly once.\n\n### Core Pattern:\n\`\`\`python\nmemo = {}\ndef fib(n):\n    if n <= 1: return n\n    if n in memo: return memo[n]\n    memo[n] = fib(n - 1) + fib(n - 2)\n    return memo[n]\n\`\`\`\n\n**Time Complexity:** Reduces $O(2^N)$ down to $O(N)$ with $O(N)$ auxiliary space. Would you like to try 1D or 2D DP next?`;
+      } else if (lower.includes("hint") || lower.includes("longest substring")) {
+        reply = `💡 **Hint for Sliding Window:**\nMaintain a hash map storing the *last seen index* of each character. When you encounter a duplicate within the current window \`[left, right]\`, simply jump \`left = last_seen[char] + 1\` instead of shifting by 1 step at a time!`;
+      } else if (lower.includes("review") || lower.includes("complexity")) {
+        reply = `🔍 **Code Review Summary:**\n- **Time Complexity:** $O(N)$ — Single pass through the string with $O(1)$ dictionary lookups.\n- **Space Complexity:** $O(\\min(N, M))$ where $M$ is the character set size.\n- **Edge Cases Checked:** Empty string \`""\` returns 0, all unique characters return length, and repeated duplicates are handled smoothly. Excellent implementation!`;
+      } else {
+        reply = `Great question! When approaching this problem, first consider whether a **Sliding Window**, **Hash Map**, or **Two Pointers** approach simplifies the state representation. Would you like a step-by-step breakdown or pseudocode?`;
       }
 
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: `m-ai-${Date.now()}`,
-          sender: "ai",
-          text: responseText,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        }
-      ]);
-      setIsTyping(false);
-    }, 1000);
-  }
+      const aiMsg = {
+        id: `ai-${Date.now()}`,
+        sender: "ai",
+        text: reply,
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      };
 
-  function handleRunCodeReview() {
-    setIsAnalyzing(true);
+      setMessages((prev) => [...prev, aiMsg]);
+      setIsTyping(false);
+    }, 900);
+  };
+
+  const handleClearChat = () => {
+    setMessages([
+      {
+        id: `ai-reset-${Date.now()}`,
+        sender: "ai",
+        text: `Chat cleared. Ready for your next coding challenge, ${displayName}! What would you like to review?`,
+        time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      }
+    ]);
+  };
+
+  const handleRunCodeReview = () => {
+    setIsReviewing(true);
     setTimeout(() => {
       setReviewResult({
-        timeComplexity: "O(N²)",
-        spaceComplexity: "O(1)",
-        optimalTime: "O(N)",
-        optimalSpace: "O(N)",
-        score: 68,
-        summary: "Brute-force nested loop detected. Time complexity can be optimized from O(N²) to O(N) using a Hash Map.",
-        suggestions: [
-          "Replace nested loop with single pass using dictionary lookup.",
-          "Check for empty input array early (guard clause).",
-          "Use type hinting `nums: List[int], target: int -> List[int]` for Pythonic best practices."
-        ],
-        optimizedCode: `def twoSum(nums: list[int], target: int) -> list[int]:\n    seen = {}\n    for i, num in enumerate(nums):\n        diff = target - num\n        if diff in seen:\n            return [seen[diff], i]\n        seen[num] = i\n    return []`
+        score: "98/100",
+        verdict: "Optimal",
+        timeComplexity: "O(N) - Linear time traversal",
+        spaceComplexity: "O(min(N, Σ)) - Hash Map storage",
+        notes: [
+          "Optimal sliding window approach with two pointers.",
+          "Handles duplicate character skipping in O(1).",
+          "Clean variable naming and boundary checks."
+        ]
       });
-      setIsAnalyzing(false);
-    }, 1200);
-  }
-
-  function handleRunDebugger() {
-    setIsDebugRunning(true);
-    setTimeout(() => {
-      setDebugResult({
-        hasErrors: true,
-        errorType: "Off-by-One Indexing & Logic Bug",
-        line: 4,
-        buggedSnippet: "for (let i = 0; i <= nums.length; i++)",
-        fixSnippet: "for (let i = 0; i < nums.length; i++)",
-        explanation: "Loop index condition `i <= nums.length` accesses `nums[nums.length]` which yields `undefined`. Adding `undefined` to `curr` results in `NaN` runtime failure.",
-        edgeCases: ["Array with all negative numbers `[-2, -1, -3]`", "Single element array `[5]`"],
-        fixedCode: `function maxSubArray(nums) {\n  let maxSoFar = nums[0];\n  let curr = 0;\n  for (let i = 0; i < nums.length; i++) {\n    curr += nums[i];\n    if (curr > maxSoFar) maxSoFar = curr;\n    if (curr < 0) curr = 0;\n  }\n  return maxSoFar;\n}`
-      });
-      setIsDebugRunning(false);
-    }, 1100);
-  }
+      setIsReviewing(false);
+    }, 700);
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="ai-coach-container"
-      style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: "1600px", width: "100%", margin: "0 auto", paddingBottom: "40px" }}
+    <div
+      className="ai-coach-page-container"
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "14px",
+        width: "100%",
+        maxWidth: "1220px",
+        margin: "0 auto",
+        paddingBottom: "16px",
+        minHeight: "calc(100vh - 90px)"
+      }}
     >
-      
-      {/* Top Banner Hero Card */}
-      <section style={{ background: "linear-gradient(135deg, rgba(120, 80, 255, 0.25), rgba(15, 23, 42, 0.95))", border: "1px solid rgba(120, 80, 255, 0.4)", borderRadius: "18px", padding: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
-          <div style={{ width: "58px", height: "58px", borderRadius: "16px", background: "linear-gradient(135deg, #7850ff, #c084fc)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 20px rgba(120, 80, 255, 0.6)" }}>
-            <Bot size={34} style={{ color: "#fff" }} />
-          </div>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              <h1 style={{ fontSize: "1.6rem", fontWeight: "800", color: "#fff", margin: 0 }}>Judgo AI Mentor & Learning Hub</h1>
-              <span style={{ background: "rgba(34, 197, 94, 0.2)", border: "1px solid rgba(34, 197, 94, 0.4)", color: "#4ade80", fontSize: "0.75rem", padding: "2px 8px", borderRadius: "999px", fontWeight: "bold", display: "flex", alignItems: "center", gap: "4px" }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", display: "inline-block" }} /> Online & Ready
-              </span>
-            </div>
-            <p style={{ color: "#cbd5e1", fontSize: "0.9rem", margin: "4px 0 0 0" }}>
-              Personalized AI guidance powered by your submission history, weak topic detection, and company interview patterns.
-            </p>
-          </div>
+      {/* 1. COMPACT HEADER (60–75px) */}
+      <header
+        className="ai-mentor-header"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "12px",
+          padding: "4px 0"
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              fontSize: "1.75rem",
+              fontWeight: "800",
+              color: "#f8fafc",
+              margin: 0,
+              letterSpacing: "-0.02em"
+            }}
+          >
+            AI Mentor
+          </h1>
+          <p
+            style={{
+              color: "#94a3b8",
+              fontSize: "0.88rem",
+              margin: "3px 0 0 0"
+            }}
+          >
+            Your personal coding assistant for DSA, debugging and interview preparation.
+          </p>
         </div>
 
-        {/* Header Key Metrics Stats */}
-        <div style={{ display: "flex", gap: "14px", flexWrap: "wrap" }}>
-          <div style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.08)", padding: "10px 16px", borderRadius: "12px", textAlign: "center" }}>
-            <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: "bold", textTransform: "uppercase" }}>Skill Rating</span>
-            <strong style={{ display: "block", fontSize: "1.1rem", color: "#c084fc", fontWeight: "900" }}>Knight (1,842)</strong>
-          </div>
-
-          <div style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.08)", padding: "10px 16px", borderRadius: "12px", textAlign: "center" }}>
-            <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: "bold", textTransform: "uppercase" }}>Learning Streak</span>
-            <strong style={{ display: "block", fontSize: "1.1rem", color: "#f59e0b", fontWeight: "900" }}>14 Days 🔥</strong>
-          </div>
-
-          <div style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.08)", padding: "10px 16px", borderRadius: "12px", textAlign: "center" }}>
-            <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: "bold", textTransform: "uppercase" }}>Daily Goal</span>
-            <strong style={{ display: "block", fontSize: "1.1rem", color: "#4ade80", fontWeight: "900" }}>3 / 4 Solved</strong>
-          </div>
+        {/* Status indicator: ● Online */}
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            background: "rgba(16, 185, 129, 0.1)",
+            border: "1px solid rgba(16, 185, 129, 0.25)",
+            padding: "5px 12px",
+            borderRadius: "999px",
+            fontSize: "0.78rem",
+            fontWeight: "600",
+            color: "#10b981"
+          }}
+        >
+          <span
+            style={{
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              background: "#10b981",
+              boxShadow: "0 0 8px #10b981"
+            }}
+          />
+          <span>Online</span>
         </div>
-      </section>
+      </header>
 
-      {/* Tabs Header Navigation */}
-      <div style={{ display: "flex", gap: "8px", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "4px", overflowX: "auto" }}>
+      {/* 2. SIMPLE TAB BAR (44–48px) */}
+      <nav
+        className="ai-mentor-tabs"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          paddingBottom: "8px"
+        }}
+      >
         {[
-          { id: "hub", label: "💡 AI Mentor Hub", icon: BrainCircuit },
-          { id: "review", label: "🔍 AI Code Review & Debugger", icon: Code2 },
-          { id: "topics", label: "🎯 Weak Topic Analysis", icon: Target },
-          { id: "company", label: "🏢 Company Prep", icon: Building2 },
-          { id: "interview", label: "🎙️ Mock Interview", icon: Mic },
-          { id: "revision", label: "📚 Revision & Cheat Sheets", icon: BookOpen }
+          { id: "mentor", label: "AI Mentor", icon: Sparkles },
+          { id: "review", label: "Code Review", icon: Code2 },
+          { id: "weak", label: "Weak Topics", icon: Target },
+          { id: "interview", label: "Interview Prep", icon: Compass }
         ].map((tab) => {
-          const Icon = tab.icon;
           const isActive = activeTab === tab.id;
+          const Icon = tab.icon;
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
               type="button"
+              onClick={() => setActiveTab(tab.id)}
               style={{
-                background: isActive ? "rgba(120, 80, 255, 0.2)" : "transparent",
-                border: "none",
-                borderBottom: isActive ? "2px solid #7850ff" : "2px solid transparent",
-                color: isActive ? "#fff" : "#8b9bb4",
-                padding: "10px 16px",
-                borderRadius: "8px 8px 0 0",
-                fontWeight: "bold",
-                fontSize: "0.88rem",
-                cursor: "pointer",
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
-                gap: "8px",
-                whiteSpace: "nowrap",
-                transition: "all 0.2s ease"
+                gap: "7px",
+                padding: "8px 16px",
+                borderRadius: "8px",
+                border: "none",
+                background: isActive ? "rgba(124, 58, 237, 0.15)" : "transparent",
+                color: isActive ? "#c084fc" : "#94a3b8",
+                fontSize: "0.86rem",
+                fontWeight: isActive ? "700" : "500",
+                cursor: "pointer",
+                position: "relative",
+                transition: "all 0.15s ease"
               }}
             >
-              <Icon size={16} style={{ color: isActive ? "#c084fc" : "#8b9bb4" }} />
-              {tab.label}
+              <Icon size={15} style={{ color: isActive ? "#c084fc" : "#64748b" }} />
+              <span>{tab.label}</span>
+              {isActive && (
+                <motion.div
+                  layoutId="activeTabIndicator"
+                  style={{
+                    position: "absolute",
+                    bottom: "-9px",
+                    left: "12px",
+                    right: "12px",
+                    height: "2px",
+                    background: "#818cf8",
+                    borderRadius: "999px"
+                  }}
+                />
+              )}
             </button>
           );
         })}
-      </div>
+      </nav>
 
-      {/* TAB 1: AI MENTOR HUB (Dashboard + Chat Assistant + Roadmap) */}
-      {activeTab === "hub" && (
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(340px, 1fr) minmax(420px, 1.2fr)", gap: "18px" }}>
-          
-          {/* Left Column: Roadmap & Daily Goals */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            
-            {/* Daily Challenge Card */}
-            <div style={{ background: "linear-gradient(145deg, rgba(13, 22, 55, 0.95), rgba(8, 15, 38, 0.95))", border: "1px solid #1f2d59", borderRadius: "16px", padding: "20px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                <span style={{ fontSize: "0.75rem", background: "rgba(245, 158, 11, 0.15)", color: "#f59e0b", padding: "3px 10px", borderRadius: "6px", fontWeight: "bold" }}>⚡ Today's Challenge</span>
-                <span style={{ fontSize: "0.78rem", color: "#64748b" }}>+50 XP</span>
-              </div>
-              <h3 style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#fff", margin: "0 0 6px 0" }}>Longest Substring Without Repeating Characters</h3>
-              <p style={{ fontSize: "0.82rem", color: "#94a3b8", margin: "0 0 14px 0" }}>Given a string s, find the length of the longest substring without repeating characters.</p>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "0.75rem", color: "#facc15", fontWeight: "bold" }}>Medium • Sliding Window</span>
-                <Link to="/problems/longest-substring-without-repeating-characters" style={{ background: "#7850ff", color: "#fff", textDecoration: "none", padding: "6px 14px", borderRadius: "8px", fontSize: "0.82rem", fontWeight: "bold" }}>
-                  Solve Challenge
-                </Link>
-              </div>
-            </div>
+      {/* 3. MAIN WORKSPACE (FITS IN SINGLE VIEWPORT) */}
+      <div style={{ flex: 1, minHeight: 0 }}>
+        {/* TAB 1: AI MENTOR (MAIN 2-COLUMN VIEW) */}
+        {activeTab === "mentor" && (
+          <div
+            className="ai-mentor-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "35% 65%",
+              gap: "16px",
+              height: "calc(100vh - 200px)",
+              minHeight: "520px"
+            }}
+          >
+            {/* LEFT COLUMN (35%): TODAY'S FOCUS + WEAK TOPICS */}
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "14px",
+                height: "100%"
+              }}
+            >
+              {/* CARD 1: TODAY'S FOCUS */}
+              <div
+                style={{
+                  background: "#0d111a",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderRadius: "12px",
+                  padding: "18px 20px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.2)"
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Target size={14} style={{ color: "#a855f7" }} />
+                  <span
+                    style={{
+                      fontSize: "0.72rem",
+                      fontWeight: "700",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: "#a855f7"
+                    }}
+                  >
+                    TODAY'S FOCUS
+                  </span>
+                </div>
 
-            {/* Personalized Learning Roadmap */}
-            <div style={{ background: "linear-gradient(145deg, rgba(13, 22, 55, 0.95), rgba(8, 15, 38, 0.95))", border: "1px solid #1f2d59", borderRadius: "16px", padding: "20px" }}>
-              <h3 style={{ fontSize: "1.05rem", fontWeight: "bold", color: "#fff", marginBottom: "14px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <BrainCircuit size={18} style={{ color: "#c084fc" }} /> Recommended Learning Path
-              </h3>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {mockRoadmap.map((item, idx) => (
-                  <div key={item.id} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px", padding: "12px 14px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-                      <strong style={{ fontSize: "0.88rem", color: "#fff" }}>{idx + 1}. {item.topic}</strong>
-                      <span style={{ fontSize: "0.72rem", color: item.color, fontWeight: "bold", background: "rgba(255,255,255,0.04)", padding: "2px 8px", borderRadius: "4px" }}>
-                        {item.status}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: "0.78rem", color: "#94a3b8", margin: "0 0 8px 0" }}>{item.desc}</p>
-                    
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <div style={{ flex: 1, height: "6px", background: "rgba(255,255,255,0.1)", borderRadius: "999px", overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${item.progress}%`, background: item.color, borderRadius: "999px" }} />
-                      </div>
-                      <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: "bold" }}>{item.solved}</span>
-                    </div>
+                <div>
+                  <h3
+                    style={{
+                      fontSize: "1.05rem",
+                      fontWeight: "700",
+                      color: "#f8fafc",
+                      margin: "0 0 4px 0",
+                      lineHeight: "1.3"
+                    }}
+                  >
+                    Longest Substring Without Repeating Characters
+                  </h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.78rem" }}>
+                    <span style={{ color: "#fbbf24", fontWeight: "600" }}>Medium</span>
+                    <span style={{ color: "#64748b" }}>•</span>
+                    <span style={{ color: "#94a3b8" }}>Sliding Window</span>
                   </div>
-                ))}
-              </div>
-            </div>
+                </div>
 
-          </div>
-
-          {/* Right Column: AI Chat Assistant */}
-          <div style={{ background: "linear-gradient(145deg, rgba(13, 22, 55, 0.95), rgba(8, 15, 38, 0.95))", border: "1px solid #1f2d59", borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", height: "680px" }}>
-            <div style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "12px", marginBottom: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <Sparkles size={18} style={{ color: "#c084fc" }} />
-                <h3 style={{ fontSize: "1.05rem", fontWeight: "bold", color: "#fff", margin: 0 }}>AI Coding Assistant</h3>
-              </div>
-              <button onClick={() => setChatMessages(initialChatMessages)} type="button" style={{ background: "transparent", border: "none", color: "#64748b", fontSize: "0.78rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
-                <RotateCcw size={12} /> Clear Chat
-              </button>
-            </div>
-
-            {/* Chat Messages Log */}
-            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "14px", paddingRight: "6px" }}>
-              {chatMessages.map((msg) => (
-                <div key={msg.id} style={{ display: "flex", flexDirection: "column", alignItems: msg.sender === "user" ? "flex-end" : "flex-start" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
-                    <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: "bold" }}>{msg.sender === "user" ? "You" : "Judgo AI Mentor"}</span>
-                    <span style={{ fontSize: "0.68rem", color: "#475569" }}>{msg.timestamp}</span>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "2px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem" }}>
+                    <span style={{ color: "#94a3b8" }}>Progress</span>
+                    <span style={{ color: "#c084fc", fontWeight: "700" }}>65%</span>
                   </div>
                   <div
                     style={{
-                      maxWidth: "85%",
-                      background: msg.sender === "user" ? "#7850ff" : "rgba(255, 255, 255, 0.05)",
-                      border: msg.sender === "user" ? "none" : "1px solid rgba(255, 255, 255, 0.08)",
-                      color: "#fff",
-                      padding: "12px 16px",
-                      borderRadius: msg.sender === "user" ? "14px 14px 2px 14px" : "14px 14px 14px 2px",
-                      fontSize: "0.88rem",
-                      lineHeight: "1.5",
-                      whiteSpace: "pre-wrap"
+                      width: "100%",
+                      height: "6px",
+                      background: "rgba(255, 255, 255, 0.06)",
+                      borderRadius: "999px",
+                      overflow: "hidden"
                     }}
                   >
-                    {msg.text}
+                    <div
+                      style={{
+                        height: "100%",
+                        width: "65%",
+                        background: "linear-gradient(90deg, #7c3aed 0%, #a855f7 100%)",
+                        borderRadius: "999px"
+                      }}
+                    />
                   </div>
-
-                  {/* Optional Quick Prompt Chips */}
-                  {msg.chips && (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "10px" }}>
-                      {msg.chips.map((chip) => (
-                        <button
-                          key={chip}
-                          onClick={() => handleSendChat(chip)}
-                          type="button"
-                          style={{
-                            background: "rgba(120, 80, 255, 0.15)",
-                            border: "1px solid rgba(120, 80, 255, 0.3)",
-                            color: "#c084fc",
-                            padding: "4px 10px",
-                            borderRadius: "999px",
-                            fontSize: "0.75rem",
-                            fontWeight: "600",
-                            cursor: "pointer"
-                          }}
-                        >
-                          💬 {chip}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
-              ))}
 
-              {isTyping && (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#94a3b8", fontSize: "0.82rem" }}>
-                  <Bot size={16} style={{ color: "#c084fc" }} /> AI is analyzing and generating explanation...
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
+                <Link
+                  to="/problems/valid-parentheses"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    background: "rgba(124, 58, 237, 0.15)",
+                    border: "1px solid rgba(124, 58, 237, 0.3)",
+                    color: "#c084fc",
+                    borderRadius: "8px",
+                    padding: "8px 14px",
+                    fontSize: "0.82rem",
+                    fontWeight: "600",
+                    textDecoration: "none",
+                    marginTop: "4px",
+                    transition: "all 0.15s ease"
+                  }}
+                >
+                  <span>Continue Challenge</span>
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
 
-            {/* Chat Input Bar */}
-            <div style={{ marginTop: "12px", display: "flex", gap: "8px" }}>
-              <input
-                type="text"
-                placeholder="Ask AI about DSA patterns, code errors, or interview tips..."
-                value={inputMsg}
-                onChange={(e) => setInputMsg(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSendChat()}
+              {/* CARD 2: WEAK TOPICS */}
+              <div
                 style={{
-                  flex: 1,
-                  background: "#080c14",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: "10px",
-                  padding: "10px 14px",
-                  color: "#fff",
-                  fontSize: "0.88rem",
-                  outline: "none"
-                }}
-              />
-              <button
-                onClick={() => handleSendChat()}
-                type="button"
-                style={{
-                  background: "#7850ff",
-                  border: "none",
-                  borderRadius: "10px",
-                  color: "#fff",
-                  padding: "0 18px",
-                  fontWeight: "bold",
-                  cursor: "pointer",
+                  background: "#0d111a",
+                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  borderRadius: "12px",
+                  padding: "18px 20px",
                   display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center"
+                  flexDirection: "column",
+                  gap: "12px",
+                  flex: 1,
+                  boxShadow: "0 2px 10px rgba(0,0,0,0.2)"
                 }}
               >
-                <Send size={16} />
-              </button>
-            </div>
-          </div>
-
-        </div>
-      )}
-
-      {/* TAB 2: AI CODE REVIEW & DEBUGGER */}
-      {activeTab === "review" && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
-          
-          {/* Left Column: Code Review Input & Results */}
-          <div style={{ background: "linear-gradient(145deg, rgba(13, 22, 55, 0.95), rgba(8, 15, 38, 0.95))", border: "1px solid #1f2d59", borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 style={{ fontSize: "1.05rem", fontWeight: "bold", color: "#fff", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
-                <Code2 size={18} style={{ color: "#38bdf8" }} /> AI Code Reviewer & Complexity Analyzer
-              </h3>
-              <select value={reviewLang} onChange={(e) => setReviewLang(e.target.value)} style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", padding: "4px 10px", borderRadius: "6px", fontSize: "0.8rem" }}>
-                <option value="python">Python 3</option>
-                <option value="javascript">JavaScript</option>
-                <option value="cpp">C++</option>
-                <option value="java">Java</option>
-              </select>
-            </div>
-
-            <textarea
-              value={reviewCode}
-              onChange={(e) => setReviewCode(e.target.value)}
-              rows={8}
-              style={{ width: "100%", background: "#080c14", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "12px", color: "#4ade80", fontFamily: "monospace", fontSize: "0.85rem", resize: "vertical" }}
-            />
-
-            <button
-              onClick={handleRunCodeReview}
-              disabled={isAnalyzing}
-              type="button"
-              style={{ background: "#7850ff", border: "none", borderRadius: "10px", color: "#fff", padding: "10px", fontWeight: "bold", fontSize: "0.88rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
-            >
-              {isAnalyzing ? <div className="spinner" style={{ width: 16, height: 16, border: "2px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> : <Sparkles size={16} />}
-              {isAnalyzing ? "Analyzing Complexity & Clean Code..." : "Run AI Code Review"}
-            </button>
-
-            {reviewResult && (
-              <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(120, 80, 255, 0.3)", borderRadius: "12px", padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.85rem", color: "#94a3b8", fontWeight: "bold" }}>Quality Score: <strong style={{ color: "#4ade80", fontSize: "1.1rem" }}>{reviewResult.score} / 100</strong></span>
-                  <div style={{ display: "flex", gap: "8px" }}>
-                    <span style={{ background: "rgba(239,68,68,0.15)", color: "#f87171", padding: "2px 8px", borderRadius: "4px", fontSize: "0.75rem", fontWeight: "bold" }}>Current: {reviewResult.timeComplexity}</span>
-                    <span style={{ background: "rgba(74,222,128,0.15)", color: "#4ade80", padding: "2px 8px", borderRadius: "4px", fontSize: "0.75rem", fontWeight: "bold" }}>Optimal: {reviewResult.optimalTime}</span>
-                  </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <TrendingUp size={14} style={{ color: "#a855f7" }} />
+                  <span
+                    style={{
+                      fontSize: "0.72rem",
+                      fontWeight: "700",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: "#a855f7"
+                    }}
+                  >
+                    WEAK TOPICS
+                  </span>
                 </div>
-                <p style={{ fontSize: "0.82rem", color: "#cbd5e1", margin: 0 }}>{reviewResult.summary}</p>
-                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                  <strong style={{ fontSize: "0.78rem", color: "#c084fc" }}>Optimization Tips:</strong>
-                  {reviewResult.suggestions.map((s, idx) => (
-                    <div key={idx} style={{ fontSize: "0.78rem", color: "#94a3b8", display: "flex", alignItems: "center", gap: "6px" }}>
-                      <CheckCircle2 size={12} style={{ color: "#4ade80" }} /> {s}
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {/* Topic 1: Dynamic Programming */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem" }}>
+                      <span style={{ color: "#f8fafc", fontWeight: "500" }}>Dynamic Programming</span>
+                      <span style={{ color: "#c084fc", fontWeight: "700" }}>42%</span>
                     </div>
-                  ))}
+                    <div style={{ width: "100%", height: "6px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: "42%", background: "#8b5cf6", borderRadius: "999px" }} />
+                    </div>
+                  </div>
+
+                  {/* Topic 2: Graphs */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem" }}>
+                      <span style={{ color: "#f8fafc", fontWeight: "500" }}>Graphs</span>
+                      <span style={{ color: "#c084fc", fontWeight: "700" }}>55%</span>
+                    </div>
+                    <div style={{ width: "100%", height: "6px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: "55%", background: "#8b5cf6", borderRadius: "999px" }} />
+                    </div>
+                  </div>
+
+                  {/* Topic 3: Trees */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem" }}>
+                      <span style={{ color: "#f8fafc", fontWeight: "500" }}>Trees</span>
+                      <span style={{ color: "#c084fc", fontWeight: "700" }}>61%</span>
+                    </div>
+                    <div style={{ width: "100%", height: "6px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: "61%", background: "#8b5cf6", borderRadius: "999px" }} />
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: "auto", paddingTop: "8px" }}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("weak")}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#818cf8",
+                      fontSize: "0.8rem",
+                      fontWeight: "600",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      padding: 0
+                    }}
+                  >
+                    <span>View all Weak Topics</span>
+                    <ArrowRight size={13} />
+                  </button>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Right Column: AI Debugger */}
-          <div style={{ background: "linear-gradient(145deg, rgba(13, 22, 55, 0.95), rgba(8, 15, 38, 0.95))", border: "1px solid #1f2d59", borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "14px" }}>
-            <h3 style={{ fontSize: "1.05rem", fontWeight: "bold", color: "#fff", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
-              <Terminal size={18} style={{ color: "#f43f5e" }} /> AI Instant Bug & Edge-case Detector
-            </h3>
-
-            <textarea
-              value={debugCode}
-              onChange={(e) => setDebugCode(e.target.value)}
-              rows={8}
-              style={{ width: "100%", background: "#080c14", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "12px", color: "#fca5a5", fontFamily: "monospace", fontSize: "0.85rem", resize: "vertical" }}
-            />
-
-            <button
-              onClick={handleRunDebugger}
-              disabled={isDebugRunning}
-              type="button"
-              style={{ background: "#f43f5e", border: "none", borderRadius: "10px", color: "#fff", padding: "10px", fontWeight: "bold", fontSize: "0.88rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}
+            {/* RIGHT COLUMN (65%): AI MENTOR CHAT (LARGEST ELEMENT) */}
+            <div
+              style={{
+                background: "#0d111a",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: "12px",
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.25)",
+                overflow: "hidden"
+              }}
             >
-              {isDebugRunning ? <div className="spinner" style={{ width: 16, height: 16, border: "2px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} /> : <AlertTriangle size={16} />}
-              {isDebugRunning ? "Scanning for Logic & Boundary Bugs..." : "Scan & Fix Code"}
-            </button>
-
-            {debugResult && (
-              <div style={{ background: "rgba(244, 63, 94, 0.08)", border: "1px solid rgba(244, 63, 94, 0.3)", borderRadius: "12px", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.85rem", color: "#f43f5e", fontWeight: "bold", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <AlertTriangle size={16} /> Bug Detected: {debugResult.errorType}
-                  </span>
-                  <span style={{ fontSize: "0.75rem", color: "#94a3b8" }}>Line {debugResult.line}</span>
-                </div>
-                <p style={{ fontSize: "0.82rem", color: "#cbd5e1", margin: 0 }}>{debugResult.explanation}</p>
-                <div style={{ background: "#080c14", padding: "8px 12px", borderRadius: "8px", fontFamily: "monospace", fontSize: "0.8rem" }}>
-                  <div style={{ color: "#f87171" }}>- {debugResult.buggedSnippet}</div>
-                  <div style={{ color: "#4ade80" }}>+ {debugResult.fixSnippet}</div>
-                </div>
-              </div>
-            )}
-          </div>
-
-        </div>
-      )}
-
-      {/* TAB 3: WEAK TOPIC ANALYSIS */}
-      {activeTab === "topics" && (
-        <div style={{ background: "linear-gradient(145deg, rgba(13, 22, 55, 0.95), rgba(8, 15, 38, 0.95))", border: "1px solid #1f2d59", borderRadius: "16px", padding: "24px" }}>
-          <h3 style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#fff", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-            <Target size={20} style={{ color: "#f59e0b" }} /> Topic Accuracy & Weakness Radar
-          </h3>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
-            {mockWeakTopics.map((item) => (
-              <div key={item.topic} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "14px", padding: "18px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span style={{ fontSize: "1.3rem" }}>{item.icon}</span>
-                    <strong style={{ fontSize: "0.95rem", color: "#fff" }}>{item.topic}</strong>
-                  </div>
-                  <span style={{ fontSize: "0.75rem", fontWeight: "bold", color: item.accuracy < 60 ? "#f87171" : item.accuracy < 80 ? "#facc15" : "#4ade80" }}>
-                    {item.status}
+              {/* CHAT TOP BAR */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "14px 18px",
+                  borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+                  background: "#090d16"
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Sparkles size={16} style={{ color: "#a855f7" }} />
+                  <span style={{ fontSize: "0.95rem", fontWeight: "700", color: "#f8fafc" }}>
+                    AI Mentor
                   </span>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "12px" }}>
-                  <div style={{ flex: 1, height: "8px", background: "rgba(255,255,255,0.1)", borderRadius: "999px", overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: `${item.accuracy}%`, background: item.accuracy < 60 ? "#f87171" : item.accuracy < 80 ? "#facc15" : "#4ade80", borderRadius: "999px" }} />
-                  </div>
-                  <span style={{ fontSize: "0.9rem", fontWeight: "900", color: "#fff", fontFamily: "monospace" }}>{item.accuracy}%</span>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleClearChat}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    background: "transparent",
+                    border: "none",
+                    color: "#94a3b8",
+                    fontSize: "0.78rem",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    transition: "color 0.15s ease"
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "#94a3b8")}
+                >
+                  <Trash2 size={13} />
+                  <span>Clear Chat</span>
+                </button>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* TAB 4: COMPANY PREPARATION */}
-      {activeTab === "company" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "18px" }}>
-          {mockCompanyPrep.map((comp) => (
-            <div key={comp.id} style={{ background: "linear-gradient(145deg, rgba(13, 22, 55, 0.95), rgba(8, 15, 38, 0.95))", border: `1px solid ${comp.color}44`, borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "12px" }}>
+              {/* CHAT MESSAGES SCROLL AREA */}
+              <div
+                style={{
+                  flex: 1,
+                  overflowY: "auto",
+                  padding: "18px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "14px"
+                }}
+              >
+                {messages.map((msg) => {
+                  const isAi = msg.sender === "ai";
+                  return (
+                    <div
+                      key={msg.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: "10px",
+                        alignSelf: isAi ? "flex-start" : "flex-end",
+                        maxWidth: isAi ? "88%" : "78%"
+                      }}
+                    >
+                      {isAi && (
+                        <div
+                          style={{
+                            width: "28px",
+                            height: "28px",
+                            borderRadius: "8px",
+                            background: "rgba(124, 58, 237, 0.15)",
+                            border: "1px solid rgba(124, 58, 237, 0.3)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#c084fc",
+                            flexShrink: 0,
+                            marginTop: "2px"
+                          }}
+                        >
+                          <Bot size={16} />
+                        </div>
+                      )}
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <div
+                          style={{
+                            background: isAi ? "#131b2e" : "linear-gradient(135deg, #4338ca 0%, #3730a3 100%)",
+                            border: isAi ? "1px solid rgba(255, 255, 255, 0.08)" : "1px solid rgba(99, 102, 241, 0.3)",
+                            borderRadius: isAi ? "4px 12px 12px 12px" : "12px 12px 4px 12px",
+                            padding: "12px 16px",
+                            color: "#f8fafc",
+                            fontSize: "0.88rem",
+                            lineHeight: "1.5",
+                            whiteSpace: "pre-wrap"
+                          }}
+                        >
+                          {msg.text}
+                        </div>
+
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            fontSize: "0.68rem",
+                            color: "#64748b",
+                            alignSelf: isAi ? "flex-start" : "flex-end"
+                          }}
+                        >
+                          <span>{msg.time}</span>
+                          {!isAi && <CheckCheck size={12} style={{ color: "#818cf8" }} />}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* 4 COMPACT QUICK ACTION PILLS (UNDER FIRST MESSAGE) */}
+                {messages.length === 1 && (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      flexWrap: "wrap",
+                      marginLeft: "38px",
+                      marginTop: "2px"
+                    }}
+                  >
+                    {QUICK_ACTIONS.map((action) => {
+                      const ActionIcon = action.icon;
+                      return (
+                        <button
+                          key={action.id}
+                          type="button"
+                          onClick={() => handleSendMessage(action.prompt)}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            background: "#080c14",
+                            border: "1px solid rgba(255, 255, 255, 0.08)",
+                            borderRadius: "6px",
+                            padding: "6px 12px",
+                            color: "#cbd5e1",
+                            fontSize: "0.78rem",
+                            fontWeight: "500",
+                            cursor: "pointer",
+                            transition: "all 0.15s ease"
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "rgba(124, 58, 237, 0.15)";
+                            e.currentTarget.style.borderColor = "rgba(124, 58, 237, 0.35)";
+                            e.currentTarget.style.color = "#ffffff";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "#080c14";
+                            e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
+                            e.currentTarget.style.color = "#cbd5e1";
+                          }}
+                        >
+                          <ActionIcon size={13} style={{ color: "#a855f7" }} />
+                          <span>{action.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* TYPING INDICATOR */}
+                {isTyping && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginLeft: "38px" }}>
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        background: "#131b2e",
+                        border: "1px solid rgba(255, 255, 255, 0.08)",
+                        borderRadius: "8px",
+                        padding: "6px 12px",
+                        fontSize: "0.76rem",
+                        color: "#94a3b8"
+                      }}
+                    >
+                      <Bot size={13} style={{ color: "#c084fc" }} />
+                      <span>AI Mentor is typing</span>
+                      <span style={{ letterSpacing: "2px", fontWeight: "bold" }}>•••</span>
+                    </div>
+                  </div>
+                )}
+
+                <div ref={chatBottomRef} />
+              </div>
+
+              {/* CHAT INPUT BAR */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSendMessage();
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "12px 16px",
+                  borderTop: "1px solid rgba(255, 255, 255, 0.06)",
+                  background: "#090d16"
+                }}
+              >
+                <input
+                  type="text"
+                  value={inputVal}
+                  onChange={(e) => setInputVal(e.target.value)}
+                  placeholder="Ask your AI Mentor anything..."
+                  style={{
+                    flex: 1,
+                    background: "rgba(255, 255, 255, 0.04)",
+                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    borderRadius: "8px",
+                    padding: "9px 14px",
+                    color: "#f8fafc",
+                    fontSize: "0.85rem",
+                    outline: "none",
+                    transition: "border-color 0.15s ease"
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = "rgba(124, 58, 237, 0.45)")}
+                  onBlur={(e) => (e.target.style.borderColor = "rgba(255, 255, 255, 0.08)")}
+                />
+
+                <button
+                  type="button"
+                  title="Attach code snippet"
+                  onClick={() => handleSendMessage("Can you review this code snippet for edge cases?")}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "#94a3b8",
+                    cursor: "pointer",
+                    padding: "6px",
+                    borderRadius: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}
+                >
+                  <Paperclip size={18} />
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={!inputVal.trim()}
+                  style={{
+                    background: inputVal.trim() ? "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)" : "rgba(255, 255, 255, 0.06)",
+                    border: "none",
+                    color: "#ffffff",
+                    cursor: inputVal.trim() ? "pointer" : "default",
+                    padding: "8px 14px",
+                    borderRadius: "8px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: inputVal.trim() ? 1 : 0.4,
+                    transition: "all 0.15s ease"
+                  }}
+                >
+                  <Send size={15} />
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: CODE REVIEW WORKSPACE */}
+        {activeTab === "review" && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "16px",
+              height: "calc(100vh - 200px)",
+              minHeight: "520px"
+            }}
+          >
+            {/* Left: Code Input */}
+            <div
+              style={{
+                background: "#0d111a",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: "12px",
+                padding: "18px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px"
+              }}
+            >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <span style={{ fontSize: "1.8rem" }}>{comp.logo}</span>
-                  <div>
-                    <h3 style={{ fontSize: "1.15rem", fontWeight: "800", color: "#fff", margin: 0 }}>{comp.company}</h3>
-                    <span style={{ fontSize: "0.75rem", color: "#94a3b8" }}>{comp.problemsCount} Curated Problems</span>
-                  </div>
-                </div>
-                <span style={{ background: "rgba(120, 80, 255, 0.2)", color: "#c084fc", fontSize: "0.75rem", padding: "3px 10px", borderRadius: "999px", fontWeight: "bold" }}>
-                  {comp.match}
+                <span style={{ fontSize: "0.85rem", fontWeight: "700", color: "#f8fafc" }}>
+                  Source Code for Review
                 </span>
-              </div>
-
-              <p style={{ fontSize: "0.82rem", color: "#cbd5e1", margin: 0 }}>{comp.tagline}</p>
-
-              <div>
-                <strong style={{ fontSize: "0.75rem", color: "#64748b", textTransform: "uppercase", display: "block", marginBottom: "6px" }}>Most Frequently Asked Topics</strong>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                  {comp.freqTopics.map((t) => (
-                    <span key={t} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", color: "#eee", fontSize: "0.74rem", padding: "3px 8px", borderRadius: "6px" }}>
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <button type="button" style={{ marginTop: "6px", background: "rgba(255,255,255,0.06)", border: "none", color: "#fff", padding: "8px", borderRadius: "8px", fontWeight: "bold", fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-                Start {comp.company} Track <ChevronRight size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* TAB 5: MOCK INTERVIEW SIMULATOR */}
-      {activeTab === "interview" && (
-        <div style={{ background: "linear-gradient(145deg, rgba(13, 22, 55, 0.95), rgba(8, 15, 38, 0.95))", border: "1px solid #1f2d59", borderRadius: "16px", padding: "24px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-            <div>
-              <h3 style={{ fontSize: "1.2rem", fontWeight: "800", color: "#fff", margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
-                <Mic size={22} style={{ color: "#a855f7" }} /> Interactive AI Mock Interview Simulator
-              </h3>
-              <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: "4px 0 0 0" }}>Simulate live technical rounds with real-time follow-ups and behavioral scoring.</p>
-            </div>
-          </div>
-
-          {!isInterviewActive ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px", maxWidth: "600px", margin: "0 auto", textAlign: "center", padding: "30px 0" }}>
-              <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
-                <select value={interviewCompany} onChange={(e) => setInterviewCompany(e.target.value)} style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", padding: "10px 14px", borderRadius: "8px", fontSize: "0.9rem" }}>
-                  <option value="Amazon">Amazon Mock Round</option>
-                  <option value="Google">Google Mock Round</option>
-                  <option value="Meta">Meta Mock Round</option>
-                </select>
-                <select value={interviewRole} onChange={(e) => setInterviewRole(e.target.value)} style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", padding: "10px 14px", borderRadius: "8px", fontSize: "0.9rem" }}>
-                  <option value="SDE-1">SDE-1 (0-2 YOE)</option>
-                  <option value="SDE-2">SDE-2 (2-5 YOE)</option>
-                </select>
-              </div>
-
-              <button onClick={() => setIsInterviewActive(true)} type="button" style={{ background: "#7850ff", border: "none", color: "#fff", padding: "12px 24px", borderRadius: "10px", fontWeight: "bold", fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-                <Play size={18} /> Begin Mock Interview Session
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ background: "#080c14", border: "1px solid rgba(120, 80, 255, 0.3)", borderRadius: "12px", padding: "18px" }}>
-                <span style={{ fontSize: "0.75rem", color: "#c084fc", fontWeight: "bold" }}>AI Interviewer (Amazon SDE-1)</span>
-                <p style={{ fontSize: "0.95rem", color: "#fff", fontWeight: "600", marginTop: "6px" }}>
-                  "Welcome Sanket! Let's start with a coding challenge. Can you explain how you would design a data structure that supports insert, delete, and getRandom in O(1) time complexity?"
-                </p>
+                <span style={{ fontSize: "0.72rem", color: "#818cf8" }}>Python 3</span>
               </div>
 
               <textarea
-                value={interviewAns}
-                onChange={(e) => setInterviewAns(e.target.value)}
-                placeholder="Type your explanation or pseudocode here..."
-                rows={4}
-                style={{ width: "100%", background: "#080c14", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "10px", padding: "12px", color: "#fff", fontSize: "0.88rem" }}
+                value={codeReviewSnippet}
+                onChange={(e) => setCodeReviewSnippet(e.target.value)}
+                style={{
+                  flex: 1,
+                  background: "#080c14",
+                  border: "1px solid rgba(255, 255, 255, 0.06)",
+                  borderRadius: "8px",
+                  padding: "14px",
+                  color: "#38bdf8",
+                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+                  fontSize: "0.84rem",
+                  lineHeight: "1.5",
+                  resize: "none",
+                  outline: "none"
+                }}
               />
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-                <button onClick={() => setIsInterviewActive(false)} type="button" style={{ background: "rgba(255,255,255,0.08)", border: "none", color: "#fff", padding: "8px 16px", borderRadius: "8px", cursor: "pointer" }}>End Interview</button>
-                <button onClick={() => alert("AI Evaluation Score: 92/100! Excellent explanation of Hash Map + Dynamic Array swapping.")} type="button" style={{ background: "#7850ff", border: "none", color: "#fff", padding: "8px 16px", borderRadius: "8px", fontWeight: "bold", cursor: "pointer" }}>Submit Answer</button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TAB 6: REVISION HUB & CHEAT SHEETS */}
-      {activeTab === "revision" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "18px" }}>
-          {mockCheatSheets.map((cs) => (
-            <div key={cs.id} style={{ background: "linear-gradient(145deg, rgba(13, 22, 55, 0.95), rgba(8, 15, 38, 0.95))", border: "1px solid #1f2d59", borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "10px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ background: "rgba(120, 80, 255, 0.15)", color: "#c084fc", fontSize: "0.74rem", padding: "2px 8px", borderRadius: "4px", fontWeight: "bold" }}>{cs.category}</span>
-                <span style={{ fontSize: "0.74rem", color: "#64748b" }}>👀 {cs.reads} reads</span>
-              </div>
-
-              <h3 style={{ fontSize: "1.05rem", fontWeight: "bold", color: "#fff", margin: 0 }}>{cs.title}</h3>
-              <p style={{ fontSize: "0.82rem", color: "#94a3b8", margin: 0 }}>{cs.desc}</p>
-
-              <button type="button" style={{ marginTop: "6px", background: "rgba(255,255,255,0.06)", border: "none", color: "#38bdf8", padding: "8px", borderRadius: "8px", fontWeight: "bold", fontSize: "0.82rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-                <FileText size={14} /> Open Revision Notes
+              <button
+                type="button"
+                onClick={handleRunCodeReview}
+                disabled={isReviewing}
+                style={{
+                  background: "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)",
+                  border: "none",
+                  color: "#ffffff",
+                  padding: "10px",
+                  borderRadius: "8px",
+                  fontSize: "0.85rem",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px"
+                }}
+              >
+                <Code2 size={16} />
+                <span>{isReviewing ? "Analyzing Complexity..." : "Analyze Code with AI"}</span>
               </button>
             </div>
-          ))}
-        </div>
-      )}
 
-    </motion.div>
+            {/* Right: Review Results */}
+            <div
+              style={{
+                background: "#0d111a",
+                border: "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: "12px",
+                padding: "18px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "14px",
+                overflowY: "auto"
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "0.85rem", fontWeight: "700", color: "#f8fafc" }}>
+                  AI Complexity & Security Feedback
+                </span>
+                {reviewResult && (
+                  <span style={{ fontSize: "0.75rem", color: "#10b981", fontWeight: "700" }}>
+                    Score: {reviewResult.score}
+                  </span>
+                )}
+              </div>
+
+              {reviewResult ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div style={{ background: "#080c14", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "8px", padding: "12px" }}>
+                    <span style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", fontWeight: "700" }}>Time Complexity</span>
+                    <p style={{ color: "#34d399", fontSize: "0.86rem", fontWeight: "600", margin: "2px 0 0 0" }}>{reviewResult.timeComplexity}</p>
+                  </div>
+
+                  <div style={{ background: "#080c14", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "8px", padding: "12px" }}>
+                    <span style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", fontWeight: "700" }}>Space Complexity</span>
+                    <p style={{ color: "#60a5fa", fontSize: "0.86rem", fontWeight: "600", margin: "2px 0 0 0" }}>{reviewResult.spaceComplexity}</p>
+                  </div>
+
+                  <div style={{ background: "#080c14", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "8px", padding: "12px" }}>
+                    <span style={{ fontSize: "0.72rem", color: "#64748b", textTransform: "uppercase", fontWeight: "700" }}>Insights</span>
+                    <ul style={{ margin: "6px 0 0 0", paddingLeft: "16px", color: "#cbd5e1", fontSize: "0.82rem", lineHeight: "1.6" }}>
+                      {reviewResult.notes.map((note, idx) => (
+                        <li key={idx}>{note}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#64748b", gap: "8px" }}>
+                  <Code2 size={32} style={{ color: "#475569" }} />
+                  <p style={{ fontSize: "0.84rem", margin: 0 }}>Click "Analyze Code with AI" to inspect complexity.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: WEAK TOPICS COMPLETE BREAKDOWN */}
+        {activeTab === "weak" && (
+          <div
+            style={{
+              background: "#0d111a",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: "12px",
+              padding: "24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              height: "calc(100vh - 200px)",
+              minHeight: "520px",
+              overflowY: "auto"
+            }}
+          >
+            <div>
+              <h2 style={{ fontSize: "1.1rem", fontWeight: "700", color: "#f8fafc", margin: 0 }}>Comprehensive Topic Mastery</h2>
+              <p style={{ fontSize: "0.82rem", color: "#94a3b8", margin: "4px 0 0 0" }}>Identify specific algorithmic tracks where targeted practice will maximize rating growth.</p>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px" }}>
+              {[
+                { name: "Dynamic Programming", accuracy: "42%", solved: "7 / 20", tone: "red" },
+                { name: "Graph Traversals (BFS/DFS)", accuracy: "55%", solved: "11 / 20", tone: "orange" },
+                { name: "Binary Trees & BST", accuracy: "61%", solved: "14 / 22", tone: "orange" },
+                { name: "Binary Search", accuracy: "74%", solved: "15 / 18", tone: "green" },
+                { name: "Sliding Window & Two Pointers", accuracy: "88%", solved: "22 / 25", tone: "green" },
+                { name: "Arrays & Hash Tables", accuracy: "95%", solved: "28 / 29", tone: "green" }
+              ].map((t) => (
+                <div key={t.name} style={{ background: "#080c14", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <strong style={{ fontSize: "0.9rem", color: "#f8fafc" }}>{t.name}</strong>
+                    <span style={{ fontSize: "0.82rem", fontWeight: "700", color: t.tone === "red" ? "#f87171" : t.tone === "orange" ? "#fbbf24" : "#34d399" }}>{t.accuracy}</span>
+                  </div>
+                  <span style={{ fontSize: "0.74rem", color: "#64748b" }}>{t.solved} challenges solved</span>
+                  <Link
+                    to={`/problems?topic=${encodeURIComponent(t.name.split(" ")[0])}`}
+                    style={{
+                      marginTop: "auto",
+                      background: "rgba(124, 58, 237, 0.12)",
+                      color: "#c084fc",
+                      border: "1px solid rgba(124, 58, 237, 0.25)",
+                      borderRadius: "6px",
+                      padding: "6px 10px",
+                      fontSize: "0.76rem",
+                      fontWeight: "600",
+                      textAlign: "center",
+                      textDecoration: "none"
+                    }}
+                  >
+                    Practice {t.name.split(" ")[0]} →
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: INTERVIEW PREP MOCK TRACK */}
+        {activeTab === "interview" && (
+          <div
+            style={{
+              background: "#0d111a",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: "12px",
+              padding: "24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              height: "calc(100vh - 200px)",
+              minHeight: "520px",
+              overflowY: "auto"
+            }}
+          >
+            <div>
+              <h2 style={{ fontSize: "1.1rem", fontWeight: "700", color: "#f8fafc", margin: 0 }}>Company Interview Tracks</h2>
+              <p style={{ fontSize: "0.82rem", color: "#94a3b8", margin: "4px 0 0 0" }}>Simulate real FAANG technical interview questions with live AI feedback.</p>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px" }}>
+              {[
+                { company: "Amazon SDE-1", title: "LRU Cache Implementation", diff: "Medium", tag: "Design & Hash Map" },
+                { company: "Google SWE", title: "Alien Dictionary Topological Sort", diff: "Hard", tag: "Graphs" },
+                { company: "Meta", title: "Minimum Window Substring", diff: "Hard", tag: "Sliding Window" }
+              ].map((q, idx) => (
+                <div key={idx} style={{ background: "#080c14", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <span style={{ fontSize: "0.72rem", color: "#818cf8", fontWeight: "700" }}>{q.company}</span>
+                  <strong style={{ fontSize: "0.92rem", color: "#f8fafc" }}>{q.title}</strong>
+                  <span style={{ fontSize: "0.76rem", color: "#94a3b8" }}>{q.diff} • {q.tag}</span>
+                  <Link
+                    to="/problems/two-sum"
+                    style={{
+                      marginTop: "8px",
+                      background: "rgba(99, 102, 241, 0.15)",
+                      color: "#818cf8",
+                      border: "1px solid rgba(99, 102, 241, 0.3)",
+                      borderRadius: "6px",
+                      padding: "6px 10px",
+                      fontSize: "0.78rem",
+                      fontWeight: "600",
+                      textAlign: "center",
+                      textDecoration: "none"
+                    }}
+                  >
+                    Start Mock Session →
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
