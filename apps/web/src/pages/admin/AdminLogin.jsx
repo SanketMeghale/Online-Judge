@@ -29,8 +29,12 @@ export default function AdminLogin() {
     setErrorMessage("");
 
     try {
+      const trimmed = identifier.trim();
       const res = await login({
-        emailOrUsername: identifier.trim(),
+        username: trimmed,
+        email: trimmed,
+        identifier: trimmed,
+        emailOrUsername: trimmed,
         password
       });
 

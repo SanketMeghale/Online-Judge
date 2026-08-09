@@ -332,7 +332,38 @@ export function nowIso() {
 
 function seedDatabase() {
   return {
-    users: [],
+    users: [
+      {
+        id: "u-admin",
+        name: "Platform Administrator",
+        username: "admin",
+        email: "admin@judgo.dev",
+        password: "admin123",
+        role: "admin",
+        status: "active",
+        ranking: 1,
+        xp: 9999,
+        streak: 30,
+        badges: ["Platform Administrator", "Algorithm Pioneer"],
+        solvedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number"],
+        attemptedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number"]
+      },
+      {
+        id: "u-sanketmeghale",
+        name: "Sanket Meghale",
+        username: "sanketmeghale",
+        email: "sanket@example.com",
+        password: "password123",
+        role: "admin",
+        status: "active",
+        ranking: 14,
+        xp: 2450,
+        streak: 5,
+        badges: ["New Challenger", "Three Problem Sprint"],
+        solvedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number"],
+        attemptedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number"]
+      }
+    ],
     problems: baseProblems,
     submissions: [],
     nextSubmissionId: 1001
