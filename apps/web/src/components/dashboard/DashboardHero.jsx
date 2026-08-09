@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
-import { ArrowRight, CheckCircle2, Sparkles, Target } from "lucide-react";
+import { ArrowRight, CheckCircle2, Target } from "lucide-react";
 
 export default function DashboardHero({
   user,
@@ -20,7 +20,7 @@ export default function DashboardHero({
     return "Good evening";
   }, [currentHour]);
 
-  // Authentic user display name (updates dynamically from profile/settings)
+  // Authentic user display name
   const displayName = useMemo(() => {
     const raw = liveUser?.name || liveUser?.username || user?.name || user?.username || "Coder";
     return String(raw).trim().split(" ")[0] || "Coder";
@@ -33,6 +33,16 @@ export default function DashboardHero({
   // Dynamic daily challenge URL
   const dailyUrl = dailyChallenge?.id ? `/problems/${dailyChallenge.id}` : "/problems";
   const isDailySolved = dailyChallenge?.solved || false;
+
+  // Blinking cursor state
+  const [cursorVisible, setCursorVisible] = useState(true);
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    const interval = setInterval(() => {
+      setCursorVisible((v) => !v);
+    }, 530);
+    return () => clearInterval(interval);
+  }, [prefersReducedMotion]);
 
   // Keyboard shortcut listener: Cmd/Ctrl + Enter to trigger Daily Challenge
   useEffect(() => {
@@ -104,7 +114,7 @@ export default function DashboardHero({
             Keep your streak alive and tackle today's curated challenges.
           </motion.p>
 
-          {/* Two Action Buttons */}
+          {/* Action Buttons */}
           <motion.div
             initial={prefersReducedMotion ? false : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
@@ -140,7 +150,7 @@ export default function DashboardHero({
           </motion.div>
         </div>
 
-        {/* RIGHT COLUMN: Futuristic Mini Terminal Visual */}
+        {/* RIGHT COLUMN: Futuristic Glassmorphism Code Terminal Visual */}
         <motion.div
           initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.95 }}
           animate={
@@ -156,60 +166,59 @@ export default function DashboardHero({
           className="dash-hero-right"
           aria-hidden="true"
         >
-          <div className="dash-hero-visual-card">
-            {/* Terminal Window Header */}
-            <div className="dash-terminal-header">
-              <div className="dash-terminal-dots">
-                <span className="dot dot-red" />
-                <span className="dot dot-yellow" />
-                <span className="dot dot-green" />
+          <div className="dash-editor-glow" />
+          <div className="dash-code-window">
+            {/* Terminal Header */}
+            <div className="dash-code-header">
+              <div className="dash-code-dots">
+                <span className="dash-dot dot-close" />
+                <span className="dash-dot dot-minimize" />
+                <span className="dash-dot dot-maximize" />
               </div>
-              <span className="dash-terminal-title">judgo_engine.cpp</span>
-              <span className="dash-terminal-lang">C++20</span>
+              <span className="dash-code-filename">judgo_engine.cpp</span>
+              <span className="dash-code-tag">C++20</span>
             </div>
 
-            {/* Terminal Code Snippet */}
-            <div className="dash-terminal-code">
+            {/* Code Body */}
+            <div className="dash-code-body">
               <div className="code-line">
-                <span className="ln">1</span>
-                <span className="keyword">template</span>&lt;<span className="keyword">typename</span> T&gt;
+                <span className="code-ln">1</span>
+                <span className="syn-kw">template</span> &lt;<span className="syn-kw">typename</span> <span className="syn-type">T</span>&gt;
               </div>
               <div className="code-line">
-                <span className="ln">2</span>
-                <span className="keyword">class</span> <span className="entity">JudgoArena</span> &#123;
+                <span className="code-ln">2</span>
+                <span className="syn-kw">class</span> <span className="syn-fn">JudgoArena</span> &#123;
               </div>
-              <div className="code-line indent-1">
-                <span className="ln">3</span>
-                <span className="keyword">public</span>:
+              <div className="code-line indent">
+                <span className="code-ln">3</span>
+                <span className="syn-kw">public</span>:
               </div>
               <div className="code-line indent-2">
-                <span className="ln">4</span>
-                <span className="keyword">auto</span> <span className="func">evaluate</span>(T&amp; sol) &#123;
-              </div>
-              <div className="code-line indent-3">
-                <span className="ln">5</span>
-                <span className="keyword">return</span> sol.<span className="func">solve</span>();
+                <span className="code-ln">4</span>
+                <span className="syn-kw">auto</span> <span className="syn-fn">evaluate</span>(<span className="syn-type">T</span>&amp; sol) &#123;
               </div>
               <div className="code-line indent-2">
-                <span className="ln">6</span>
+                <span className="code-ln">5</span>
+                &nbsp;&nbsp;<span className="syn-kw">return</span> sol.<span className="syn-fn">solve</span>();
+              </div>
+              <div className="code-line indent">
+                <span className="code-ln">6</span>
                 &#125;
               </div>
               <div className="code-line">
-                <span className="ln">7</span>
+                <span className="code-ln">7</span>
                 &#125;;
+                {cursorVisible && <span className="syn-cursor">|</span>}
               </div>
             </div>
 
-            {/* Terminal Live Status Footer */}
-            <div className="dash-terminal-footer">
-              <div className="dash-status-indicator">
-                <span className="dash-status-dot" />
-                <span className="dash-status-text">JUDGE ONLINE</span>
+            {/* Terminal Footer */}
+            <div className="dash-code-footer">
+              <div className="dash-code-status">
+                <span className="status-ping-dot" />
+                <span>JUDGE ONLINE</span>
               </div>
-              <div className="dash-speed-badge">
-                <span className="dash-speed-label">LATENCY</span>
-                <span className="dash-speed-value">&lt; 15ms</span>
-              </div>
+              <span className="dash-latency-badge">&lt; 15ms</span>
             </div>
           </div>
         </motion.div>
