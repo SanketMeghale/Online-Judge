@@ -68,6 +68,15 @@ export const adminApi = {
     return handleResponse(res);
   },
 
+  deleteUser: async (id) => {
+    const res = await fetch(`${API_BASE}/admin/users/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+      credentials: "include"
+    });
+    return handleResponse(res);
+  },
+
   // 3. Problems
   getProblems: async (params = {}) => {
     const query = new URLSearchParams(params).toString();
@@ -115,7 +124,35 @@ export const adminApi = {
     return handleResponse(res);
   },
 
-  // 4. Topics
+  // 4. Test Cases
+  getTestCases: async (problemId) => {
+    const res = await fetch(`${API_BASE}/admin/problems/${problemId}/testcases`, {
+      headers: getAuthHeaders(),
+      credentials: "include"
+    });
+    return handleResponse(res);
+  },
+
+  addTestCase: async (problemId, testCaseData) => {
+    const res = await fetch(`${API_BASE}/admin/problems/${problemId}/testcases`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(testCaseData),
+      credentials: "include"
+    });
+    return handleResponse(res);
+  },
+
+  deleteTestCase: async (problemId, type, index) => {
+    const res = await fetch(`${API_BASE}/admin/problems/${problemId}/testcases/${type}/${index}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+      credentials: "include"
+    });
+    return handleResponse(res);
+  },
+
+  // 5. Topics
   getTopics: async () => {
     const res = await fetch(`${API_BASE}/admin/topics`, {
       headers: getAuthHeaders(),
@@ -153,7 +190,7 @@ export const adminApi = {
     return handleResponse(res);
   },
 
-  // 5. Submissions
+  // 6. Submissions
   getSubmissions: async (params = {}) => {
     const query = new URLSearchParams(params).toString();
     const res = await fetch(`${API_BASE}/admin/submissions?${query}`, {
@@ -171,7 +208,7 @@ export const adminApi = {
     return handleResponse(res);
   },
 
-  // 6. Contests
+  // 7. Contests
   getContests: async () => {
     const res = await fetch(`${API_BASE}/admin/contests`, {
       headers: getAuthHeaders(),
@@ -209,7 +246,7 @@ export const adminApi = {
     return handleResponse(res);
   },
 
-  // 7. Analytics
+  // 8. Analytics
   getAnalytics: async (range = "30d") => {
     const res = await fetch(`${API_BASE}/admin/analytics?range=${range}`, {
       headers: getAuthHeaders(),
@@ -218,7 +255,7 @@ export const adminApi = {
     return handleResponse(res);
   },
 
-  // 8. Reports
+  // 9. Reports & CSV Export
   getReports: async (params = {}) => {
     const query = new URLSearchParams(params).toString();
     const res = await fetch(`${API_BASE}/admin/reports?${query}`, {
@@ -238,7 +275,53 @@ export const adminApi = {
     return handleResponse(res);
   },
 
-  // 9. AI Coach Telemetry
+  downloadReportCsv: async (type = "users") => {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${API_BASE}/admin/reports/export/${type}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      credentials: "include"
+    });
+    if (!res.ok) throw new Error("Failed to download CSV report.");
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `judgo-${type}-report-${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+
+  // 10. Notifications
+  getNotifications: async () => {
+    const res = await fetch(`${API_BASE}/admin/notifications`, {
+      headers: getAuthHeaders(),
+      credentials: "include"
+    });
+    return handleResponse(res);
+  },
+
+  createNotification: async (notificationData) => {
+    const res = await fetch(`${API_BASE}/admin/notifications`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(notificationData),
+      credentials: "include"
+    });
+    return handleResponse(res);
+  },
+
+  deleteNotification: async (id) => {
+    const res = await fetch(`${API_BASE}/admin/notifications/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+      credentials: "include"
+    });
+    return handleResponse(res);
+  },
+
+  // 11. AI Coach Telemetry
   getAICoachStats: async () => {
     const res = await fetch(`${API_BASE}/admin/ai-coach`, {
       headers: getAuthHeaders(),
@@ -247,7 +330,7 @@ export const adminApi = {
     return handleResponse(res);
   },
 
-  // 10. Audit Logs
+  // 12. Audit Logs
   getAuditLogs: async (params = {}) => {
     const query = new URLSearchParams(params).toString();
     const res = await fetch(`${API_BASE}/admin/audit-logs?${query}`, {
@@ -257,7 +340,7 @@ export const adminApi = {
     return handleResponse(res);
   },
 
-  // 11. Platform Settings
+  // 13. Platform Settings
   getSettings: async () => {
     const res = await fetch(`${API_BASE}/admin/settings`, {
       headers: getAuthHeaders(),

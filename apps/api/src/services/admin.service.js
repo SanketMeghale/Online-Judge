@@ -4,10 +4,12 @@ import { User } from "../models/User.js";
 import { Problem } from "../models/Problem.js";
 import { Submission } from "../models/Submission.js";
 import { Contest } from "../models/Contest.js";
+import { ContestRegistration } from "../models/ContestRegistration.js";
 import { Topic } from "../models/Topic.js";
 import { Report } from "../models/Report.js";
 import { AuditLog } from "../models/AuditLog.js";
 import { PlatformSettings } from "../models/PlatformSettings.js";
+import { Notification } from "../models/Notification.js";
 import { AIUsage } from "../models/AIUsage.js";
 import { AIConversation } from "../models/AIConversation.js";
 import { Company } from "../models/Company.js";
@@ -17,6 +19,8 @@ import {
   findUserById,
   updateUserRole as storeUpdateRole,
   updateUserStatus as storeUpdateStatus,
+  softDeleteUser as storeSoftDelete,
+  restoreUser as storeRestoreUser,
   sanitizeUser
 } from "../lib/userStore.js";
 import { problems as memoryProblems } from "../data/problems.js";
@@ -54,34 +58,9 @@ let memoryReports = [
     status: "open",
     adminNotes: "",
     createdAt: new Date(Date.now() - 3600000 * 5)
-  },
-  {
-    _id: "rep-2",
-    reporterId: "u-sanketmeghale",
-    reporterEmail: "sanket@example.com",
-    targetType: "bug",
-    targetId: "judge-memory",
-    targetTitle: "Judge Memory Meter",
-    reason: "Python 3 memory reporting offset",
-    notes: "Verified that baseline memory is 14MB.",
-    status: "investigating",
-    adminNotes: "Reviewing judge0 harness container footprint",
-    createdAt: new Date(Date.now() - 3600000 * 24)
   }
 ];
-let memoryAuditLogs = [
-  {
-    _id: "aud-1",
-    adminId: "u-sanketmeghale",
-    adminEmail: "sanket@example.com",
-    action: "ADMIN_LOGIN",
-    targetType: "auth",
-    targetId: "u-sanketmeghale",
-    description: "Administrator signed into Judgo Admin Control Center.",
-    metadata: { ip: "127.0.0.1", userAgent: "Mozilla/5.0" },
-    createdAt: new Date(Date.now() - 3600000 * 2)
-  }
-];
+let memoryAuditLogs = [];
 let memoryPlatformSettings = {
   key: "global_settings",
   platformName: "Judgo",
@@ -132,7 +111,7 @@ export async function logAdminAction({
   return logEntry;
 }
 
-// 1. DASHBOARD OVERVIEW METRICS
+// 1. DASHBOARD OVERVIEW METRICS (DYNAMIC MONGODB AGGREGATIONS)
 export async function getDashboardStats() {
   await connectDatabase();
 
@@ -140,6 +119,7 @@ export async function getDashboardStats() {
   let activeUsers = 0;
   let suspendedUsers = 0;
   let newUsersToday = 0;
+  let newUsersWeek = 0;
 
   let problemCount = 0;
   let publishedProblems = 0;
@@ -155,6 +135,7 @@ export async function getDashboardStats() {
   let contestCount = 0;
   let liveContests = 0;
   let upcomingContests = 0;
+  let completedContests = 0;
 
   let openReports = 0;
   let totalAuditLogs = 0;
@@ -164,27 +145,30 @@ export async function getDashboardStats() {
   let recentLogs = [];
   let recentReportsList = [];
 
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfWeek = new Date(now.getTime() - 7 * 24 * 3600000);
 
   if (isDatabaseConnected()) {
     try {
-      const [uTotal, uActive, uSuspended, uToday] = await Promise.all([
-        User.countDocuments(),
-        User.countDocuments({ status: { $ne: "suspended" } }),
-        User.countDocuments({ status: "suspended" }),
-        User.countDocuments({ createdAt: { $gte: startOfToday } })
+      const [uTotal, uActive, uSuspended, uToday, uWeek] = await Promise.all([
+        User.countDocuments({ isDeleted: { $ne: true } }),
+        User.countDocuments({ status: "active", isDeleted: { $ne: true } }),
+        User.countDocuments({ status: "suspended", isDeleted: { $ne: true } }),
+        User.countDocuments({ createdAt: { $gte: startOfToday }, isDeleted: { $ne: true } }),
+        User.countDocuments({ createdAt: { $gte: startOfWeek }, isDeleted: { $ne: true } })
       ]);
       userCount = uTotal;
       activeUsers = uActive;
       suspendedUsers = uSuspended;
       newUsersToday = uToday;
+      newUsersWeek = uWeek;
 
       const [pTotal, pPub, pDraft, pArch] = await Promise.all([
-        Problem.countDocuments(),
-        Problem.countDocuments({ status: "published" }),
-        Problem.countDocuments({ status: "draft" }),
-        Problem.countDocuments({ status: "archived" })
+        Problem.countDocuments({ isDeleted: { $ne: true } }),
+        Problem.countDocuments({ status: "published", isDeleted: { $ne: true } }),
+        Problem.countDocuments({ status: "draft", isDeleted: { $ne: true } }),
+        Problem.countDocuments({ status: "archived", isDeleted: { $ne: true } })
       ]);
       problemCount = pTotal;
       publishedProblems = pPub;
@@ -193,10 +177,10 @@ export async function getDashboardStats() {
 
       const [sTotal, sAc, sWa, sTle, sRe] = await Promise.all([
         Submission.countDocuments(),
-        Submission.countDocuments({ verdict: { $in: ["ACCEPTED", "AC"] } }),
-        Submission.countDocuments({ verdict: { $in: ["WRONG_ANSWER", "WA"] } }),
-        Submission.countDocuments({ verdict: { $in: ["TIME_LIMIT_EXCEEDED", "TLE"] } }),
-        Submission.countDocuments({ verdict: { $in: ["RUNTIME_ERROR", "RE"] } })
+        Submission.countDocuments({ status: { $in: ["Accepted", "ACCEPTED", "AC"] } }),
+        Submission.countDocuments({ status: { $in: ["Wrong Answer", "WRONG_ANSWER", "WA"] } }),
+        Submission.countDocuments({ status: { $in: ["Time Limit Exceeded", "TIME_LIMIT_EXCEEDED", "TLE"] } }),
+        Submission.countDocuments({ status: { $in: ["Runtime Error", "RUNTIME_ERROR", "RE"] } })
       ]);
       submissionCount = sTotal;
       acceptedCount = sAc;
@@ -204,21 +188,23 @@ export async function getDashboardStats() {
       tleCount = sTle;
       reCount = sRe;
 
-      const [cTotal, cLive, cUp] = await Promise.all([
+      const [cTotal, cLive, cUp, cComp] = await Promise.all([
         Contest.countDocuments(),
         Contest.countDocuments({ status: "live" }),
-        Contest.countDocuments({ status: "scheduled" })
+        Contest.countDocuments({ status: { $in: ["scheduled", "upcoming"] } }),
+        Contest.countDocuments({ status: "completed" })
       ]);
       contestCount = cTotal;
       liveContests = cLive;
       upcomingContests = cUp;
+      completedContests = cComp;
 
       openReports = await Report.countDocuments({ status: { $in: ["open", "investigating"] } });
       totalAuditLogs = await AuditLog.countDocuments();
 
       const [uRec, sRec, lRec, rRec] = await Promise.all([
-        User.find().sort({ createdAt: -1 }).limit(6).lean(),
-        Submission.find().sort({ submittedAt: -1 }).limit(8).lean(),
+        User.find({ isDeleted: { $ne: true } }).sort({ createdAt: -1 }).limit(6).lean(),
+        Submission.find().sort({ submittedAt: -1, createdAt: -1 }).limit(8).lean(),
         AuditLog.find().sort({ createdAt: -1 }).limit(6).lean(),
         Report.find().sort({ createdAt: -1 }).limit(5).lean()
       ]);
@@ -228,78 +214,74 @@ export async function getDashboardStats() {
       recentLogs = lRec;
       recentReportsList = rRec;
     } catch (e) {
-      console.error("[AdminService] DB stats computation fallback:", e);
+      console.error("[AdminService] DB dashboard aggregation error:", e);
     }
   }
 
-  // Memory fallback fill
+  // Memory fallback
   if (userCount === 0) {
     const { users } = await getAllUsers({ limit: 100 });
     userCount = users.length;
     activeUsers = users.filter((u) => u.status !== "suspended").length;
     suspendedUsers = users.filter((u) => u.status === "suspended").length;
     newUsersToday = 1;
+    newUsersWeek = users.length;
     recentUsers = users.slice(0, 6);
   }
 
   if (problemCount === 0) {
     problemCount = memoryProblems.length;
     publishedProblems = memoryProblems.length;
-    draftProblems = 0;
-    archivedProblems = 0;
   }
 
   if (submissionCount === 0) {
     submissionCount = memorySubmissions.length;
-    acceptedCount = memorySubmissions.filter((s) => s.verdict === "ACCEPTED" || s.verdict === "AC").length;
-    waCount = memorySubmissions.filter((s) => s.verdict === "WRONG_ANSWER" || s.verdict === "WA").length;
-    tleCount = memorySubmissions.filter((s) => s.verdict === "TIME_LIMIT_EXCEEDED" || s.verdict === "TLE").length;
-    reCount = memorySubmissions.filter((s) => s.verdict === "RUNTIME_ERROR" || s.verdict === "RE").length;
+    acceptedCount = memorySubmissions.filter((s) => ["ACCEPTED", "AC", "Accepted"].includes(s.verdict || s.status)).length;
+    waCount = memorySubmissions.filter((s) => ["WRONG_ANSWER", "WA", "Wrong Answer"].includes(s.verdict || s.status)).length;
+    tleCount = memorySubmissions.filter((s) => ["TIME_LIMIT_EXCEEDED", "TLE", "Time Limit Exceeded"].includes(s.verdict || s.status)).length;
+    reCount = memorySubmissions.filter((s) => ["RUNTIME_ERROR", "RE", "Runtime Error"].includes(s.verdict || s.status)).length;
     recentSubmissions = memorySubmissions.slice(0, 8);
   }
 
-  if (recentLogs.length === 0) recentLogs = memoryAuditLogs.slice(0, 6);
-  if (recentReportsList.length === 0) recentReportsList = memoryReports.slice(0, 5);
-  if (openReports === 0) openReports = memoryReports.filter((r) => r.status === "open" || r.status === "investigating").length;
-
-  const acceptanceRate = submissionCount > 0 ? Math.round((acceptedCount / submissionCount) * 100) : 78;
+  const acceptanceRate = submissionCount > 0 ? Math.round((acceptedCount / submissionCount) * 100) : 75;
+  const avgSubmissionsPerUser = userCount > 0 ? Number((submissionCount / userCount).toFixed(1)) : 0;
 
   return {
     users: {
       total: userCount,
       active: activeUsers,
       suspended: suspendedUsers,
-      newToday: newUsersToday
+      newToday: newUsersToday,
+      newThisWeek: newUsersWeek
     },
     problems: {
       total: problemCount,
-      published: publishedProblems || problemCount,
+      published: publishedProblems,
       draft: draftProblems,
       archived: archivedProblems
     },
     submissions: {
       total: submissionCount,
       accepted: acceptedCount,
+      failed: submissionCount - acceptedCount,
       wrongAnswer: waCount,
       timeLimitExceeded: tleCount,
       runtimeError: reCount,
-      acceptanceRate
+      acceptanceRate,
+      averagePerUser: avgSubmissionsPerUser
     },
     contests: {
       total: contestCount || 3,
       live: liveContests,
-      upcoming: upcomingContests || 1,
-      completed: Math.max(0, (contestCount || 3) - liveContests - (upcomingContests || 1))
-    },
-    aiCoach: {
-      totalRequests: 348,
-      requestsToday: 42,
-      errorCount: 1,
-      averageLatencyMs: 420
+      upcoming: upcomingContests,
+      completed: completedContests
     },
     reports: {
       open: openReports,
       total: openReports + 2
+    },
+    auditLogs: {
+      total: totalAuditLogs
     },
     recentUsers,
     recentSubmissions,
@@ -308,7 +290,7 @@ export async function getDashboardStats() {
   };
 }
 
-// 2. USER MANAGEMENT
+// 2. USER MANAGEMENT & COMPREHENSIVE PROFILER
 export async function getAdminUsers(query) {
   return await getAllUsers(query);
 }
@@ -319,20 +301,65 @@ export async function getAdminUserDetails(userId) {
 
   await connectDatabase();
   let submissions = [];
+  let solvedProblemsList = [];
+  let attemptedProblemsList = [];
+  let topicBreakdown = {};
+  let contestHistory = [];
+  let aiSessions = [];
+
   if (isDatabaseConnected()) {
     try {
-      submissions = await Submission.find({ userId: String(userId) })
-        .sort({ submittedAt: -1 })
-        .limit(20)
-        .lean();
-    } catch (e) {}
-  } else {
-    submissions = memorySubmissions.filter((s) => String(s.userId) === String(userId)).slice(0, 20);
+      const isObjId = mongoose.Types.ObjectId.isValid(String(userId));
+      const userQuery = isObjId ? { $or: [{ userId: String(userId) }, { userId: String(user.id) }] } : { userId: String(userId) };
+
+      // Submissions
+      submissions = await Submission.find(userQuery).sort({ submittedAt: -1, createdAt: -1 }).limit(50).lean();
+
+      // Solved problem details
+      if (user.solvedProblemIds && user.solvedProblemIds.length > 0) {
+        solvedProblemsList = await Problem.find({ id: { $in: user.solvedProblemIds } })
+          .select("id title difficulty topic points")
+          .lean();
+
+        solvedProblemsList.forEach((p) => {
+          const t = p.topic || "General";
+          topicBreakdown[t] = (topicBreakdown[t] || 0) + 1;
+        });
+      }
+
+      // Attempted problems (not yet solved)
+      const unsolvedAttemptedIds = (user.attemptedProblemIds || []).filter(
+        (id) => !(user.solvedProblemIds || []).includes(id)
+      );
+      if (unsolvedAttemptedIds.length > 0) {
+        attemptedProblemsList = await Problem.find({ id: { $in: unsolvedAttemptedIds } })
+          .select("id title difficulty topic")
+          .lean();
+      }
+
+      // Contest participations
+      contestHistory = await ContestRegistration.find(userQuery).sort({ registeredAt: -1 }).lean();
+
+      // AI Sessions
+      aiSessions = await AIConversation.find(userQuery).sort({ updatedAt: -1 }).limit(10).lean();
+    } catch (e) {
+      console.error("[AdminService] getAdminUserDetails DB error:", e);
+    }
+  }
+
+  // Memory fallback
+  if (submissions.length === 0) {
+    submissions = memorySubmissions.filter((s) => String(s.userId) === String(userId) || String(s.userId) === String(user.id));
   }
 
   return {
     user,
     submissions,
+    solvedProblems: solvedProblemsList,
+    attemptedProblems: attemptedProblemsList,
+    topicBreakdown,
+    contestHistory,
+    aiSessions,
     solvedCount: user.solvedProblemIds?.length || 0,
     attemptedCount: user.attemptedProblemIds?.length || 0
   };
@@ -370,6 +397,25 @@ export async function updateAdminUserStatus(userId, newStatus, reason, adminUser
   return updated;
 }
 
+export async function deleteAdminUser(userId, isSoftDelete = true, adminUser, req) {
+  if (isSoftDelete) {
+    const ok = await storeSoftDelete(userId);
+    if (ok) {
+      await logAdminAction({
+        adminUser,
+        action: "USER_SOFT_DELETE",
+        targetType: "user",
+        targetId: userId,
+        description: `Deactivated / soft-deleted user account (ID: ${userId}).`,
+        metadata: { userId },
+        req
+      });
+      return { success: true, softDeleted: true };
+    }
+  }
+  return { success: false };
+}
+
 // 3. PROBLEM MANAGEMENT
 export async function getAdminProblems({
   page = 1,
@@ -386,13 +432,13 @@ export async function getAdminProblems({
 
   if (isDatabaseConnected()) {
     try {
-      const filter = {};
+      const filter = { isDeleted: { $ne: true } };
       if (difficulty && difficulty !== "all") filter.difficulty = difficulty;
       if (topic && topic !== "all") filter.topic = topic;
       if (status && status !== "all") filter.status = status;
       if (search) {
         const regex = new RegExp(search.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"), "i");
-        filter.$or = [{ title: regex }, { id: regex }, { topic: regex }];
+        filter.$or = [{ title: regex }, { id: regex }, { topic: regex }, { statement: regex }];
       }
 
       const [docs, total] = await Promise.all([
@@ -402,7 +448,7 @@ export async function getAdminProblems({
 
       return {
         problems: docs,
-        pagination: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) }
+        pagination: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) || 1 }
       };
     } catch (e) {
       console.error("[AdminService] getAdminProblems DB error:", e);
@@ -410,7 +456,7 @@ export async function getAdminProblems({
   }
 
   // Memory fallback
-  let list = [...memoryProblems];
+  let list = memoryProblems.filter((p) => !p.isDeleted);
   if (difficulty && difficulty !== "all") list = list.filter((p) => p.difficulty === difficulty);
   if (topic && topic !== "all") list = list.filter((p) => p.topic === topic);
   if (status && status !== "all") list = list.filter((p) => (p.status || "published") === status);
@@ -424,7 +470,7 @@ export async function getAdminProblems({
 
   return {
     problems: paginated,
-    pagination: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) }
+    pagination: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) || 1 }
   };
 }
 
@@ -432,16 +478,16 @@ export async function getAdminProblemById(id) {
   await connectDatabase();
   if (isDatabaseConnected()) {
     try {
-      const doc = await Problem.findOne({ id: String(id) }).lean();
+      const doc = await Problem.findOne({ $or: [{ id: String(id) }, { slug: String(id) }] }).lean();
       if (doc) return doc;
     } catch (e) {}
   }
-  return memoryProblems.find((p) => p.id === String(id)) || null;
+  return memoryProblems.find((p) => p.id === String(id) || p.slug === String(id)) || null;
 }
 
 export async function createAdminProblem(problemData, adminUser, req) {
   await connectDatabase();
-  const slug = (problemData.title || "")
+  const slug = (problemData.slug || problemData.title || "")
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
@@ -452,9 +498,11 @@ export async function createAdminProblem(problemData, adminUser, req) {
   const newDoc = {
     ...problemData,
     id,
+    slug,
     acceptance: problemData.acceptance || 50,
     submissions: problemData.submissions || 0,
     status: problemData.status || "published",
+    createdBy: adminUser?.email || "admin",
     createdAt: new Date(),
     updatedAt: new Date()
   };
@@ -484,7 +532,7 @@ export async function createAdminProblem(problemData, adminUser, req) {
     action: "PROBLEM_CREATE",
     targetType: "problem",
     targetId: id,
-    description: `Created problem '${newDoc.title}' (${newDoc.difficulty}, ${newDoc.topic}) in memory.`,
+    description: `Created problem '${newDoc.title}' in memory.`,
     metadata: { id, title: newDoc.title },
     req
   });
@@ -496,7 +544,7 @@ export async function updateAdminProblem(id, problemData, adminUser, req) {
   if (isDatabaseConnected()) {
     try {
       const updated = await Problem.findOneAndUpdate(
-        { id: String(id) },
+        { $or: [{ id: String(id) }, { slug: String(id) }] },
         { ...problemData, updatedAt: new Date() },
         { new: true }
       ).lean();
@@ -542,7 +590,11 @@ export async function deleteAdminProblem(id, adminUser, req) {
 
   if (isDatabaseConnected()) {
     try {
-      const doc = await Problem.findOneAndDelete({ id: String(id) }).lean();
+      const doc = await Problem.findOneAndUpdate(
+        { $or: [{ id: String(id) }, { slug: String(id) }] },
+        { $set: { isDeleted: true, status: "archived", deletedAt: new Date() } },
+        { new: true }
+      ).lean();
       if (doc) deletedTitle = doc.title;
     } catch (e) {}
   }
@@ -550,15 +602,16 @@ export async function deleteAdminProblem(id, adminUser, req) {
   const idx = memoryProblems.findIndex((p) => p.id === String(id));
   if (idx !== -1) {
     deletedTitle = memoryProblems[idx].title;
-    memoryProblems.splice(idx, 1);
+    memoryProblems[idx].isDeleted = true;
+    memoryProblems[idx].status = "archived";
   }
 
   await logAdminAction({
     adminUser,
-    action: "PROBLEM_DELETE",
+    action: "PROBLEM_ARCHIVE",
     targetType: "problem",
     targetId: id,
-    description: `Deleted problem '${deletedTitle}' (ID: ${id}).`,
+    description: `Archived problem '${deletedTitle}' (ID: ${id}).`,
     metadata: { id, title: deletedTitle },
     req
   });
@@ -566,170 +619,131 @@ export async function deleteAdminProblem(id, adminUser, req) {
   return { success: true, id };
 }
 
-// 4. TOPIC MANAGEMENT (SINGLE SOURCE OF TRUTH)
-export async function getAdminTopics() {
+// 4. TEST CASE MANAGEMENT
+export async function getAdminTestCases(problemId) {
   await connectDatabase();
-  let topics = [];
+  let problem = null;
 
   if (isDatabaseConnected()) {
     try {
-      const count = await Topic.countDocuments();
-      if (count === 0) {
-        await Topic.insertMany(DEFAULT_TOPICS);
-      }
-      topics = await Topic.find().sort({ order: 1, name: 1 }).lean();
-    } catch (e) {
-      console.error("[AdminService] getAdminTopics DB error:", e);
-    }
+      problem = await Problem.findOne({ $or: [{ id: String(problemId) }, { slug: String(problemId) }] }).lean();
+    } catch (e) {}
   }
 
-  if (topics.length === 0) {
-    topics = [...memoryTopics];
+  if (!problem) {
+    problem = memoryProblems.find((p) => p.id === String(problemId) || p.slug === String(problemId));
   }
 
-  // Compute live problem counts for each topic
-  const problemCounts = {};
-  const allProblems = isDatabaseConnected()
-    ? await Problem.find({}, "topic").lean().catch(() => memoryProblems)
-    : memoryProblems;
+  if (!problem) return null;
 
-  allProblems.forEach((p) => {
-    const top = p.topic || "General";
-    problemCounts[top] = (problemCounts[top] || 0) + 1;
-  });
-
-  return topics.map((t) => ({
-    ...t,
-    problemCount: problemCounts[t.name] || problemCounts[t.slug] || 0
+  const sampleCases = (problem.examples || []).map((tc, idx) => ({
+    ...tc,
+    index: idx,
+    isSample: true,
+    isHidden: false
   }));
+
+  const hiddenCases = (problem.hiddenTestCases || []).map((tc, idx) => ({
+    ...tc,
+    index: sampleCases.length + idx,
+    isSample: false,
+    isHidden: true
+  }));
+
+  return {
+    problemId: problem.id,
+    problemTitle: problem.title,
+    testCases: [...sampleCases, ...hiddenCases]
+  };
 }
 
-export async function createAdminTopic(data, adminUser, req) {
+export async function addAdminTestCase(problemId, testCaseData, adminUser, req) {
   await connectDatabase();
-  const slug = (data.slug || data.name || "")
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-");
+  const { input, output, explanation = "", isHidden = false } = testCaseData;
 
-  const id = slug || `topic-${Date.now()}`;
-  const newTopic = {
-    ...data,
-    id,
-    slug,
-    isActive: typeof data.isActive === "boolean" ? data.isActive : true,
-    order: data.order || memoryTopics.length + 1
+  if (!input || !output) throw new Error("Input and output are required.");
+
+  const newTestCase = {
+    id: `tc-${Date.now()}`,
+    input: String(input).trim(),
+    output: String(output).trim(),
+    explanation: String(explanation).trim(),
+    isSample: !isHidden,
+    isHidden: !!isHidden
   };
 
   if (isDatabaseConnected()) {
     try {
-      const created = await Topic.create(newTopic);
-      await logAdminAction({
-        adminUser,
-        action: "TOPIC_CREATE",
-        targetType: "topic",
-        targetId: id,
-        description: `Created algorithmic topic '${newTopic.name}' (${newTopic.category}).`,
-        metadata: { id, name: newTopic.name },
-        req
-      });
-      return created.toObject();
-    } catch (e) {
-      console.error("[AdminService] createAdminTopic DB error:", e);
-      throw e;
-    }
-  }
-
-  memoryTopics.push(newTopic);
-  await logAdminAction({
-    adminUser,
-    action: "TOPIC_CREATE",
-    targetType: "topic",
-    targetId: id,
-    description: `Created topic '${newTopic.name}' in memory.`,
-    metadata: { id, name: newTopic.name },
-    req
-  });
-  return newTopic;
-}
-
-export async function updateAdminTopic(id, data, adminUser, req) {
-  await connectDatabase();
-  if (isDatabaseConnected()) {
-    try {
-      const updated = await Topic.findOneAndUpdate(
-        { $or: [{ id: String(id) }, { _id: id }] },
-        data,
+      const updateField = isHidden ? "hiddenTestCases" : "examples";
+      const updated = await Problem.findOneAndUpdate(
+        { $or: [{ id: String(problemId) }, { slug: String(problemId) }] },
+        { $push: { [updateField]: newTestCase } },
         { new: true }
       ).lean();
 
       if (updated) {
         await logAdminAction({
           adminUser,
-          action: "TOPIC_UPDATE",
-          targetType: "topic",
-          targetId: id,
-          description: `Updated topic parameters for '${updated.name}'.`,
-          metadata: { id, updates: Object.keys(data) },
+          action: "TESTCASE_ADD",
+          targetType: "test_case",
+          targetId: problemId,
+          description: `Added ${isHidden ? "hidden" : "sample"} testcase to '${updated.title}'.`,
+          metadata: { problemId, isHidden },
           req
         });
-        return updated;
+        return newTestCase;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error("[AdminService] addAdminTestCase error:", e);
+      throw e;
+    }
   }
 
-  const idx = memoryTopics.findIndex((t) => t.id === String(id) || t._id === String(id));
-  if (idx !== -1) {
-    memoryTopics[idx] = { ...memoryTopics[idx], ...data };
-    await logAdminAction({
-      adminUser,
-      action: "TOPIC_UPDATE",
-      targetType: "topic",
-      targetId: id,
-      description: `Updated topic '${memoryTopics[idx].name}'.`,
-      metadata: { id },
-      req
-    });
-    return memoryTopics[idx];
-  }
-
-  return null;
+  return newTestCase;
 }
 
-export async function deleteAdminTopic(id, adminUser, req) {
+export async function deleteAdminTestCase(problemId, type, index, adminUser, req) {
   await connectDatabase();
-  let topicName = id;
+  const idx = parseInt(index, 10);
 
   if (isDatabaseConnected()) {
     try {
-      const doc = await Topic.findOneAndDelete({ $or: [{ id: String(id) }, { _id: id }] }).lean();
-      if (doc) topicName = doc.name;
-    } catch (e) {}
+      const problem = await Problem.findOne({ $or: [{ id: String(problemId) }, { slug: String(problemId) }] });
+      if (!problem) throw new Error("Problem not found.");
+
+      if (type === "hidden" && problem.hiddenTestCases && problem.hiddenTestCases[idx]) {
+        problem.hiddenTestCases.splice(idx, 1);
+      } else if (problem.examples && problem.examples[idx]) {
+        problem.examples.splice(idx, 1);
+      }
+
+      await problem.save();
+
+      await logAdminAction({
+        adminUser,
+        action: "TESTCASE_DELETE",
+        targetType: "test_case",
+        targetId: problemId,
+        description: `Deleted ${type} testcase #${idx + 1} from '${problem.title}'.`,
+        metadata: { problemId, type, index: idx },
+        req
+      });
+
+      return { success: true };
+    } catch (e) {
+      console.error("[AdminService] deleteAdminTestCase error:", e);
+      throw e;
+    }
   }
 
-  const idx = memoryTopics.findIndex((t) => t.id === String(id) || t._id === String(id));
-  if (idx !== -1) {
-    topicName = memoryTopics[idx].name;
-    memoryTopics.splice(idx, 1);
-  }
-
-  await logAdminAction({
-    adminUser,
-    action: "TOPIC_DELETE",
-    targetType: "topic",
-    targetId: id,
-    description: `Deleted topic '${topicName}' (ID: ${id}).`,
-    metadata: { id, name: topicName },
-    req
-  });
-
-  return { success: true, id };
+  return { success: true };
 }
 
 // 5. SUBMISSIONS MANAGEMENT
 export async function getAdminSubmissions({
   page = 1,
   limit = 25,
-  verdict = "",
+  status = "",
   language = "",
   problemId = "",
   userId = "",
@@ -742,47 +756,43 @@ export async function getAdminSubmissions({
 
   if (isDatabaseConnected()) {
     try {
-      const query = {};
-      if (verdict && verdict !== "all") query.verdict = verdict;
-      if (language && language !== "all") query.language = language;
-      if (problemId && problemId !== "all") query.problemId = problemId;
-      if (userId) query.userId = userId;
+      const filter = {};
+      if (status && status !== "all") filter.status = status;
+      if (language && language !== "all") filter.language = language.toLowerCase();
+      if (problemId && problemId !== "all") filter.problemId = problemId;
+      if (userId) filter.userId = userId;
       if (search) {
         const regex = new RegExp(search.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"), "i");
-        query.$or = [{ problemId: regex }, { userId: regex }, { id: regex }];
+        filter.$or = [{ problemId: regex }, { userId: regex }, { username: regex }, { language: regex }];
       }
 
       const [docs, total] = await Promise.all([
-        Submission.find(query).sort({ submittedAt: -1 }).skip(skip).limit(limitNum).lean(),
-        Submission.countDocuments(query)
+        Submission.find(filter).sort({ submittedAt: -1, createdAt: -1 }).skip(skip).limit(limitNum).lean(),
+        Submission.countDocuments(filter)
       ]);
 
       return {
         submissions: docs,
-        pagination: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) }
+        pagination: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) || 1 }
       };
     } catch (e) {
-      console.error("[AdminService] getAdminSubmissions error:", e);
+      console.error("[AdminService] getAdminSubmissions DB error:", e);
     }
   }
 
   // Memory fallback
   let list = [...memorySubmissions];
-  if (verdict && verdict !== "all") list = list.filter((s) => s.verdict === verdict);
-  if (language && language !== "all") list = list.filter((s) => s.language === language);
+  if (status && status !== "all") list = list.filter((s) => (s.verdict || s.status) === status);
+  if (language && language !== "all") list = list.filter((s) => s.language?.toLowerCase() === language.toLowerCase());
   if (problemId && problemId !== "all") list = list.filter((s) => s.problemId === problemId);
   if (userId) list = list.filter((s) => s.userId === userId);
-  if (search) {
-    const s = search.toLowerCase();
-    list = list.filter((sub) => sub.problemId?.toLowerCase().includes(s) || sub.userId?.toLowerCase().includes(s));
-  }
 
   const total = list.length;
   const paginated = list.slice(skip, skip + limitNum);
 
   return {
     submissions: paginated,
-    pagination: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) }
+    pagination: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) || 1 }
   };
 }
 
@@ -790,10 +800,13 @@ export async function getAdminSubmissionDetails(id) {
   await connectDatabase();
   if (isDatabaseConnected()) {
     try {
-      const doc = await Submission.findOne({ $or: [{ id: String(id) }, { _id: id }] }).lean();
+      const isObjId = mongoose.Types.ObjectId.isValid(String(id));
+      const query = isObjId ? { $or: [{ _id: id }, { id: String(id) }] } : { id: String(id) };
+      const doc = await Submission.findOne(query).lean();
       if (doc) return doc;
     } catch (e) {}
   }
+
   return memorySubmissions.find((s) => String(s.id) === String(id) || String(s._id) === String(id)) || null;
 }
 
@@ -802,7 +815,7 @@ export async function getAdminContests() {
   await connectDatabase();
   if (isDatabaseConnected()) {
     try {
-      return await Contest.find().sort({ startTime: -1 }).lean();
+      return await Contest.find().sort({ startTime: -1, createdAt: -1 }).lean();
     } catch (e) {}
   }
   return [];
@@ -883,58 +896,310 @@ export async function deleteAdminContest(id, adminUser, req) {
   return { success: true, id };
 }
 
-// 7. ANALYTICS ENGINE
+// 7. ANALYTICS ENGINE (REAL MONGODB AGGREGATIONS)
 export async function getAdminAnalytics(timeRange = "30d") {
-  const days = timeRange === "7d" ? 7 : timeRange === "90d" ? 90 : 30;
+  await connectDatabase();
+  const days = timeRange === "7d" ? 7 : timeRange === "90d" ? 90 : timeRange === "1y" ? 365 : 30;
+  const startDate = new Date(Date.now() - days * 24 * 3600000);
 
-  // Generate daily date buckets
-  const timeline = [];
-  const now = new Date();
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now.getTime() - i * 24 * 3600000);
-    const dateKey = d.toISOString().split("T")[0];
-    timeline.push({
-      date: dateKey,
-      submissions: Math.floor(18 + Math.sin(i * 0.4) * 8 + (days - i) * 0.5),
-      accepted: Math.floor(14 + Math.sin(i * 0.4) * 6 + (days - i) * 0.4),
-      newUsers: Math.floor(2 + (i % 3 === 0 ? 3 : 1)),
-      aiQueries: Math.floor(8 + (i % 2 === 0 ? 5 : 2))
-    });
+  let timeline = [];
+  let verdicts = [
+    { name: "Accepted", value: 0, color: "#10b981" },
+    { name: "Wrong Answer", value: 0, color: "#ef4444" },
+    { name: "Time Limit Exceeded", value: 0, color: "#f59e0b" },
+    { name: "Runtime Error", value: 0, color: "#8b5cf6" },
+    { name: "Compile Error", value: 0, color: "#64748b" }
+  ];
+  let languages = [];
+  let topProblems = [];
+  let hardestProblems = [];
+
+  if (isDatabaseConnected()) {
+    try {
+      // Submissions aggregation by day
+      const subAggr = await Submission.aggregate([
+        { $match: { submittedAt: { $gte: startDate } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$submittedAt" } },
+            total: { $sum: 1 },
+            accepted: {
+              $sum: {
+                $cond: [{ $in: ["$status", ["Accepted", "ACCEPTED", "AC"]] }, 1, 0]
+              }
+            }
+          }
+        },
+        { $sort: { _id: 1 } }
+      ]);
+
+      // User registrations by day
+      const userAggr = await User.aggregate([
+        { $match: { createdAt: { $gte: startDate }, isDeleted: { $ne: true } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            newUsers: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } }
+      ]);
+
+      const dateMap = {};
+      const now = new Date();
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 24 * 3600000);
+        const k = d.toISOString().split("T")[0];
+        dateMap[k] = { date: k, submissions: 0, accepted: 0, newUsers: 0 };
+      }
+
+      subAggr.forEach((item) => {
+        if (dateMap[item._id]) {
+          dateMap[item._id].submissions = item.total;
+          dateMap[item._id].accepted = item.accepted;
+        }
+      });
+
+      userAggr.forEach((item) => {
+        if (dateMap[item._id]) {
+          dateMap[item._id].newUsers = item.newUsers;
+        }
+      });
+
+      timeline = Object.values(dateMap);
+
+      // Verdicts breakdown
+      const verdictAggr = await Submission.aggregate([
+        {
+          $group: {
+            _id: "$status",
+            count: { $sum: 1 }
+          }
+        }
+      ]);
+
+      const verdictCounts = {
+        Accepted: 0,
+        "Wrong Answer": 0,
+        "Time Limit Exceeded": 0,
+        "Runtime Error": 0,
+        "Compile Error": 0
+      };
+
+      verdictAggr.forEach((v) => {
+        const s = String(v._id || "");
+        if (["Accepted", "ACCEPTED", "AC"].includes(s)) verdictCounts.Accepted += v.count;
+        else if (["Wrong Answer", "WRONG_ANSWER", "WA"].includes(s)) verdictCounts["Wrong Answer"] += v.count;
+        else if (["Time Limit Exceeded", "TIME_LIMIT_EXCEEDED", "TLE"].includes(s)) verdictCounts["Time Limit Exceeded"] += v.count;
+        else if (["Runtime Error", "RUNTIME_ERROR", "RE"].includes(s)) verdictCounts["Runtime Error"] += v.count;
+        else verdictCounts["Compile Error"] += v.count;
+      });
+
+      verdicts = [
+        { name: "Accepted", value: verdictCounts.Accepted, color: "#10b981" },
+        { name: "Wrong Answer", value: verdictCounts["Wrong Answer"], color: "#ef4444" },
+        { name: "Time Limit Exceeded", value: verdictCounts["Time Limit Exceeded"], color: "#f59e0b" },
+        { name: "Runtime Error", value: verdictCounts["Runtime Error"], color: "#8b5cf6" },
+        { name: "Compile Error", value: verdictCounts["Compile Error"], color: "#64748b" }
+      ];
+
+      // Language distribution
+      const langAggr = await Submission.aggregate([
+        {
+          $group: {
+            _id: "$language",
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { count: -1 } }
+      ]);
+
+      const langColorMap = {
+        python: "#38bdf8",
+        javascript: "#fbbf24",
+        cpp: "#c084fc",
+        java: "#f87171",
+        c: "#94a3b8"
+      };
+
+      const totalLangs = langAggr.reduce((acc, l) => acc + l.count, 0) || 1;
+      languages = langAggr.map((l) => ({
+        name: l._id || "Other",
+        count: l.count,
+        share: Math.round((l.count / totalLangs) * 100),
+        color: langColorMap[String(l._id).toLowerCase()] || "#818cf8"
+      }));
+
+      // Top solved & Hardest problems
+      const problemsDoc = await Problem.find({ isDeleted: { $ne: true } })
+        .sort({ submissions: -1 })
+        .limit(10)
+        .lean();
+
+      topProblems = problemsDoc.slice(0, 5).map((p) => ({
+        title: p.title,
+        difficulty: p.difficulty,
+        submissions: p.submissions || 0,
+        solveRate: `${p.acceptance || 50}%`
+      }));
+
+      hardestProblems = [...problemsDoc]
+        .sort((a, b) => (a.acceptance || 50) - (b.acceptance || 50))
+        .slice(0, 5)
+        .map((p) => ({
+          title: p.title,
+          difficulty: p.difficulty,
+          submissions: p.submissions || 0,
+          solveRate: `${p.acceptance || 50}%`
+        }));
+    } catch (e) {
+      console.error("[AdminService] getAdminAnalytics DB error:", e);
+    }
+  }
+
+  if (timeline.length === 0) {
+    const now = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 3600000);
+      timeline.push({
+        date: d.toISOString().split("T")[0],
+        submissions: Math.floor(12 + Math.sin(i * 0.4) * 6),
+        accepted: Math.floor(9 + Math.sin(i * 0.4) * 4),
+        newUsers: 1
+      });
+    }
   }
 
   return {
     timeRange,
     timeline,
-    verdicts: [
-      { name: "Accepted", value: 68, color: "#10b981" },
-      { name: "Wrong Answer", value: 18, color: "#ef4444" },
-      { name: "Time Limit Exceeded", value: 8, color: "#f59e0b" },
-      { name: "Runtime Error", value: 4, color: "#8b5cf6" },
-      { name: "Compile Error", value: 2, color: "#64748b" }
+    verdicts,
+    languages: languages.length ? languages : [
+      { name: "Python 3", share: 45, count: 45, color: "#38bdf8" },
+      { name: "C++ 20", share: 30, count: 30, color: "#c084fc" },
+      { name: "JavaScript", share: 20, count: 20, color: "#fbbf24" },
+      { name: "Java", share: 5, count: 5, color: "#f87171" }
     ],
-    languages: [
-      { name: "Python 3", share: 44, color: "#38bdf8" },
-      { name: "JavaScript", share: 32, color: "#fbbf24" },
-      { name: "C++ 20", share: 18, color: "#c084fc" },
-      { name: "Java", share: 6, color: "#f87171" }
-    ],
-    topProblems: [
-      { title: "Two Sum", difficulty: "Easy", submissions: 142, solveRate: "88%" },
-      { title: "Valid Parentheses", difficulty: "Easy", submissions: 110, solveRate: "82%" },
-      { title: "LRU Cache", difficulty: "Medium", submissions: 74, solveRate: "58%" },
-      { title: "Median of Two Sorted Arrays", difficulty: "Hard", submissions: 32, solveRate: "34%" }
-    ],
-    topicPopularity: [
-      { topic: "Arrays & Strings", percentage: 92 },
-      { topic: "Binary Search", percentage: 76 },
-      { topic: "Trees & Graphs", percentage: 64 },
-      { topic: "Dynamic Programming", percentage: 48 },
-      { topic: "Backtracking", percentage: 38 }
-    ]
+    topProblems,
+    hardestProblems
   };
 }
 
-// 8. REPORT SYSTEM
+// 8. CSV REPORT GENERATORS
+export async function exportCsvReport(type = "users") {
+  await connectDatabase();
+
+  if (type === "users") {
+    const users = isDatabaseConnected() ? await User.find().lean() : (await getAllUsers()).users;
+    let csv = "ID,Name,Username,Email,Role,Status,XP,Streak,SolvedCount,CreatedAt\n";
+    users.forEach((u) => {
+      csv += `"${u.id}","${u.name || ""}","${u.username || ""}","${u.email || ""}","${u.role || "user"}","${u.status || "active"}",${u.xp || 0},${u.streak || 0},${u.solvedProblemIds?.length || 0},"${u.createdAt ? new Date(u.createdAt).toISOString() : ""}"\n`;
+    });
+    return csv;
+  }
+
+  if (type === "submissions") {
+    const subs = isDatabaseConnected() ? await Submission.find().sort({ submittedAt: -1 }).limit(1000).lean() : memorySubmissions;
+    let csv = "ID,UserId,ProblemId,Language,Status,RuntimeMs,MemoryMb,SubmittedAt\n";
+    subs.forEach((s) => {
+      csv += `"${s.id || s._id}","${s.userId}","${s.problemId}","${s.language}","${s.status || s.verdict}",${s.runtimeMs || 0},${s.memoryMb || 0},"${s.submittedAt ? new Date(s.submittedAt).toISOString() : ""}"\n`;
+    });
+    return csv;
+  }
+
+  if (type === "problems") {
+    const probs = isDatabaseConnected() ? await Problem.find().lean() : memoryProblems;
+    let csv = "ID,Title,Difficulty,Topic,Points,Status,Submissions,AcceptanceRate,CreatedAt\n";
+    probs.forEach((p) => {
+      csv += `"${p.id}","${p.title}","${p.difficulty}","${p.topic}",${p.points || 10},"${p.status || "published"}",${p.submissions || 0},${p.acceptance || 50},"${p.createdAt ? new Date(p.createdAt).toISOString() : ""}"\n`;
+    });
+    return csv;
+  }
+
+  if (type === "contests") {
+    const contests = isDatabaseConnected() ? await Contest.find().lean() : [];
+    let csv = "ID,Title,Status,StartTime,EndTime,DurationMinutes,Participants\n";
+    contests.forEach((c) => {
+      csv += `"${c.id || c._id}","${c.title}","${c.status}","${c.startTime ? new Date(c.startTime).toISOString() : ""}","${c.endTime ? new Date(c.endTime).toISOString() : ""}",${c.durationMinutes || 90},${c.participants?.length || 0}\n`;
+    });
+    return csv;
+  }
+
+  return "ID,Message\n1,Invalid report type\n";
+}
+
+// 9. TOPICS & REPORTS
+export async function getAdminTopics() {
+  await connectDatabase();
+  let topics = [];
+
+  if (isDatabaseConnected()) {
+    try {
+      const count = await Topic.countDocuments();
+      if (count === 0) {
+        await Topic.insertMany(DEFAULT_TOPICS);
+      }
+      topics = await Topic.find().sort({ order: 1, name: 1 }).lean();
+    } catch (e) {
+      console.error("[AdminService] getAdminTopics DB error:", e);
+    }
+  }
+
+  if (topics.length === 0) {
+    topics = [...memoryTopics];
+  }
+
+  return topics;
+}
+
+export async function createAdminTopic(topicData, adminUser, req) {
+  await connectDatabase();
+  const slug = (topicData.slug || topicData.name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const newTopic = {
+    ...topicData,
+    slug,
+    id: topicData.id || slug
+  };
+
+  if (isDatabaseConnected()) {
+    const created = await Topic.create(newTopic);
+    await logAdminAction({
+      adminUser,
+      action: "TOPIC_CREATE",
+      targetType: "topic",
+      targetId: newTopic.id,
+      description: `Created topic '${newTopic.name}'.`,
+      metadata: { name: newTopic.name },
+      req
+    });
+    return created.toObject();
+  }
+
+  memoryTopics.push(newTopic);
+  return newTopic;
+}
+
+export async function updateAdminTopic(id, topicData, adminUser, req) {
+  await connectDatabase();
+  if (isDatabaseConnected()) {
+    const updated = await Topic.findOneAndUpdate(
+      { $or: [{ id: String(id) }, { _id: id }, { slug: String(id) }] },
+      topicData,
+      { new: true }
+    ).lean();
+    return updated;
+  }
+  return null;
+}
+
+export async function deleteAdminTopic(id, adminUser, req) {
+  await connectDatabase();
+  if (isDatabaseConnected()) {
+    await Topic.findOneAndDelete({ $or: [{ id: String(id) }, { _id: id }, { slug: String(id) }] });
+  }
+  return { success: true, id };
+}
+
 export async function getAdminReports({ status = "", targetType = "" } = {}) {
   await connectDatabase();
   if (isDatabaseConnected()) {
@@ -945,11 +1210,7 @@ export async function getAdminReports({ status = "", targetType = "" } = {}) {
       return await Report.find(filter).sort({ createdAt: -1 }).lean();
     } catch (e) {}
   }
-
-  let list = [...memoryReports];
-  if (status && status !== "all") list = list.filter((r) => r.status === status);
-  if (targetType && targetType !== "all") list = list.filter((r) => r.targetType === targetType);
-  return list;
+  return memoryReports;
 }
 
 export async function updateAdminReportStatus(id, { status, adminNotes = "" }, adminUser, req) {
@@ -964,63 +1225,62 @@ export async function updateAdminReportStatus(id, { status, adminNotes = "" }, a
   if (isDatabaseConnected()) {
     try {
       const updated = await Report.findByIdAndUpdate(id, updateData, { new: true }).lean();
-      if (updated) {
-        await logAdminAction({
-          adminUser,
-          action: "REPORT_STATUS_CHANGE",
-          targetType: "report",
-          targetId: id,
-          description: `Updated report status to '${status}'.`,
-          metadata: { id, status, notes: adminNotes },
-          req
-        });
-        return updated;
-      }
+      if (updated) return updated;
     } catch (e) {}
   }
-
-  const idx = memoryReports.findIndex((r) => String(r._id) === String(id));
-  if (idx !== -1) {
-    memoryReports[idx] = { ...memoryReports[idx], ...updateData };
-    await logAdminAction({
-      adminUser,
-      action: "REPORT_STATUS_CHANGE",
-      targetType: "report",
-      targetId: id,
-      description: `Updated report status to '${status}'.`,
-      metadata: { id, status },
-      req
-    });
-    return memoryReports[idx];
-  }
-
   return null;
 }
 
-// 9. AI COACH TELEMETRY
-export async function getAdminAICoachStats() {
-  return {
-    status: "active",
-    model: "Judgo-AI-Engine-v2",
-    totalQueries: 412,
-    todayQueries: 48,
-    activeSessions: 6,
-    avgResponseLatencyMs: 440,
-    errorRatePercent: 0.2,
-    usageByTier: {
-      codingMentor: 62,
-      mockInterview: 28,
-      complexityReview: 10
-    },
-    topActiveUsers: [
-      { username: "sanketmeghale", queries: 84, lastActive: "Just now" },
-      { username: "demouser", queries: 32, lastActive: "2 hours ago" },
-      { username: "coder_google", queries: 14, lastActive: "1 day ago" }
-    ]
-  };
+// 10. NOTIFICATIONS
+export async function getAdminNotifications() {
+  await connectDatabase();
+  if (isDatabaseConnected()) {
+    try {
+      return await Notification.find().sort({ createdAt: -1 }).limit(50).lean();
+    } catch (e) {}
+  }
+  return [];
 }
 
-// 10. AUDIT LOGS
+export async function createAdminNotification(data, adminUser, req) {
+  await connectDatabase();
+  const newNotif = {
+    id: `notif-${Date.now()}`,
+    userId: data.userId || null,
+    type: data.type || "announcement",
+    title: data.title,
+    message: data.message,
+    link: data.link || "",
+    createdBy: adminUser?.email || "admin",
+    createdAt: new Date()
+  };
+
+  if (isDatabaseConnected()) {
+    const created = await Notification.create(newNotif);
+    await logAdminAction({
+      adminUser,
+      action: "NOTIFICATION_BROADCAST",
+      targetType: "notification",
+      targetId: newNotif.id,
+      description: `Broadcasted notification '${newNotif.title}'.`,
+      metadata: { title: newNotif.title, type: newNotif.type },
+      req
+    });
+    return created.toObject();
+  }
+
+  return newNotif;
+}
+
+export async function deleteAdminNotification(id, adminUser, req) {
+  await connectDatabase();
+  if (isDatabaseConnected()) {
+    await Notification.findOneAndDelete({ $or: [{ id: String(id) }, { _id: id }] });
+  }
+  return { success: true, id };
+}
+
+// 11. AUDIT LOGS & SETTINGS
 export async function getAdminAuditLogs({ page = 1, limit = 30, action = "", search = "" } = {}) {
   await connectDatabase();
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
@@ -1043,26 +1303,17 @@ export async function getAdminAuditLogs({ page = 1, limit = 30, action = "", sea
 
       return {
         logs: docs,
-        pagination: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) }
+        pagination: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) || 1 }
       };
     } catch (e) {}
   }
 
-  let list = [...memoryAuditLogs];
-  if (action && action !== "all") list = list.filter((l) => l.action === action);
-  if (search) {
-    const s = search.toLowerCase();
-    list = list.filter((l) => l.description?.toLowerCase().includes(s) || l.adminEmail?.toLowerCase().includes(s));
-  }
-
-  const total = list.length;
   return {
-    logs: list.slice(skip, skip + limitNum),
-    pagination: { total, page: pageNum, limit: limitNum, totalPages: Math.ceil(total / limitNum) }
+    logs: memoryAuditLogs.slice(skip, skip + limitNum),
+    pagination: { total: memoryAuditLogs.length, page: pageNum, limit: limitNum, totalPages: 1 }
   };
 }
 
-// 11. PLATFORM SETTINGS
 export async function getAdminSettings() {
   await connectDatabase();
   if (isDatabaseConnected()) {
@@ -1101,17 +1352,6 @@ export async function updateAdminSettings(settingsData, adminUser, req) {
       return updated;
     } catch (e) {}
   }
-
-  memoryPlatformSettings = { ...memoryPlatformSettings, ...settingsData };
-  await logAdminAction({
-    adminUser,
-    action: "SETTINGS_UPDATE",
-    targetType: "settings",
-    targetId: "global_settings",
-    description: `Updated platform settings in memory.`,
-    metadata: { updatedFields: Object.keys(settingsData) },
-    req
-  });
   return memoryPlatformSettings;
 }
 
@@ -1189,15 +1429,6 @@ export async function createAdminCompany(companyData, adminUser, req) {
     }
   }
 
-  await logAdminAction({
-    adminUser,
-    action: "COMPANY_CREATE",
-    targetType: "company",
-    targetId: id,
-    description: `Created new Company Sheet '${newCompany.name}' in memory.`,
-    metadata: { id },
-    req
-  });
   return newCompany;
 }
 
@@ -1334,3 +1565,23 @@ export async function removeProblemFromCompany(companyId, problemId, adminUser, 
   return null;
 }
 
+export async function getAdminAICoachStats() {
+  return {
+    status: "active",
+    model: "Judgo-Intelligence-Engine-v2",
+    totalQueries: 412,
+    todayQueries: 48,
+    activeSessions: 6,
+    avgResponseLatencyMs: 440,
+    errorRatePercent: 0.2,
+    usageByTier: {
+      codingMentor: 62,
+      mockInterview: 28,
+      complexityReview: 10
+    },
+    topActiveUsers: [
+      { username: "sanketmeghale", queries: 84, lastActive: "Just now" },
+      { username: "demouser", queries: 32, lastActive: "2 hours ago" }
+    ]
+  };
+}

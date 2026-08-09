@@ -42,9 +42,11 @@ const userSchema = new mongoose.Schema(
     lastActiveDate: { type: String, default: null },
     activeDates: { type: [String], default: [] },
     badges: { type: [String], default: ["New Challenger"] },
-    role: { type: String, enum: ["user", "admin"], default: "user", index: true },
+    role: { type: String, enum: ["user", "admin", "super_admin"], default: "user", index: true },
     status: { type: String, enum: ["active", "suspended"], default: "active", index: true },
     suspendedReason: { type: String, default: "" },
+    isDeleted: { type: Boolean, default: false, index: true },
+    deletedAt: { type: Date, default: null },
     solvedProblemIds: { type: [String], default: [] },
     attemptedProblemIds: { type: [String], default: [] },
     bookmarkedProblemIds: { type: [String], default: [] },
@@ -58,5 +60,10 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true, collection: "users" }
 );
+
+// Compound index for search and sorting
+userSchema.index({ name: "text", username: "text", email: "text" });
+userSchema.index({ createdAt: -1 });
+userSchema.index({ xp: -1 });
 
 export const User = mongoose.models.User || mongoose.model("User", userSchema);

@@ -556,6 +556,60 @@ export async function deleteUser(userId) {
   return false;
 }
 
+export async function softDeleteUser(userId) {
+  if (!userId) return false;
+  await connectDatabase();
+
+  if (isDatabaseConnected()) {
+    try {
+      const isObjId = mongoose.Types.ObjectId.isValid(String(userId));
+      const query = isObjId ? { $or: [{ id: String(userId) }, { _id: userId }] } : { id: String(userId) };
+      const res = await User.updateOne(query, { $set: { isDeleted: true, deletedAt: new Date() } });
+      return res.modifiedCount > 0;
+    } catch (e) {
+      console.error("[UserStore] softDeleteUser DB error:", e);
+    }
+  }
+
+  const u = memoryUsers.find(
+    (item) => String(item.id) === String(userId) || String(item._id) === String(userId)
+  );
+  if (u) {
+    u.isDeleted = true;
+    u.deletedAt = new Date();
+    return true;
+  }
+
+  return false;
+}
+
+export async function restoreUser(userId) {
+  if (!userId) return false;
+  await connectDatabase();
+
+  if (isDatabaseConnected()) {
+    try {
+      const isObjId = mongoose.Types.ObjectId.isValid(String(userId));
+      const query = isObjId ? { $or: [{ id: String(userId) }, { _id: userId }] } : { id: String(userId) };
+      const res = await User.updateOne(query, { $set: { isDeleted: false, deletedAt: null } });
+      return res.modifiedCount > 0;
+    } catch (e) {
+      console.error("[UserStore] restoreUser DB error:", e);
+    }
+  }
+
+  const u = memoryUsers.find(
+    (item) => String(item.id) === String(userId) || String(item._id) === String(userId)
+  );
+  if (u) {
+    u.isDeleted = false;
+    u.deletedAt = null;
+    return true;
+  }
+
+  return false;
+}
+
 /**
  * Record user submission verdict and update solved/attempted problem IDs, stats, and real streak permanently
  */
@@ -564,56 +618,64 @@ export async function recordUserSubmission(userId, problemId, verdict, points = 
   await connectDatabase();
 
   const isAc = verdict === "AC" || verdict === "OK" || verdict === "Accepted";
-  const xpEarned = isAc ? (Number(points) || 10) * 10 : 0;
   const todayKey = formatDateKey(new Date());
-
-  const mongoUpdate = {
-    $addToSet: { attemptedProblemIds: String(problemId) },
-    $inc: { "stats.totalSubmissions": 1 }
-  };
-
-  if (isAc) {
-    mongoUpdate.$addToSet.solvedProblemIds = String(problemId);
-    mongoUpdate.$addToSet.activeDates = todayKey;
-    mongoUpdate.$inc["stats.acceptedSubmissions"] = 1;
-    mongoUpdate.$inc.xp = xpEarned;
-    mongoUpdate.$set = { lastActiveDate: todayKey };
-  } else if (verdict === "WA") {
-    mongoUpdate.$inc["stats.waCount"] = 1;
-  } else if (verdict === "RE") {
-    mongoUpdate.$inc["stats.reCount"] = 1;
-  } else if (verdict === "TLE") {
-    mongoUpdate.$inc["stats.tleCount"] = 1;
-  } else if (verdict === "CE") {
-    mongoUpdate.$inc["stats.ceCount"] = 1;
-  }
 
   if (isDatabaseConnected()) {
     try {
       const isObjId = mongoose.Types.ObjectId.isValid(String(userId));
       const query = isObjId ? { $or: [{ id: String(userId) }, { _id: userId }] } : { id: String(userId) };
 
-      const doc = await User.findOneAndUpdate(query, mongoUpdate, { new: true }).lean();
-      if (doc) {
-        // Recalculate streak from activeDates set
-        const activeDatesList = doc.activeDates || (isAc ? [todayKey] : []);
-        const streakResult = calculateUserStreak(activeDatesList, new Date());
+      // Find user to check if problem was already solved
+      const existingUser = await User.findOne(query).lean();
+      if (existingUser) {
+        const isFirstTimeSolve = isAc && !(existingUser.solvedProblemIds || []).includes(String(problemId));
+        const xpEarned = isFirstTimeSolve ? (Number(points) || 10) * 10 : 0;
 
-        await User.updateOne(query, {
-          $set: {
-            streak: streakResult.currentStreak,
-            bestStreak: Math.max(doc.bestStreak || 0, streakResult.bestStreak)
-          }
-        });
-
-        const updatedDoc = {
-          ...doc,
-          streak: streakResult.currentStreak,
-          bestStreak: Math.max(doc.bestStreak || 0, streakResult.bestStreak)
+        const mongoUpdate = {
+          $addToSet: { attemptedProblemIds: String(problemId) },
+          $inc: { "stats.totalSubmissions": 1 }
         };
 
-        console.log(`[UserStore] Updated user '${userId}' stats: AC=${isAc}, streak=${streakResult.currentStreak}, bestStreak=${streakResult.bestStreak}`);
-        return sanitizeUser(updatedDoc);
+        if (isAc) {
+          mongoUpdate.$addToSet.solvedProblemIds = String(problemId);
+          mongoUpdate.$addToSet.activeDates = todayKey;
+          mongoUpdate.$inc["stats.acceptedSubmissions"] = 1;
+          if (xpEarned > 0) {
+            mongoUpdate.$inc.xp = xpEarned;
+          }
+          mongoUpdate.$set = { lastActiveDate: todayKey };
+        } else if (verdict === "WA") {
+          mongoUpdate.$inc["stats.waCount"] = 1;
+        } else if (verdict === "RE") {
+          mongoUpdate.$inc["stats.reCount"] = 1;
+        } else if (verdict === "TLE") {
+          mongoUpdate.$inc["stats.tleCount"] = 1;
+        } else if (verdict === "CE") {
+          mongoUpdate.$inc["stats.ceCount"] = 1;
+        }
+
+        const doc = await User.findOneAndUpdate(query, mongoUpdate, { new: true }).lean();
+        if (doc) {
+          // Recalculate streak from activeDates set
+          const activeDatesList = doc.activeDates || (isAc ? [todayKey] : []);
+          const streakResult = calculateUserStreak(activeDatesList, new Date());
+
+          await User.updateOne(query, {
+            $set: {
+              streak: streakResult.currentStreak,
+              bestStreak: Math.max(doc.bestStreak || 0, streakResult.bestStreak)
+            }
+          });
+
+          const updatedDoc = {
+            ...doc,
+            streak: streakResult.currentStreak,
+            bestStreak: Math.max(doc.bestStreak || 0, streakResult.bestStreak)
+          };
+
+          console.log(`[UserStore] Updated user '${userId}' stats: AC=${isAc}, firstTime=${isFirstTimeSolve}, streak=${streakResult.currentStreak}, bestStreak=${streakResult.bestStreak}`);
+          return sanitizeUser(updatedDoc);
+        }
       }
     } catch (e) {
       console.error("[UserStore] recordUserSubmission DB error:", e);
@@ -635,6 +697,9 @@ export async function recordUserSubmission(userId, problemId, verdict, points = 
     user.stats.totalSubmissions = (user.stats.totalSubmissions || 0) + 1;
 
     if (isAc) {
+      const isFirstTimeSolve = !(user.solvedProblemIds || []).includes(String(problemId));
+      const xpEarned = isFirstTimeSolve ? (Number(points) || 10) * 10 : 0;
+
       const solved = new Set(user.solvedProblemIds || []);
       solved.add(String(problemId));
       user.solvedProblemIds = Array.from(solved);
@@ -649,7 +714,9 @@ export async function recordUserSubmission(userId, problemId, verdict, points = 
       user.bestStreak = Math.max(user.bestStreak || 0, streakResult.bestStreak);
 
       user.stats.acceptedSubmissions = (user.stats.acceptedSubmissions || 0) + 1;
-      user.xp = (user.xp || 0) + xpEarned;
+      if (xpEarned > 0) {
+        user.xp = (user.xp || 0) + xpEarned;
+      }
     } else if (verdict === "WA") {
       user.stats.waCount = (user.stats.waCount || 0) + 1;
     } else if (verdict === "RE") {

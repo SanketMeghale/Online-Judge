@@ -64,6 +64,13 @@ export async function requireAdmin(req, res, next) {
       });
     }
 
+    if (req.user.isDeleted) {
+      return res.status(403).json({
+        success: false,
+        error: "Your account has been deactivated."
+      });
+    }
+
     if (req.user.status === "suspended") {
       return res.status(403).json({
         success: false,
@@ -72,13 +79,25 @@ export async function requireAdmin(req, res, next) {
       });
     }
 
-    if (req.user.role !== "admin") {
+    if (req.user.role !== "admin" && req.user.role !== "super_admin") {
       return res.status(403).json({
         success: false,
         error: "Access denied. Administrator privileges required."
       });
     }
 
+    next();
+  });
+}
+
+export async function requireSuperAdmin(req, res, next) {
+  return requireAdmin(req, res, () => {
+    if (req.user.role !== "super_admin") {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied. Super Administrator privileges required."
+      });
+    }
     next();
   });
 }

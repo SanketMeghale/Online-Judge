@@ -1,16 +1,20 @@
 import { Router } from "express";
-import { requireAdmin } from "../middleware/auth.middleware.js";
+import { requireAdmin, requireSuperAdmin } from "../middleware/auth.middleware.js";
 import {
   getDashboardStats,
   getAdminUsers,
   getAdminUserDetails,
   updateAdminUserRole,
   updateAdminUserStatus,
+  deleteAdminUser,
   getAdminProblems,
   getAdminProblemById,
   createAdminProblem,
   updateAdminProblem,
   deleteAdminProblem,
+  getAdminTestCases,
+  addAdminTestCase,
+  deleteAdminTestCase,
   getAdminTopics,
   createAdminTopic,
   updateAdminTopic,
@@ -24,6 +28,10 @@ import {
   getAdminAnalytics,
   getAdminReports,
   updateAdminReportStatus,
+  exportCsvReport,
+  getAdminNotifications,
+  createAdminNotification,
+  deleteAdminNotification,
   getAdminAICoachStats,
   getAdminAuditLogs,
   getAdminSettings,
@@ -33,8 +41,7 @@ import {
   updateAdminCompany,
   deleteAdminCompany,
   addProblemToCompany,
-  removeProblemFromCompany,
-  logAdminAction
+  removeProblemFromCompany
 } from "../services/admin.service.js";
 
 const router = Router();
@@ -53,7 +60,7 @@ router.get("/dashboard", async (req, res) => {
   }
 });
 
-// 2. USERS
+// 2. USERS MANAGEMENT
 router.get("/users", async (req, res) => {
   try {
     const result = await getAdminUsers(req.query);
@@ -78,7 +85,7 @@ router.get("/users/:id", async (req, res) => {
 router.patch("/users/:id/role", async (req, res) => {
   try {
     const { role } = req.body;
-    if (!["user", "admin"].includes(role)) {
+    if (!["user", "admin", "super_admin"].includes(role)) {
       return res.status(400).json({ success: false, error: "Invalid role specified." });
     }
     const updated = await updateAdminUserRole(req.params.id, role, req.user, req);
@@ -105,7 +112,17 @@ router.patch("/users/:id/status", async (req, res) => {
   }
 });
 
-// 3. PROBLEMS
+router.delete("/users/:id", async (req, res) => {
+  try {
+    const result = await deleteAdminUser(req.params.id, true, req.user, req);
+    res.json(result);
+  } catch (error) {
+    console.error("[AdminAPI] DELETE /users/:id error:", error);
+    res.status(500).json({ success: false, error: "Failed to deactivate user." });
+  }
+});
+
+// 3. PROBLEMS MANAGEMENT
 router.get("/problems", async (req, res) => {
   try {
     const result = await getAdminProblems(req.query);
@@ -162,51 +179,40 @@ router.delete("/problems/:id", async (req, res) => {
   }
 });
 
-// 4. TOPICS (SINGLE SOURCE OF TRUTH)
-router.get("/topics", async (_req, res) => {
+// 4. TEST CASE MANAGEMENT
+router.get("/problems/:id/testcases", async (req, res) => {
   try {
-    const topics = await getAdminTopics();
-    res.json({ success: true, topics });
+    const data = await getAdminTestCases(req.params.id);
+    if (!data) return res.status(404).json({ success: false, error: "Problem not found." });
+    res.json({ success: true, ...data });
   } catch (error) {
-    console.error("[AdminAPI] /topics error:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch topics." });
+    console.error("[AdminAPI] /problems/:id/testcases error:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch test cases." });
   }
 });
 
-router.post("/topics", async (req, res) => {
+router.post("/problems/:id/testcases", async (req, res) => {
   try {
-    const { name } = req.body;
-    if (!name) return res.status(400).json({ success: false, error: "Topic name is required." });
-    const topic = await createAdminTopic(req.body, req.user, req);
-    res.status(201).json({ success: true, topic });
+    const testCase = await addAdminTestCase(req.params.id, req.body, req.user, req);
+    res.status(201).json({ success: true, testCase });
   } catch (error) {
-    console.error("[AdminAPI] POST /topics error:", error);
-    res.status(500).json({ success: false, error: "Failed to create topic." });
+    console.error("[AdminAPI] POST /problems/:id/testcases error:", error);
+    res.status(500).json({ success: false, error: error.message || "Failed to add testcase." });
   }
 });
 
-router.patch("/topics/:id", async (req, res) => {
+router.delete("/problems/:id/testcases/:type/:index", async (req, res) => {
   try {
-    const topic = await updateAdminTopic(req.params.id, req.body, req.user, req);
-    if (!topic) return res.status(404).json({ success: false, error: "Topic not found." });
-    res.json({ success: true, topic });
-  } catch (error) {
-    console.error("[AdminAPI] PATCH /topics/:id error:", error);
-    res.status(500).json({ success: false, error: "Failed to update topic." });
-  }
-});
-
-router.delete("/topics/:id", async (req, res) => {
-  try {
-    const result = await deleteAdminTopic(req.params.id, req.user, req);
+    const { id, type, index } = req.params;
+    const result = await deleteAdminTestCase(id, type, index, req.user, req);
     res.json(result);
   } catch (error) {
-    console.error("[AdminAPI] DELETE /topics/:id error:", error);
-    res.status(500).json({ success: false, error: "Failed to delete topic." });
+    console.error("[AdminAPI] DELETE testcase error:", error);
+    res.status(500).json({ success: false, error: "Failed to delete testcase." });
   }
 });
 
-// 5. SUBMISSIONS
+// 5. SUBMISSIONS MANAGEMENT
 router.get("/submissions", async (req, res) => {
   try {
     const result = await getAdminSubmissions(req.query);
@@ -228,7 +234,7 @@ router.get("/submissions/:id", async (req, res) => {
   }
 });
 
-// 6. CONTESTS
+// 6. CONTESTS MANAGEMENT
 router.get("/contests", async (req, res) => {
   try {
     const contests = await getAdminContests();
@@ -241,8 +247,6 @@ router.get("/contests", async (req, res) => {
 
 router.post("/contests", async (req, res) => {
   try {
-    const { title } = req.body;
-    if (!title) return res.status(400).json({ success: false, error: "Contest title is required." });
     const contest = await createAdminContest(req.body, req.user, req);
     res.status(201).json({ success: true, contest });
   } catch (error) {
@@ -275,15 +279,15 @@ router.delete("/contests/:id", async (req, res) => {
 // 7. ANALYTICS
 router.get("/analytics", async (req, res) => {
   try {
-    const analytics = await getAdminAnalytics(req.query.range || "30d");
-    res.json({ success: true, ...analytics });
+    const data = await getAdminAnalytics(req.query.range || "30d");
+    res.json({ success: true, ...data });
   } catch (error) {
     console.error("[AdminAPI] /analytics error:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch platform analytics." });
+    res.status(500).json({ success: false, error: "Failed to fetch analytics." });
   }
 });
 
-// 8. REPORTS
+// 8. REPORTS & CSV EXPORTS
 router.get("/reports", async (req, res) => {
   try {
     const reports = await getAdminReports(req.query);
@@ -296,9 +300,7 @@ router.get("/reports", async (req, res) => {
 
 router.patch("/reports/:id", async (req, res) => {
   try {
-    const { status, adminNotes } = req.body;
-    if (!status) return res.status(400).json({ success: false, error: "Status is required." });
-    const report = await updateAdminReportStatus(req.params.id, { status, adminNotes }, req.user, req);
+    const report = await updateAdminReportStatus(req.params.id, req.body, req.user, req);
     if (!report) return res.status(404).json({ success: false, error: "Report not found." });
     res.json({ success: true, report });
   } catch (error) {
@@ -307,18 +309,92 @@ router.patch("/reports/:id", async (req, res) => {
   }
 });
 
-// 9. AI COACH TELEMETRY
-router.get("/ai-coach", async (_req, res) => {
+router.get("/reports/export/:type", async (req, res) => {
   try {
-    const aiStats = await getAdminAICoachStats();
-    res.json({ success: true, ...aiStats });
+    const csvContent = await exportCsvReport(req.params.type);
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="judgo-${req.params.type}-report-${Date.now()}.csv"`);
+    res.send(csvContent);
   } catch (error) {
-    console.error("[AdminAPI] /ai-coach error:", error);
-    res.status(500).json({ success: false, error: "Failed to fetch AI telemetry." });
+    console.error("[AdminAPI] Export CSV error:", error);
+    res.status(500).json({ success: false, error: "Failed to generate CSV export." });
   }
 });
 
-// 10. AUDIT LOGS
+// 9. TOPICS
+router.get("/topics", async (req, res) => {
+  try {
+    const topics = await getAdminTopics();
+    res.json({ success: true, topics });
+  } catch (error) {
+    console.error("[AdminAPI] /topics error:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch topics." });
+  }
+});
+
+router.post("/topics", async (req, res) => {
+  try {
+    const topic = await createAdminTopic(req.body, req.user, req);
+    res.status(201).json({ success: true, topic });
+  } catch (error) {
+    console.error("[AdminAPI] POST /topics error:", error);
+    res.status(500).json({ success: false, error: "Failed to create topic." });
+  }
+});
+
+router.patch("/topics/:id", async (req, res) => {
+  try {
+    const topic = await updateAdminTopic(req.params.id, req.body, req.user, req);
+    if (!topic) return res.status(404).json({ success: false, error: "Topic not found." });
+    res.json({ success: true, topic });
+  } catch (error) {
+    console.error("[AdminAPI] PATCH /topics/:id error:", error);
+    res.status(500).json({ success: false, error: "Failed to update topic." });
+  }
+});
+
+router.delete("/topics/:id", async (req, res) => {
+  try {
+    const result = await deleteAdminTopic(req.params.id, req.user, req);
+    res.json(result);
+  } catch (error) {
+    console.error("[AdminAPI] DELETE /topics/:id error:", error);
+    res.status(500).json({ success: false, error: "Failed to delete topic." });
+  }
+});
+
+// 10. NOTIFICATIONS
+router.get("/notifications", async (req, res) => {
+  try {
+    const notifications = await getAdminNotifications();
+    res.json({ success: true, notifications });
+  } catch (error) {
+    console.error("[AdminAPI] /notifications error:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch notifications." });
+  }
+});
+
+router.post("/notifications", async (req, res) => {
+  try {
+    const notification = await createAdminNotification(req.body, req.user, req);
+    res.status(201).json({ success: true, notification });
+  } catch (error) {
+    console.error("[AdminAPI] POST /notifications error:", error);
+    res.status(500).json({ success: false, error: "Failed to broadcast notification." });
+  }
+});
+
+router.delete("/notifications/:id", async (req, res) => {
+  try {
+    const result = await deleteAdminNotification(req.params.id, req.user, req);
+    res.json(result);
+  } catch (error) {
+    console.error("[AdminAPI] DELETE /notifications/:id error:", error);
+    res.status(500).json({ success: false, error: "Failed to delete notification." });
+  }
+});
+
+// 11. AUDIT LOGS
 router.get("/audit-logs", async (req, res) => {
   try {
     const result = await getAdminAuditLogs(req.query);
@@ -329,13 +405,13 @@ router.get("/audit-logs", async (req, res) => {
   }
 });
 
-// 11. PLATFORM SETTINGS
-router.get("/settings", async (_req, res) => {
+// 12. PLATFORM SETTINGS
+router.get("/settings", async (req, res) => {
   try {
     const settings = await getAdminSettings();
     res.json({ success: true, settings });
   } catch (error) {
-    console.error("[AdminAPI] /settings error:", error);
+    console.error("[AdminAPI] GET /settings error:", error);
     res.status(500).json({ success: false, error: "Failed to fetch platform settings." });
   }
 });
@@ -350,7 +426,7 @@ router.patch("/settings", async (req, res) => {
   }
 });
 
-// 12. COMPANY SHEETS CONTROL
+// 13. COMPANY SHEETS
 router.get("/companies", async (req, res) => {
   try {
     const result = await getAdminCompanies(req.query);
@@ -367,17 +443,17 @@ router.post("/companies", async (req, res) => {
     res.status(201).json({ success: true, company });
   } catch (error) {
     console.error("[AdminAPI] POST /companies error:", error);
-    res.status(500).json({ success: false, error: error.message || "Failed to create company sheet." });
+    res.status(500).json({ success: false, error: "Failed to create company sheet." });
   }
 });
 
-router.put("/companies/:id", async (req, res) => {
+router.patch("/companies/:id", async (req, res) => {
   try {
     const company = await updateAdminCompany(req.params.id, req.body, req.user, req);
     if (!company) return res.status(404).json({ success: false, error: "Company not found." });
     res.json({ success: true, company });
   } catch (error) {
-    console.error("[AdminAPI] PUT /companies/:id error:", error);
+    console.error("[AdminAPI] PATCH /companies/:id error:", error);
     res.status(500).json({ success: false, error: "Failed to update company sheet." });
   }
 });
@@ -385,7 +461,7 @@ router.put("/companies/:id", async (req, res) => {
 router.delete("/companies/:id", async (req, res) => {
   try {
     const result = await deleteAdminCompany(req.params.id, req.user, req);
-    res.json({ success: true, ...result });
+    res.json(result);
   } catch (error) {
     console.error("[AdminAPI] DELETE /companies/:id error:", error);
     res.status(500).json({ success: false, error: "Failed to delete company sheet." });
@@ -395,10 +471,10 @@ router.delete("/companies/:id", async (req, res) => {
 router.post("/companies/:id/problems", async (req, res) => {
   try {
     const company = await addProblemToCompany(req.params.id, req.body, req.user, req);
-    res.json({ success: true, company });
+    res.status(201).json({ success: true, company });
   } catch (error) {
     console.error("[AdminAPI] POST /companies/:id/problems error:", error);
-    res.status(500).json({ success: false, error: error.message || "Failed to add problem to company sheet." });
+    res.status(500).json({ success: false, error: error.message || "Failed to add problem to company." });
   }
 });
 
@@ -408,7 +484,18 @@ router.delete("/companies/:id/problems/:problemId", async (req, res) => {
     res.json({ success: true, company });
   } catch (error) {
     console.error("[AdminAPI] DELETE /companies/:id/problems/:problemId error:", error);
-    res.status(500).json({ success: false, error: error.message || "Failed to remove problem from company sheet." });
+    res.status(500).json({ success: false, error: error.message || "Failed to remove problem from company." });
+  }
+});
+
+// 14. AI COACH TELEMETRY
+router.get("/ai-coach", async (req, res) => {
+  try {
+    const stats = await getAdminAICoachStats();
+    res.json({ success: true, stats });
+  } catch (error) {
+    console.error("[AdminAPI] /ai-coach error:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch AI stats." });
   }
 });
 
