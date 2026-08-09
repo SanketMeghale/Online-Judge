@@ -507,25 +507,56 @@ export function listSubmissionsForUser(database, userId) {
     }));
 }
 
+function calculateBadge(rating) {
+  if (rating >= 2400) return "Grandmaster";
+  if (rating >= 2000) return "Master";
+  if (rating >= 1600) return "Expert";
+  if (rating >= 1200) return "Knight";
+  return "Newbie";
+}
+
 export function computeLeaderboard(database) {
   if (!database || !Array.isArray(database.users)) return [];
-  return database.users
-    .map((user) => enrichUser(database, user))
+
+  const enriched = database.users
+    .map((user) => {
+      const enrichedUser = enrichUser(database, user);
+      if (!enrichedUser) return null;
+
+      const solvedCount = enrichedUser.solved || 0;
+      const xp = typeof enrichedUser.xp === "number" ? enrichedUser.xp : solvedCount * 100;
+      const rating = 1200 + solvedCount * 15 + Math.floor(xp / 10);
+      const badge = calculateBadge(rating);
+
+      return {
+        ...enrichedUser,
+        solvedCount,
+        xp,
+        rating,
+        badge
+      };
+    })
     .filter(Boolean)
     .sort((left, right) => {
-      if (right.xp !== left.xp) {
-        return right.xp - left.xp;
-      }
-      return right.solved - left.solved;
-    })
-    .map((user, index) => ({
-      rank: index + 1,
-      id: user.id || user._id || `user_${index}`,
-      name: user.name || user.username || "Developer",
-      score: user.xp || 0,
-      solved: user.solved || 0,
-      streak: user.streak || 1
-    }));
+      if (right.rating !== left.rating) return right.rating - left.rating;
+      if (right.xp !== left.xp) return right.xp - left.xp;
+      return right.solvedCount - left.solvedCount;
+    });
+
+  return enriched.map((user, index) => ({
+    rank: index + 1,
+    id: user.id || user._id || `user_${index}`,
+    userId: user.id || user._id || `user_${index}`,
+    username: user.username || user.name || "Developer",
+    name: user.name || user.username || "Developer",
+    score: user.xp || 0,
+    xp: user.xp || 0,
+    solved: user.solvedCount || 0,
+    solvedCount: user.solvedCount || 0,
+    rating: user.rating,
+    badge: user.badge,
+    streak: user.streak || 1
+  }));
 }
 
 export function simulateRun(problem, language, code) {
