@@ -6,6 +6,35 @@ import { calculateUserStreak, formatDateKey } from "./streakEngine.js";
 
 const DEFAULT_SEED_USERS = [
   {
+    id: "u-admin",
+    name: "Platform Administrator",
+    username: "admin",
+    email: "admin@judgo.dev",
+    passwordHash: hashPasswordSync("admin123"),
+    bio: "Judgo System Administrator",
+    role: "admin",
+    status: "active",
+    suspendedReason: "",
+    language: "en-US",
+    timezone: "UTC",
+    ranking: 1,
+    xp: 9999,
+    streak: 30,
+    bestStreak: 100,
+    badges: ["Platform Administrator", "Algorithm Pioneer"],
+    solvedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number"],
+    attemptedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number"],
+    activeDates: [formatDateKey(new Date())],
+    stats: {
+      totalSubmissions: 100,
+      acceptedSubmissions: 95,
+      waCount: 4,
+      reCount: 1,
+      tleCount: 0
+    },
+    createdAt: new Date("2026-01-01")
+  },
+  {
     id: "u-sanketmeghale",
     name: "Sanket Meghale",
     username: "sanketmeghale",
