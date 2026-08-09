@@ -145,7 +145,6 @@
 }
 
 .dsa-ring-fill {
-  stroke: url(#dsa-gradient, #7850ff);
   stroke: #7850ff;
   transition: stroke-dashoffset 1s cubic-bezier(0.16, 1, 0.3, 1);
   filter: drop-shadow(0 0 6px rgba(120, 80, 255, 0.8));
