@@ -9,7 +9,10 @@ import {
   ShieldCheck,
   Activity,
   Terminal as TerminalIcon,
-  Sparkles
+  Play,
+  RotateCcw,
+  Sparkles,
+  Cpu
 } from "lucide-react";
 import { getUserDisplayName } from "../../auth/displayName.js";
 
@@ -19,14 +22,15 @@ const SNIPPETS = [
     label: "C++20",
     filename: "judgo_engine.cpp",
     runtime: "< 1ms",
-    verdict: "ALL 45/45 ACCEPTED",
-    beats: "99.8%",
+    memory: "14.2 MB",
+    complexity: "O(1) Space",
+    testcases: ["TC #1", "TC #2", "TC #3", "TC #4", "TC #5"],
     lines: [
       { num: 1, content: <><span className="syn-kw">template</span> &lt;<span className="syn-kw">typename</span> <span className="syn-type">T</span>&gt;</> },
       { num: 2, content: <><span className="syn-kw">class</span> <span className="syn-fn">JudgoArena</span> &#123;</> },
       { num: 3, indent: 1, content: <><span className="syn-kw">public</span>:</> },
       { num: 4, indent: 2, content: <><span className="syn-kw">auto</span> <span className="syn-fn">evaluate</span>(<span className="syn-type">T</span>&amp; sol) &#123;</> },
-      { num: 5, indent: 2, content: <><span className="syn-kw">return</span> sol.<span className="syn-fn">optimalSolve</span>();</> },
+      { num: 5, indent: 2, content: <><span className="syn-kw">return</span> sol.<span className="syn-fn">solve</span>();</> },
       { num: 6, indent: 1, content: <>&#125;</> },
       { num: 7, content: <>&#125;;</> }
     ]
@@ -36,8 +40,9 @@ const SNIPPETS = [
     label: "Python 3",
     filename: "two_sum.py",
     runtime: "12ms",
-    verdict: "O(N) OPTIMAL ACCEPTED",
-    beats: "99.4%",
+    memory: "15.1 MB",
+    complexity: "O(N) Hash",
+    testcases: ["nums=[2,7..]", "target=9", "negatives", "duplicates", "large N"],
     lines: [
       { num: 1, content: <><span className="syn-kw">def</span> <span className="syn-fn">twoSum</span>(nums: <span className="syn-type">list</span>[<span className="syn-type">int</span>], target: <span className="syn-type">int</span>):</> },
       { num: 2, indent: 1, content: <><span className="syn-var">seen</span> = &#123;&#125;</> },
@@ -52,8 +57,9 @@ const SNIPPETS = [
     label: "TypeScript",
     filename: "binary_search.ts",
     runtime: "4ms",
-    verdict: "LOG(N) SEARCH PASSED",
-    beats: "100%",
+    memory: "14.8 MB",
+    complexity: "O(log N)",
+    testcases: ["arr=[1..10k]", "x=42", "not found", "single elem", "boundaries"],
     lines: [
       { num: 1, content: <><span className="syn-kw">function</span> <span className="syn-fn">binarySearch</span>(arr: <span className="syn-type">number[]</span>, x: <span className="syn-type">number</span>): <span className="syn-type">number</span> &#123;</> },
       { num: 2, indent: 1, content: <><span className="syn-kw">let</span> [l, r] = [<span className="syn-num">0</span>, arr.length - <span className="syn-num">1</span>];</> },
@@ -67,46 +73,66 @@ const SNIPPETS = [
   }
 ];
 
-function AnimatedCodeTerminal({ prefersReducedMotion }) {
+function CyberMatrixTerminal({ prefersReducedMotion }) {
   const [activeSnippetIdx, setActiveSnippetIdx] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+  const [passedCount, setPassedCount] = useState(5);
+  const [evalPhase, setEvalPhase] = useState("ready"); // "ready" | "compiling" | "testing" | "accepted"
   const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0 });
+  const [isHovered, setIsHovered] = useState(false);
   const cardRef = useRef(null);
 
   const snippet = SNIPPETS[activeSnippetIdx];
 
-  // Auto-cycle languages every 6 seconds when not hovered
-  useEffect(() => {
-    if (isHovered || prefersReducedMotion) return;
-    const interval = setInterval(() => {
-      setActiveSnippetIdx((prev) => (prev + 1) % SNIPPETS.length);
-    }, 5500);
-    return () => clearInterval(interval);
-  }, [isHovered, prefersReducedMotion]);
+  // Auto-run evaluation sequence
+  const runEvaluation = () => {
+    if (isRunning) return;
+    setIsRunning(true);
+    setEvalPhase("compiling");
+    setPassedCount(0);
 
-  // Simulated test evaluation progress animation
+    setTimeout(() => {
+      setEvalPhase("testing");
+      // Cascade testcases 1 by 1
+      let count = 0;
+      const tcInterval = setInterval(() => {
+        count += 1;
+        setPassedCount(count);
+        if (count >= 5) {
+          clearInterval(tcInterval);
+          setEvalPhase("accepted");
+          setIsRunning(false);
+        }
+      }, 240);
+    }, 500);
+  };
+
+  // Cycle snippets automatically every 7 seconds
   useEffect(() => {
-    setProgress(0);
-    const t1 = setTimeout(() => setProgress(35), 400);
-    const t2 = setTimeout(() => setProgress(75), 1100);
-    const t3 = setTimeout(() => setProgress(100), 1800);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
+    if (isHovered || isRunning || prefersReducedMotion) return;
+    const interval = setInterval(() => {
+      setActiveSnippetIdx((prev) => {
+        const next = (prev + 1) % SNIPPETS.length;
+        return next;
+      });
+      runEvaluation();
+    }, 6500);
+    return () => clearInterval(interval);
+  }, [isHovered, isRunning, prefersReducedMotion]);
+
+  // Initial trigger
+  useEffect(() => {
+    runEvaluation();
   }, [activeSnippetIdx]);
 
-  // 3D Mouse Tilt Handler
+  // 3D Parallax Mouse Move Handler
   const handleMouseMove = (e) => {
     if (prefersReducedMotion || !cardRef.current) return;
     const rect = cardRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left - rect.width / 2;
     const y = e.clientY - rect.top - rect.height / 2;
-    // Map to rotation angles
-    const rotateY = (x / (rect.width / 2)) * 9;
-    const rotateX = -(y / (rect.height / 2)) * 9;
+    const rotateY = (x / (rect.width / 2)) * 8;
+    const rotateX = -(y / (rect.height / 2)) * 8;
     setTilt({ rotateX, rotateY });
   };
 
@@ -122,7 +148,7 @@ function AnimatedCodeTerminal({ prefersReducedMotion }) {
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleMouseMove}
     >
-      {/* Background Radial Glow */}
+      {/* Background Cyber Glow */}
       <div className="dash-editor-glow" aria-hidden="true" />
 
       {/* Floating Top-Right Badge: Runtime Performance */}
@@ -130,30 +156,30 @@ function AnimatedCodeTerminal({ prefersReducedMotion }) {
         animate={
           prefersReducedMotion
             ? { opacity: 1 }
-            : { y: [0, -6, 0], opacity: [0.95, 1, 0.95] }
+            : { y: [0, -5, 0], opacity: [0.95, 1, 0.95] }
         }
-        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
         className="dash-floating-chip chip-top-right"
       >
         <Zap size={13} style={{ color: "#38bdf8" }} />
-        <span>0ms Runtime (Top {snippet.beats})</span>
+        <span>Runtime {snippet.runtime} (Top 99.8%)</span>
       </motion.div>
 
-      {/* Floating Bottom-Left Badge: Test Case Verification */}
+      {/* Floating Bottom-Left Badge: Memory & Complexity */}
       <motion.div
         animate={
           prefersReducedMotion
             ? { opacity: 1 }
-            : { y: [0, 6, 0], opacity: [0.95, 1, 0.95] }
+            : { y: [0, 5, 0], opacity: [0.95, 1, 0.95] }
         }
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+        transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
         className="dash-floating-chip chip-bottom-left"
       >
-        <CheckCircle2 size={13} style={{ color: "#34d399" }} />
-        <span>All 45/45 Passed • O(1) Memory</span>
+        <ShieldCheck size={13} style={{ color: "#34d399" }} />
+        <span>{snippet.complexity} • 45/45 Passed</span>
       </motion.div>
 
-      {/* Main 3D Tilted Code Window */}
+      {/* 3D Code Window Frame */}
       <motion.div
         ref={cardRef}
         animate={{
@@ -161,7 +187,7 @@ function AnimatedCodeTerminal({ prefersReducedMotion }) {
           rotateY: tilt.rotateY,
           scale: isHovered ? 1.02 : 1
         }}
-        transition={{ type: "spring", stiffness: 260, damping: 20 }}
+        transition={{ type: "spring", stiffness: 280, damping: 22 }}
         className="dash-code-window"
       >
         {/* Terminal Header */}
@@ -172,74 +198,109 @@ function AnimatedCodeTerminal({ prefersReducedMotion }) {
             <span className="dash-dot dot-maximize" />
           </div>
 
-          {/* Filename with terminal icon */}
           <div className="dash-code-filename">
             <TerminalIcon size={12} style={{ color: "#818cf8" }} />
             <span>{snippet.filename}</span>
           </div>
 
-          {/* Interactive Language Selector Tabs */}
-          <div className="dash-lang-tabs">
-            {SNIPPETS.map((item, idx) => (
-              <button
-                key={item.id}
-                type="button"
-                className={`dash-lang-tab ${idx === activeSnippetIdx ? "active" : ""}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveSnippetIdx(idx);
-                }}
+          {/* Interactive Run / Trigger Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              runEvaluation();
+            }}
+            className="dash-run-code-btn"
+            title="Simulate Real-time Evaluation"
+          >
+            {isRunning ? (
+              <>
+                <RotateCcw size={10} className="animate-spin" />
+                <span>EVAL</span>
+              </>
+            ) : (
+              <>
+                <Play size={10} fill="#10b981" />
+                <span>RUN</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Code Body with Animated Laser Scan Beam */}
+        <div className="dash-code-body-wrapper">
+          <div className="dash-laser-scanline" />
+
+          <div className="dash-code-body">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={snippet.id}
+                initial={{ opacity: 0, y: 3 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -3 }}
+                transition={{ duration: 0.18 }}
+                style={{ display: "flex", flexDirection: "column", gap: "2px" }}
               >
-                {item.label}
-              </button>
-            ))}
+                {snippet.lines.map((line, lIdx) => (
+                  <div
+                    key={lIdx}
+                    className={`code-line ${
+                      line.indent === 1
+                        ? "indent"
+                        : line.indent === 2
+                        ? "indent-2"
+                        : line.indent === 3
+                        ? "indent-3"
+                        : ""
+                    } ${evalPhase === "testing" && lIdx === (passedCount % snippet.lines.length) ? "active-eval" : ""}`}
+                  >
+                    <span className="code-ln">{line.num}</span>
+                    <span>{line.content}</span>
+                    {lIdx === snippet.lines.length - 1 && <span className="syn-cursor">|</span>}
+                  </div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
           </div>
         </div>
 
-        {/* Live Evaluation Progress Bar */}
-        <div className="dash-eval-progress-track">
-          <div
-            className="dash-eval-progress-bar"
-            style={{ width: `${progress}%` }}
-          />
+        {/* Live Testcase Matrix Cascade */}
+        <div className="dash-testcase-matrix">
+          {snippet.testcases.map((tc, idx) => {
+            const isPassed = idx < passedCount;
+            const isRunningThis = evalPhase === "testing" && idx === passedCount;
+            return (
+              <div
+                key={idx}
+                className={`dash-tc-node ${isPassed ? "passed" : ""} ${isRunningThis ? "running" : ""}`}
+              >
+                {isPassed ? (
+                  <CheckCircle2 size={10} style={{ color: "#34d399" }} />
+                ) : (
+                  <Cpu size={10} />
+                )}
+                <span>TC{idx + 1}</span>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Code Body with Smooth Cross-fade */}
-        <div className="dash-code-body">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={snippet.id}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.2 }}
-              style={{ display: "flex", flexDirection: "column", gap: "2px" }}
-            >
-              {snippet.lines.map((line, lIdx) => (
-                <div
-                  key={lIdx}
-                  className={`code-line ${line.indent === 1 ? "indent" : line.indent === 2 ? "indent-2" : line.indent === 3 ? "indent-2" : ""}`}
-                >
-                  <span className="code-ln">{line.num}</span>
-                  <span>{line.content}</span>
-                  {lIdx === snippet.lines.length - 1 && <span className="syn-cursor">|</span>}
-                </div>
-              ))}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-
-        {/* Terminal Footer with Live Status Ticker */}
+        {/* Terminal Footer with Live Ping Status */}
         <div className="dash-code-footer">
           <div className="dash-code-status">
             <span className="status-ping-dot" />
             <span>
-              {progress < 100 ? "EVALUATING..." : snippet.verdict}
+              {evalPhase === "compiling"
+                ? "COMPILING C++20..."
+                : evalPhase === "testing"
+                ? `EVALUATING (${passedCount}/5)...`
+                : "ALL 45/45 ACCEPTED"}
             </span>
           </div>
+
           <div className="dash-latency-badge">
-            <Activity size={11} />
-            <span>{snippet.runtime}</span>
+            <Activity size={10} />
+            <span>{evalPhase === "accepted" ? snippet.runtime : "evaluating"}</span>
           </div>
         </div>
       </motion.div>
@@ -384,8 +445,8 @@ export default function DashboardHero({
           </motion.div>
         </div>
 
-        {/* RIGHT COLUMN: 3D Interactive Animated Code Terminal Visual */}
-        <AnimatedCodeTerminal prefersReducedMotion={prefersReducedMotion} />
+        {/* RIGHT COLUMN: Cyber Matrix Live Code Evaluator with Laser Scan */}
+        <CyberMatrixTerminal prefersReducedMotion={prefersReducedMotion} />
       </div>
     </motion.section>
   );
