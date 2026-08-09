@@ -310,12 +310,12 @@ export default function LandingPage() {
             </Link>
 
             <nav className="lp-nav-links">
-              <a href="#features" className="lp-nav-link">Features</a>
-              <a href="#problems" className="lp-nav-link">Problems</a>
-              <a href="#contests" className="lp-nav-link">Contests</a>
-              <a href="#ai-coach" className="lp-nav-link">AI Coach</a>
-              <a href="#companies" className="lp-nav-link">Company Sheets</a>
-              <a href="#stats" className="lp-nav-link">Leaderboard</a>
+              <Link to="/register" className="lp-nav-link">Features</Link>
+              <Link to="/register" className="lp-nav-link">Problems</Link>
+              <Link to="/register" className="lp-nav-link">Contests</Link>
+              <Link to="/register" className="lp-nav-link">AI Coach</Link>
+              <Link to="/register" className="lp-nav-link">Company Sheets</Link>
+              <Link to="/register" className="lp-nav-link">Leaderboard</Link>
             </nav>
 
             <div className="lp-nav-actions">
@@ -842,30 +842,30 @@ export default function LandingPage() {
             <div>
               <div className="footer-col-title">Product</div>
               <div className="footer-links">
-                <a href="#problems" className="footer-link">Problem Archive</a>
-                <a href="#contests" className="footer-link">Contest Arena</a>
-                <a href="#ai-coach" className="footer-link">AI Coach</a>
-                <a href="#companies" className="footer-link">Company Sheets</a>
+                <Link to="/register" className="footer-link">Problem Archive</Link>
+                <Link to="/register" className="footer-link">Contest Arena</Link>
+                <Link to="/register" className="footer-link">AI Coach</Link>
+                <Link to="/register" className="footer-link">Company Sheets</Link>
               </div>
             </div>
 
             <div>
               <div className="footer-col-title">Resources</div>
               <div className="footer-links">
-                <a href="#features" className="footer-link">Documentation</a>
+                <Link to="/register" className="footer-link">Documentation</Link>
                 <a href="https://github.com/SanketMeghale/Online-Judge" target="_blank" rel="noreferrer" className="footer-link">GitHub Repository</a>
-                <a href="#features" className="footer-link">API & Webhooks</a>
-                <a href="#features" className="footer-link">System Architecture</a>
+                <Link to="/register" className="footer-link">API & Webhooks</Link>
+                <Link to="/register" className="footer-link">System Architecture</Link>
               </div>
             </div>
 
             <div>
               <div className="footer-col-title">Community & Legal</div>
               <div className="footer-links">
-                <a href="#features" className="footer-link">Discord Server</a>
-                <a href="#features" className="footer-link">Privacy Policy</a>
-                <a href="#features" className="footer-link">Terms of Service</a>
-                <a href="#features" className="footer-link">Security Guidelines</a>
+                <Link to="/register" className="footer-link">Discord Server</Link>
+                <Link to="/register" className="footer-link">Privacy Policy</Link>
+                <Link to="/register" className="footer-link">Terms of Service</Link>
+                <Link to="/register" className="footer-link">Security Guidelines</Link>
               </div>
             </div>
           </div>
