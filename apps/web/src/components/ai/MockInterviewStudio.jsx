@@ -59,13 +59,142 @@ const TRACKS = [
 
 const DIFFICULTIES = ["Junior (L3)", "Mid-Level (L4)", "Senior (L5)"];
 
+function MarkdownDialogueRenderer({ content = "" }) {
+  if (!content) return null;
+  const [copiedIndex, setCopiedIndex] = useState(null);
+
+  const handleCopy = (codeText, idx) => {
+    try {
+      navigator.clipboard.writeText(codeText);
+      setCopiedIndex(idx);
+      setTimeout(() => setCopiedIndex(null), 2000);
+    } catch {}
+  };
+
+  const renderInline = (text = "") => {
+    // Parse **bold**, *italic*, and `inline-code` or $math$
+    const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`|\$[^\$]+\$)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("**") && part.endsWith("**") && part.length >= 4) {
+        return (
+          <strong key={i} className="mock-bold-text">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      if (part.startsWith("*") && part.endsWith("*") && part.length >= 2) {
+        return <em key={i}>{part.slice(1, -1)}</em>;
+      }
+      if (part.startsWith("`") && part.endsWith("`") && part.length >= 2) {
+        return (
+          <code key={i} className="mock-inline-code">
+            {part.slice(1, -1)}
+          </code>
+        );
+      }
+      if (part.startsWith("$") && part.endsWith("$") && part.length >= 2) {
+        return (
+          <code key={i} className="mock-inline-code">
+            {part.slice(1, -1)}
+          </code>
+        );
+      }
+      return part;
+    });
+  };
+
+  // Split by fenced code blocks ```
+  const codeBlocks = content.split(/(```[\s\S]*?```)/g);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+      {codeBlocks.map((block, bIdx) => {
+        if (block.startsWith("```") && block.endsWith("```")) {
+          const lines = block.slice(3, -3).split("\n");
+          const firstLine = lines[0].trim();
+          const hasLang = /^[a-zA-Z0-9_-]+$/.test(firstLine);
+          const lang = hasLang ? firstLine : "code";
+          const rawCode = (hasLang ? lines.slice(1) : lines).join("\n").trim();
+
+          return (
+            <div key={bIdx} className="mock-code-block-card">
+              <div className="mock-code-block-header">
+                <span>{lang.toUpperCase()}</span>
+                <button
+                  type="button"
+                  className="mock-copy-btn"
+                  onClick={() => handleCopy(rawCode, bIdx)}
+                >
+                  {copiedIndex === bIdx ? <Check size={12} style={{ color: "#34d399" }} /> : <Copy size={12} />}
+                  <span>{copiedIndex === bIdx ? "Copied" : "Copy"}</span>
+                </button>
+              </div>
+              <pre className="mock-code-block-content">
+                <code>{rawCode}</code>
+              </pre>
+            </div>
+          );
+        }
+
+        const lines = block.split("\n");
+        return (
+          <div key={bIdx} style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+            {lines.map((line, lIdx) => {
+              const trimmed = line.trim();
+              if (!trimmed) return <div key={lIdx} style={{ height: "4px" }} />;
+
+              if (trimmed.startsWith("### ")) {
+                return (
+                  <h4 key={lIdx} className="mock-chat-h3">
+                    {renderInline(trimmed.slice(4))}
+                  </h4>
+                );
+              }
+              if (trimmed.startsWith("## ")) {
+                return (
+                  <h3 key={lIdx} className="mock-chat-h3">
+                    {renderInline(trimmed.slice(3))}
+                  </h3>
+                );
+              }
+              if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+                return (
+                  <div key={lIdx} className="mock-bullet-row">
+                    <span className="mock-bullet-dot" />
+                    <div style={{ flex: 1 }}>{renderInline(trimmed.slice(2))}</div>
+                  </div>
+                );
+              }
+              const numMatch = trimmed.match(/^(\d+\.)\s+(.+)$/);
+              if (numMatch) {
+                return (
+                  <div key={lIdx} className="mock-bullet-row">
+                    <span style={{ fontWeight: "700", color: "#818cf8", minWidth: "16px" }}>{numMatch[1]}</span>
+                    <div style={{ flex: 1 }}>{renderInline(numMatch[2])}</div>
+                  </div>
+                );
+              }
+
+              return (
+                <div key={lIdx} style={{ lineHeight: "1.55" }}>
+                  {renderInline(line)}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // Fallback high-fidelity problem repository covering all 8 companies and 3 tracks
 const FALLBACK_PROBLEMS = {
   Google: {
     dsa: {
-      title: "Design Google Search Autocomplete System",
+      title: "Design Search Autocomplete System",
       difficulty: "Hard",
-      topic: "Trie & Min-Heap",
+      topic: "Trie & Frequency Min-Heap",
       question: "Welcome to your **Google Software Engineer Coding Round**! 🚀\n\nI am your lead interviewer today. We'll be working on designing a low-latency **Search Autocomplete System** for Google Search.\n\n**Initial Question:** How would you design a Trie data structure paired with frequency ranking so that typing any prefix returns the top 3 most searched historical sentences in sub-millisecond time?",
       starterCode: {
         python: `class AutocompleteSystem:\n    def __init__(self, sentences: list[str], times: list[int]):\n        # Initialize Trie with historical query frequencies\n        pass\n\n    def input(self, c: str) -> list[str]:\n        # Return top 3 hot sentences matching active prefix\n        return []`,
@@ -79,9 +208,9 @@ const FALLBACK_PROBLEMS = {
       topic: "Distributed Systems & Transcoding",
       question: "Welcome to your **Google Infrastructure System Design Interview**! 🚀\n\nLet's design YouTube's video upload and global streaming pipeline handling 500 hours of video uploaded per minute.\n\n**Step 1:** Walk me through functional requirements, storage calculations, and how chunked distributed transcoding ensures reliable uploads across weak networks.",
       starterCode: {
-        python: `# System Design Blueprint: YouTube Video Ingestion\n# Components:\n# 1. API Gateway & Auth\n# 2. Upload Chunk Receiver (GCS Blob Store)\n# 3. Transcoding Worker Fleet (Pub/Sub Queue)\n# 4. Global CDN Edge Caching\n\nclass VideoUploadService:\n    def handle_chunk(self, chunk_id, data):\n        pass`,
-        javascript: `// System Design Blueprint: YouTube Video Ingestion\nclass VideoUploadService {\n  handleChunk(chunkId, data) {}\n}`,
-        cpp: `// System Design Blueprint: YouTube Video Ingestion\nclass VideoUploadService {\npublic:\n    void handleChunk(string chunkId, string data) {}\n};`
+        python: `# System Design Blueprint: YouTube Video Ingestion\nclass VideoUploadService:\n    def handle_chunk(self, chunk_id: str, data: bytes) -> bool:\n        pass`,
+        javascript: `class VideoUploadService {\n  handleChunk(chunkId, data) {}\n}`,
+        cpp: `class VideoUploadService {\npublic:\n    void handleChunk(string chunkId, string data) {}\n};`
       }
     },
     behavioral: {
@@ -913,7 +1042,7 @@ export default function MockInterviewStudio() {
                     <div className="mock-msg-meta">
                       <span>{msg.author || (msg.role === "assistant" ? "Interviewer" : "Candidate")}</span>
                     </div>
-                    <div style={{ whiteSpace: "pre-wrap" }}>{msg.content}</div>
+                    <MarkdownDialogueRenderer content={msg.content} />
                   </div>
                 ))}
 
@@ -1027,11 +1156,8 @@ export default function MockInterviewStudio() {
               {/* Evaluation Console if available */}
               {codeEvaluation && (
                 <div className="mock-code-eval-box">
-                  <strong style={{ color: "#34d399", display: "block", marginBottom: "4px" }}>
-                    ✓ Interviewer Evaluation:
-                  </strong>
-                  <div style={{ whiteSpace: "pre-wrap", color: "#cbd5e1", fontSize: "0.76rem" }}>
-                    {codeEvaluation}
+                  <div style={{ color: "#cbd5e1", fontSize: "0.82rem" }}>
+                    <MarkdownDialogueRenderer content={codeEvaluation} />
                   </div>
                 </div>
               )}
