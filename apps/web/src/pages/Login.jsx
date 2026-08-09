@@ -16,7 +16,7 @@ import {
 import { useAuth } from "../auth/AuthContext.jsx";
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, loginGoogle, loginGitHub } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -77,24 +77,30 @@ export default function Login() {
     }
   }
 
-  function handleSocialLogin(provider) {
-    // Quick demo / social placeholder with feedback
+  async function handleSocialLogin(provider) {
     setError("");
     setIsSubmitting(true);
-    setTimeout(async () => {
-      try {
+    try {
+      if (provider === "Google") {
+        await loginGoogle();
+      } else if (provider === "GitHub") {
+        await loginGitHub();
+      } else {
         await login({
           email: `coder_${provider.toLowerCase()}@judgo.dev`,
           username: `coder_${provider.toLowerCase()}`,
           password: "password123"
         });
-        navigate(redirectTo, { replace: true });
-      } catch (err) {
-        setError(`Failed to connect with ${provider}.`);
-      } finally {
-        setIsSubmitting(false);
       }
-    }, 600);
+      navigate(redirectTo, { replace: true });
+    } catch (err) {
+      if (err?.code === "auth/popup-closed-by-user" || err?.message?.includes("closed-by-user")) {
+        return;
+      }
+      setError(err.message || `Failed to authenticate with ${provider}.`);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (

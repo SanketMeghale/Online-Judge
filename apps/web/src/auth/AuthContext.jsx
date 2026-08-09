@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { api } from "../api/apiClient.js";
 import { clearStoredSession, readStoredSession, writeStoredSession } from "./authStorage.js";
-import { loginWithEmail, refreshCurrentSession, registerWithEmail } from "./authService.js";
+import { loginWithEmail, loginWithGoogle, loginWithGitHub, refreshCurrentSession, registerWithEmail } from "./authService.js";
 import { useAppData } from "../data/AppDataContext.jsx";
 
 const AuthContext = createContext(null);
@@ -104,6 +104,62 @@ export function AuthProvider({ children }) {
     return nextSession;
   }
 
+  async function loginGoogle() {
+    const nextSession = await loginWithGoogle();
+    refreshDatabase();
+    writeStoredSession(nextSession);
+    setSession(nextSession);
+
+    if (nextSession?.user) {
+      updateDatabase((current) => {
+        const uid = String(nextSession.user.id || nextSession.user._id || "");
+        const exists = current.users?.some((u) => String(u.id) === uid || String(u._id) === uid);
+        if (exists) {
+          return {
+            ...current,
+            users: current.users.map((u) =>
+              String(u.id) === uid || String(u._id) === uid ? { ...u, ...nextSession.user } : u
+            )
+          };
+        }
+        return {
+          ...current,
+          users: [...(current.users || []), nextSession.user]
+        };
+      });
+    }
+
+    return nextSession;
+  }
+
+  async function loginGitHub() {
+    const nextSession = await loginWithGitHub();
+    refreshDatabase();
+    writeStoredSession(nextSession);
+    setSession(nextSession);
+
+    if (nextSession?.user) {
+      updateDatabase((current) => {
+        const uid = String(nextSession.user.id || nextSession.user._id || "");
+        const exists = current.users?.some((u) => String(u.id) === uid || String(u._id) === uid);
+        if (exists) {
+          return {
+            ...current,
+            users: current.users.map((u) =>
+              String(u.id) === uid || String(u._id) === uid ? { ...u, ...nextSession.user } : u
+            )
+          };
+        }
+        return {
+          ...current,
+          users: [...(current.users || []), nextSession.user]
+        };
+      });
+    }
+
+    return nextSession;
+  }
+
   async function register(details) {
     const nextSession = await registerWithEmail(details);
     refreshDatabase();
@@ -147,6 +203,8 @@ export function AuthProvider({ children }) {
       session,
       user: session?.user ?? null,
       login,
+      loginGoogle,
+      loginGitHub,
       logout,
       register
     }),

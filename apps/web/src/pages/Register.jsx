@@ -20,7 +20,7 @@ import {
 import { useAuth } from "../auth/AuthContext.jsx";
 
 export default function Register() {
-  const { register } = useAuth();
+  const { register, loginGoogle, loginGitHub } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -135,11 +135,15 @@ export default function Register() {
     }
   }
 
-  function handleSocialSignup(provider) {
+  async function handleSocialSignup(provider) {
     setError("");
     setIsSubmitting(true);
-    setTimeout(async () => {
-      try {
+    try {
+      if (provider === "Google") {
+        await loginGoogle();
+      } else if (provider === "GitHub") {
+        await loginGitHub();
+      } else {
         const demoTag = Math.floor(1000 + Math.random() * 9000);
         await register({
           name: `Coder ${provider}`,
@@ -147,13 +151,16 @@ export default function Register() {
           email: `coder_${demoTag}@judgo.dev`,
           password: "password123"
         });
-        navigate("/dashboard", { replace: true });
-      } catch (err) {
-        setError(`Failed to sign up with ${provider}.`);
-      } finally {
-        setIsSubmitting(false);
       }
-    }, 600);
+      navigate("/dashboard", { replace: true });
+    } catch (err) {
+      if (err?.code === "auth/popup-closed-by-user" || err?.message?.includes("closed-by-user")) {
+        return;
+      }
+      setError(err.message || `Failed to sign up with ${provider}.`);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (

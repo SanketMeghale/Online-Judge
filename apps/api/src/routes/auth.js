@@ -152,6 +152,56 @@ router.post("/login", authLimiter, async (request, response) => {
   }
 });
 
+router.post("/google", authLimiter, async (request, response) => {
+  try {
+    const { email, name, photoURL, uid } = request.body ?? {};
+
+    if (!email) {
+      response.status(400).json({ success: false, error: "Google account email is required." });
+      return;
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    let user = await findUserByEmail(cleanEmail);
+
+    if (!user) {
+      // Auto-generate clean username from email or name
+      const baseUser = (cleanEmail.split("@")[0] || "coder").replace(/[^a-zA-Z0-9_]/g, "").slice(0, 20);
+      let proposedUser = baseUser;
+      let counter = 1;
+      while (!(await isUsernameAvailable(proposedUser))) {
+        proposedUser = `${baseUser}${counter++}`;
+      }
+
+      user = await createUser({
+        name: (name || proposedUser).trim(),
+        username: proposedUser,
+        email: cleanEmail,
+        password: `google-auth-${uid || Date.now()}`
+      });
+    }
+
+    const token = signToken({ userId: user.id, email: user.email, username: user.username });
+    try {
+      response.cookie("token", token, COOKIE_OPTIONS);
+    } catch {}
+
+    response.json({
+      success: true,
+      message: "Authenticated with Google successfully.",
+      token,
+      accessToken: token,
+      user
+    });
+  } catch (err) {
+    console.error("[Auth Google Error]:", err);
+    response.status(500).json({
+      success: false,
+      error: err?.message || "Failed to authenticate with Google."
+    });
+  }
+});
+
 router.post("/logout", (request, response) => {
   try {
     response.clearCookie("token", COOKIE_OPTIONS);

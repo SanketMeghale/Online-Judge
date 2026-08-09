@@ -1,3 +1,5 @@
+import { signInWithPopup } from "firebase/auth";
+import { auth, googleProvider, githubProvider } from "../firebase/firebase.js";
 import { api } from "../api/apiClient.js";
 import { createUserRecord, ensureDatabase, findUserByEmail, findUserById, writeDatabase } from "../data/appData.js";
 
@@ -16,6 +18,95 @@ function assertEmail(email) {
 function assertPassword(password) {
   if (!password || password.length < 6) {
     throw new Error("Password must be at least 6 characters.");
+  }
+}
+
+export async function loginWithGoogle() {
+  const result = await signInWithPopup(auth, googleProvider);
+  const fbUser = result.user;
+
+  const email = fbUser.email || "";
+  const name = fbUser.displayName || (email ? email.split("@")[0] : "Google Developer");
+  const photoURL = fbUser.photoURL || "";
+  const uid = fbUser.uid || `google-${Date.now()}`;
+
+  try {
+    const res = await api.loginGoogle({
+      email,
+      name,
+      photoURL,
+      uid
+    });
+
+    return {
+      accessToken: res.token || res.accessToken,
+      user: res.user
+    };
+  } catch (err) {
+    // If backend is in offline fallback mode, create local session
+    const database = ensureDatabase();
+    let localUser = findUserByEmail(database, email);
+    if (!localUser) {
+      localUser = createUserRecord({
+        name,
+        username: (email.split("@")[0] || "coder").replace(/[^a-zA-Z0-9_]/g, ""),
+        email,
+        password: `google-auth-${uid}`
+      });
+      writeDatabase({
+        ...database,
+        users: [...(database.users || []), localUser]
+      });
+    }
+
+    return {
+      accessToken: `google-jwt-${Date.now()}`,
+      user: localUser
+    };
+  }
+}
+
+export async function loginWithGitHub() {
+  const result = await signInWithPopup(auth, githubProvider);
+  const fbUser = result.user;
+
+  const email = fbUser.email || `${fbUser.uid}@github.judgo.dev`;
+  const name = fbUser.displayName || "GitHub Developer";
+  const photoURL = fbUser.photoURL || "";
+  const uid = fbUser.uid;
+
+  try {
+    const res = await api.loginGoogle({
+      email,
+      name,
+      photoURL,
+      uid
+    });
+
+    return {
+      accessToken: res.token || res.accessToken,
+      user: res.user
+    };
+  } catch (err) {
+    const database = ensureDatabase();
+    let localUser = findUserByEmail(database, email);
+    if (!localUser) {
+      localUser = createUserRecord({
+        name,
+        username: (name || "coder").toLowerCase().replace(/[^a-zA-Z0-9_]/g, ""),
+        email,
+        password: `github-auth-${uid}`
+      });
+      writeDatabase({
+        ...database,
+        users: [...(database.users || []), localUser]
+      });
+    }
+
+    return {
+      accessToken: `github-jwt-${Date.now()}`,
+      user: localUser
+    };
   }
 }
 

@@ -42,6 +42,7 @@ export const api = {
   // Auth
   register: (body) => request("/auth/register", { method: "POST", body: JSON.stringify(body) }),
   login: (body) => request("/auth/login", { method: "POST", body: JSON.stringify(body) }),
+  loginGoogle: (body) => request("/auth/google", { method: "POST", body: JSON.stringify(body) }),
   logout: () => request("/auth/logout", { method: "POST" }),
   getMe: () => request("/auth/me"),
   updateSettings: (body) => request("/auth/settings", { method: "PATCH", body: JSON.stringify(body) }),
