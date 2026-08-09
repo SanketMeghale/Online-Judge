@@ -10,6 +10,7 @@ import submissionRoutes from "./routes/submission.routes.js";
 import contestRoutes from "./routes/contests.js";
 import leaderboardRoutes from "./routes/leaderboard.js";
 import progressRoutes from "./routes/progress.js";
+import dashboardRoutes from "./routes/dashboard.js";
 
 function parseCookies(cookieHeader = "") {
   const list = {};
@@ -81,6 +82,9 @@ export function createApp() {
 
   app.use("/api/progress", progressRoutes);
   app.use("/progress", progressRoutes);
+
+  app.use("/api/dashboard", dashboardRoutes);
+  app.use("/dashboard", dashboardRoutes);
 
   app.use((error, _request, response, _next) => {
     console.error("[Unhandled API Error]:", error);

@@ -74,5 +74,8 @@ export const api = {
   getLeaderboard: () => request("/leaderboard"),
 
   // Analytics & Progress
-  getProgress: (range = "30d") => request(`/progress?range=${range}`)
+  getProgress: (range = "30d") => request(`/progress?range=${range}`),
+
+  // Dashboard Summary & Analytics
+  getDashboard: () => request("/dashboard")
 };
