@@ -18,6 +18,7 @@ import {
   X
 } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext.jsx";
+import { getUserDisplayName } from "../../auth/displayName.js";
 import { useAppData } from "../../data/AppDataContext.jsx";
 
 const navSections = [
@@ -49,7 +50,10 @@ const navSections = [
 export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }) {
   const { user } = useAuth();
   const { getUserById } = useAppData();
-  const liveUser = (user?.id ? getUserById(user.id) : null) || user || {};
+  const currentUserId = user?.id || user?._id || "";
+  const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
+  const displayName = getUserDisplayName(liveUser);
+  const userHandle = String(liveUser?.username || liveUser?.email || "").trim();
 
   const [collapsed, setCollapsed] = useState(false);
   const [hoveredItem, setHoveredItem] = useState(null);
@@ -294,10 +298,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
           >
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <Sparkles size={14} style={{ color: "#a855f7" }} />
-              <strong style={{ fontSize: "0.82rem", color: "#f8fafc", fontWeight: "700" }}>Pro Developer</strong>
+              <strong style={{ fontSize: "0.82rem", color: "#f8fafc", fontWeight: "700" }}>{displayName}</strong>
             </div>
-            <p style={{ fontSize: "0.74rem", color: "#94a3b8", margin: 0, lineHeight: "1.4" }}>
-              Unlock advanced AI mock interviews and system tracks.
+            <p style={{ fontSize: "0.74rem", color: "#94a3b8", margin: 0, lineHeight: "1.4", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {userHandle ? (liveUser?.username ? `@${userHandle}` : userHandle) : "Authenticated user"}
             </p>
             <NavLink
               to="/stats"

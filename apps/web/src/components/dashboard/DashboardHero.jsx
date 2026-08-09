@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, CheckCircle2, Target } from "lucide-react";
+import { getUserDisplayName } from "../../auth/displayName.js";
 
 export default function DashboardHero({
   user,
@@ -22,8 +23,8 @@ export default function DashboardHero({
 
   // Authentic user display name
   const displayName = useMemo(() => {
-    const raw = liveUser?.name || liveUser?.username || user?.name || user?.username || "Coder";
-    return String(raw).trim().split(" ")[0] || "Coder";
+    const raw = getUserDisplayName(liveUser || user);
+    return String(raw).trim().split(" ")[0] || "User";
   }, [liveUser, user]);
 
   // Dynamic continue problem URL

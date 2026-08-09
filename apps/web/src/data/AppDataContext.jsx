@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { api } from "../api/apiClient";
 import { subscribeToSubmissionUpdates } from "../services/socketService";
 import {
@@ -121,7 +121,7 @@ export function AppDataProvider({ children }) {
   const [savedCode, setSavedCode] = useState(() => readSavedCode());
 
   // Dedicated sync function to fetch problems (with server-calculated status) and submissions from backend
-  const syncBackendData = async () => {
+  const syncBackendData = useCallback(async () => {
     try {
       const [problemsRes, subsRes] = await Promise.allSettled([
         api.getProblems(),
@@ -163,7 +163,7 @@ export function AppDataProvider({ children }) {
     } catch (err) {
       console.warn("[AppDataContext] syncBackendData notice:", err);
     }
-  };
+  }, []);
 
   // Fetch & sync on mount
   useEffect(() => {

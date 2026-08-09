@@ -30,6 +30,7 @@ import { useAppData } from "../data/AppDataContext.jsx";
 import { api } from "../api/apiClient.js";
 import { applyThemeAndAppearance } from "../utils/themeApplier.js";
 import { writeStoredSession, readStoredSession } from "../auth/authStorage.js";
+import { getUserDisplayName } from "../auth/displayName.js";
 
 const SETTINGS_STORAGE_KEY = "judgo-user-settings-v1";
 
@@ -103,9 +104,9 @@ export default function Settings() {
     const userPrefs = liveUser?.preferences || {};
 
     return {
-      displayName: liveUser?.name || "Developer",
-      username: liveUser?.username || "coder",
-      email: liveUser?.email || "developer@judgo.io",
+      displayName: getUserDisplayName(liveUser),
+      username: liveUser?.username || "",
+      email: liveUser?.email || "",
       bio: liveUser?.bio || "",
       language: liveUser?.language || localPrefs?.language || "en-US",
       timezone: liveUser?.timezone || localPrefs?.timezone || "UTC-5 (Eastern Time / US & Canada)",
@@ -136,10 +137,11 @@ export default function Settings() {
 
   // Sync baseline if liveUser initializes after mount
   useEffect(() => {
-    if (liveUser?.name && !savedBaseline.displayName) {
+    const nextDisplayName = getUserDisplayName(liveUser);
+    if (nextDisplayName && !savedBaseline.displayName) {
       const updated = {
         ...formData,
-        displayName: liveUser.name || formData.displayName,
+        displayName: nextDisplayName || formData.displayName,
         username: liveUser.username || formData.username,
         email: liveUser.email || formData.email,
         bio: liveUser.bio || formData.bio
@@ -147,7 +149,7 @@ export default function Settings() {
       setFormData(updated);
       setSavedBaseline(updated);
     }
-  }, [liveUser?.name, liveUser?.username]);
+  }, [liveUser?.displayName, liveUser?.name, liveUser?.username, liveUser?.email]);
 
   // Tab Sync with URL search params
   useEffect(() => {

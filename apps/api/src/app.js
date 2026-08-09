@@ -36,6 +36,7 @@ export function createApp() {
 
   const allowedOrigins = [
     process.env.CLIENT_ORIGIN,
+    
     "http://localhost:8080",
     "http://localhost:5173",
     "http://127.0.0.1:8080",
@@ -48,7 +49,7 @@ export function createApp() {
         if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
           callback(null, true);
         } else {
-          callback(null, true); // Dev fallback
+          callback(new Error("Not allowed by CORS"));
         }
       },
       credentials: true

@@ -17,15 +17,21 @@ import AICoachCard from "../components/dashboard/AICoachCard.jsx";
 import AnimatedSection from "../components/dashboard/AnimatedSection.jsx";
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, isCheckingSession } = useAuth();
   const { getUserById, getProblemsForUser, getSubmissionsForUser, syncBackendData } = useAppData();
-  const liveUser = getUserById(user?.id) ?? user;
 
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Stable userId to use as the primary effect dependency
+  const userId = user?.id || user?._id || null;
+  const liveUser = (userId ? getUserById(userId) : null) || user;
+
+  // Fetch dashboard data — stable: only depends on userId (not liveUser or functions)
   const fetchDashboardData = useCallback(async () => {
+    if (!userId || isCheckingSession) return;
+
     setLoading(true);
     setError(null);
 
@@ -40,22 +46,24 @@ export default function Dashboard() {
       console.warn("[Dashboard] API getDashboard notice, using fallback:", err);
     }
 
-    // Fallback: Compute from local app data
+    // Fallback: Compute from local app data (snapshot values at call time — not reactive deps)
     try {
-      const localProblems = getProblemsForUser(user?.id) || [];
-      const localSubs = getSubmissionsForUser(user?.id) || [];
+      const localProblems = getProblemsForUser(userId) || [];
+      const localSubs = getSubmissionsForUser(userId) || [];
+      // Snapshot liveUser at call time so we don't create a reactive dependency
+      const snapshotUser = getUserById(userId) ?? user;
 
       const solvedSet = new Set(
         localSubs
           .filter((s) => s.verdict === "AC" || s.verdict === "OK" || s.verdict === "Accepted")
           .map((s) => s.problemId || s.problem)
       );
-      if (Array.isArray(liveUser?.solvedProblemIds)) {
-        liveUser.solvedProblemIds.forEach((pid) => solvedSet.add(pid));
+      if (Array.isArray(snapshotUser?.solvedProblemIds)) {
+        snapshotUser.solvedProblemIds.forEach((pid) => solvedSet.add(pid));
       }
 
       const solvedCount = solvedSet.size;
-      const totalSubs = Math.max(localSubs.length, liveUser?.stats?.totalSubmissions || 0);
+      const totalSubs = Math.max(localSubs.length, snapshotUser?.stats?.totalSubmissions || 0);
       const acceptedCount = localSubs.filter((s) => s.verdict === "AC" || s.verdict === "OK" || s.verdict === "Accepted").length;
       const waCount = localSubs.filter((s) => s.verdict === "WA" || s.verdict === "Wrong Answer").length;
       const reCount = localSubs.filter((s) => s.verdict === "RE" || s.verdict === "Runtime Error").length;
@@ -71,8 +79,8 @@ export default function Dashboard() {
         stats: {
           globalRank: 4,
           rating,
-          currentStreak: liveUser?.streak || (solvedCount > 0 ? 1 : 0),
-          bestStreak: Math.max(liveUser?.streak || 1, 1),
+          currentStreak: snapshotUser?.streak || (solvedCount > 0 ? 1 : 0),
+          bestStreak: Math.max(snapshotUser?.streak || 1, 1),
           acceptanceRate: `${rate}%`,
           acceptanceRateNum: Number(rate),
           solvedCount,
@@ -122,14 +130,36 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [user?.id, liveUser, getProblemsForUser, getSubmissionsForUser]);
+  // Only depend on userId — liveUser/getProblemsForUser/getSubmissionsForUser are accessed
+  // at call time via closure; they must NOT be in deps to avoid re-creation on every DB update
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, isCheckingSession]);
 
+  // Run dashboard fetch exactly once per userId change (stable: no syncBackendData in deps)
   useEffect(() => {
-    fetchDashboardData();
-    if (syncBackendData) {
+    let cancelled = false;
+
+    const run = async () => {
+      if (!userId || isCheckingSession || cancelled) return;
+      await fetchDashboardData();
+    };
+
+    run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, isCheckingSession, fetchDashboardData]);
+
+  // Sync backend data once after the authenticated user is available.
+  useEffect(() => {
+    if (!isCheckingSession && userId && typeof syncBackendData === "function") {
       syncBackendData();
     }
-  }, [fetchDashboardData, syncBackendData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, isCheckingSession]);
+
+
 
   const stats = dashboardData?.stats;
   const weeklyGoal = dashboardData?.weeklyGoal;

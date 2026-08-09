@@ -1,6 +1,7 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { signToken } from "../lib/jwt.js";
+import { verifyFirebaseIdToken } from "../lib/firebaseAdmin.js";
 import {
   createUser,
   deleteUser,
@@ -8,6 +9,7 @@ import {
   findUserById,
   findUserByUsername,
   isUsernameAvailable,
+  upsertFirebaseUser,
   updateUserPassword,
   updateUserProfile,
   validateUserCredentials,
@@ -154,32 +156,26 @@ router.post("/login", authLimiter, async (request, response) => {
 
 router.post("/google", authLimiter, async (request, response) => {
   try {
-    const { email, name, photoURL, uid } = request.body ?? {};
+    const { idToken } = request.body ?? {};
 
-    if (!email) {
-      response.status(400).json({ success: false, error: "Google account email is required." });
+    if (!idToken) {
+      response.status(400).json({ success: false, error: "Firebase ID token is required." });
       return;
     }
 
-    const cleanEmail = String(email).trim().toLowerCase();
-    let user = await findUserByEmail(cleanEmail);
-
-    if (!user) {
-      // Auto-generate clean username from email or name
-      const baseUser = (cleanEmail.split("@")[0] || "coder").replace(/[^a-zA-Z0-9_]/g, "").slice(0, 20);
-      let proposedUser = baseUser;
-      let counter = 1;
-      while (!(await isUsernameAvailable(proposedUser))) {
-        proposedUser = `${baseUser}${counter++}`;
-      }
-
-      user = await createUser({
-        name: (name || proposedUser).trim(),
-        username: proposedUser,
-        email: cleanEmail,
-        password: `google-auth-${uid || Date.now()}`
-      });
+    const decodedToken = await verifyFirebaseIdToken(idToken);
+    if (!decodedToken?.uid || !decodedToken?.email) {
+      response.status(401).json({ success: false, error: "Invalid Firebase authentication token." });
+      return;
     }
+
+    const user = await upsertFirebaseUser({
+      firebaseUid: decodedToken.uid,
+      email: decodedToken.email,
+      displayName: decodedToken.name || "",
+      photoURL: decodedToken.picture || "",
+      provider: decodedToken.firebase?.sign_in_provider || "google.com"
+    });
 
     const token = signToken({ userId: user.id, email: user.email, username: user.username });
     try {

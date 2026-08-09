@@ -168,6 +168,142 @@ export async function findUserByEmail(email) {
   return u ? sanitizeUser(u) : null;
 }
 
+export async function findUserByFirebaseUid(firebaseUid) {
+  if (!firebaseUid) return null;
+  await connectDatabase();
+
+  if (isDatabaseConnected()) {
+    try {
+      const doc = await User.findOne({ firebaseUid: String(firebaseUid) }).lean();
+      if (doc) return sanitizeUser(doc);
+    } catch (e) {
+      console.error("[UserStore] findUserByFirebaseUid DB error:", e);
+    }
+  }
+
+  const u = memoryUsers.find((item) => item.firebaseUid === String(firebaseUid));
+  return u ? sanitizeUser(u) : null;
+}
+
+function getEmailDerivedName(email) {
+  return String(email || "")
+    .split("@")[0]
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export async function upsertFirebaseUser({ firebaseUid, email, displayName, photoURL, provider = "google.com" }) {
+  if (!firebaseUid || !email) return null;
+  await connectDatabase();
+
+  const cleanEmail = String(email).trim().toLowerCase();
+  const cleanDisplayName = String(displayName || "").trim();
+  const cleanPhotoURL = String(photoURL || "").trim();
+  const cleanProvider = String(provider || "google.com").trim();
+  const fallbackName = cleanDisplayName || getEmailDerivedName(cleanEmail) || "User";
+  const baseUsername = cleanEmail.split("@")[0].replace(/[^a-zA-Z0-9_.-]/g, "").slice(0, 24) || `user${Date.now()}`;
+
+  if (isDatabaseConnected()) {
+    try {
+      let existing = await User.findOne({
+        $or: [{ firebaseUid: String(firebaseUid) }, { email: cleanEmail }]
+      });
+
+      if (existing) {
+        existing.firebaseUid = String(firebaseUid);
+        if (cleanDisplayName) {
+          existing.displayName = cleanDisplayName;
+        } else if (!existing.displayName) {
+          existing.displayName = existing.name || fallbackName;
+        }
+        existing.name = existing.name || existing.displayName || fallbackName;
+        existing.email = cleanEmail;
+        if (cleanPhotoURL) {
+          existing.photoURL = cleanPhotoURL;
+        }
+        existing.provider = cleanProvider;
+        existing.lastLoginAt = new Date();
+        await existing.save();
+        return sanitizeUser(existing.toObject());
+      }
+
+      let username = baseUsername;
+      let counter = 1;
+      while (!(await isUsernameAvailable(username))) {
+        username = `${baseUsername}${counter++}`;
+      }
+
+      const created = await User.create({
+        id: `u-${Date.now()}`,
+        firebaseUid: String(firebaseUid),
+        name: fallbackName,
+        displayName: cleanDisplayName || fallbackName,
+        username,
+        email: cleanEmail,
+        photoURL: cleanPhotoURL,
+        provider: cleanProvider,
+        passwordHash: "",
+        role: "user",
+        status: "active",
+        lastLoginAt: new Date(),
+        badges: ["New Challenger"],
+        solvedProblemIds: [],
+        attemptedProblemIds: [],
+        stats: {
+          totalSubmissions: 0,
+          acceptedSubmissions: 0,
+          waCount: 0,
+          reCount: 0,
+          tleCount: 0
+        }
+      });
+      return sanitizeUser(created.toObject());
+    } catch (e) {
+      console.error("[UserStore] upsertFirebaseUser DB error:", e);
+    }
+  }
+
+  let user = memoryUsers.find((item) => item.firebaseUid === String(firebaseUid) || item.email?.toLowerCase() === cleanEmail);
+  if (!user) {
+    user = {
+      id: `u-${Date.now()}`,
+      firebaseUid: String(firebaseUid),
+      name: fallbackName,
+      displayName: cleanDisplayName || fallbackName,
+      username: baseUsername,
+      email: cleanEmail,
+      photoURL: cleanPhotoURL,
+      provider: cleanProvider,
+      passwordHash: "",
+      role: "user",
+      status: "active",
+      lastLoginAt: new Date(),
+      badges: ["New Challenger"],
+      solvedProblemIds: [],
+      attemptedProblemIds: [],
+      stats: { totalSubmissions: 0, acceptedSubmissions: 0, waCount: 0, reCount: 0, tleCount: 0 }
+    };
+    memoryUsers.push(user);
+  } else {
+    user.firebaseUid = String(firebaseUid);
+    if (cleanDisplayName) {
+      user.displayName = cleanDisplayName;
+    } else {
+      user.displayName = user.displayName || user.name || fallbackName;
+    }
+    user.name = user.name || user.displayName || fallbackName;
+    user.email = cleanEmail;
+    if (cleanPhotoURL) {
+      user.photoURL = cleanPhotoURL;
+    }
+    user.provider = cleanProvider;
+    user.lastLoginAt = new Date();
+  }
+
+  return sanitizeUser(user);
+}
+
 export async function findUserByUsername(username) {
   if (!username) return null;
   await connectDatabase();
@@ -238,14 +374,17 @@ export async function isUsernameAvailable(username, currentUserId = null) {
   return !found;
 }
 
-export async function createUser({ name, username, email, password }) {
+export async function createUser({ name, username, email, password, firebaseUid = "", photoURL = "" }) {
   await connectDatabase();
   const hashedPassword = await hashPassword(password);
   const userObj = {
     id: `u-${Date.now()}`,
     name: name.trim(),
+    displayName: name.trim(),
     username: username.trim(),
     email: email.trim().toLowerCase(),
+    firebaseUid: firebaseUid ? String(firebaseUid) : undefined,
+    photoURL,
     passwordHash: hashedPassword,
     bio: "",
     language: "en-US",
@@ -551,21 +690,6 @@ export async function validateUserCredentials(identifier, password) {
     );
   }
 
-  // Auto-provision social login users if they log in via social providers (Google/GitHub/GitLab)
-  if (!rawUser && (clean.startsWith("coder_") || clean.includes("@judgo.dev"))) {
-    const providerName = clean.replace(/@.*$/, "").replace(/^coder_/, "") || "Developer";
-    const displayName = providerName.charAt(0).toUpperCase() + providerName.slice(1) + " Developer";
-    try {
-      const newUser = await createUser({
-        name: displayName,
-        username: clean.replace(/@.*$/, ""),
-        email: clean.includes("@") ? clean : `${clean}@judgo.dev`,
-        password
-      });
-      return newUser;
-    } catch (e) {}
-  }
-
   if (!rawUser) return null;
 
   const pwdHash = rawUser.passwordHash || rawUser.password;
@@ -611,6 +735,13 @@ export function sanitizeUser(user) {
     ...safeUser,
     id: primaryId,
     _id: mongoId,
+    name: safeUser.name || safeUser.displayName || safeUser.username || getEmailDerivedName(safeUser.email) || "User",
+    displayName: safeUser.displayName || safeUser.name || "",
+    username: safeUser.username || "",
+    email: safeUser.email || "",
+    photoURL: safeUser.photoURL || "",
+    firebaseUid: safeUser.firebaseUid || "",
+    provider: safeUser.provider || "password",
     bio: safeUser.bio || "",
     language: safeUser.language || "en-US",
     timezone: safeUser.timezone || "UTC-5 (Eastern Time)",
@@ -730,7 +861,7 @@ export async function getAllUsers({
 }
 
 export async function updateUserRole(id, newRole) {
-  if (!id || !["user", "admin"].includes(newRole)) return null;
+  if (!id || !["user", "admin", "superadmin"].includes(newRole)) return null;
   await connectDatabase();
 
   if (isDatabaseConnected()) {
@@ -779,4 +910,3 @@ export async function updateUserStatus(id, newStatus, suspendedReason = "") {
   }
   return null;
 }
-

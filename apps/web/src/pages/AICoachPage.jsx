@@ -35,6 +35,7 @@ import {
 } from "lucide-react";
 import { api } from "../api/apiClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
+import { getUserDisplayName } from "../auth/displayName.js";
 import { useAppData } from "../data/AppDataContext.jsx";
 import MockInterviewStudio from "../components/ai/MockInterviewStudio.jsx";
 import CompanySheetsDashboard from "../components/company/CompanySheetsDashboard.jsx";
@@ -399,7 +400,7 @@ export default function AICoachPage() {
 
   const currentUserId = user?.id || user?._id || "";
   const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
-  const displayName = String(liveUser?.name || liveUser?.username || "Coder").trim().split(" ")[0] || "Coder";
+  const displayName = String(getUserDisplayName(liveUser)).trim().split(" ")[0] || "User";
 
   // Tab State: "mentor" | "interview" | "weak" | "companies"
   const [activeTab, setActiveTab] = useState(() => {

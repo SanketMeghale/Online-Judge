@@ -19,6 +19,7 @@ import {
   User as UserIcon
 } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext.jsx";
+import { getUserDisplayName } from "../../auth/displayName.js";
 import { useAppData } from "../../data/AppDataContext.jsx";
 import CommandPalette from "../dashboard/CommandPalette.jsx";
 
@@ -36,8 +37,8 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
   const currentUserId = user?.id || user?._id || "";
   const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
 
-  const fullName = String(liveUser?.name || liveUser?.username || "Developer").trim();
-  const username = String(liveUser?.username || "coder").trim();
+  const fullName = getUserDisplayName(liveUser);
+  const username = String(liveUser?.username || "").trim();
   const email = String(liveUser?.email || "").trim();
   const avatarLetter = String(fullName || username || "D").slice(0, 1).toUpperCase();
   const streakCount = typeof liveUser?.streak === "number" ? liveUser.streak : (liveUser?.solved > 0 ? 1 : 0);
@@ -407,7 +408,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                             {fullName}
                           </strong>
                           <p style={{ margin: 0, fontSize: "0.75rem", color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            @{username}
+                            {username ? `@${username}` : email}
                           </p>
                         </div>
                       </div>

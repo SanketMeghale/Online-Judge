@@ -19,6 +19,7 @@ import {
   Zap
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext.jsx";
+import { getUserDisplayName } from "../auth/displayName.js";
 import SubmissionTable from "../components/tables/SubmissionTable.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
 import "../styles/profile.css";
@@ -56,8 +57,8 @@ export default function Profile() {
   const foundInDb = currentUserId ? getUserById(currentUserId) : null;
   const liveUser = foundInDb || user || {};
 
-  const name = String(liveUser.name || liveUser.username || "Developer").trim();
-  const username = String(liveUser.username || "coder").trim();
+  const name = getUserDisplayName(liveUser);
+  const username = String(liveUser.username || "").trim();
   const email = String(liveUser.email || "").trim();
   const avatarUrl = liveUser.photoURL || liveUser.avatarUrl || "";
   const avatarLetter = String(name || username || "U").slice(0, 1).toUpperCase();
