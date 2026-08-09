@@ -132,14 +132,17 @@ router.post("/hint", optionalAuth, async (req, res) => {
 router.post("/interview", optionalAuth, async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || "guest_coder";
-    const { company, track, action, answer, history } = req.body || {};
+    const { company, track, difficulty, action, answer, code, language, history } = req.body || {};
 
     const result = await handleMockInterview({
       userId,
-      company: company || "Amazon",
-      track: track || "General",
+      company: company || "Google",
+      track: track || "dsa",
+      difficulty: difficulty || "Medium",
       action: action || "start",
       answer: answer || "",
+      code: code || "",
+      language: language || "python",
       history: history || []
     });
 

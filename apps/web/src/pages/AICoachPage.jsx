@@ -35,6 +35,7 @@ import {
 import { api } from "../api/apiClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
+import MockInterviewStudio from "../components/ai/MockInterviewStudio.jsx";
 
 // Authentic SVGs for Tech Companies
 export function GoogleLogo({ size = 18 }) {
@@ -780,9 +781,8 @@ export default function AICoachPage() {
       >
         {[
           { id: "mentor", label: "AI Mentor", icon: Sparkles },
-          { id: "review", label: "Code Review", icon: Code2 },
-          { id: "weak", label: "Weak Topics", icon: Target },
-          { id: "interview", label: "Interview Prep", icon: Compass }
+          { id: "interview", label: "AI Mock Interview", icon: Compass },
+          { id: "weak", label: "Weak Topics", icon: Target }
         ].map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -1329,136 +1329,8 @@ export default function AICoachPage() {
           </div>
         )}
 
-        {/* TAB 2: CODE REVIEW WORKSPACE */}
-        {activeTab === "review" && (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "16px",
-              height: "calc(100vh - 200px)",
-              minHeight: "520px"
-            }}
-          >
-            {/* Left: Code Input */}
-            <div
-              style={{
-                background: "#0d111a",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: "12px",
-                padding: "18px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px"
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: "700", color: "#f8fafc" }}>
-                  Source Code for Review
-                </span>
-                <select
-                  value={codeReviewLang}
-                  onChange={(e) => setCodeReviewLang(e.target.value)}
-                  style={{
-                    background: "#080c14",
-                    border: "1px solid rgba(255, 255, 255, 0.1)",
-                    color: "#c084fc",
-                    borderRadius: "6px",
-                    padding: "3px 8px",
-                    fontSize: "0.76rem",
-                    outline: "none"
-                  }}
-                >
-                  <option value="python">Python 3</option>
-                  <option value="cpp">C++ 20</option>
-                  <option value="javascript">JavaScript</option>
-                  <option value="java">Java</option>
-                </select>
-              </div>
-
-              <textarea
-                value={codeReviewSnippet}
-                onChange={(e) => setCodeReviewSnippet(e.target.value)}
-                placeholder="Paste code or submit a solution to inspect complexity..."
-                style={{
-                  flex: 1,
-                  background: "#080c14",
-                  border: "1px solid rgba(255, 255, 255, 0.06)",
-                  borderRadius: "8px",
-                  padding: "14px",
-                  color: "#38bdf8",
-                  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                  fontSize: "0.84rem",
-                  lineHeight: "1.5",
-                  resize: "none",
-                  outline: "none"
-                }}
-              />
-
-              <button
-                type="button"
-                onClick={handleRunCodeReview}
-                disabled={isReviewing || !codeReviewSnippet.trim()}
-                style={{
-                  background: "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)",
-                  border: "none",
-                  color: "#ffffff",
-                  padding: "10px",
-                  borderRadius: "8px",
-                  fontSize: "0.85rem",
-                  fontWeight: "600",
-                  cursor: isReviewing ? "default" : "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "6px",
-                  opacity: isReviewing ? 0.7 : 1
-                }}
-              >
-                <Code2 size={16} />
-                <span>{isReviewing ? "Evaluating Complexity..." : "Inspect Code with AI"}</span>
-              </button>
-            </div>
-
-            {/* Right: Review Results */}
-            <div
-              style={{
-                background: "#0d111a",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: "12px",
-                padding: "18px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "14px",
-                overflowY: "auto"
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "0.85rem", fontWeight: "700", color: "#f8fafc" }}>
-                  AI Complexity &amp; Optimization Feedback
-                </span>
-                {reviewResult && (
-                  <span style={{ fontSize: "0.75rem", color: "#10b981", fontWeight: "700" }}>
-                    Score: {reviewResult.score}
-                  </span>
-                )}
-              </div>
-
-              {reviewResult ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  <div style={{ background: "#080c14", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "8px", padding: "14px" }}>
-                    <FormattedMessage text={reviewResult.review} />
-                  </div>
-                </div>
-              ) : (
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#64748b", gap: "8px" }}>
-                  <Code2 size={32} style={{ color: "#475569" }} />
-                  <p style={{ fontSize: "0.84rem", margin: 0 }}>Click "Inspect Code with AI" to evaluate runtime complexity and edge cases.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+        {/* TAB 2: AI MOCK INTERVIEW STUDIO */}
+        {activeTab === "interview" && <MockInterviewStudio />}
 
         {/* TAB 3: WEAK TOPICS COMPLETE BREAKDOWN */}
         {activeTab === "weak" && (
@@ -1531,159 +1403,6 @@ export default function AICoachPage() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* TAB 4: INTERVIEW PREP MOCK TRACK WITH COMPANY LOGOS */}
-        {activeTab === "interview" && (
-          <div
-            style={{
-              background: "#0d111a",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: "12px",
-              padding: "24px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px",
-              height: "calc(100vh - 200px)",
-              minHeight: "520px",
-              overflowY: "auto"
-            }}
-          >
-            <div>
-              <h2 style={{ fontSize: "1.15rem", fontWeight: "800", color: "#f8fafc", margin: 0, letterSpacing: "-0.01em" }}>
-                Target Company Technical Mock Tracks
-              </h2>
-              <p style={{ fontSize: "0.82rem", color: "#94a3b8", margin: "4px 0 0 0" }}>
-                Simulate real FAANG &amp; Tier-1 interview rounds with authentic company interview patterns and live AI feedback.
-              </p>
-            </div>
-
-            {!interviewSession ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px" }}>
-                {companyTracks.map((q, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      background: "#080c14",
-                      border: "1px solid rgba(255, 255, 255, 0.06)",
-                      borderRadius: "10px",
-                      padding: "16px",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "10px",
-                      transition: "all 0.15s ease"
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "rgba(255, 255, 255, 0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <CompanyLogoRenderer company={q.company} size={18} />
-                        </div>
-                        <span style={{ fontSize: "0.82rem", color: "#f8fafc", fontWeight: "700" }}>{q.company}</span>
-                      </div>
-                      <span style={{
-                        fontSize: "0.7rem",
-                        fontWeight: "700",
-                        color: q.diff === "Easy" ? "#34d399" : q.diff === "Hard" ? "#ef4444" : "#fbbf24",
-                        background: q.diff === "Easy" ? "rgba(52, 211, 153, 0.1)" : q.diff === "Hard" ? "rgba(239, 68, 68, 0.1)" : "rgba(251, 191, 36, 0.1)",
-                        padding: "2px 7px",
-                        borderRadius: "4px"
-                      }}>
-                        {q.diff}
-                      </span>
-                    </div>
-
-                    <div>
-                      <strong style={{ fontSize: "0.92rem", fontWeight: "700", color: "#f8fafc", display: "block", marginBottom: "2px" }}>
-                        {q.title}
-                      </strong>
-                      <span style={{ fontSize: "0.74rem", color: "#94a3b8" }}>{q.role} • {q.tag}</span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleStartInterview(q.company)}
-                      style={{
-                        marginTop: "auto",
-                        background: "rgba(124, 58, 237, 0.15)",
-                        color: "#c084fc",
-                        border: "1px solid rgba(124, 58, 237, 0.3)",
-                        borderRadius: "6px",
-                        padding: "8px 12px",
-                        fontSize: "0.78rem",
-                        fontWeight: "700",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "6px",
-                        transition: "all 0.15s ease"
-                      }}
-                    >
-                      <Play size={13} />
-                      <span>Start {q.company} Interview →</span>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px", flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#080c14", padding: "10px 16px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <CompanyLogoRenderer company={interviewSession.company} size={20} />
-                    <span style={{ fontSize: "0.92rem", fontWeight: "800", color: "#f8fafc" }}>
-                      {interviewSession.company} Technical Interview in Progress
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setInterviewSession(null)}
-                    style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.25)", color: "#f87171", fontSize: "0.76rem", fontWeight: "600", padding: "4px 10px", borderRadius: "6px", cursor: "pointer" }}
-                  >
-                    Exit Session
-                  </button>
-                </div>
-
-                <div style={{ flex: 1, background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "16px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {interviewSession.history.map((h, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        background: h.role === "assistant" ? "#131b2e" : "linear-gradient(135deg, #4338ca 0%, #3730a3 100%)",
-                        border: h.role === "assistant" ? "1px solid rgba(255, 255, 255, 0.08)" : "1px solid rgba(99, 102, 241, 0.3)",
-                        padding: "14px",
-                        borderRadius: "8px",
-                        color: "#f8fafc"
-                      }}
-                    >
-                      <FormattedMessage text={h.content} />
-                    </div>
-                  ))}
-                </div>
-
-                <div style={{ display: "flex", gap: "10px" }}>
-                  <input
-                    type="text"
-                    value={interviewInput}
-                    onChange={(e) => setInterviewInput(e.target.value)}
-                    placeholder="Type your explanation, pseudocode, or clarification..."
-                    style={{ flex: 1, background: "#080c14", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "10px 14px", color: "#f8fafc", fontSize: "0.85rem", outline: "none" }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSendInterviewAnswer();
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSendInterviewAnswer}
-                    disabled={isInterviewing || !interviewInput.trim()}
-                    style={{ background: "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)", border: "none", color: "#fff", padding: "10px 18px", borderRadius: "8px", fontSize: "0.84rem", fontWeight: "700", cursor: "pointer" }}
-                  >
-                    {isInterviewing ? "Evaluating..." : "Submit Answer"}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
