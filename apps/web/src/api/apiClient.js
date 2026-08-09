@@ -59,6 +59,17 @@ export const api = {
   submitCode: (body) => request("/submissions/submit", { method: "POST", body: JSON.stringify(body) }),
   getSubmissions: (query = "") => request(`/submissions/history${query ? `?${query}` : ""}`),
   getSubmissionById: (id) => request(`/submissions/${id}`),
-  // Alias used in polling logic (AppDataContext + ProblemDetails)
-  getSubmission: (id) => request(`/submissions/${id}`)
+  getSubmission: (id) => request(`/submissions/${id}`),
+
+  // Contests & Arena
+  getContests: (query = "") => request(`/contests${query ? `?${query}` : ""}`),
+  getContestById: (id) => request(`/contests/${id}`),
+  registerContest: (id) => request(`/contests/${id}/register`, { method: "POST" }),
+  getContestRegistration: (id) => request(`/contests/${id}/registration`),
+  getContestProblems: (id) => request(`/contests/${id}/problems`),
+  getContestLeaderboard: (id) => request(`/contests/${id}/leaderboard`),
+  getContestResults: (id) => request(`/contests/${id}/results`),
+
+  // Global Leaderboard
+  getLeaderboard: () => request("/leaderboard")
 };

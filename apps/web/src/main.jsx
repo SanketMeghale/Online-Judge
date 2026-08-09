@@ -11,6 +11,8 @@ import Dashboard from "./pages/Dashboard.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
 import AICoachPage from "./pages/AICoachPage.jsx";
 import ContestPage from "./pages/ContestPage.jsx";
+import ContestArenaPage from "./pages/ContestArenaPage.jsx";
+import ContestResultsPage from "./pages/ContestResultsPage.jsx";
 import FeaturePage from "./pages/FeaturePage.jsx";
 import LeaderboardPage from "./pages/LeaderboardPage.jsx";
 import Login from "./pages/Login.jsx";
@@ -65,6 +67,10 @@ createRoot(document.getElementById("root")).render(
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/contests" element={<ContestPage />} />
                 <Route path="/contest" element={<ContestPage />} />
+                <Route path="/contests/:contestId/arena" element={<ContestArenaPage />} />
+                <Route path="/contests/:contestId/arena/:problemId" element={<ContestArenaPage />} />
+                <Route path="/contests/:contestId/results" element={<ContestResultsPage />} />
+                <Route path="/contests/:contestId/leaderboard" element={<ContestResultsPage />} />
                 <Route path="/collaboration" element={<FeaturePage title="Collaboration" />} />
                 <Route path="/interviewer" element={<AICoachPage />} />
                 <Route path="/ai-coach" element={<AICoachPage />} />

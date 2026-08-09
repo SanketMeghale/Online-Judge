@@ -7,6 +7,9 @@ import healthRoutes from "./routes/health.js";
 import problemsRoutes from "./routes/problems.js";
 import submissionRoutes from "./routes/submission.routes.js";
 
+import contestRoutes from "./routes/contests.js";
+import leaderboardRoutes from "./routes/leaderboard.js";
+
 function parseCookies(cookieHeader = "") {
   const list = {};
   if (!cookieHeader) return list;
@@ -68,6 +71,12 @@ export function createApp() {
 
   app.use("/api/submissions", submissionRoutes);
   app.use("/submissions", submissionRoutes);
+
+  app.use("/api/contests", contestRoutes);
+  app.use("/contests", contestRoutes);
+
+  app.use("/api/leaderboard", leaderboardRoutes);
+  app.use("/leaderboard", leaderboardRoutes);
 
   app.use((error, _request, response, _next) => {
     console.error("[Unhandled API Error]:", error);
