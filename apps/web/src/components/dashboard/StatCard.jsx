@@ -72,7 +72,7 @@ export default function StatCard({
         ) : (
           <div className="dash-stat-value">
             {numericValue !== undefined ? (
-              <AnimatedCounter to={numericValue} />
+              <AnimatedCounter value={numericValue} />
             ) : (
               value
             )}

@@ -134,18 +134,23 @@ export function AnimatedButton({
 /* ==========================================================================
    4. ANIMATED COUNTER (Counting Upward Smoothly)
    ========================================================================== */
-export function AnimatedCounter({ value, duration = 1.2, suffix = "", prefix = "" }) {
-  const [displayValue, setDisplayValue] = useState(0);
-  const numericTarget = typeof value === "number" ? value : parseFloat(String(value).replace(/[^0-9.]/g, "")) || 0;
+export function AnimatedCounter({ value, to, duration = 1.0, suffix = "", prefix = "" }) {
+  const target = value !== undefined ? value : to;
+  const numericTarget = typeof target === "number" ? target : parseFloat(String(target ?? 0).replace(/[^0-9.]/g, "")) || 0;
+  const [displayValue, setDisplayValue] = useState(numericTarget);
 
   useEffect(() => {
+    if (numericTarget === 0) {
+      setDisplayValue(0);
+      return;
+    }
+
     let startTimestamp = null;
     const startValue = 0;
 
     function step(timestamp) {
       if (!startTimestamp) startTimestamp = timestamp;
       const progress = Math.min((timestamp - startTimestamp) / (duration * 1000), 1);
-      // Ease out cubic
       const easeOutProgress = 1 - Math.pow(1 - progress, 3);
       const current = Math.floor(startValue + (numericTarget - startValue) * easeOutProgress);
       setDisplayValue(current);
@@ -161,10 +166,10 @@ export function AnimatedCounter({ value, duration = 1.2, suffix = "", prefix = "
     return () => cancelAnimationFrame(frameId);
   }, [numericTarget, duration]);
 
-  // If original string had non-numeric characters like "150K+", preserve the format
-  const isK = String(value).includes("K");
-  const isPercent = String(value).includes("%");
-  const isPlus = String(value).includes("+");
+  const rawStr = String(target ?? "");
+  const isK = rawStr.includes("K");
+  const isPercent = rawStr.includes("%");
+  const isPlus = rawStr.includes("+");
 
   return (
     <span>

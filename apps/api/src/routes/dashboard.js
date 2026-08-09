@@ -183,17 +183,24 @@ router.get("/", optionalAuth, async (req, res) => {
 
       const now = new Date();
       const todayKey = formatDateKey(now);
-      const yesterdayKey = formatDateKey(new Date(now.getTime() - 24 * 3600 * 1000));
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayKey = formatDateKey(yesterday);
 
-      const checkDate = dateMap.has(todayKey) ? now : dateMap.has(yesterdayKey) ? new Date(now.getTime() - 24 * 3600 * 1000) : null;
+      const checkDate = dateMap.has(todayKey) ? now : dateMap.has(yesterdayKey) ? yesterday : null;
 
       if (checkDate) {
         let runner = new Date(checkDate);
         while (dateMap.has(formatDateKey(runner))) {
           currentStreak++;
-          runner = new Date(runner.getTime() - 24 * 3600 * 1000);
+          runner.setDate(runner.getDate() - 1);
         }
+      } else if (dateMap.size > 0 && solvedCount > 0) {
+        currentStreak = 1;
       }
+    } else if (solvedCount > 0) {
+      currentStreak = userDoc?.streak || 1;
+      bestStreak = Math.max(1, userDoc?.streak || 1);
     }
 
     if (userDoc?.streak && currentStreak === 0 && userDoc.streak > 0) {
