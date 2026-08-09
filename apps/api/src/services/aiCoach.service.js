@@ -1,6 +1,7 @@
 import { connectDatabase, isDatabaseConnected } from "../lib/db.js";
 import { AIConversation } from "../models/AIConversation.js";
 import { AIUsage } from "../models/AIUsage.js";
+import { calculateUserHiringEvaluation } from "./evaluation.service.js";
 import { getAIProvider } from "./aiProvider.service.js";
 import { getUserLearningProfile, getAllPlatformProblems } from "./userAnalytics.service.js";
 import { formatDateKey } from "../lib/streakEngine.js";
@@ -888,85 +889,35 @@ Provide a strict, professional, and encouraging Bar Raiser code assessment:
     };
   }
 
-  // ACTION 3: FINISH INTERVIEW & GENERATE DETAILED SCORECARD
+  // ACTION 3: FINISH INTERVIEW & GENERATE 100% DATA-DRIVEN SCORECARD
   if (action === "finish") {
-    const systemPrompt = `You are the Lead Hiring Committee Chair at ${companyKey}.
-Review the full interview transcript and submitted code.
-Generate a structured, rigorous Hiring Committee Scorecard in valid JSON format only.
+    const evalData = await calculateUserHiringEvaluation(userId, {
+      company: companyKey,
+      track,
+      chatHistory: history,
+      sourceCode: code
+    });
 
-JSON Shape:
-{
-  "overallScore": 91,
-  "decision": "Strong Hire",
-  "breakdown": {
-    "problemSolving": 92,
-    "codeQuality": 90,
-    "efficiency": 92,
-    "communication": 90
-  },
-  "strengths": [
-    "Rapidly decomposed problem into optimal sub-structures",
-    "Articulated Big-O time and space complexity with precision"
-  ],
-  "improvements": [
-    "Walk through extreme boundary conditions more proactively"
-  ],
-  "summary": "Candidate demonstrated excellent algorithmic rigor and clear engineering communication matching ${companyKey} standards."
-}`;
-
-    let scorecard = null;
-    try {
-      const completion = await aiProvider.generateCompletion({
-        systemPrompt,
-        messages: [
-          ...history.map((h) => ({ role: h.role, content: h.content })),
-          { role: "user", content: "Generate the final hiring committee scorecard." }
-        ],
-        temperature: 0.3
-      });
-
-      const jsonMatch = completion.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        scorecard = JSON.parse(jsonMatch[0]);
-      }
-    } catch (e) {
-      // Fall through to smart calculated scorecard
-    }
-
-    if (!scorecard) {
-      const chatCount = history.length;
-      const hasCode = code.length > 40;
-      const problemSolving = Math.min(96, Math.max(82, 86 + (hasCode ? 6 : 0)));
-      const codeQuality = Math.min(94, Math.max(80, 84 + (hasCode ? 6 : 0)));
-      const efficiency = 90;
-      const communication = Math.min(95, Math.max(82, 82 + chatCount * 2));
-      const overallScore = Math.round((problemSolving + codeQuality + efficiency + communication) / 4);
-
-      let decision = "Hire";
-      if (overallScore >= 90) decision = "Strong Hire";
-      else if (overallScore < 80) decision = "Lean Hire";
-
-      scorecard = {
-        overallScore,
-        decision,
-        breakdown: {
-          problemSolving,
-          codeQuality,
-          efficiency,
-          communication
-        },
-        strengths: [
-          `Rapidly identified optimal algorithmic invariants for ${companyKey}`,
-          "Articulated Big-O time and space trade-offs with clarity",
-          "Wrote clean, modular code with solid boundary handling"
-        ],
-        improvements: [
-          "Proactively walk through a dry run on tricky edge cases before submitting",
-          "Discuss caching and concurrency optimizations under high throughput"
-        ],
-        summary: `Strong candidate demonstrating clear technical communication, sound algorithmic intuition, and clean engineering practices matching ${companyKey} standards.`
-      };
-    }
+    const scorecard = {
+      overallScore: evalData.overallScore,
+      decision: evalData.recommendation,
+      hasData: evalData.hasData,
+      breakdown: {
+        problemSolving: evalData.metrics.problemSolving,
+        correctness: evalData.metrics.correctness,
+        difficulty: evalData.metrics.difficulty,
+        consistency: evalData.metrics.consistency,
+        topicCoverage: evalData.metrics.topicCoverage,
+        codeQuality: evalData.metrics.codeQuality,
+        codeQualityStatus: evalData.metrics.codeQualityStatus,
+        communication: evalData.metrics.communication,
+        communicationStatus: evalData.metrics.communicationStatus
+      },
+      stats: evalData.stats,
+      strengths: evalData.strengths,
+      improvements: evalData.growthAreas,
+      summary: evalData.summary
+    };
 
     return {
       success: true,

@@ -87,5 +87,9 @@ export const api = {
   reviewCodeAI: (body) => request("/ai/review", { method: "POST", body: JSON.stringify(body) }),
   getProblemHintAI: (body) => request("/ai/hint", { method: "POST", body: JSON.stringify(body) }),
   interviewAI: (body) => request("/ai/interview", { method: "POST", body: JSON.stringify(body) }),
-  clearAIConversation: (conversationId) => request(`/ai/conversations${conversationId ? `?conversationId=${conversationId}` : ""}`, { method: "DELETE" })
+  clearAIConversation: (conversationId) => request(`/ai/conversations${conversationId ? `?conversationId=${conversationId}` : ""}`, { method: "DELETE" }),
+
+  // Data-Driven Hiring Committee Evaluation
+  getEvaluation: (query = "") => request(`/evaluation${query ? `?${query}` : ""}`),
+  getUserEvaluation: (userId, query = "") => request(`/evaluation/${userId}${query ? `?${query}` : ""}`)
 };

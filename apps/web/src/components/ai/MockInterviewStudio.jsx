@@ -23,9 +23,17 @@ import {
   Check,
   Layers,
   HelpCircle,
-  Lightbulb
+  Lightbulb,
+  Info,
+  Award,
+  BarChart3,
+  AlertTriangle,
+  ArrowRight
 } from "lucide-react";
 import { api } from "../../api/apiClient.js";
+import { useAuth } from "../../auth/AuthContext.jsx";
+import { useAppData } from "../../data/AppDataContext.jsx";
+import { calculateLocalHiringEvaluation, ensureDatabase } from "../../data/appData.js";
 import "../../styles/mockInterview.css";
 
 const COMPANIES = [
@@ -473,6 +481,10 @@ const FALLBACK_PROBLEMS = {
 };
 
 export default function MockInterviewStudio() {
+  const { session } = useAuth() || {};
+  const { database } = useAppData() || {};
+  const currentUser = session?.user || null;
+
   // Setup State
   const [selectedCompany, setSelectedCompany] = useState("Google");
   const [selectedTrack, setSelectedTrack] = useState("dsa");
@@ -499,6 +511,7 @@ export default function MockInterviewStudio() {
   // Scorecard State
   const [scorecard, setScorecard] = useState(null);
   const [finishingSession, setFinishingSession] = useState(false);
+  const [loadingEvaluation, setLoadingEvaluation] = useState(false);
 
   const chatScrollRef = useRef(null);
 
@@ -724,7 +737,7 @@ export default function MockInterviewStudio() {
     }, 800);
   };
 
-  // 4. Finish Interview & Generate Scorecard
+  // 4. Finish Interview & Generate 100% Real Data-Driven Scorecard
   const handleFinishInterview = async () => {
     setFinishingSession(true);
     setTimerRunning(false);
@@ -745,49 +758,107 @@ export default function MockInterviewStudio() {
         return;
       }
     } catch (err) {
-      console.warn("[MockInterview] Finish fallback notice:", err.message);
+      console.warn("[MockInterview] Finish API notice:", err.message);
     }
 
-    // Smart Scorecard Calculation based on session telemetry
-    setTimeout(() => {
-      const chatCount = chatHistory.length;
-      const hasCode = sourceCode.length > 50;
+    // Deterministic fallback from authenticated user's real DB data
+    const currentDb = database || ensureDatabase();
+    const uid = currentUser?.id || currentUser?._id;
+    const localEval = calculateLocalHiringEvaluation(currentDb, uid, {
+      company: selectedCompany,
+      track: selectedTrack,
+      chatHistory,
+      sourceCode
+    });
 
-      const problemSolving = Math.min(96, Math.max(82, 85 + (hasCode ? 7 : 0)));
-      const codeQuality = Math.min(94, Math.max(80, 84 + (hasCode ? 6 : 0)));
-      const efficiency = 90;
-      const communication = Math.min(95, Math.max(80, 80 + chatCount * 2));
-      const overallScore = Math.round((problemSolving + codeQuality + efficiency + communication) / 4);
-
-      let decision = "Hire";
-      if (overallScore >= 90) decision = "Strong Hire";
-      else if (overallScore < 80) decision = "Lean Hire";
-
-      setScorecard({
-        overallScore,
-        decision,
-        breakdown: {
-          problemSolving,
-          codeQuality,
-          efficiency,
-          communication
-        },
-        strengths: [
-          `Rapidly grasped the ${selectedCompany} problem statement and constraints`,
-          "Clearly communicated time and space trade-offs during approach exploration",
-          "Wrote clean, idiomatic code with solid boundary condition handling"
-        ],
-        improvements: [
-          "Proactively walk through an end-to-end dry run with a tricky edge case",
-          "Discuss caching and memory footprint optimization under extreme concurrency"
-        ],
-        summary: `Strong candidate demonstrating clear technical communication, sound algorithmic intuition, and clean engineering practices matching ${selectedCompany} hiring bar.`
-      });
-      setFinishingSession(false);
-    }, 700);
+    setScorecard({
+      overallScore: localEval.overallScore,
+      decision: localEval.recommendation,
+      hasData: localEval.hasData,
+      breakdown: {
+        problemSolving: localEval.metrics.problemSolving,
+        correctness: localEval.metrics.correctness,
+        difficulty: localEval.metrics.difficulty,
+        consistency: localEval.metrics.consistency,
+        topicCoverage: localEval.metrics.topicCoverage,
+        codeQuality: localEval.metrics.codeQuality,
+        codeQualityStatus: localEval.metrics.codeQualityStatus,
+        communication: localEval.metrics.communication,
+        communicationStatus: localEval.metrics.communicationStatus
+      },
+      stats: localEval.stats,
+      strengths: localEval.strengths,
+      improvements: localEval.growthAreas,
+      summary: localEval.summary
+    });
+    setFinishingSession(false);
   };
 
-  // 5. Exit Session
+  // 5. Direct View Live Real-Time Evaluation
+  const handleViewLiveEvaluation = async () => {
+    setLoadingEvaluation(true);
+    try {
+      const res = await api.getEvaluation(`company=${selectedCompany}&track=${selectedTrack}`);
+      if (res && res.success && res.evaluation) {
+        const ev = res.evaluation;
+        setScorecard({
+          overallScore: ev.overallScore,
+          decision: ev.recommendation,
+          hasData: ev.hasData,
+          breakdown: {
+            problemSolving: ev.metrics?.problemSolving ?? 0,
+            correctness: ev.metrics?.correctness ?? 0,
+            difficulty: ev.metrics?.difficulty ?? 0,
+            consistency: ev.metrics?.consistency ?? 0,
+            topicCoverage: ev.metrics?.topicCoverage ?? 0,
+            codeQuality: ev.metrics?.codeQuality,
+            codeQualityStatus: ev.metrics?.codeQualityStatus,
+            communication: ev.metrics?.communication,
+            communicationStatus: ev.metrics?.communicationStatus
+          },
+          stats: ev.stats,
+          strengths: ev.strengths,
+          improvements: ev.growthAreas,
+          summary: ev.summary
+        });
+        setLoadingEvaluation(false);
+        return;
+      }
+    } catch (e) {
+      console.warn("[MockInterview] getEvaluation error:", e);
+    }
+
+    const currentDb = database || ensureDatabase();
+    const uid = currentUser?.id || currentUser?._id;
+    const localEval = calculateLocalHiringEvaluation(currentDb, uid, {
+      company: selectedCompany,
+      track: selectedTrack
+    });
+
+    setScorecard({
+      overallScore: localEval.overallScore,
+      decision: localEval.recommendation,
+      hasData: localEval.hasData,
+      breakdown: {
+        problemSolving: localEval.metrics.problemSolving,
+        correctness: localEval.metrics.correctness,
+        difficulty: localEval.metrics.difficulty,
+        consistency: localEval.metrics.consistency,
+        topicCoverage: localEval.metrics.topicCoverage,
+        codeQuality: localEval.metrics.codeQuality,
+        codeQualityStatus: localEval.metrics.codeQualityStatus,
+        communication: localEval.metrics.communication,
+        communicationStatus: localEval.metrics.communicationStatus
+      },
+      stats: localEval.stats,
+      strengths: localEval.strengths,
+      improvements: localEval.growthAreas,
+      summary: localEval.summary
+    });
+    setLoadingEvaluation(false);
+  };
+
+  // 6. Exit Session
   const handleExitSession = () => {
     setSessionActive(false);
     setSessionData(null);
@@ -797,17 +868,21 @@ export default function MockInterviewStudio() {
   };
 
   // ──────────────────────────────────────────────────────────────────────────
-  // VIEW 1: SCORECARD REPORT (If Interview Finished)
+  // VIEW 1: SCORECARD REPORT (If Scorecard Active)
   // ──────────────────────────────────────────────────────────────────────────
   if (scorecard) {
-    const decisionClass =
-      scorecard.decision?.toLowerCase().includes("strong")
-        ? "strong-hire"
-        : scorecard.decision?.toLowerCase().includes("hire")
-        ? "hire"
-        : scorecard.decision?.toLowerCase().includes("lean")
-        ? "lean-hire"
-        : "no-hire";
+    const decisionLower = (scorecard.decision || scorecard.recommendation || "Not Ready").toLowerCase();
+    const decisionClass = decisionLower.includes("strong")
+      ? "strong-hire"
+      : decisionLower.includes("hire")
+      ? "hire"
+      : decisionLower.includes("consider") || decisionLower.includes("lean")
+      ? "consider"
+      : decisionLower.includes("needs")
+      ? "needs-improvement"
+      : "not-ready";
+
+    const hasData = scorecard.hasData !== false && (scorecard.stats?.submissions > 0 || scorecard.stats?.solved > 0);
 
     return (
       <div className="mock-studio-root">
@@ -825,14 +900,14 @@ export default function MockInterviewStudio() {
                   {selectedCompany} Hiring Committee Scorecard
                 </h2>
                 <span style={{ fontSize: "0.78rem", color: "#94a3b8" }}>
-                  {selectedTrack.toUpperCase()} Round • {selectedDiff}
+                  {selectedTrack.toUpperCase()} Round • {selectedDiff} • 100% Data-Driven
                 </span>
               </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
               <div className={`mock-decision-pill ${decisionClass}`}>
-                {scorecard.decision || "Hire"} ({scorecard.overallScore || 88}/100)
+                {scorecard.decision || scorecard.recommendation || "Not Ready"} ({scorecard.overallScore || 0}/100)
               </div>
               <button
                 type="button"
@@ -853,137 +928,276 @@ export default function MockInterviewStudio() {
             </div>
           </div>
 
-          {/* 4 Dimension Category Scores */}
-          <div className="mock-scorecard-bars">
-            <div className="mock-scorecard-bar-card">
-              <div className="mock-bar-head">
-                <span>🧠 Problem Solving</span>
-                <strong>{scorecard.breakdown?.problemSolving || 90}%</strong>
-              </div>
-              <div className="mock-bar-track">
-                <div
-                  className="mock-bar-fill"
-                  style={{ width: `${scorecard.breakdown?.problemSolving || 90}%` }}
-                />
-              </div>
+          {!hasData ? (
+            <div className="mock-eval-empty-card">
+              <AlertTriangle size={36} style={{ color: "#f59e0b" }} />
+              <h3>No coding data available yet</h3>
+              <p>
+                No problem submissions or solved challenges recorded for this user account yet. Complete practice problems in the Problems catalog to generate your authenticated hiring committee evaluation.
+              </p>
+              <button
+                type="button"
+                className="mock-code-action-btn"
+                style={{ padding: "8px 18px", marginTop: "4px" }}
+                onClick={handleExitSession}
+              >
+                <span>Launch Practice Session</span>
+              </button>
             </div>
+          ) : (
+            <>
+              {/* Real Summary Stats Banner */}
+              {scorecard.stats && (
+                <div className="mock-eval-stats-row">
+                  <span className="mock-eval-stat-pill">
+                    🎯 Solved: <strong>{scorecard.stats.solved}</strong>
+                  </span>
+                  <span className="mock-eval-stat-pill">
+                    🟢 Easy: <strong>{scorecard.stats.easy}</strong>
+                  </span>
+                  <span className="mock-eval-stat-pill">
+                    🟡 Med: <strong>{scorecard.stats.medium}</strong>
+                  </span>
+                  <span className="mock-eval-stat-pill">
+                    🔴 Hard: <strong>{scorecard.stats.hard}</strong>
+                  </span>
+                  <span className="mock-eval-stat-pill">
+                    ⚡ Accuracy: <strong>{scorecard.stats.acceptanceRate}%</strong>
+                  </span>
+                  <span className="mock-eval-stat-pill">
+                    📊 Total Submissions: <strong>{scorecard.stats.submissions}</strong>
+                  </span>
+                  <span className="mock-eval-stat-pill">
+                    📅 Active Days: <strong>{scorecard.stats.activeDays}</strong>
+                  </span>
+                  <span className="mock-eval-stat-pill">
+                    🔥 Streak: <strong>{scorecard.stats.streak || 0}d</strong>
+                  </span>
+                </div>
+              )}
 
-            <div className="mock-scorecard-bar-card">
-              <div className="mock-bar-head">
-                <span>💻 Code Quality</span>
-                <strong>{scorecard.breakdown?.codeQuality || 85}%</strong>
-              </div>
-              <div className="mock-bar-track">
-                <div
-                  className="mock-bar-fill"
-                  style={{ width: `${scorecard.breakdown?.codeQuality || 85}%` }}
-                />
-              </div>
-            </div>
+              {/* 5 Core Dimension Metric Cards + Tooltips */}
+              <div className="mock-scorecard-bars">
+                {/* 1. Problem Solving */}
+                <div className="mock-scorecard-bar-card">
+                  <div className="mock-bar-head">
+                    <span>🧠 Problem Solving</span>
+                    <strong>{scorecard.breakdown?.problemSolving ?? 0}%</strong>
+                  </div>
+                  <div className="mock-bar-track">
+                    <div
+                      className="mock-bar-fill"
+                      style={{ width: `${scorecard.breakdown?.problemSolving ?? 0}%` }}
+                    />
+                  </div>
+                  <div className="mock-bar-tooltip-text">
+                    Difficulty-weighted points: Easy=1pt, Med=2.5pt, Hard=4pt & topic volume.
+                  </div>
+                </div>
 
-            <div className="mock-scorecard-bar-card">
-              <div className="mock-bar-head">
-                <span>⏱️ Complexity (Big-O)</span>
-                <strong>{scorecard.breakdown?.efficiency || 88}%</strong>
-              </div>
-              <div className="mock-bar-track">
-                <div
-                  className="mock-bar-fill"
-                  style={{ width: `${scorecard.breakdown?.efficiency || 88}%` }}
-                />
-              </div>
-            </div>
+                {/* 2. Correctness */}
+                <div className="mock-scorecard-bar-card">
+                  <div className="mock-bar-head">
+                    <span>🎯 Correctness</span>
+                    <strong>{scorecard.breakdown?.correctness ?? 0}%</strong>
+                  </div>
+                  <div className="mock-bar-track">
+                    <div
+                      className="mock-bar-fill"
+                      style={{ width: `${scorecard.breakdown?.correctness ?? 0}%` }}
+                    />
+                  </div>
+                  <div className="mock-bar-tooltip-text">
+                    Accepted / judged submissions ratio & first-attempt accuracy.
+                  </div>
+                </div>
 
-            <div className="mock-scorecard-bar-card">
-              <div className="mock-bar-head">
-                <span>🗣️ Technical Communication</span>
-                <strong>{scorecard.breakdown?.communication || 88}%</strong>
-              </div>
-              <div className="mock-bar-track">
-                <div
-                  className="mock-bar-fill"
-                  style={{ width: `${scorecard.breakdown?.communication || 88}%` }}
-                />
-              </div>
-            </div>
-          </div>
+                {/* 3. DSA Difficulty */}
+                <div className="mock-scorecard-bar-card">
+                  <div className="mock-bar-head">
+                    <span>⚡ DSA Difficulty</span>
+                    <strong>{scorecard.breakdown?.difficulty ?? 0}%</strong>
+                  </div>
+                  <div className="mock-bar-track">
+                    <div
+                      className="mock-bar-fill"
+                      style={{ width: `${scorecard.breakdown?.difficulty ?? 0}%` }}
+                    />
+                  </div>
+                  <div className="mock-bar-tooltip-text">
+                    Evaluates Easy vs Medium & Hard distribution depth.
+                  </div>
+                </div>
 
-          {/* Executive Summary */}
-          <div
-            style={{
-              background: "rgba(255, 255, 255, 0.02)",
-              border: "1px solid rgba(255, 255, 255, 0.06)",
-              borderRadius: "8px",
-              padding: "14px 16px",
-              fontSize: "0.84rem",
-              lineHeight: 1.45,
-              color: "#e2e8f0"
-            }}
-          >
-            <strong style={{ color: "#38bdf8", display: "block", marginBottom: "4px" }}>
-              Committee Evaluation Summary:
-            </strong>
-            {scorecard.summary}
-          </div>
+                {/* 4. Consistency */}
+                <div className="mock-scorecard-bar-card">
+                  <div className="mock-bar-head">
+                    <span>📅 Consistency</span>
+                    <strong>{scorecard.breakdown?.consistency ?? 0}%</strong>
+                  </div>
+                  <div className="mock-bar-track">
+                    <div
+                      className="mock-bar-fill"
+                      style={{ width: `${scorecard.breakdown?.consistency ?? 0}%` }}
+                    />
+                  </div>
+                  <div className="mock-bar-tooltip-text">
+                    Active days across 30-day window and streak discipline.
+                  </div>
+                </div>
 
-          {/* Strengths & Growth Areas */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
-            <div
-              style={{
-                background: "rgba(16, 185, 129, 0.04)",
-                border: "1px solid rgba(16, 185, 129, 0.15)",
-                borderRadius: "8px",
-                padding: "14px"
-              }}
-            >
-              <h4
+                {/* 5. Topic Coverage */}
+                <div className="mock-scorecard-bar-card">
+                  <div className="mock-bar-head">
+                    <span>🌐 Topic Coverage</span>
+                    <strong>{scorecard.breakdown?.topicCoverage ?? 0}%</strong>
+                  </div>
+                  <div className="mock-bar-track">
+                    <div
+                      className="mock-bar-fill"
+                      style={{ width: `${scorecard.breakdown?.topicCoverage ?? 0}%` }}
+                    />
+                  </div>
+                  <div className="mock-bar-tooltip-text">
+                    Coverage across standard DSA curriculum topics.
+                  </div>
+                </div>
+
+                {/* 6. Code Quality */}
+                <div className="mock-scorecard-bar-card">
+                  <div className="mock-bar-head">
+                    <span>💻 Code Quality</span>
+                    <strong>
+                      {scorecard.breakdown?.codeQuality !== null && scorecard.breakdown?.codeQuality !== undefined
+                        ? `${scorecard.breakdown.codeQuality}%`
+                        : (scorecard.breakdown?.codeQualityStatus || "Insufficient data")}
+                    </strong>
+                  </div>
+                  <div className="mock-bar-track">
+                    <div
+                      className="mock-bar-fill"
+                      style={{
+                        width: `${scorecard.breakdown?.codeQuality ?? 0}%`,
+                        opacity: scorecard.breakdown?.codeQuality !== null && scorecard.breakdown?.codeQuality !== undefined ? 1 : 0.2
+                      }}
+                    />
+                  </div>
+                  <div className="mock-bar-tooltip-text">
+                    {scorecard.breakdown?.codeQuality !== null && scorecard.breakdown?.codeQuality !== undefined
+                      ? "Derived from low runtime error and low retry counts."
+                      : "Insufficient submission data to compute quality."}
+                  </div>
+                </div>
+
+                {/* 7. Technical Communication */}
+                <div className="mock-scorecard-bar-card">
+                  <div className="mock-bar-head">
+                    <span>🗣️ Communication</span>
+                    <strong>
+                      {scorecard.breakdown?.communication !== null && scorecard.breakdown?.communication !== undefined
+                        ? `${scorecard.breakdown.communication}%`
+                        : (scorecard.breakdown?.communicationStatus || "Not enough data")}
+                    </strong>
+                  </div>
+                  <div className="mock-bar-track">
+                    <div
+                      className="mock-bar-fill"
+                      style={{
+                        width: `${scorecard.breakdown?.communication ?? 0}%`,
+                        opacity: scorecard.breakdown?.communication !== null && scorecard.breakdown?.communication !== undefined ? 1 : 0.2
+                      }}
+                    />
+                  </div>
+                  <div className="mock-bar-tooltip-text">
+                    {scorecard.breakdown?.communication !== null && scorecard.breakdown?.communication !== undefined
+                      ? "Evaluated from interactive technical interview dialogue."
+                      : "Not enough communication data from DSA submissions."}
+                  </div>
+                </div>
+              </div>
+
+              {/* Dynamic Committee Summary */}
+              <div
                 style={{
-                  fontSize: "0.82rem",
-                  fontWeight: "700",
-                  color: "#34d399",
-                  margin: "0 0 8px 0",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px"
+                  background: "rgba(255, 255, 255, 0.02)",
+                  border: "1px solid rgba(255, 255, 255, 0.06)",
+                  borderRadius: "8px",
+                  padding: "14px 16px",
+                  fontSize: "0.84rem",
+                  lineHeight: 1.5,
+                  color: "#e2e8f0"
                 }}
               >
-                <CheckCircle2 size={15} /> Key Strengths Identified
-              </h4>
-              <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "0.78rem", color: "#cbd5e1", display: "flex", flexDirection: "column", gap: "4px" }}>
-                {(scorecard.strengths || []).map((s, i) => (
-                  <li key={i}>{s}</li>
-                ))}
-              </ul>
-            </div>
+                <strong style={{ color: "#38bdf8", display: "block", marginBottom: "6px" }}>
+                  Committee Evaluation Summary:
+                </strong>
+                <MarkdownDialogueRenderer content={scorecard.summary || "Candidate evaluation based on authenticated activity."} />
+              </div>
 
-            <div
-              style={{
-                background: "rgba(245, 158, 11, 0.04)",
-                border: "1px solid rgba(245, 158, 11, 0.15)",
-                borderRadius: "8px",
-                padding: "14px"
-              }}
-            >
-              <h4
-                style={{
-                  fontSize: "0.82rem",
-                  fontWeight: "700",
-                  color: "#fbbf24",
-                  margin: "0 0 8px 0",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px"
-                }}
-              >
-                <Sparkles size={15} /> Targeted Growth Areas
-              </h4>
-              <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "0.78rem", color: "#cbd5e1", display: "flex", flexDirection: "column", gap: "4px" }}>
-                {(scorecard.improvements || []).map((s, i) => (
-                  <li key={i}>{s}</li>
-                ))}
-              </ul>
-            </div>
-          </div>
+              {/* Dynamic Strengths & Growth Areas */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                <div
+                  style={{
+                    background: "rgba(16, 185, 129, 0.04)",
+                    border: "1px solid rgba(16, 185, 129, 0.15)",
+                    borderRadius: "8px",
+                    padding: "14px"
+                  }}
+                >
+                  <h4
+                    style={{
+                      fontSize: "0.82rem",
+                      fontWeight: "700",
+                      color: "#34d399",
+                      margin: "0 0 8px 0",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px"
+                    }}
+                  >
+                    <CheckCircle2 size={15} /> Key Strengths Identified (Evidence-Backed)
+                  </h4>
+                  <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "0.78rem", color: "#cbd5e1", display: "flex", flexDirection: "column", gap: "6px" }}>
+                    {(scorecard.strengths || []).map((s, i) => (
+                      <li key={i}>
+                        <MarkdownDialogueRenderer content={s} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div
+                  style={{
+                    background: "rgba(245, 158, 11, 0.04)",
+                    border: "1px solid rgba(245, 158, 11, 0.15)",
+                    borderRadius: "8px",
+                    padding: "14px"
+                  }}
+                >
+                  <h4
+                    style={{
+                      fontSize: "0.82rem",
+                      fontWeight: "700",
+                      color: "#fbbf24",
+                      margin: "0 0 8px 0",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px"
+                    }}
+                  >
+                    <Sparkles size={15} /> Targeted Growth Areas (Evidence-Backed)
+                  </h4>
+                  <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "0.78rem", color: "#cbd5e1", display: "flex", flexDirection: "column", gap: "6px" }}>
+                    {(scorecard.improvements || scorecard.growthAreas || []).map((s, i) => (
+                      <li key={i}>
+                        <MarkdownDialogueRenderer content={s} />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </>
+          )}
         </motion.div>
       </div>
     );
@@ -1269,16 +1483,42 @@ export default function MockInterviewStudio() {
           </div>
         </div>
 
-        {/* Launch CTA */}
-        <button
-          type="button"
-          className="mock-start-btn"
-          onClick={handleStartInterview}
-          disabled={sessionLoading}
-        >
-          <Play size={16} />
-          <span>{sessionLoading ? "Initializing Mock Studio..." : `Start ${selectedCompany} Technical Interview →`}</span>
-        </button>
+        {/* Launch CTA Row */}
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
+          <button
+            type="button"
+            className="mock-start-btn"
+            style={{ flex: "1 1 260px" }}
+            onClick={handleStartInterview}
+            disabled={sessionLoading}
+          >
+            <Play size={16} />
+            <span>{sessionLoading ? "Initializing Mock Studio..." : `Start ${selectedCompany} Technical Interview →`}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleViewLiveEvaluation}
+            disabled={loadingEvaluation}
+            style={{
+              background: "rgba(120, 80, 255, 0.08)",
+              border: "1px solid rgba(120, 80, 255, 0.25)",
+              color: "#c4b5fd",
+              borderRadius: "10px",
+              padding: "13px 20px",
+              fontSize: "0.86rem",
+              fontWeight: "700",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <BarChart3 size={16} />
+            <span>{loadingEvaluation ? "Analyzing Real Submissions..." : "📊 View Real-Time Hiring Evaluation"}</span>
+          </button>
+        </div>
       </div>
     </div>
   );
