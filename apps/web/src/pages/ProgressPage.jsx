@@ -28,6 +28,7 @@ import { api } from "../api/apiClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
 import DsaSkillTree from "../components/progress/DsaSkillTree.jsx";
+import LeetCodeActivityCalendar from "../components/progress/LeetCodeActivityCalendar.jsx";
 
 const TIME_RANGES = [
   { id: "7d", label: "Last 7 Days", days: 7 },
@@ -342,55 +343,15 @@ export default function ProgressPage() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: CODING ACTIVITY HEATMAP GRID */}
-        <div style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <Calendar size={15} style={{ color: "#34d399" }} />
-              <h3 style={{ fontSize: "0.9rem", fontWeight: "800", color: "#f8fafc", margin: 0 }}>Coding Activity</h3>
-            </div>
-            <span style={{ fontSize: "0.75rem", color: "#64748b" }}>
-              {overview.activeDaysCount || 0} active days in period
-            </span>
-          </div>
-
-          {/* Activity Grid Heatmap */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", padding: "6px 0" }}>
-            {activityGrid.map((day) => {
-              const bg =
-                day.intensity === 4 ? "#10b981"
-                : day.intensity === 3 ? "#059669"
-                : day.intensity === 2 ? "#047857"
-                : day.intensity === 1 ? "#064e3b"
-                : "rgba(255,255,255,0.04)";
-
-              return (
-                <div
-                  key={day.date}
-                  title={`${day.label} — ${day.count} submission${day.count === 1 ? "" : "s"}`}
-                  style={{
-                    width: "12px", height: "12px", borderRadius: "2px",
-                    background: bg, cursor: "pointer",
-                    transition: "transform 0.1s ease"
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.3)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-                />
-              );
-            })}
-          </div>
-
-          {/* Legend */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "6px", fontSize: "0.7rem", color: "#64748b" }}>
-            <span>Less</span>
-            <span style={{ width: "9px", height: "9px", borderRadius: "2px", background: "rgba(255,255,255,0.04)" }} />
-            <span style={{ width: "9px", height: "9px", borderRadius: "2px", background: "#064e3b" }} />
-            <span style={{ width: "9px", height: "9px", borderRadius: "2px", background: "#047857" }} />
-            <span style={{ width: "9px", height: "9px", borderRadius: "2px", background: "#059669" }} />
-            <span style={{ width: "9px", height: "9px", borderRadius: "2px", background: "#10b981" }} />
-            <span>More</span>
-          </div>
-        </div>
+        {/* RIGHT COLUMN: LEETCODE STYLE CODING ACTIVITY HEATMAP */}
+        <LeetCodeActivityCalendar
+          submissions={getSubmissionsForUser(currentUserId)}
+          activityGrid={activityGrid}
+          activeDaysCount={overview.activeDaysCount}
+          currentStreak={overview.currentStreak}
+          maxStreak={overview.bestStreak}
+          timeRange={timeRange}
+        />
 
       </div>
 
