@@ -30,23 +30,47 @@ function parseCookies(cookieHeader = "") {
   return list;
 }
 
+function splitOriginList(value = "") {
+  return String(value || "")
+    .split(",")
+    .map((origin) => origin.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+}
+
+function isAllowedVercelOrigin(origin) {
+  if (!origin || (!process.env.VERCEL && !process.env.VERCEL_ENV)) return false;
+  try {
+    const { hostname, protocol } = new URL(origin);
+    return protocol === "https:" && hostname.endsWith(".vercel.app");
+  } catch {
+    return false;
+  }
+}
+
 export function createApp() {
   const app = express();
   app.set("trust proxy", 1);
 
   const allowedOrigins = [
-    process.env.CLIENT_ORIGIN,
-    
+    ...splitOriginList(process.env.CLIENT_ORIGIN),
+    ...splitOriginList(process.env.CORS_ORIGIN),
+    ...splitOriginList(process.env.FRONTEND_URL),
     "http://localhost:8080",
     "http://localhost:5173",
     "http://127.0.0.1:8080",
     "http://127.0.0.1:5173"
-  ].filter(Boolean);
+  ];
 
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+        const cleanOrigin = origin ? origin.replace(/\/$/, "") : "";
+        if (
+          !origin ||
+          allowedOrigins.includes("*") ||
+          allowedOrigins.includes(cleanOrigin) ||
+          isAllowedVercelOrigin(cleanOrigin)
+        ) {
           callback(null, true);
         } else {
           callback(new Error("Not allowed by CORS"));
