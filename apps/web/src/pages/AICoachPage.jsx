@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -390,6 +390,7 @@ function FormattedMessage({ text = "" }) {
 
 export default function AICoachPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { getUserById, getSubmissionsForUser } = useAppData();
 
@@ -397,8 +398,21 @@ export default function AICoachPage() {
   const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
   const displayName = String(liveUser?.name || liveUser?.username || "Coder").trim().split(" ")[0] || "Coder";
 
-  // Tab State: "mentor" | "review" | "weak" | "interview"
-  const [activeTab, setActiveTab] = useState("mentor");
+  // Tab State: "mentor" | "interview" | "weak"
+  const [activeTab, setActiveTab] = useState(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get("tab") === "interview" || window.location.pathname === "/interviewer") {
+      return "interview";
+    }
+    return "mentor";
+  });
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    if (searchParams.get("tab") === "interview" || location.pathname === "/interviewer") {
+      setActiveTab("interview");
+    }
+  }, [location.pathname, location.search]);
 
   // Profile / Analytics State
   const [coachProfile, setCoachProfile] = useState(null);

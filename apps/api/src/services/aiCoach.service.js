@@ -387,7 +387,7 @@ const COMPANY_QUESTIONS = {
   Google: [
     {
       id: "goog-1",
-      title: "Design Google Auto-Complete Suggestions",
+      title: "Design Google Search Autocomplete System",
       difficulty: "Hard",
       topic: "Trie & Heaps",
       description: "Design a search autocomplete system that returns the top 3 most frequently searched historical prefixes matching a user's typed string in real-time.",
@@ -397,19 +397,6 @@ const COMPANY_QUESTIONS = {
         cpp: `class AutocompleteSystem {\npublic:\n    AutocompleteSystem(vector<string>& sentences, vector<int>& times) {\n        // Initialize Trie\n    }\n    \n    vector<string> input(char c) {\n        return {};\n    }\n};`
       },
       question: "Welcome to your **Google Software Engineer Coding Round**! 🚀\n\nI am your lead interviewer today. We'll be working on designing a low-latency **Search Autocomplete System** for Google Search.\n\n**Initial Question:** Before jumping into the code, how would you clarify the query latency constraints, and what data structure would you propose to support prefix searching and frequency ranking with optimal runtime?"
-    },
-    {
-      id: "goog-2",
-      title: "Evaluate Reverse Polish Notation in Stream",
-      difficulty: "Medium",
-      topic: "Stack & Parsing",
-      description: "Evaluate the value of an arithmetic expression in Reverse Polish Notation (Postfix) given as a stream of tokens `['2', '1', '+', '3', '*']`.",
-      starterCode: {
-        python: `def evalRPN(tokens: list[str]) -> int:\n    # Implement stack evaluation in O(N) time\n    pass`,
-        javascript: `function evalRPN(tokens) {\n  // Implement stack evaluation in O(N) time\n  return 0;\n}`,
-        cpp: `int evalRPN(vector<string>& tokens) {\n    // Implement stack evaluation in O(N) time\n    return 0;\n}`
-      },
-      question: "Welcome to your **Google Algorithmic Round**! 🚀\n\nWe have an expression evaluation problem. How would you handle division truncating towards zero, operator precedence, and single-pass linear time complexity using a Stack?"
     }
   ],
   Meta: [
@@ -455,6 +442,66 @@ const COMPANY_QUESTIONS = {
         cpp: `class LRUCache {\npublic:\n    LRUCache(int capacity) {}\n    int get(int key) { return -1; }\n    void put(int key, int value) {}\n};`
       },
       question: "Welcome to your **Microsoft Cloud & AI Coding Round**! 🚀\n\nWe will be building an LRU Cache from scratch. Walk me through how combining a Hash Map with a Doubly Linked List achieves strict $O(1)$ lookup and eviction."
+    }
+  ],
+  Apple: [
+    {
+      id: "appl-1",
+      title: "High-Performance Trapping Rain Water Engine",
+      difficulty: "Hard",
+      topic: "Two Pointers & Monotonic Stack",
+      description: "Given n non-negative integers representing an elevation map where the width of each bar is 1, compute how much water it can trap after raining.",
+      starterCode: {
+        python: `def trap(height: list[int]) -> int:\n    # Implement optimal two-pointer solution in O(N) time and O(1) space\n    return 0`,
+        javascript: `function trap(height) {\n  // Implement optimal two-pointer solution in O(N) time and O(1) space\n  return 0;\n}`,
+        cpp: `int trap(vector<int>& height) {\n    // Implement optimal two-pointer solution in O(N) time and O(1) space\n    return 0;\n}`
+      },
+      question: "Welcome to your **Apple CoreOS Technical Round**! 🚀\n\nI am your interviewer from the Systems Architecture group. We evaluate candidates on clean, optimal code with minimum memory overhead.\n\n**Initial Question:** How would you design a Two-Pointer linear scan to solve Trapping Rain Water in $O(1)$ auxiliary space without allocating arrays?"
+    }
+  ],
+  Netflix: [
+    {
+      id: "nflx-1",
+      title: "Distributed Video Streaming Chunk Buffer Manager",
+      difficulty: "Hard",
+      topic: "Heap & Priority Queue",
+      description: "You are merging K sorted video chunk timestamp streams into a single seamless playback buffer in real-time.",
+      starterCode: {
+        python: `import heapq\n\ndef mergeVideoChunks(streams: list[list[int]]) -> list[int]:\n    # Implement K-way merge using min-heap\n    return []`,
+        javascript: `function mergeVideoChunks(streams) {\n  // Implement K-way merge using min-heap\n  return [];\n}`,
+        cpp: `vector<int> mergeVideoChunks(vector<vector<int>>& streams) {\n    // Implement K-way merge using min-heap\n    return {};\n}`
+      },
+      question: "Welcome to your **Netflix Playback Engineering Interview**! 🚀\n\nWe deal with streaming gigabytes of segmented media buffers concurrently. Today we're optimizing a K-way sorted stream merger.\n\n**Initial Question:** What is the optimal time complexity of maintaining a Min-Heap of size $K$ across $N$ total items?"
+    }
+  ],
+  Uber: [
+    {
+      id: "uber-1",
+      title: "Real-Time Geo-Spatial Proximity Matcher",
+      difficulty: "Hard",
+      topic: "QuadTree & GeoHash",
+      description: "Given coordinates of thousands of drivers and rider pickup requests, match riders to the K nearest active drivers in under 10ms.",
+      starterCode: {
+        python: `import math\n\ndef findNearestDrivers(rider_location: tuple[float, float], drivers: list[tuple[int, float, float]], k: int) -> list[int]:\n    # Return list of driver IDs within nearest euclidean distance\n    return []`,
+        javascript: `function findNearestDrivers(riderLocation, drivers, k) {\n  // Return list of driver IDs within nearest euclidean distance\n  return [];\n}`,
+        cpp: `vector<int> findNearestDrivers(pair<double, double> riderLocation, vector<tuple<int, double, double>>& drivers, int k) {\n    // Return list of driver IDs\n    return {};\n}`
+      },
+      question: "Welcome to your **Uber Marketplace & Dispatch Round**! 🚀\n\nI'm from the Real-time Dispatch team. We route millions of ride requests per minute.\n\n**Initial Question:** How would you index dynamic 2D coordinates in memory to support nearest neighbor searches without evaluating every driver?"
+    }
+  ],
+  Stripe: [
+    {
+      id: "strp-1",
+      title: "Idempotent Transaction Ledger with Double-Spend Protection",
+      difficulty: "Medium",
+      topic: "Concurrency & Hash Maps",
+      description: "Design an in-memory payment idempotency engine that rejects duplicate charge keys and securely manages account balances under concurrent requests.",
+      starterCode: {
+        python: `class PaymentLedger:\n    def __init__(self):\n        self.balances = {}\n        self.processed_keys = {}\n\n    def process_charge(self, idempotency_key: str, account_id: str, amount: int) -> bool:\n        # Process charge atomically\n        return True`,
+        javascript: `class PaymentLedger {\n  constructor() {\n    this.balances = new Map();\n    this.processedKeys = new Map();\n  }\n  processCharge(idempotencyKey, accountId, amount) {\n    return true;\n  }\n}`,
+        cpp: `class PaymentLedger {\npublic:\n    bool processCharge(string idempotencyKey, string accountId, int amount) {\n        return true;\n    }\n};`
+      },
+      question: "Welcome to your **Stripe Infrastructure & Core Payments Interview**! 🚀\n\nAt Stripe, precision and idempotency are mission-critical. Every financial transaction must execute exactly once.\n\n**Initial Question:** How do you design an idempotency key lookup that prevents race conditions when concurrent requests hit the gateway at the same millisecond?"
     }
   ]
 };
