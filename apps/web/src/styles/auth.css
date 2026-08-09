@@ -36,7 +36,7 @@
   overflow-x: hidden;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--auth-text-main);
-  padding: 24px 16px;
+  padding: 16px 12px;
   box-sizing: border-box;
 }
 
@@ -110,20 +110,20 @@
 /* Desktop Split Container (45% Left / 55% Right) */
 .auth-split-container {
   width: 100%;
-  max-width: 1240px;
-  min-height: 720px;
+  max-width: 1200px;
+  min-height: auto;
   display: grid;
   grid-template-columns: 1fr;
   align-items: center;
   position: relative;
   z-index: 10;
-  gap: 32px;
+  gap: 24px;
 }
 
 @media (min-width: 1024px) {
   .auth-split-container {
     grid-template-columns: 46% 54%;
-    gap: 48px;
+    gap: 36px;
   }
 }
 
@@ -132,7 +132,7 @@
   display: none;
   flex-direction: column;
   justify-content: center;
-  padding: 32px 16px 32px 24px;
+  padding: 16px 16px;
 }
 
 @media (min-width: 1024px) {
@@ -146,7 +146,7 @@
   align-items: center;
   gap: 12px;
   text-decoration: none;
-  margin-bottom: 28px;
+  margin-bottom: 16px;
 }
 
 .auth-logo-box {
@@ -326,14 +326,14 @@
   border: 1px solid var(--auth-card-border);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-radius: 24px;
-  padding: 36px 32px;
+  border-radius: 20px;
+  padding: 24px 22px;
   box-shadow: 
     0 24px 60px rgba(0, 0, 0, 0.6),
     0 0 0 1px rgba(255, 255, 255, 0.05) inset,
     0 0 40px rgba(120, 80, 255, 0.1);
   width: 100%;
-  max-width: 520px;
+  max-width: 480px;
   margin: 0 auto;
   box-sizing: border-box;
   position: relative;
@@ -342,12 +342,12 @@
 
 @media (min-width: 640px) {
   .auth-glass-panel {
-    padding: 44px 40px;
+    padding: 28px 30px;
   }
 }
 
 .auth-glass-panel.panel-wide {
-  max-width: 580px;
+  max-width: 540px;
 }
 
 /* Glow Accent Top Rim */
@@ -368,7 +368,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 @media (min-width: 1024px) {
@@ -379,23 +379,23 @@
 
 /* Form Headings */
 .auth-card-header {
-  margin-bottom: 28px;
+  margin-bottom: 18px;
   text-align: left;
 }
 
 .auth-card-header h2 {
-  font-size: 1.75rem;
+  font-size: 1.55rem;
   font-weight: 800;
   letter-spacing: -0.03em;
   color: #ffffff;
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
 }
 
 .auth-card-header p {
-  font-size: 0.92rem;
+  font-size: 0.86rem;
   color: var(--auth-text-muted);
   margin: 0;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 /* Social Login Grid */
@@ -403,7 +403,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
-  margin-bottom: 22px;
+  margin-bottom: 16px;
 }
 
 .auth-social-btn {

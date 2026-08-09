@@ -199,43 +199,61 @@ const testimonials = [
   }
 ];
 
-// Interactive Code Snippets for Hero IDE
-const codeSnippets = {
-  python: `class Solution:
-    def twoSum(self, nums: list[int], target: int) -> list[int]:
-        seen = {}
-        for i, num in enumerate(nums):
-            diff = target - num
-            if diff in seen:
-                return [seen[diff], i]
-            seen[num] = i
-        return []`,
-  javascript: `function twoSum(nums, target) {
-  const map = new Map();
-  for (let i = 0; i < nums.length; i++) {
-    const diff = target - nums[i];
-    if (map.has(diff)) {
-      return [map.get(diff), i];
-    }
-    map.set(nums[i], i);
+function HeroCodeView({ lang = "python" }) {
+  if (lang === "javascript") {
+    return (
+      <div className="ide-code-lines">
+        <div className="code-line"><span className="code-ln">1</span><span><span className="code-keyword">function</span> <span className="code-fn">twoSum</span>(<span className="code-param">nums</span>, <span className="code-param">target</span>) &#123;</span></div>
+        <div className="code-line"><span className="code-ln">2</span><span>  <span className="code-keyword">const</span> <span className="code-var">map</span> = <span className="code-keyword">new</span> <span className="code-type">Map</span>();</span></div>
+        <div className="code-line"><span className="code-ln">3</span><span>  <span className="code-keyword">for</span> (<span className="code-keyword">let</span> <span className="code-var">i</span> = <span className="code-num">0</span>; <span className="code-var">i</span> &lt; <span className="code-param">nums</span>.<span className="code-prop">length</span>; <span className="code-var">i</span>++) &#123;</span></div>
+        <div className="code-line"><span className="code-ln">4</span><span>    <span className="code-keyword">const</span> <span className="code-var">diff</span> = <span className="code-param">target</span> - <span className="code-param">nums</span>[<span className="code-var">i</span>];</span></div>
+        <div className="code-line"><span className="code-ln">5</span><span>    <span className="code-keyword">if</span> (<span className="code-var">map</span>.<span className="code-fn">has</span>(<span className="code-var">diff</span>)) &#123;</span></div>
+        <div className="code-line"><span className="code-ln">6</span><span>      <span className="code-keyword">return</span> [<span className="code-var">map</span>.<span className="code-fn">get</span>(<span className="code-var">diff</span>), <span className="code-var">i</span>];</span></div>
+        <div className="code-line"><span className="code-ln">7</span><span>    &#125;</span></div>
+        <div className="code-line"><span className="code-ln">8</span><span>    <span className="code-var">map</span>.<span className="code-fn">set</span>(<span className="code-param">nums</span>[<span className="code-var">i</span>], <span className="code-var">i</span>);</span></div>
+        <div className="code-line"><span className="code-ln">9</span><span>  &#125;</span></div>
+        <div className="code-line"><span className="code-ln">10</span><span>  <span className="code-keyword">return</span> [];</span></div>
+        <div className="code-line"><span className="code-ln">11</span><span>&#125;</span></div>
+      </div>
+    );
   }
-  return [];
-}`,
-  cpp: `class Solution {
-public:
-    vector<int> twoSum(vector<int>& nums, int target) {
-        unordered_map<int, int> map;
-        for (int i = 0; i < nums.size(); i++) {
-            int diff = target - nums[i];
-            if (map.count(diff)) {
-                return {map[diff], i};
-            }
-            map[nums[i]] = i;
-        }
-        return {};
-    }
-};`
-};
+
+  if (lang === "cpp") {
+    return (
+      <div className="ide-code-lines">
+        <div className="code-line"><span className="code-ln">1</span><span><span className="code-keyword">class</span> <span className="code-class">Solution</span> &#123;</span></div>
+        <div className="code-line"><span className="code-ln">2</span><span><span className="code-keyword">public</span>:</span></div>
+        <div className="code-line"><span className="code-ln">3</span><span>    <span className="code-type">vector</span>&lt;<span className="code-type">int</span>&gt; <span className="code-fn">twoSum</span>(<span className="code-type">vector</span>&lt;<span className="code-type">int</span>&gt;&amp; <span className="code-param">nums</span>, <span className="code-type">int</span> <span className="code-param">target</span>) &#123;</span></div>
+        <div className="code-line"><span className="code-ln">4</span><span>        <span className="code-type">unordered_map</span>&lt;<span className="code-type">int</span>, <span className="code-type">int</span>&gt; <span className="code-var">seen</span>;</span></div>
+        <div className="code-line"><span className="code-ln">5</span><span>        <span className="code-keyword">for</span> (<span className="code-type">int</span> <span className="code-var">i</span> = <span className="code-num">0</span>; <span className="code-var">i</span> &lt; <span className="code-param">nums</span>.<span className="code-fn">size</span>(); <span className="code-var">i</span>++) &#123;</span></div>
+        <div className="code-line"><span className="code-ln">6</span><span>            <span className="code-type">int</span> <span className="code-var">diff</span> = <span className="code-param">target</span> - <span className="code-param">nums</span>[<span className="code-var">i</span>];</span></div>
+        <div className="code-line"><span className="code-ln">7</span><span>            <span className="code-keyword">if</span> (<span className="code-var">seen</span>.<span className="code-fn">count</span>(<span className="code-var">diff</span>)) &#123;</span></div>
+        <div className="code-line"><span className="code-ln">8</span><span>                <span className="code-keyword">return</span> &#123;<span className="code-var">seen</span>[<span className="code-var">diff</span>], <span className="code-var">i</span>&#125;;</span></div>
+        <div className="code-line"><span className="code-ln">9</span><span>            &#125;</span></div>
+        <div className="code-line"><span className="code-ln">10</span><span>            <span className="code-var">seen</span>[<span className="code-param">nums</span>[<span className="code-var">i</span>]] = <span className="code-var">i</span>;</span></div>
+        <div className="code-line"><span className="code-ln">11</span><span>        &#125;</span></div>
+        <div className="code-line"><span className="code-ln">12</span><span>        <span className="code-keyword">return</span> &#123;&#125;;</span></div>
+        <div className="code-line"><span className="code-ln">13</span><span>    &#125;</span></div>
+        <div className="code-line"><span className="code-ln">14</span><span>&#125;;</span></div>
+      </div>
+    );
+  }
+
+  // Default Python
+  return (
+    <div className="ide-code-lines">
+      <div className="code-line"><span className="code-ln">1</span><span><span className="code-keyword">class</span> <span className="code-class">Solution</span>:</span></div>
+      <div className="code-line"><span className="code-ln">2</span><span>    <span className="code-keyword">def</span> <span className="code-fn">twoSum</span>(<span className="code-self">self</span>, <span className="code-param">nums</span>: <span className="code-type">list</span>[<span className="code-type">int</span>], <span className="code-param">target</span>: <span className="code-type">int</span>) -&gt; <span className="code-type">list</span>[<span className="code-type">int</span>]:</span></div>
+      <div className="code-line"><span className="code-ln">3</span><span>        <span className="code-var">seen</span> = &#123;&#125;</span></div>
+      <div className="code-line"><span className="code-ln">4</span><span>        <span className="code-keyword">for</span> <span className="code-var">i</span>, <span className="code-var">num</span> <span className="code-keyword">in</span> <span className="code-fn">enumerate</span>(<span className="code-param">nums</span>):</span></div>
+      <div className="code-line"><span className="code-ln">5</span><span>            <span className="code-var">diff</span> = <span className="code-param">target</span> - <span className="code-var">num</span></span></div>
+      <div className="code-line"><span className="code-ln">6</span><span>            <span className="code-keyword">if</span> <span className="code-var">diff</span> <span className="code-keyword">in</span> <span className="code-var">seen</span>:</span></div>
+      <div className="code-line"><span className="code-ln">7</span><span>                <span className="code-keyword">return</span> [<span className="code-var">seen</span>[<span className="code-var">diff</span>], <span className="code-var">i</span>]</span></div>
+      <div className="code-line"><span className="code-ln">8</span><span>            <span className="code-var">seen</span>[<span className="code-var">num</span>] = <span className="code-var">i</span></span></div>
+      <div className="code-line"><span className="code-ln">9</span><span>        <span className="code-keyword">return</span> []</span></div>
+    </div>
+  );
+}
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -437,11 +455,9 @@ export default function LandingPage() {
               </div>
 
               {/* Code Area */}
-              <pre className="ide-code-body">
-                <code>
-                  {codeSnippets[selectedLang]}
-                </code>
-              </pre>
+              <div className="ide-code-body">
+                <HeroCodeView lang={selectedLang} />
+              </div>
 
               {/* Footer Evaluation Bar */}
               <div className="ide-footer-bar">
