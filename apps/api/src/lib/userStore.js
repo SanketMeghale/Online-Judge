@@ -12,6 +12,9 @@ const DEFAULT_SEED_USERS = [
     email: "sanket@example.com",
     passwordHash: hashPasswordSync("password123"),
     bio: "Full Stack & Algorithms Engineer",
+    role: "admin",
+    status: "active",
+    suspendedReason: "",
     language: "en-US",
     timezone: "UTC+5:30 (IST)",
     ranking: 14,
@@ -38,6 +41,9 @@ const DEFAULT_SEED_USERS = [
     email: "demo@judgo.dev",
     passwordHash: hashPasswordSync("password123"),
     bio: "Passionate about algorithms and system design.",
+    role: "user",
+    status: "active",
+    suspendedReason: "",
     language: "en-US",
     timezone: "UTC-5 (Eastern Time)",
     ranking: 120,
@@ -595,6 +601,9 @@ export function sanitizeUser(user) {
       dailyStreakReminders: true,
       showContestRanking: true
     },
+    role: safeUser.role || "user",
+    status: safeUser.status || "active",
+    suspendedReason: safeUser.suspendedReason || "",
     streak: typeof safeUser.streak === "number" ? safeUser.streak : (safeUser.solvedProblemIds?.length > 0 ? 1 : 0),
     bestStreak: typeof safeUser.bestStreak === "number" ? safeUser.bestStreak : (safeUser.streak || 0),
     lastActiveDate: safeUser.lastActiveDate || null,
@@ -609,3 +618,136 @@ export function sanitizeUser(user) {
     }
   };
 }
+
+export async function getAllUsers({
+  page = 1,
+  limit = 20,
+  search = "",
+  role = "",
+  status = "",
+  sortBy = "createdAt",
+  sortOrder = "desc"
+} = {}) {
+  await connectDatabase();
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10) || 20));
+  const skip = (pageNum - 1) * limitNum;
+
+  if (isDatabaseConnected()) {
+    try {
+      const query = {};
+      if (role && role !== "all") query.role = role;
+      if (status && status !== "all") query.status = status;
+      if (search) {
+        const regex = new RegExp(search.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"), "i");
+        query.$or = [{ name: regex }, { username: regex }, { email: regex }];
+      }
+
+      const sort = {};
+      sort[sortBy] = sortOrder === "asc" ? 1 : -1;
+
+      const [docs, total] = await Promise.all([
+        User.find(query).sort(sort).skip(skip).limit(limitNum).lean(),
+        User.countDocuments(query)
+      ]);
+
+      return {
+        users: docs.map(sanitizeUser),
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(total / limitNum)
+        }
+      };
+    } catch (e) {
+      console.error("[UserStore] getAllUsers DB error:", e);
+    }
+  }
+
+  // Memory fallback
+  let filtered = [...memoryUsers];
+  if (role && role !== "all") filtered = filtered.filter((u) => (u.role || "user") === role);
+  if (status && status !== "all") filtered = filtered.filter((u) => (u.status || "active") === status);
+  if (search) {
+    const s = search.toLowerCase();
+    filtered = filtered.filter(
+      (u) =>
+        u.name?.toLowerCase().includes(s) ||
+        u.username?.toLowerCase().includes(s) ||
+        u.email?.toLowerCase().includes(s)
+    );
+  }
+
+  filtered.sort((a, b) => {
+    const aVal = a[sortBy] || 0;
+    const bVal = b[sortBy] || 0;
+    if (sortOrder === "asc") return aVal > bVal ? 1 : -1;
+    return aVal < bVal ? 1 : -1;
+  });
+
+  const total = filtered.length;
+  const paginated = filtered.slice(skip, skip + limitNum);
+
+  return {
+    users: paginated.map(sanitizeUser),
+    pagination: {
+      total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum)
+    }
+  };
+}
+
+export async function updateUserRole(id, newRole) {
+  if (!id || !["user", "admin"].includes(newRole)) return null;
+  await connectDatabase();
+
+  if (isDatabaseConnected()) {
+    try {
+      const isObjId = mongoose.Types.ObjectId.isValid(String(id));
+      const query = isObjId ? { $or: [{ id: String(id) }, { _id: id }] } : { id: String(id) };
+      const doc = await User.findOneAndUpdate(query, { role: newRole }, { new: true }).lean();
+      if (doc) return sanitizeUser(doc);
+    } catch (e) {
+      console.error("[UserStore] updateUserRole DB error:", e);
+    }
+  }
+
+  const u = memoryUsers.find((item) => String(item.id) === String(id) || String(item._id) === String(id));
+  if (u) {
+    u.role = newRole;
+    return sanitizeUser(u);
+  }
+  return null;
+}
+
+export async function updateUserStatus(id, newStatus, suspendedReason = "") {
+  if (!id || !["active", "suspended"].includes(newStatus)) return null;
+  await connectDatabase();
+
+  if (isDatabaseConnected()) {
+    try {
+      const isObjId = mongoose.Types.ObjectId.isValid(String(id));
+      const query = isObjId ? { $or: [{ id: String(id) }, { _id: id }] } : { id: String(id) };
+      const doc = await User.findOneAndUpdate(
+        query,
+        { status: newStatus, suspendedReason: newStatus === "suspended" ? suspendedReason : "" },
+        { new: true }
+      ).lean();
+      if (doc) return sanitizeUser(doc);
+    } catch (e) {
+      console.error("[UserStore] updateUserStatus DB error:", e);
+    }
+  }
+
+  const u = memoryUsers.find((item) => String(item.id) === String(id) || String(item._id) === String(id));
+  if (u) {
+    u.status = newStatus;
+    u.suspendedReason = newStatus === "suspended" ? suspendedReason : "";
+    return sanitizeUser(u);
+  }
+  return null;
+}
+

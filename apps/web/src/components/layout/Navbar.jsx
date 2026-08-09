@@ -116,8 +116,17 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
             <Menu size={18} />
           </button>
 
-          {/* Logo & Wordmark */}
-          <Link to="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
+          {/* Logo & Wordmark (Single-click -> Dashboard/Home, Double-click -> Admin Login) */}
+          <Link
+            to={isAuthenticated ? "/dashboard" : "/"}
+            onDoubleClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              navigate("/admin/login");
+            }}
+            title="Judgo Coding Platform"
+            style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none", cursor: "pointer" }}
+          >
             <motion.div
               whileHover={{ scale: 1.12, rotate: 8 }}
               whileTap={{ scale: 0.92 }}

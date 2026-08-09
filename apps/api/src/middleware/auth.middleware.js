@@ -42,7 +42,45 @@ export async function authenticate(req, res, next) {
 }
 
 export async function requireAuth(req, res, next) {
-  return authenticate(req, res, next);
+  return authenticate(req, res, () => {
+    if (req.user && req.user.status === "suspended") {
+      return res.status(403).json({
+        success: false,
+        error: "Your account is currently suspended. Please contact platform support.",
+        suspended: true,
+        reason: req.user.suspendedReason || "Terms of service violation"
+      });
+    }
+    next();
+  });
+}
+
+export async function requireAdmin(req, res, next) {
+  return authenticate(req, res, () => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: "Authentication required."
+      });
+    }
+
+    if (req.user.status === "suspended") {
+      return res.status(403).json({
+        success: false,
+        error: "Your administrator account has been suspended.",
+        suspended: true
+      });
+    }
+
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        error: "Access denied. Administrator privileges required."
+      });
+    }
+
+    next();
+  });
 }
 
 export async function optionalAuth(req, _res, next) {
@@ -69,3 +107,4 @@ export async function optionalAuth(req, _res, next) {
 }
 
 export default authenticate;
+

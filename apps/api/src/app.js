@@ -12,6 +12,7 @@ import leaderboardRoutes from "./routes/leaderboard.js";
 import progressRoutes from "./routes/progress.js";
 import dashboardRoutes from "./routes/dashboard.js";
 import aiRoutes from "./routes/ai.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
 
 function parseCookies(cookieHeader = "") {
   const list = {};
@@ -89,6 +90,9 @@ export function createApp() {
 
   app.use("/api/ai", aiRoutes);
   app.use("/ai", aiRoutes);
+
+  app.use("/api/admin", adminRoutes);
+  app.use("/admin", adminRoutes);
 
   app.use((error, _request, response, _next) => {
     console.error("[Unhandled API Error]:", error);

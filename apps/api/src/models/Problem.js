@@ -24,6 +24,7 @@ const problemSchema = new mongoose.Schema(
     examples: [exampleSchema],
     hiddenTestCases: [exampleSchema],
     constraints: { type: [String], default: [] },
+    status: { type: String, enum: ["draft", "published", "archived"], default: "published", index: true },
     starterCode: {
       javascript: String,
       python: String,

@@ -3,10 +3,13 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth/AuthContext.jsx";
 import { PublicOnlyRoute, RequireAuth } from "./auth/AuthRoutes.jsx";
+import AdminRoute from "./auth/AdminRoute.jsx";
 import AppLayout from "./components/layout/AppLayout.jsx";
 import AuthLayout from "./components/layout/AuthLayout.jsx";
+import AdminLayout from "./components/admin/AdminLayout.jsx";
 import { AppDataProvider } from "./data/AppDataContext.jsx";
-import AdminDashboard from "./pages/AdminDashboard.jsx";
+
+// Standard User Pages
 import Dashboard from "./pages/Dashboard.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
 import AICoachPage from "./pages/AICoachPage.jsx";
@@ -24,6 +27,22 @@ import Register from "./pages/Register.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import Settings from "./pages/Settings.jsx";
 import SubmissionHistoryPage from "./pages/SubmissionHistoryPage.jsx";
+
+// Admin Panel Pages
+import AdminLogin from "./pages/admin/AdminLogin.jsx";
+import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
+import AdminUsers from "./pages/admin/AdminUsers.jsx";
+import AdminProblems from "./pages/admin/AdminProblems.jsx";
+import AdminTopics from "./pages/admin/AdminTopics.jsx";
+import AdminTestCases from "./pages/admin/AdminTestCases.jsx";
+import AdminSubmissions from "./pages/admin/AdminSubmissions.jsx";
+import AdminContests from "./pages/admin/AdminContests.jsx";
+import AdminAnalytics from "./pages/admin/AdminAnalytics.jsx";
+import AdminReports from "./pages/admin/AdminReports.jsx";
+import AdminAICoach from "./pages/admin/AdminAICoach.jsx";
+import AdminAuditLogs from "./pages/admin/AdminAuditLogs.jsx";
+import AdminSettings from "./pages/admin/AdminSettings.jsx";
+
 import "./styles/main.css";
 
 // Global error handlers for diagnostics
@@ -79,7 +98,28 @@ createRoot(document.getElementById("root")).render(
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/bookmarks" element={<FeaturePage title="Bookmarks" />} />
                 <Route path="/discuss" element={<FeaturePage title="Discuss" />} />
-                <Route path="/admin" element={<AdminDashboard />} />
+              </Route>
+            </Route>
+
+            {/* Admin Authentication Route */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+
+            {/* Protected Admin Control Center Routes */}
+            <Route element={<AdminRoute />}>
+              <Route element={<AdminLayout />}>
+                <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/admin/users" element={<AdminUsers />} />
+                <Route path="/admin/problems" element={<AdminProblems />} />
+                <Route path="/admin/topics" element={<AdminTopics />} />
+                <Route path="/admin/test-cases" element={<AdminTestCases />} />
+                <Route path="/admin/submissions" element={<AdminSubmissions />} />
+                <Route path="/admin/contests" element={<AdminContests />} />
+                <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                <Route path="/admin/reports" element={<AdminReports />} />
+                <Route path="/admin/ai-coach" element={<AdminAICoach />} />
+                <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
+                <Route path="/admin/settings" element={<AdminSettings />} />
               </Route>
             </Route>
 
