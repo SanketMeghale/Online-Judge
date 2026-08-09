@@ -33,7 +33,7 @@ const navSections = [
   {
     category: "LEARNING",
     items: [
-      { label: "AI Coach", to: "/ai-coach", icon: Bot },
+      { label: "Judgo Intelligence", to: "/ai-coach", icon: Bot },
       { label: "Mock Interview", to: "/interviewer", icon: Sparkles },
       { label: "Progress", to: "/stats", icon: TrendingUp }
     ]

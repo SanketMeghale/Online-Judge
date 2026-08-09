@@ -38,8 +38,8 @@ export default function AdminAICoach() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
         <div>
-          <h1 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#f8fafc", margin: 0 }}>AI Coach &amp; Interview Telemetry</h1>
-          <p style={{ fontSize: "0.82rem", color: "#94a3b8", margin: "4px 0 0 0" }}>Monitor AI Mentor request rates, model response latencies, and quota usage.</p>
+          <h1 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#f8fafc", margin: 0 }}>Judgo Intelligence &amp; Interview Telemetry</h1>
+          <p style={{ fontSize: "0.82rem", color: "#94a3b8", margin: "4px 0 0 0" }}>Monitor Judgo Intelligence request rates, model response latencies, and quota usage.</p>
         </div>
 
         <button type="button" onClick={loadData} className="admin-btn admin-btn-secondary">

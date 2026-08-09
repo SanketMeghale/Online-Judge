@@ -12,7 +12,7 @@ const searchIndex = [
   { id: "climbing-stairs", title: "Climbing Stairs", category: "Problems", path: "/problems/climbing-stairs", diff: "Easy" },
   { id: "reverse-string", title: "Reverse String", category: "Problems", path: "/problems/reverse-string", diff: "Easy" },
   { id: "codesprint", title: "CodeSprint Biweekly Contest", category: "Contests", path: "/contests", diff: "Live" },
-  { id: "ai-interview", title: "AI Technical Mock Interview", category: "AI Coach", path: "/ai-coach", diff: "AI" },
+  { id: "ai-interview", title: "AI Technical Mock Interview", category: "Judgo Intelligence", path: "/ai-coach", diff: "AI" },
   { id: "leaderboard", title: "Global Developer Leaderboard", category: "Rankings", path: "/leaderboard", diff: "Stats" }
 ];
 
@@ -118,7 +118,7 @@ export default function CommandPalette({ isOpen, onClose }) {
                         <Code2 size={16} style={{ color: "#38bdf8" }} />
                       ) : item.category === "Contests" ? (
                         <Trophy size={16} style={{ color: "#fbbf24" }} />
-                      ) : item.category === "AI Coach" ? (
+                      ) : item.category === "Judgo Intelligence" ? (
                         <Bot size={16} style={{ color: "#c084fc" }} />
                       ) : (
                         <Sparkles size={16} style={{ color: "#10b981" }} />

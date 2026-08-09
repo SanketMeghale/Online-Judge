@@ -48,7 +48,7 @@ export default function AdminLayout() {
         { path: "/admin/contests", label: "Contests", icon: Trophy },
         { path: "/admin/analytics", label: "Analytics", icon: BarChart3 },
         { path: "/admin/reports", label: "Reports", icon: Flag },
-        { path: "/admin/ai-coach", label: "AI Coach", icon: Sparkles },
+        { path: "/admin/ai-coach", label: "Judgo Intelligence", icon: Sparkles },
         { path: "/admin/companies", label: "Company Sheets", icon: Building2 }
       ]
     },

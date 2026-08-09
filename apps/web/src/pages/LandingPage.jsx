@@ -313,7 +313,7 @@ export default function LandingPage() {
               <Link to="/register" className="lp-nav-link">Features</Link>
               <Link to="/register" className="lp-nav-link">Problems</Link>
               <Link to="/register" className="lp-nav-link">Contests</Link>
-              <Link to="/register" className="lp-nav-link">AI Coach</Link>
+              <Link to="/register" className="lp-nav-link">Judgo Intelligence</Link>
               <Link to="/register" className="lp-nav-link">Company Sheets</Link>
               <Link to="/register" className="lp-nav-link">Leaderboard</Link>
             </nav>
@@ -877,7 +877,7 @@ export default function LandingPage() {
               <div className="footer-links">
                 <Link to="/register" className="footer-link">Problem Archive</Link>
                 <Link to="/register" className="footer-link">Contest Arena</Link>
-                <Link to="/register" className="footer-link">AI Coach</Link>
+                <Link to="/register" className="footer-link">Judgo Intelligence</Link>
                 <Link to="/register" className="footer-link">Company Sheets</Link>
               </div>
             </div>

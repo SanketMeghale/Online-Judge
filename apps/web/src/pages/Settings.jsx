@@ -930,7 +930,7 @@ export default function Settings() {
                   { key: "submissionResults", label: "Submission Results", desc: "Get notified when background judge worker finishes evaluating your code." },
                   { key: "achievementAlerts", label: "Achievement Notifications", desc: "Notify when you earn new problem milestones or streak badges." },
                   { key: "dailyStreakReminders", label: "Daily Coding Reminders", desc: "Daily evening reminder to solve a problem and protect your streak." },
-                  { key: "aiCoachNotifications", label: "AI Coach Notifications", desc: "Get feedback and interview tips from the AI Coach after solving." }
+                  { key: "aiCoachNotifications", label: "Judgo Intelligence Notifications", desc: "Get feedback and interview tips from Judgo Intelligence after solving." }
                 ].map((item) => (
                   <div key={item.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", padding: "14px 18px", borderRadius: "10px" }}>
                     <div>

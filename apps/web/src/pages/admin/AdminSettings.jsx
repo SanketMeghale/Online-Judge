@@ -96,7 +96,7 @@ export default function AdminSettings() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
         <div>
           <h1 style={{ fontSize: "1.3rem", fontWeight: "800", color: "#f8fafc", margin: 0 }}>Platform Configuration &amp; Governance</h1>
-          <p style={{ fontSize: "0.82rem", color: "#94a3b8", margin: "4px 0 0 0" }}>Configure global judge parameters, AI Coach quotas, and platform accessibility.</p>
+          <p style={{ fontSize: "0.82rem", color: "#94a3b8", margin: "4px 0 0 0" }}>Configure global judge parameters, Judgo Intelligence quotas, and platform accessibility.</p>
         </div>
 
         {saveSuccess && (
@@ -201,7 +201,7 @@ export default function AdminSettings() {
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px", background: "#080c14", borderRadius: "8px" }}>
             <div>
-              <strong style={{ fontSize: "0.84rem", color: "#f8fafc", display: "block" }}>AI Coach &amp; Mock Interviewer</strong>
+              <strong style={{ fontSize: "0.84rem", color: "#f8fafc", display: "block" }}>Judgo Intelligence &amp; Mock Interviewer</strong>
               <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>Enable conversational AI hints and mock technical rounds platform-wide.</span>
             </div>
             <input

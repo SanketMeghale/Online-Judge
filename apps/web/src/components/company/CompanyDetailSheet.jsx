@@ -568,7 +568,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <Sparkles size={20} color="#c084fc" />
           <h3 style={{ margin: 0, fontSize: "1.1rem", color: "#f8fafc" }}>
-            Ask AI Coach about {company.name}
+            Ask Judgo Intelligence about {company.name}
           </h3>
         </div>
         <p style={{ margin: 0, color: "#94a3b8", fontSize: "0.86rem" }}>

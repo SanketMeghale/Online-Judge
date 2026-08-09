@@ -756,7 +756,7 @@ export default function AICoachPage() {
                 letterSpacing: "-0.02em"
               }}
             >
-              AI Mentor
+              Judgo Intelligence
             </h1>
             <span style={{ fontSize: "0.72rem", background: "rgba(124, 58, 237, 0.18)", color: "#c084fc", border: "1px solid rgba(124, 58, 237, 0.3)", padding: "2px 8px", borderRadius: "999px", fontWeight: "700" }}>
               PRO
@@ -769,7 +769,7 @@ export default function AICoachPage() {
               margin: "3px 0 0 0"
             }}
           >
-            Your personal algorithmic coach for DSA mastery, complexity review, and FAANG interviews.
+            Your personal algorithmic intelligence suite for DSA mastery, mock interviews, and company preparation.
           </p>
         </div>
 

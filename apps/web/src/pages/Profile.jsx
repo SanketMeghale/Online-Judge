@@ -392,12 +392,12 @@ export default function Profile() {
             <div className="prof-mentor-info">
               <Brain size={22} style={{ color: "#a78bfa" }} />
               <div className="prof-mentor-text">
-                <h4>AI Coach Mentor</h4>
+                <h4>Judgo Intelligence</h4>
                 <p>Personalized weakness diagnostics &amp; mocks</p>
               </div>
             </div>
             <Link to="/ai-coach" className="prof-mentor-btn">
-              <span>Open Coach</span>
+              <span>Open Intelligence</span>
               <ChevronRight size={14} />
             </Link>
           </div>
