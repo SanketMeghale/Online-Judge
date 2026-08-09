@@ -8,6 +8,9 @@ if (!cached) {
   cached = global._mongooseCached = { conn: null, promise: null, seeded: false };
 }
 
+// Ensure mongoose does not hang operations when disconnected
+mongoose.set("bufferCommands", false);
+
 export async function connectDatabase() {
   const rawUri = (process.env.MONGODB_URI || "").trim();
 
@@ -23,9 +26,9 @@ export async function connectDatabase() {
 
   if (!cached.promise) {
     const opts = {
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 5000,
-      socketTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 2500,
+      connectTimeoutMS: 2500,
+      socketTimeoutMS: 8000,
       maxPoolSize: 5
     };
 

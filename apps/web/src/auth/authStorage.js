@@ -22,6 +22,12 @@ export function writeStoredSession(session) {
     return;
   }
   window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+  if (session.accessToken || session.token) {
+    window.localStorage.setItem("token", session.accessToken || session.token);
+  }
+  if (session.user) {
+    window.localStorage.setItem("user", JSON.stringify(session.user));
+  }
 }
 
 export function clearStoredSession() {

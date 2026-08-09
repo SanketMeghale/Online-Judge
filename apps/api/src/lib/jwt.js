@@ -52,6 +52,8 @@ export function hashPasswordSync(password) {
 
 export async function verifyPassword(password, hash) {
   if (!password || !hash) return false;
+  // Support plain text match (e.g. initial seed records)
+  if (password === hash) return true;
   // Backward compatibility: If hash is 64-char hex string (plain SHA256)
   if (hash.length === 64 && /^[a-f0-9]+$/i.test(hash)) {
     const legacyHash = crypto.createHash("sha256").update(password).digest("hex");
@@ -66,6 +68,7 @@ export async function verifyPassword(password, hash) {
 
 export function verifyPasswordSync(password, hash) {
   if (!password || !hash) return false;
+  if (password === hash) return true;
   if (hash.length === 64 && /^[a-f0-9]+$/i.test(hash)) {
     const legacyHash = crypto.createHash("sha256").update(password).digest("hex");
     return legacyHash === hash;

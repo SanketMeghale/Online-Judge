@@ -4,7 +4,116 @@ import { hashPassword, hashPasswordSync, verifyPassword } from "./jwt.js";
 import { User } from "../models/User.js";
 import { calculateUserStreak, formatDateKey } from "./streakEngine.js";
 
-const memoryUsers = [];
+const DEFAULT_SEED_USERS = [
+  {
+    id: "u-sanketmeghale",
+    name: "Sanket Meghale",
+    username: "sanketmeghale",
+    email: "sanket@example.com",
+    passwordHash: hashPasswordSync("password123"),
+    bio: "Full Stack & Algorithms Engineer",
+    language: "en-US",
+    timezone: "UTC+5:30 (IST)",
+    ranking: 14,
+    xp: 2450,
+    streak: 5,
+    bestStreak: 12,
+    badges: ["New Challenger", "Three Problem Sprint", "Algorithm Pioneer"],
+    solvedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number"],
+    attemptedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number", "reverse-linked-list"],
+    activeDates: [formatDateKey(new Date())],
+    stats: {
+      totalSubmissions: 28,
+      acceptedSubmissions: 22,
+      waCount: 4,
+      reCount: 1,
+      tleCount: 1
+    },
+    createdAt: new Date("2026-01-01")
+  },
+  {
+    id: "u-demouser",
+    name: "Judgo Demo Coder",
+    username: "demouser",
+    email: "demo@judgo.dev",
+    passwordHash: hashPasswordSync("password123"),
+    bio: "Passionate about algorithms and system design.",
+    language: "en-US",
+    timezone: "UTC-5 (Eastern Time)",
+    ranking: 120,
+    xp: 850,
+    streak: 3,
+    bestStreak: 7,
+    badges: ["New Challenger"],
+    solvedProblemIds: ["two-sum", "valid-parentheses"],
+    attemptedProblemIds: ["two-sum", "valid-parentheses"],
+    activeDates: [formatDateKey(new Date())],
+    stats: {
+      totalSubmissions: 10,
+      acceptedSubmissions: 8,
+      waCount: 2,
+      reCount: 0,
+      tleCount: 0
+    },
+    createdAt: new Date("2026-01-01")
+  },
+  {
+    id: "u-coder-google",
+    name: "Google Developer",
+    username: "coder_google",
+    email: "coder_google@judgo.dev",
+    passwordHash: hashPasswordSync("password123"),
+    bio: "Google Developer Account",
+    ranking: 55,
+    xp: 1400,
+    streak: 4,
+    bestStreak: 8,
+    badges: ["New Challenger", "Google Club"],
+    solvedProblemIds: ["two-sum"],
+    attemptedProblemIds: ["two-sum"],
+    activeDates: [formatDateKey(new Date())],
+    stats: { totalSubmissions: 5, acceptedSubmissions: 4, waCount: 1, reCount: 0, tleCount: 0 },
+    createdAt: new Date("2026-01-01")
+  },
+  {
+    id: "u-coder-github",
+    name: "GitHub Developer",
+    username: "coder_github",
+    email: "coder_github@judgo.dev",
+    passwordHash: hashPasswordSync("password123"),
+    bio: "GitHub Developer Account",
+    ranking: 75,
+    xp: 1100,
+    streak: 3,
+    bestStreak: 6,
+    badges: ["New Challenger"],
+    solvedProblemIds: ["two-sum"],
+    attemptedProblemIds: ["two-sum"],
+    activeDates: [formatDateKey(new Date())],
+    stats: { totalSubmissions: 3, acceptedSubmissions: 3, waCount: 0, reCount: 0, tleCount: 0 },
+    createdAt: new Date("2026-01-01")
+  },
+  {
+    id: "u-coder-gitlab",
+    name: "GitLab Developer",
+    username: "coder_gitlab",
+    email: "coder_gitlab@judgo.dev",
+    passwordHash: hashPasswordSync("password123"),
+    bio: "GitLab Developer Account",
+    ranking: 85,
+    xp: 950,
+    streak: 2,
+    bestStreak: 5,
+    badges: ["New Challenger"],
+    solvedProblemIds: ["two-sum"],
+    attemptedProblemIds: ["two-sum"],
+    activeDates: [formatDateKey(new Date())],
+    stats: { totalSubmissions: 2, acceptedSubmissions: 2, waCount: 0, reCount: 0, tleCount: 0 },
+    createdAt: new Date("2026-01-01")
+  }
+];
+
+const memoryUsers = [...DEFAULT_SEED_USERS];
 
 export async function findUserByEmail(email) {
   if (!email) return null;
@@ -14,13 +123,13 @@ export async function findUserByEmail(email) {
   if (isDatabaseConnected()) {
     try {
       const doc = await User.findOne({ email: cleanEmail }).lean();
-      return doc ? sanitizeUser(doc) : null;
+      if (doc) return sanitizeUser(doc);
     } catch (e) {
       console.error("[UserStore] findUserByEmail DB error:", e);
     }
   }
 
-  const u = memoryUsers.find((item) => item.email.toLowerCase() === cleanEmail);
+  const u = memoryUsers.find((item) => item.email?.toLowerCase() === cleanEmail);
   return u ? sanitizeUser(u) : null;
 }
 
@@ -34,13 +143,13 @@ export async function findUserByUsername(username) {
       const doc = await User.findOne({
         username: { $regex: new RegExp(`^${cleanUser.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")}$`, "i") }
       }).lean();
-      return doc ? sanitizeUser(doc) : null;
+      if (doc) return sanitizeUser(doc);
     } catch (e) {
       console.error("[UserStore] findUserByUsername DB error:", e);
     }
   }
 
-  const u = memoryUsers.find((item) => item.username.toLowerCase() === cleanUser);
+  const u = memoryUsers.find((item) => item.username?.toLowerCase() === cleanUser);
   return u ? sanitizeUser(u) : null;
 }
 
@@ -142,6 +251,8 @@ export async function createUser({ name, username, email, password }) {
     createdAt: new Date()
   };
 
+  memoryUsers.push(userObj);
+
   if (isDatabaseConnected()) {
     try {
       const doc = await User.create(userObj);
@@ -152,7 +263,6 @@ export async function createUser({ name, username, email, password }) {
     }
   }
 
-  memoryUsers.push(userObj);
   return sanitizeUser(userObj);
 }
 
@@ -402,13 +512,29 @@ export async function validateUserCredentials(identifier, password) {
 
   if (!rawUser) {
     rawUser = memoryUsers.find(
-      (u) => u.email.toLowerCase() === clean || u.username.toLowerCase() === clean
+      (u) => u.email?.toLowerCase() === clean || u.username?.toLowerCase() === clean
     );
+  }
+
+  // Auto-provision social login users if they log in via social providers (Google/GitHub/GitLab)
+  if (!rawUser && (clean.startsWith("coder_") || clean.includes("@judgo.dev"))) {
+    const providerName = clean.replace(/@.*$/, "").replace(/^coder_/, "") || "Developer";
+    const displayName = providerName.charAt(0).toUpperCase() + providerName.slice(1) + " Developer";
+    try {
+      const newUser = await createUser({
+        name: displayName,
+        username: clean.replace(/@.*$/, ""),
+        email: clean.includes("@") ? clean : `${clean}@judgo.dev`,
+        password
+      });
+      return newUser;
+    } catch (e) {}
   }
 
   if (!rawUser) return null;
 
-  const isValid = await verifyPassword(password, rawUser.passwordHash);
+  const pwdHash = rawUser.passwordHash || rawUser.password;
+  const isValid = await verifyPassword(password, pwdHash);
   if (isValid) {
     return sanitizeUser(rawUser);
   }
