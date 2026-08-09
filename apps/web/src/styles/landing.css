@@ -350,36 +350,81 @@
   transform: translateY(-2px);
 }
 
-.hero-social-proof {
+/* Hero Interactive Capability Pills Strip */
+.hero-feature-pills-row {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 6px;
 }
 
-.avatar-stack {
+.hero-feature-pill {
   display: flex;
   align-items: center;
+  gap: 10px;
+  background: rgba(13, 17, 26, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px 14px;
+  cursor: default;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
-.avatar-stack img {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 2px solid #07090e;
-  margin-left: -8px;
+.hero-feature-pill:hover {
+  background: rgba(20, 26, 40, 0.9);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(120, 80, 255, 0.15);
 }
 
-.avatar-stack img:first-child {
-  margin-left: 0;
+.pill-icon-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.social-proof-text {
-  font-size: 0.85rem;
+.pill-icon-box.cyan {
+  background: rgba(0, 195, 255, 0.15);
+  color: #00c3ff;
+  border: 1px solid rgba(0, 195, 255, 0.3);
+}
+
+.pill-icon-box.purple {
+  background: rgba(120, 80, 255, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(120, 80, 255, 0.3);
+}
+
+.pill-icon-box.emerald {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.pill-text-content {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.pill-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+}
+
+.pill-sub {
+  font-size: 0.7rem;
+  font-weight: 500;
   color: #94a3b8;
-}
-
-.social-proof-text strong {
-  color: #fff;
 }
 
 /* Hero Right Side Interactive Showcase */

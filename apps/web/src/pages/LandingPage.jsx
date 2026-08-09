@@ -368,16 +368,49 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            <div className="hero-social-proof">
-              <div className="avatar-stack">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=60&auto=format&fit=crop&q=80" alt="Dev 1" />
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&auto=format&fit=crop&q=80" alt="Dev 2" />
-                <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?w=60&auto=format&fit=crop&q=80" alt="Dev 3" />
-                <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=60&auto=format&fit=crop&q=80" alt="Dev 4" />
-              </div>
-              <span className="social-proof-text">
-                Joined by <strong>30,000+ developers</strong> from Google, Meta, and Microsoft
-              </span>
+            {/* Animated Platform Capabilities & Micro-Stats Showcase */}
+            <div className="hero-feature-pills-row">
+              <motion.div
+                className="hero-feature-pill"
+                whileHover={{ y: -3, scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="pill-icon-box cyan">
+                  <Zap size={15} />
+                </div>
+                <div className="pill-text-content">
+                  <span className="pill-title">&lt; 45ms Sandbox</span>
+                  <span className="pill-sub">Real-Time Execution</span>
+                </div>
+              </motion.div>
+
+              <motion.div
+                className="hero-feature-pill"
+                whileHover={{ y: -3, scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="pill-icon-box purple">
+                  <Brain size={15} />
+                </div>
+                <div className="pill-text-content">
+                  <span className="pill-title">AI Mentor</span>
+                  <span className="pill-sub">Adaptive Hint Engine</span>
+                </div>
+              </motion.div>
+
+              <motion.div
+                className="hero-feature-pill"
+                whileHover={{ y: -3, scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="pill-icon-box emerald">
+                  <Flame size={15} />
+                </div>
+                <div className="pill-text-content">
+                  <span className="pill-title">Live Arena</span>
+                  <span className="pill-sub">Weekly Contests</span>
+                </div>
+              </motion.div>
             </div>
           </motion.div>
 
