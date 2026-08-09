@@ -667,23 +667,59 @@ export function createSubmission(database, userId, problem, language, result) {
   };
 }
 
+function getClientDateKey(date = new Date()) {
+  const d = new Date(date);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export function updateUserAfterSubmission(user, problem, verdict) {
   if (!user) return user;
   const attemptedProblemIds = Array.from(
     new Set([...(Array.isArray(user.attemptedProblemIds) ? user.attemptedProblemIds : []), problem?.id || ""])
   ).filter(Boolean);
 
+  const todayKey = getClientDateKey();
+  const isAc = verdict === "AC" || verdict === "OK" || verdict === "Accepted";
+
+  const activeDatesSet = new Set(Array.isArray(user.activeDates) ? user.activeDates : []);
+  if (isAc) {
+    activeDatesSet.add(todayKey);
+  }
+  const activeDates = Array.from(activeDatesSet).sort();
+
+  let currentStreak = typeof user.streak === "number" ? user.streak : 0;
+  if (activeDatesSet.has(todayKey)) {
+    let runner = new Date();
+    runner.setHours(12, 0, 0, 0);
+    let count = 0;
+    while (activeDatesSet.has(getClientDateKey(runner))) {
+      count++;
+      runner.setDate(runner.getDate() - 1);
+    }
+    currentStreak = count;
+  }
+
+  const bestStreak = Math.max(user.bestStreak || 0, currentStreak);
+
   const currentStats = user.stats || { activeDays: 1, totalSubmissions: 0, acceptedSubmissions: 0 };
   const nextUser = {
     ...user,
     attemptedProblemIds,
+    activeDates,
+    streak: currentStreak,
+    bestStreak,
+    lastActiveDate: isAc ? todayKey : user.lastActiveDate,
     stats: {
       ...currentStats,
+      activeDays: activeDates.length > 0 ? activeDates.length : (currentStreak > 0 ? currentStreak : 1),
       totalSubmissions: (currentStats.totalSubmissions || 0) + 1
     }
   };
 
-  if (verdict !== "AC") {
+  if (!isAc) {
     return nextUser;
   }
 

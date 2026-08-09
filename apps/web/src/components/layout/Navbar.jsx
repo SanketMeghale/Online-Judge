@@ -40,7 +40,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
   const username = String(liveUser?.username || "coder").trim();
   const email = String(liveUser?.email || "").trim();
   const avatarLetter = String(fullName || username || "D").slice(0, 1).toUpperCase();
-  const streakCount = typeof liveUser?.streak === "number" ? liveUser.streak : 1;
+  const streakCount = typeof liveUser?.streak === "number" ? liveUser.streak : (liveUser?.solved > 0 ? 1 : 0);
 
   // Scroll listener for smooth glass transition
   useEffect(() => {
@@ -187,26 +187,28 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
           {isAuthenticated ? (
             <>
               {/* 1. Streak Badge */}
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
+              <Link
+                to="/progress"
                 className="streak-badge-pill"
+                title={streakCount > 0 ? `${streakCount} Day Streak active! Click to view progress.` : "Solve a problem today to start your streak!"}
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "6px",
-                  background: "rgba(245, 158, 11, 0.1)",
-                  border: "1px solid rgba(245, 158, 11, 0.25)",
+                  background: streakCount > 0 ? "rgba(245, 158, 11, 0.1)" : "rgba(100, 116, 139, 0.1)",
+                  border: streakCount > 0 ? "1px solid rgba(245, 158, 11, 0.25)" : "1px solid rgba(100, 116, 139, 0.25)",
                   padding: "4px 10px",
                   borderRadius: "999px",
                   fontSize: "0.82rem",
-                  color: "#fbbf24",
-                  fontWeight: "600"
+                  color: streakCount > 0 ? "#fbbf24" : "#94a3b8",
+                  fontWeight: "600",
+                  textDecoration: "none",
+                  transition: "transform 0.15s ease, border-color 0.15s ease"
                 }}
               >
-                <Flame size={15} style={{ color: "#f59e0b" }} />
-                <span>{streakCount} Day Streak</span>
-              </motion.div>
+                <Flame size={15} style={{ color: streakCount > 0 ? "#f59e0b" : "#64748b" }} />
+                <span>{streakCount} {streakCount === 1 ? "Day" : "Days"}</span>
+              </Link>
 
               {/* 2. Notifications Bell */}
               <div style={{ position: "relative" }}>

@@ -48,7 +48,7 @@ export default function Profile() {
   const avatarLetter = String(name || username || "U").slice(0, 1).toUpperCase();
 
   const xp = typeof liveUser.xp === "number" ? liveUser.xp : 0;
-  const streak = typeof liveUser.streak === "number" ? liveUser.streak : 1;
+  const streak = typeof liveUser.streak === "number" ? liveUser.streak : (liveUser.solved > 0 ? 1 : 0);
   const accuracy = typeof liveUser.accuracy === "number" ? liveUser.accuracy : 0;
   const solvedCount =
     typeof liveUser.solved === "number"
@@ -58,7 +58,7 @@ export default function Profile() {
       : 0;
 
   const stats = liveUser.stats || {
-    activeDays: 1,
+    activeDays: Array.isArray(liveUser.activeDates) ? liveUser.activeDates.length : (streak > 0 ? streak : (solvedCount > 0 ? 1 : 0)),
     totalSubmissions: 0,
     acceptedSubmissions: 0
   };

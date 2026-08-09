@@ -6,6 +6,7 @@ import { Problem } from "../models/Problem.js";
 import { User } from "../models/User.js";
 import { problems as seedProblems } from "../data/problems.js";
 import { findUserById } from "../lib/userStore.js";
+import { calculateUserStreak } from "../lib/streakEngine.js";
 
 const router = express.Router();
 
@@ -110,52 +111,21 @@ router.get("/", requireAuth, async (req, res) => {
     const acceptanceRate = totalSubmissions > 0 ? Math.round((acceptedCount / totalSubmissions) * 100) : 0;
 
     // 3. STREAK CALCULATIONS
-    const dateMap = new Map();
+    const userActiveDates = [];
     for (const s of allUserSubmissions) {
       const dt = new Date(s.submittedAt || s.createdAt || Date.now());
       const k = formatDateKey(dt);
-      dateMap.set(k, (dateMap.get(k) || 0) + 1);
+      if (k) userActiveDates.push(k);
     }
+    if (userDoc?.activeDates && Array.isArray(userDoc.activeDates)) {
+      userDoc.activeDates.forEach((d) => userActiveDates.push(d));
+    }
+    const streakResult = calculateUserStreak(userActiveDates, new Date());
+    let currentStreak = streakResult.currentStreak;
+    let bestStreak = Math.max(streakResult.bestStreak, userDoc?.bestStreak || 0, userDoc?.streak || 0);
 
-    // Current & Best Streak
-    let currentStreak = 0;
-    let bestStreak = 0;
-
-    const sortedDateKeys = Array.from(dateMap.keys()).sort();
-    if (sortedDateKeys.length > 0) {
-      // Calculate best historical streak
-      let tempStreak = 0;
-      let prevDt = null;
-
-      for (const k of sortedDateKeys) {
-        const curDt = new Date(k);
-        if (prevDt) {
-          const diffDays = Math.round((curDt - prevDt) / (24 * 3600 * 1000));
-          if (diffDays === 1) {
-            tempStreak++;
-          } else if (diffDays > 1) {
-            tempStreak = 1;
-          }
-        } else {
-          tempStreak = 1;
-        }
-        if (tempStreak > bestStreak) bestStreak = tempStreak;
-        prevDt = curDt;
-      }
-
-      // Calculate current active streak ending today or yesterday
-      const todayKey = formatDateKey(now);
-      const yesterdayKey = formatDateKey(new Date(now.getTime() - 24 * 3600 * 1000));
-
-      let checkDate = dateMap.has(todayKey) ? now : dateMap.has(yesterdayKey) ? new Date(now.getTime() - 24 * 3600 * 1000) : null;
-
-      if (checkDate) {
-        let runner = new Date(checkDate);
-        while (dateMap.has(formatDateKey(runner))) {
-          currentStreak++;
-          runner = new Date(runner.getTime() - 24 * 3600 * 1000);
-        }
-      }
+    if (currentStreak === 0 && userDoc?.streak > 0 && streakResult.isActiveToday) {
+      currentStreak = userDoc.streak;
     }
 
     // 4. DIFFICULTY BREAKDOWN

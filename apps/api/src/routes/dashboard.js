@@ -8,6 +8,7 @@ import { User } from "../models/User.js";
 import { problems as seedProblems } from "../data/problems.js";
 import { getAllContests } from "../lib/contestStore.js";
 import { listSubmissionRecords } from "../lib/submissionStore.js";
+import { calculateUserStreak } from "../lib/streakEngine.js";
 
 const router = express.Router();
 
@@ -157,57 +158,16 @@ router.get("/", optionalAuth, async (req, res) => {
     const acceptanceRate = totalSubmissions > 0 ? ((acceptedCount / totalSubmissions) * 100).toFixed(1) : "0.0";
 
     // 3. STREAK CALCULATIONS
-    let currentStreak = 0;
-    let bestStreak = 0;
-
-    const sortedDateKeys = Array.from(dateMap.keys()).sort();
-    if (sortedDateKeys.length > 0) {
-      let tempStreak = 0;
-      let prevDt = null;
-
-      for (const k of sortedDateKeys) {
-        const curDt = new Date(k);
-        if (prevDt) {
-          const diffDays = Math.round((curDt - prevDt) / (24 * 3600 * 1000));
-          if (diffDays === 1) {
-            tempStreak++;
-          } else if (diffDays > 1) {
-            tempStreak = 1;
-          }
-        } else {
-          tempStreak = 1;
-        }
-        if (tempStreak > bestStreak) bestStreak = tempStreak;
-        prevDt = curDt;
-      }
-
-      const now = new Date();
-      const todayKey = formatDateKey(now);
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayKey = formatDateKey(yesterday);
-
-      const checkDate = dateMap.has(todayKey) ? now : dateMap.has(yesterdayKey) ? yesterday : null;
-
-      if (checkDate) {
-        let runner = new Date(checkDate);
-        while (dateMap.has(formatDateKey(runner))) {
-          currentStreak++;
-          runner.setDate(runner.getDate() - 1);
-        }
-      } else if (dateMap.size > 0 && solvedCount > 0) {
-        currentStreak = 1;
-      }
-    } else if (solvedCount > 0) {
-      currentStreak = userDoc?.streak || 1;
-      bestStreak = Math.max(1, userDoc?.streak || 1);
+    const userActiveDates = Array.from(dateMap.keys());
+    if (userDoc?.activeDates && Array.isArray(userDoc.activeDates)) {
+      userDoc.activeDates.forEach((d) => userActiveDates.push(d));
     }
+    const streakResult = calculateUserStreak(userActiveDates, new Date());
+    let currentStreak = streakResult.currentStreak;
+    let bestStreak = Math.max(streakResult.bestStreak, userDoc?.bestStreak || 0, userDoc?.streak || 0);
 
-    if (userDoc?.streak && currentStreak === 0 && userDoc.streak > 0) {
+    if (currentStreak === 0 && userDoc?.streak > 0 && streakResult.isActiveToday) {
       currentStreak = userDoc.streak;
-    }
-    if (bestStreak < currentStreak) {
-      bestStreak = currentStreak;
     }
 
     // 4. GLOBAL RANK & RATING

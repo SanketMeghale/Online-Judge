@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { connectDatabase, isDatabaseConnected } from "./db.js";
 import { hashPassword, hashPasswordSync, verifyPassword } from "./jwt.js";
 import { User } from "../models/User.js";
+import { calculateUserStreak, formatDateKey } from "./streakEngine.js";
 
 const memoryUsers = [];
 
@@ -272,7 +273,7 @@ export async function deleteUser(userId) {
 }
 
 /**
- * Record user submission verdict and update solved/attempted problem IDs and stats permanently
+ * Record user submission verdict and update solved/attempted problem IDs, stats, and real streak permanently
  */
 export async function recordUserSubmission(userId, problemId, verdict, points = 10) {
   if (!userId || !problemId) return null;
@@ -280,6 +281,7 @@ export async function recordUserSubmission(userId, problemId, verdict, points = 
 
   const isAc = verdict === "AC" || verdict === "OK" || verdict === "Accepted";
   const xpEarned = isAc ? (Number(points) || 10) * 10 : 0;
+  const todayKey = formatDateKey(new Date());
 
   const mongoUpdate = {
     $addToSet: { attemptedProblemIds: String(problemId) },
@@ -288,8 +290,10 @@ export async function recordUserSubmission(userId, problemId, verdict, points = 
 
   if (isAc) {
     mongoUpdate.$addToSet.solvedProblemIds = String(problemId);
+    mongoUpdate.$addToSet.activeDates = todayKey;
     mongoUpdate.$inc["stats.acceptedSubmissions"] = 1;
     mongoUpdate.$inc.xp = xpEarned;
+    mongoUpdate.$set = { lastActiveDate: todayKey };
   } else if (verdict === "WA") {
     mongoUpdate.$inc["stats.waCount"] = 1;
   } else if (verdict === "RE") {
@@ -307,8 +311,25 @@ export async function recordUserSubmission(userId, problemId, verdict, points = 
 
       const doc = await User.findOneAndUpdate(query, mongoUpdate, { new: true }).lean();
       if (doc) {
-        console.log(`[UserStore] Updated user '${userId}' submission stats: AC=${isAc}, solvedCount=${doc.solvedProblemIds?.length || 0}`);
-        return sanitizeUser(doc);
+        // Recalculate streak from activeDates set
+        const activeDatesList = doc.activeDates || (isAc ? [todayKey] : []);
+        const streakResult = calculateUserStreak(activeDatesList, new Date());
+
+        await User.updateOne(query, {
+          $set: {
+            streak: streakResult.currentStreak,
+            bestStreak: Math.max(doc.bestStreak || 0, streakResult.bestStreak)
+          }
+        });
+
+        const updatedDoc = {
+          ...doc,
+          streak: streakResult.currentStreak,
+          bestStreak: Math.max(doc.bestStreak || 0, streakResult.bestStreak)
+        };
+
+        console.log(`[UserStore] Updated user '${userId}' stats: AC=${isAc}, streak=${streakResult.currentStreak}, bestStreak=${streakResult.bestStreak}`);
+        return sanitizeUser(updatedDoc);
       }
     } catch (e) {
       console.error("[UserStore] recordUserSubmission DB error:", e);
@@ -333,6 +354,16 @@ export async function recordUserSubmission(userId, problemId, verdict, points = 
       const solved = new Set(user.solvedProblemIds || []);
       solved.add(String(problemId));
       user.solvedProblemIds = Array.from(solved);
+
+      const activeDates = new Set(user.activeDates || []);
+      activeDates.add(todayKey);
+      user.activeDates = Array.from(activeDates);
+      user.lastActiveDate = todayKey;
+
+      const streakResult = calculateUserStreak(user.activeDates, new Date());
+      user.streak = streakResult.currentStreak;
+      user.bestStreak = Math.max(user.bestStreak || 0, streakResult.bestStreak);
+
       user.stats.acceptedSubmissions = (user.stats.acceptedSubmissions || 0) + 1;
       user.xp = (user.xp || 0) + xpEarned;
     } else if (verdict === "WA") {
@@ -436,12 +467,12 @@ export function sanitizeUser(user) {
       submissionResults: true,
       achievementAlerts: true,
       dailyStreakReminders: true,
-      aiCoachNotifications: true,
-      publicProfile: true,
-      showSolvedProblems: true,
-      showActivity: true,
       showContestRanking: true
     },
+    streak: typeof safeUser.streak === "number" ? safeUser.streak : (safeUser.solvedProblemIds?.length > 0 ? 1 : 0),
+    bestStreak: typeof safeUser.bestStreak === "number" ? safeUser.bestStreak : (safeUser.streak || 0),
+    lastActiveDate: safeUser.lastActiveDate || null,
+    activeDates: Array.isArray(safeUser.activeDates) ? safeUser.activeDates : [],
     solved: safeUser.solvedProblemIds?.length || 0,
     stats: safeUser.stats || {
       totalSubmissions: 0,
