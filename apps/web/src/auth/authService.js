@@ -24,8 +24,16 @@ export async function loginWithGoogle() {
   const result = await signInWithPopup(auth, googleProvider);
   const fbUser = result.user;
 
+  console.log("[AUTH] Firebase user:", {
+    uid: fbUser.uid,
+    displayName: fbUser.displayName,
+    email: fbUser.email
+  });
+
   const idToken = await fbUser.getIdToken();
   const res = await api.loginGoogle({ idToken });
+
+  console.log("[AUTH] Backend user:", res.user);
 
   return {
     accessToken: res.token || res.accessToken,

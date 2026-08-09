@@ -32,6 +32,8 @@ export default function Dashboard() {
   const fetchDashboardData = useCallback(async () => {
     if (!userId || isCheckingSession) return;
 
+    console.log("[DASHBOARD] Fetching dashboard for:", userId);
+
     setLoading(true);
     setError(null);
 

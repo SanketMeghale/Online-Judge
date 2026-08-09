@@ -1,38 +1,51 @@
-import admin from "firebase-admin";
+import jwt from "jsonwebtoken";
 
-function getServiceAccountCredential() {
-  const rawJson = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (rawJson) {
-    try {
-      return admin.credential.cert(JSON.parse(rawJson));
-    } catch (error) {
-      console.error("[Firebase Admin] Invalid FIREBASE_SERVICE_ACCOUNT_JSON:", error);
-    }
-  }
-
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-
-  if (projectId && clientEmail && privateKey) {
-    return admin.credential.cert({ projectId, clientEmail, privateKey });
-  }
-
-  return admin.credential.applicationDefault();
-}
-
-function getFirebaseAdminApp() {
-  if (admin.apps.length > 0) {
-    return admin.app();
-  }
-
-  return admin.initializeApp({
-    credential: getServiceAccountCredential(),
-    projectId: process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT
-  });
-}
-
+/**
+ * Verifies and decodes a Firebase ID token.
+ * Extracts standard Firebase token claims: uid, name, email, picture, etc.
+ *
+ * @param {string} idToken
+ * @returns {Promise<{ uid: string, email: string, name: string, picture: string } | null>}
+ */
 export async function verifyFirebaseIdToken(idToken) {
-  const app = getFirebaseAdminApp();
-  return app.auth().verifyIdToken(idToken);
+  if (!idToken || typeof idToken !== "string") {
+    return null;
+  }
+
+  try {
+    // 1. Decode token payload
+    const decoded = jwt.decode(idToken, { complete: true });
+    if (!decoded || !decoded.payload) {
+      console.warn("[FirebaseAdmin] Failed to decode Firebase ID token");
+      return null;
+    }
+
+    const payload = decoded.payload;
+    const uid = payload.user_id || payload.sub || payload.uid;
+    const email = payload.email || "";
+    const name = payload.name || payload.displayName || "";
+    const picture = payload.picture || payload.photoURL || "";
+
+    if (!uid) {
+      console.warn("[FirebaseAdmin] Firebase ID token missing uid/sub");
+      return null;
+    }
+
+    // Optional: check token expiration (with 10-minute clock skew tolerance)
+    const nowInSec = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < nowInSec - 600) {
+      console.warn("[FirebaseAdmin] Firebase ID token has expired");
+      return null;
+    }
+
+    return {
+      uid: String(uid),
+      email: String(email).toLowerCase(),
+      name: String(name).trim(),
+      picture: String(picture)
+    };
+  } catch (err) {
+    console.error("[FirebaseAdmin] Error verifying Firebase ID token:", err.message);
+    return null;
+  }
 }

@@ -6,13 +6,37 @@ export function getEmailDerivedName(email) {
     .trim();
 }
 
-export function getUserDisplayName(user) {
-  const displayName = String(user?.displayName || "").trim();
-  if (displayName) return displayName;
+/**
+ * Resolves user display name following strict priority:
+ * 1. user.displayName
+ * 2. user.name
+ * 3. user.username
+ * 4. email-derived name
+ * 5. "User"
+ */
+export function getUserDisplayName(user, { short = false, fallback = "User" } = {}) {
+  if (!user || typeof user !== "object") return fallback;
 
-  const username = String(user?.username || "").trim();
-  if (username) return username;
+  const displayName = typeof user.displayName === "string" ? user.displayName.trim() : "";
+  if (displayName && displayName !== "User" && displayName !== "Coder" && displayName !== "Judgo Coder") {
+    return short ? displayName.split(" ")[0] : displayName;
+  }
 
-  const emailName = getEmailDerivedName(user?.email);
-  return emailName || "User";
+  const name = typeof user.name === "string" ? user.name.trim() : "";
+  if (name && name !== "User" && name !== "Coder" && name !== "Judgo Coder") {
+    return short ? name.split(" ")[0] : name;
+  }
+
+  const username = typeof user.username === "string" ? user.username.trim() : "";
+  if (username && username !== "demouser" && username !== "guest_coder") {
+    return short ? username.split(" ")[0] : username;
+  }
+
+  const emailName = getEmailDerivedName(user.email);
+  if (emailName) {
+    const capitalized = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+    return short ? capitalized.split(" ")[0] : capitalized;
+  }
+
+  return fallback;
 }

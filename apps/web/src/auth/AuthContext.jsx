@@ -200,6 +200,7 @@ export function AuthProvider({ children }) {
     () => ({
       isAuthenticated: Boolean(session?.accessToken || session?.token),
       isCheckingSession: status === "checking",
+      isAuthLoading: status === "checking",
       session,
       user: session?.user ?? null,
       login,
