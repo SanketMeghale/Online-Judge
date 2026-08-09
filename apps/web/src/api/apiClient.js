@@ -71,5 +71,8 @@ export const api = {
   getContestResults: (id) => request(`/contests/${id}/results`),
 
   // Global Leaderboard
-  getLeaderboard: () => request("/leaderboard")
+  getLeaderboard: () => request("/leaderboard"),
+
+  // Analytics & Progress
+  getProgress: (range = "30d") => request(`/progress?range=${range}`)
 };
