@@ -26,13 +26,99 @@ import {
   RefreshCw,
   AlertCircle,
   Clock,
-  Terminal
+  Terminal,
+  Briefcase,
+  HelpCircle,
+  CheckCircle2,
+  Flame
 } from "lucide-react";
 import { api } from "../api/apiClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
 
-// Helper component to render code block with copy button
+// Authentic SVGs for Tech Companies
+export function GoogleLogo({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M23.49 12.28c0-.8-.07-1.56-.19-2.28H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.81z" fill="#4285F4"/>
+      <path d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.34 24 12 24z" fill="#34A853"/>
+      <path d="M5.27 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.38l3.98-3.09z" fill="#FBBC05"/>
+      <path d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.7 1.29 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z" fill="#EA4335"/>
+    </svg>
+  );
+}
+
+export function AmazonLogo({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M13.84 14.28c-.28.33-.8.36-1.12.06-1.47-1.39-2.04-2.87-2.04-4.83 0-2.8 1.95-4.88 4.79-4.88 2.85 0 4.77 2.06 4.77 4.9 0 2.82-1.92 4.88-4.77 4.88-.6 0-1.14-.1-1.63-.33z" fill="#FF9900" />
+      <path d="M21.72 17.5c-.29-.39-1.92-.93-3.84-.25-.33.12-.39.46-.11.7 1.63 1.41 3.51 1.7 4.09 1.12.33-.33.15-1.18-.14-1.57z" fill="#FF9900" />
+      <path d="M2.5 17.8c4.66 3.6 11.24 4.8 17.13 1.2.33-.2.37-.6.07-.84-.3-.24-.71-.25-1.04-.08-5.32 3.16-11.23 2.12-15.43-1.08-.34-.26-.74-.08-.73.32z" fill="#FF9900" />
+      <path d="M14.5 4C9.5 4 6 7.5 6 12.5c0 3.2 1.5 5.8 3.8 7.3.3.2.7.1.8-.2.1-.3 0-.7-.3-.9-1.9-1.3-3.1-3.4-3.1-6.2 0-4.3 3-7.5 7.3-7.5 4.3 0 7.3 3.2 7.3 7.5 0 2.8-1.2 4.9-3.1 6.2-.3.2-.4.6-.3.9.1.3.5.4.8.2 2.3-1.5 3.8-4.1 3.8-7.3 0-5-3.5-8.5-8.5-8.5z" fill="#F8FAFC" />
+    </svg>
+  );
+}
+
+export function MetaLogo({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M16.7 4C13.8 4 12.5 6.2 12 7.2 11.5 6.2 10.2 4 7.3 4 3.3 4 .5 7.7.5 12.2c0 4.8 3.2 8.3 7.3 8.3 3.1 0 4.5-2.2 5.1-3.2.6 1 2 3.2 5.1 3.2 4.1 0 7.3-3.5 7.3-8.3C25.3 7.7 22.5 4 16.7 4zm-9.4 13.9c-2.6 0-4.5-2.5-4.5-5.7 0-3.3 1.9-5.7 4.5-5.7 2.1 0 3.6 1.8 4.7 4.5-1.1 2.8-2.6 6.9-4.7 6.9zm9.4 0c-2.1 0-3.6-4.1-4.7-6.9 1.1-2.7 2.6-4.5 4.7-4.5 2.6 0 4.5 2.4 4.5 5.7 0 3.2-1.9 5.7-4.5 5.7z" fill="#0081FB"/>
+    </svg>
+  );
+}
+
+export function MicrosoftLogo({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="1" y="1" width="10" height="10" fill="#F25022"/>
+      <rect x="13" y="1" width="10" height="10" fill="#7FBA00"/>
+      <rect x="1" y="13" width="10" height="10" fill="#00A4EF"/>
+      <rect x="13" y="13" width="10" height="10" fill="#FFB900"/>
+    </svg>
+  );
+}
+
+export function AppleLogo({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.38c.62-.75 1.04-1.8 0.93-2.85-.9.04-1.99.6-2.61 1.35-.55.63-1.03 1.68-.9 2.7.99.08 2.02-.51 2.58-1.2z" fill="#f8fafc"/>
+    </svg>
+  );
+}
+
+export function UberLogo({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect width="24" height="24" rx="6" fill="#000" stroke="#334155" strokeWidth="1.2"/>
+      <rect x="5" y="5" width="14" height="14" rx="3" fill="#fff"/>
+      <rect x="9" y="9" width="6" height="6" rx="1.5" fill="#000"/>
+    </svg>
+  );
+}
+
+export function NetflixLogo({ size = 18 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M4 2v20l4-1V2H4z" fill="#E50914" />
+      <path d="M16 2v20l4-1V2h-4z" fill="#E50914" />
+      <path d="M4 2l12 20h4L8 2H4z" fill="#B81D24" />
+    </svg>
+  );
+}
+
+export function CompanyLogoRenderer({ company = "", size = 18 }) {
+  const norm = String(company).toLowerCase();
+  if (norm.includes("google")) return <GoogleLogo size={size} />;
+  if (norm.includes("amazon")) return <AmazonLogo size={size} />;
+  if (norm.includes("meta") || norm.includes("facebook")) return <MetaLogo size={size} />;
+  if (norm.includes("microsoft")) return <MicrosoftLogo size={size} />;
+  if (norm.includes("apple")) return <AppleLogo size={size} />;
+  if (norm.includes("uber")) return <UberLogo size={size} />;
+  if (norm.includes("netflix")) return <NetflixLogo size={size} />;
+  return <Briefcase size={size} style={{ color: "#a855f7" }} />;
+}
+
+// Code block with clean dark terminal chrome & copy button
 function CodeBlock({ language = "text", value = "" }) {
   const [copied, setCopied] = useState(false);
 
@@ -47,10 +133,11 @@ function CodeBlock({ language = "text", value = "" }) {
       style={{
         position: "relative",
         background: "#080c14",
-        border: "1px solid rgba(255, 255, 255, 0.08)",
+        border: "1px solid rgba(255, 255, 255, 0.1)",
         borderRadius: "8px",
-        margin: "8px 0",
-        overflow: "hidden"
+        margin: "10px 0",
+        overflow: "hidden",
+        boxShadow: "0 4px 14px rgba(0, 0, 0, 0.4)"
       }}
     >
       <div
@@ -58,43 +145,47 @@ function CodeBlock({ language = "text", value = "" }) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "5px 12px",
-          background: "rgba(255, 255, 255, 0.03)",
+          padding: "6px 12px",
+          background: "rgba(255, 255, 255, 0.04)",
           borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
           fontSize: "0.72rem",
           color: "#94a3b8"
         }}
       >
-        <span style={{ fontWeight: "600", textTransform: "uppercase" }}>{language}</span>
+        <span style={{ fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.04em", color: "#c084fc" }}>
+          {language || "code"}
+        </span>
         <button
           type="button"
           onClick={handleCopy}
           style={{
-            background: "transparent",
-            border: "none",
+            background: copied ? "rgba(52, 211, 153, 0.15)" : "transparent",
+            border: copied ? "1px solid rgba(52, 211, 153, 0.3)" : "none",
             color: copied ? "#34d399" : "#94a3b8",
             cursor: "pointer",
             display: "inline-flex",
             alignItems: "center",
             gap: "4px",
-            fontSize: "0.7rem",
-            padding: "2px 6px",
-            borderRadius: "4px"
+            fontSize: "0.72rem",
+            fontWeight: "600",
+            padding: "3px 8px",
+            borderRadius: "4px",
+            transition: "all 0.15s ease"
           }}
         >
           {copied ? <Check size={12} /> : <Copy size={12} />}
-          <span>{copied ? "Copied" : "Copy"}</span>
+          <span>{copied ? "Copied" : "Copy Code"}</span>
         </button>
       </div>
       <pre
         style={{
           margin: 0,
-          padding: "12px",
+          padding: "12px 14px",
           overflowX: "auto",
           fontSize: "0.82rem",
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
           color: "#38bdf8",
-          lineHeight: "1.5"
+          lineHeight: "1.6"
         }}
       >
         <code>{value}</code>
@@ -103,37 +194,192 @@ function CodeBlock({ language = "text", value = "" }) {
   );
 }
 
-// Simple Markdown parser for AI messages
+// Markdown parser converting bold, headers, inline code, and lists to styled HTML nodes
+function parseMarkdownInline(text = "") {
+  if (!text) return "";
+
+  // Split by bold tokens **...**
+  const boldRegex = /\*\*(.*?)\*\*/g;
+  const parts = [];
+  let lastIdx = 0;
+  let match;
+
+  while ((match = boldRegex.exec(text)) !== null) {
+    if (match.index > lastIdx) {
+      parts.push(text.substring(lastIdx, match.index));
+    }
+    parts.push(
+      <strong key={`b-${match.index}`} style={{ color: "#ffffff", fontWeight: "700" }}>
+        {match[1]}
+      </strong>
+    );
+    lastIdx = match.index + match[0].length;
+  }
+
+  if (lastIdx < text.length) {
+    parts.push(text.substring(lastIdx));
+  }
+
+  // Next, map over inline code `...` and Math $...$
+  return parts.map((chunk, chunkIdx) => {
+    if (typeof chunk !== "string") return chunk;
+
+    const codeRegex = /`([^`]+)`/g;
+    const subParts = [];
+    let sLast = 0;
+    let sMatch;
+
+    while ((sMatch = codeRegex.exec(chunk)) !== null) {
+      if (sMatch.index > sLast) {
+        subParts.push(chunk.substring(sLast, sMatch.index));
+      }
+      subParts.push(
+        <code
+          key={`code-${chunkIdx}-${sMatch.index}`}
+          style={{
+            background: "rgba(124, 58, 237, 0.16)",
+            color: "#c084fc",
+            border: "1px solid rgba(124, 58, 237, 0.3)",
+            padding: "2px 6px",
+            borderRadius: "5px",
+            fontSize: "0.84em",
+            fontWeight: "600",
+            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
+          }}
+        >
+          {sMatch[1]}
+        </code>
+      );
+      sLast = sMatch.index + sMatch[0].length;
+    }
+
+    if (sLast < chunk.length) {
+      subParts.push(chunk.substring(sLast));
+    }
+
+    return <React.Fragment key={chunkIdx}>{subParts}</React.Fragment>;
+  });
+}
+
 function FormattedMessage({ text = "" }) {
   if (!text) return null;
 
   // Split by code blocks ```lang ... ```
   const codeBlockRegex = /```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g;
-  const parts = [];
+  const blocks = [];
   let lastIndex = 0;
   let match;
 
   while ((match = codeBlockRegex.exec(text)) !== null) {
     if (match.index > lastIndex) {
-      parts.push({ type: "text", content: text.substring(lastIndex, match.index) });
+      blocks.push({ type: "text", content: text.substring(lastIndex, match.index) });
     }
-    parts.push({ type: "code", language: match[1] || "code", content: match[2] });
+    blocks.push({ type: "code", language: match[1] || "python", content: match[2] });
     lastIndex = match.index + match[0].length;
   }
 
   if (lastIndex < text.length) {
-    parts.push({ type: "text", content: text.substring(lastIndex) });
+    blocks.push({ type: "text", content: text.substring(lastIndex) });
   }
 
   return (
-    <div>
-      {parts.map((p, idx) => {
-        if (p.type === "code") {
-          return <CodeBlock key={idx} language={p.language} value={p.content.trim()} />;
+    <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "0.88rem", lineHeight: "1.6" }}>
+      {blocks.map((block, idx) => {
+        if (block.type === "code") {
+          return <CodeBlock key={idx} language={block.language} value={block.content.trim()} />;
         }
+
+        // Split text block by lines for headers, list items, and regular text
+        const lines = block.content.split("\n");
         return (
-          <div key={idx} style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-            {p.content}
+          <div key={idx} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            {lines.map((line, lineIdx) => {
+              const trimmed = line.trim();
+              if (!trimmed) return <div key={lineIdx} style={{ height: "4px" }} />;
+
+              // Header 3 / Header 4
+              if (trimmed.startsWith("### ")) {
+                return (
+                  <h4
+                    key={lineIdx}
+                    style={{
+                      fontSize: "0.98rem",
+                      fontWeight: "800",
+                      color: "#f8fafc",
+                      margin: "8px 0 2px 0",
+                      letterSpacing: "-0.01em"
+                    }}
+                  >
+                    {parseMarkdownInline(trimmed.substring(4))}
+                  </h4>
+                );
+              }
+
+              if (trimmed.startsWith("## ")) {
+                return (
+                  <h3
+                    key={lineIdx}
+                    style={{
+                      fontSize: "1.05rem",
+                      fontWeight: "800",
+                      color: "#f8fafc",
+                      margin: "10px 0 2px 0",
+                      letterSpacing: "-0.02em"
+                    }}
+                  >
+                    {parseMarkdownInline(trimmed.substring(3))}
+                  </h3>
+                );
+              }
+
+              // Bullet List Item
+              if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+                return (
+                  <div
+                    key={lineIdx}
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "8px",
+                      marginLeft: "6px",
+                      color: "#cbd5e1"
+                    }}
+                  >
+                    <span style={{ color: "#a855f7", fontWeight: "700", lineHeight: "1.4" }}>•</span>
+                    <div style={{ flex: 1 }}>{parseMarkdownInline(trimmed.substring(2))}</div>
+                  </div>
+                );
+              }
+
+              // Numbered List Item
+              const numMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
+              if (numMatch) {
+                return (
+                  <div
+                    key={lineIdx}
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "8px",
+                      marginLeft: "6px",
+                      color: "#cbd5e1"
+                    }}
+                  >
+                    <span style={{ color: "#818cf8", fontWeight: "700", fontSize: "0.82rem", minWidth: "16px" }}>
+                      {numMatch[1]}.
+                    </span>
+                    <div style={{ flex: 1 }}>{parseMarkdownInline(numMatch[2])}</div>
+                  </div>
+                );
+              }
+
+              // Normal text line
+              return (
+                <div key={lineIdx} style={{ color: "#cbd5e1" }}>
+                  {parseMarkdownInline(trimmed)}
+                </div>
+              );
+            })}
           </div>
         );
       })}
@@ -209,7 +455,7 @@ export default function AICoachPage() {
               {
                 id: "ai-initial",
                 sender: "ai",
-                text: `Hi ${displayName}! 👋\n\nI'm your **Judgo AI Mentor**. I analyze your live submission performance to help you master algorithms and level up your rating.\n\nBased on your coding history, your priority track today is **${weakTop}**.\n\nWhat would you like to work on?`,
+                text: `Hi **${displayName}**! 👋\n\nI'm your **Judgo AI Mentor**. I analyze your live submission performance to help you master algorithms and level up your rating.\n\nBased on your coding history, your priority track today is **${weakTop}**.\n\nWhat would you like to work on?`,
                 time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
               }
             ]);
@@ -321,7 +567,7 @@ export default function AICoachPage() {
       {
         id: `ai-reset-${Date.now()}`,
         sender: "ai",
-        text: `Chat history cleared. What challenge or algorithmic concept would you like to master next, ${displayName}?`,
+        text: `Chat history cleared. What challenge or algorithmic concept would you like to master next, **${displayName}**?`,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       }
     ]);
@@ -371,7 +617,7 @@ export default function AICoachPage() {
       setInterviewSession({
         company: comp,
         stage: res.stage || "clarification",
-        history: [{ role: "assistant", content: res.question || `Welcome to your ${comp} interview session!` }]
+        history: [{ role: "assistant", content: res.question || `Welcome to your **${comp} Technical Interview**!` }]
       });
     } catch (e) {
       setInterviewSession({
@@ -429,6 +675,16 @@ export default function AICoachPage() {
   const todaysFocus = coachProfile?.todaysFocus;
   const weakTopics = coachProfile?.weakTopics || [];
 
+  // Expanded Company Mock Tracks
+  const companyTracks = [
+    { company: "Google", role: "Software Engineer L4/L5", title: "Topological Sort & Dependency DAG", diff: "Hard", tag: "Graphs & BFS", problemId: "valid-palindrome" },
+    { company: "Amazon", role: "SDE-1 / SDE-2", title: "LRU Cache & Real-time Stream", diff: "Medium", tag: "Design & Hash Map", problemId: "two-sum" },
+    { company: "Meta", role: "Product Engineer (E5)", title: "Minimum Window Substring Optimization", diff: "Hard", tag: "Sliding Window", problemId: "reverse-linked-list" },
+    { company: "Microsoft", role: "Software Engineer", title: "Serialize & Deserialize Binary Tree", diff: "Medium", tag: "Trees & DFS", problemId: "valid-parentheses" },
+    { company: "Uber", role: "Backend Engineer", title: "Low-Latency Geospatial Driver Routing", diff: "Hard", tag: "Dijkstra & Heap", problemId: "two-sum" },
+    { company: "Apple", role: "Core OS Engineer", title: "Circular Ring Buffer & Memory Safety", diff: "Medium", tag: "Pointers & Arrays", problemId: "reverse-linked-list" }
+  ];
+
   return (
     <div
       className="ai-coach-page-container"
@@ -437,7 +693,7 @@ export default function AICoachPage() {
         flexDirection: "column",
         gap: "14px",
         width: "100%",
-        maxWidth: "1220px",
+        maxWidth: "1240px",
         margin: "0 auto",
         paddingBottom: "16px",
         minHeight: "calc(100vh - 90px)"
@@ -507,7 +763,7 @@ export default function AICoachPage() {
               boxShadow: "0 0 8px #10b981"
             }}
           />
-          <span>AI Engine Active</span>
+          <span>AI Engine Online</span>
         </div>
       </header>
 
@@ -1221,7 +1477,7 @@ export default function AICoachPage() {
             }}
           >
             <div>
-              <h2 style={{ fontSize: "1.1rem", fontWeight: "700", color: "#f8fafc", margin: 0 }}>Comprehensive Topic Mastery Profile</h2>
+              <h2 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#f8fafc", margin: 0 }}>Comprehensive Topic Mastery Profile</h2>
               <p style={{ fontSize: "0.82rem", color: "#94a3b8", margin: "4px 0 0 0" }}>Live analytics computed from your actual accepted and attempted submissions across all algorithmic tracks.</p>
             </div>
 
@@ -1236,15 +1492,15 @@ export default function AICoachPage() {
               ]).map((t) => (
                 <div key={t.topic} style={{ background: "#080c14", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <strong style={{ fontSize: "0.9rem", color: "#f8fafc" }}>{t.topic}</strong>
-                    <span style={{ fontSize: "0.82rem", fontWeight: "700", color: t.accuracy < 50 ? "#f87171" : t.accuracy < 75 ? "#fbbf24" : "#34d399" }}>
+                    <strong style={{ fontSize: "0.92rem", fontWeight: "700", color: "#f8fafc" }}>{t.topic}</strong>
+                    <span style={{ fontSize: "0.84rem", fontWeight: "800", color: t.accuracy < 50 ? "#f87171" : t.accuracy < 75 ? "#fbbf24" : "#34d399" }}>
                       {t.accuracy}%
                     </span>
                   </div>
                   <span style={{ fontSize: "0.74rem", color: "#64748b" }}>
                     {t.solvedCount || 0} / {t.totalInTopic || 3} challenges solved
                   </span>
-                  <div style={{ width: "100%", height: "5px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
+                  <div style={{ width: "100%", height: "6px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
                     <div
                       style={{
                         height: "100%",
@@ -1262,11 +1518,12 @@ export default function AICoachPage() {
                       color: "#c084fc",
                       border: "1px solid rgba(124, 58, 237, 0.25)",
                       borderRadius: "6px",
-                      padding: "6px 10px",
-                      fontSize: "0.76rem",
-                      fontWeight: "600",
+                      padding: "7px 12px",
+                      fontSize: "0.78rem",
+                      fontWeight: "700",
                       textAlign: "center",
-                      textDecoration: "none"
+                      textDecoration: "none",
+                      transition: "all 0.15s ease"
                     }}
                   >
                     Practice {t.topic.split(" ")[0]} →
@@ -1277,7 +1534,7 @@ export default function AICoachPage() {
           </div>
         )}
 
-        {/* TAB 4: INTERVIEW PREP MOCK TRACK */}
+        {/* TAB 4: INTERVIEW PREP MOCK TRACK WITH COMPANY LOGOS */}
         {activeTab === "interview" && (
           <div
             style={{
@@ -1294,51 +1551,95 @@ export default function AICoachPage() {
             }}
           >
             <div>
-              <h2 style={{ fontSize: "1.1rem", fontWeight: "700", color: "#f8fafc", margin: 0 }}>FAANG Mock Technical Interview Track</h2>
-              <p style={{ fontSize: "0.82rem", color: "#94a3b8", margin: "4px 0 0 0" }}>Simulate live technical interview rounds with personalized AI evaluation and feedback.</p>
+              <h2 style={{ fontSize: "1.15rem", fontWeight: "800", color: "#f8fafc", margin: 0, letterSpacing: "-0.01em" }}>
+                Target Company Technical Mock Tracks
+              </h2>
+              <p style={{ fontSize: "0.82rem", color: "#94a3b8", margin: "4px 0 0 0" }}>
+                Simulate real FAANG &amp; Tier-1 interview rounds with authentic company interview patterns and live AI feedback.
+              </p>
             </div>
 
             {!interviewSession ? (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px" }}>
-                {[
-                  { company: "Amazon SDE-1", title: "LRU Cache & Stream Analytics", diff: "Medium", tag: "Design & Hash Map" },
-                  { company: "Google Software Engineer", title: "Topological Sort & Dependency Resolution", diff: "Hard", tag: "Graphs" },
-                  { company: "Meta Product Engineer", title: "Minimum Window Substring Optimization", diff: "Hard", tag: "Sliding Window" }
-                ].map((q, idx) => (
-                  <div key={idx} style={{ background: "#080c14", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                    <span style={{ fontSize: "0.72rem", color: "#818cf8", fontWeight: "700" }}>{q.company}</span>
-                    <strong style={{ fontSize: "0.92rem", color: "#f8fafc" }}>{q.title}</strong>
-                    <span style={{ fontSize: "0.76rem", color: "#94a3b8" }}>{q.diff} • {q.tag}</span>
+                {companyTracks.map((q, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      background: "#080c14",
+                      border: "1px solid rgba(255, 255, 255, 0.06)",
+                      borderRadius: "10px",
+                      padding: "16px",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "10px",
+                      transition: "all 0.15s ease"
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "rgba(255, 255, 255, 0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <CompanyLogoRenderer company={q.company} size={18} />
+                        </div>
+                        <span style={{ fontSize: "0.82rem", color: "#f8fafc", fontWeight: "700" }}>{q.company}</span>
+                      </div>
+                      <span style={{
+                        fontSize: "0.7rem",
+                        fontWeight: "700",
+                        color: q.diff === "Easy" ? "#34d399" : q.diff === "Hard" ? "#ef4444" : "#fbbf24",
+                        background: q.diff === "Easy" ? "rgba(52, 211, 153, 0.1)" : q.diff === "Hard" ? "rgba(239, 68, 68, 0.1)" : "rgba(251, 191, 36, 0.1)",
+                        padding: "2px 7px",
+                        borderRadius: "4px"
+                      }}>
+                        {q.diff}
+                      </span>
+                    </div>
+
+                    <div>
+                      <strong style={{ fontSize: "0.92rem", fontWeight: "700", color: "#f8fafc", display: "block", marginBottom: "2px" }}>
+                        {q.title}
+                      </strong>
+                      <span style={{ fontSize: "0.74rem", color: "#94a3b8" }}>{q.role} • {q.tag}</span>
+                    </div>
+
                     <button
                       type="button"
                       onClick={() => handleStartInterview(q.company)}
                       style={{
-                        marginTop: "8px",
-                        background: "rgba(99, 102, 241, 0.15)",
-                        color: "#818cf8",
-                        border: "1px solid rgba(99, 102, 241, 0.3)",
+                        marginTop: "auto",
+                        background: "rgba(124, 58, 237, 0.15)",
+                        color: "#c084fc",
+                        border: "1px solid rgba(124, 58, 237, 0.3)",
                         borderRadius: "6px",
                         padding: "8px 12px",
                         fontSize: "0.78rem",
-                        fontWeight: "600",
-                        cursor: "pointer"
+                        fontWeight: "700",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        transition: "all 0.15s ease"
                       }}
                     >
-                      Start Mock Interview →
+                      <Play size={13} />
+                      <span>Start {q.company} Interview →</span>
                     </button>
                   </div>
                 ))}
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "14px", flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontSize: "0.9rem", fontWeight: "700", color: "#a855f7" }}>
-                    {interviewSession.company} Interview in Progress
-                  </span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#080c14", padding: "10px 16px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <CompanyLogoRenderer company={interviewSession.company} size={20} />
+                    <span style={{ fontSize: "0.92rem", fontWeight: "800", color: "#f8fafc" }}>
+                      {interviewSession.company} Technical Interview in Progress
+                    </span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setInterviewSession(null)}
-                    style={{ background: "transparent", border: "none", color: "#94a3b8", fontSize: "0.76rem", cursor: "pointer" }}
+                    style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.25)", color: "#f87171", fontSize: "0.76rem", fontWeight: "600", padding: "4px 10px", borderRadius: "6px", cursor: "pointer" }}
                   >
                     Exit Session
                   </button>
@@ -1346,7 +1647,16 @@ export default function AICoachPage() {
 
                 <div style={{ flex: 1, background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "16px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "12px" }}>
                   {interviewSession.history.map((h, i) => (
-                    <div key={i} style={{ background: h.role === "assistant" ? "#131b2e" : "rgba(99,102,241,0.15)", padding: "12px", borderRadius: "8px", color: "#f8fafc", fontSize: "0.86rem" }}>
+                    <div
+                      key={i}
+                      style={{
+                        background: h.role === "assistant" ? "#131b2e" : "linear-gradient(135deg, #4338ca 0%, #3730a3 100%)",
+                        border: h.role === "assistant" ? "1px solid rgba(255, 255, 255, 0.08)" : "1px solid rgba(99, 102, 241, 0.3)",
+                        padding: "14px",
+                        borderRadius: "8px",
+                        color: "#f8fafc"
+                      }}
+                    >
                       <FormattedMessage text={h.content} />
                     </div>
                   ))}
@@ -1357,7 +1667,7 @@ export default function AICoachPage() {
                     type="text"
                     value={interviewInput}
                     onChange={(e) => setInterviewInput(e.target.value)}
-                    placeholder="Type your clarification or code solution..."
+                    placeholder="Type your explanation, pseudocode, or clarification..."
                     style={{ flex: 1, background: "#080c14", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "10px 14px", color: "#f8fafc", fontSize: "0.85rem", outline: "none" }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleSendInterviewAnswer();
@@ -1367,9 +1677,9 @@ export default function AICoachPage() {
                     type="button"
                     onClick={handleSendInterviewAnswer}
                     disabled={isInterviewing || !interviewInput.trim()}
-                    style={{ background: "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)", border: "none", color: "#fff", padding: "10px 16px", borderRadius: "8px", fontSize: "0.82rem", fontWeight: "700", cursor: "pointer" }}
+                    style={{ background: "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)", border: "none", color: "#fff", padding: "10px 18px", borderRadius: "8px", fontSize: "0.84rem", fontWeight: "700", cursor: "pointer" }}
                   >
-                    {isInterviewing ? "Interviewer Thinking..." : "Submit Answer"}
+                    {isInterviewing ? "Evaluating..." : "Submit Answer"}
                   </button>
                 </div>
               </div>
