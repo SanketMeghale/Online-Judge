@@ -137,7 +137,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
               <img
                 src="/logo.png"
                 alt="Judgo Logo"
-                style={{ width: "38px", height: "38px", objectFit: "contain", display: "block", borderRadius: "8px" }}
+                style={{ width: "38px", height: "38px", objectFit: "contain", display: "block", background: "transparent" }}
               />
             </motion.div>
             <span style={{ fontSize: "1.22rem", fontWeight: "800", letterSpacing: "-0.02em", color: "#ffffff" }}>
