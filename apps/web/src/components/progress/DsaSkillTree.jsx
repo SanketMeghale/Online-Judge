@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -7,7 +7,6 @@ import {
   Calculator,
   Cpu,
   FolderTree,
-  GitBranch,
   Hash,
   Info,
   Layers,
@@ -16,20 +15,20 @@ import {
   Sparkles,
   Type,
   Zap,
-  ArrowRight,
-  ChevronRight,
-  GraduationCap
+  ChevronRight
 } from "lucide-react";
 import "../../styles/skillTree.css";
 
 // The 10 Core DSA Topics required for the Skill Tree
 const CORE_DSA_TOPICS = [
+  // TIER 1: Foundations
   {
     id: "arrays",
     name: "Arrays",
     alias: ["Arrays", "Array", "Arrays & Hashing", "Two Pointers"],
     icon: Layers,
-    tier: 1, // Tier 1: Fundamentals
+    tier: 1,
+    tierName: "Foundations",
     description: "Contiguous memory, two pointers, sliding window, and prefix sums"
   },
   {
@@ -38,22 +37,27 @@ const CORE_DSA_TOPICS = [
     alias: ["Strings", "String"],
     icon: Type,
     tier: 1,
+    tierName: "Foundations",
     description: "Pattern matching, palindromes, anagrams, and string transformations"
   },
   {
     id: "math",
     name: "Math",
-    alias: ["Math", "Mathematics", "Bit Manipulation"],
+    alias: ["Math", "Mathematics"],
     icon: Calculator,
     tier: 1,
+    tierName: "Foundations",
     description: "Number theory, modular arithmetic, combinatorics, and geometry"
   },
+
+  // TIER 2: Core Data Structures
   {
     id: "hashing",
     name: "Hashing",
     alias: ["Hashing", "Hash Table", "Hash Map"],
     icon: Hash,
-    tier: 2, // Tier 2: Core Data Structures
+    tier: 2,
+    tierName: "Data Structures",
     description: "Hash maps, hash sets, frequency counting, and collision resolution"
   },
   {
@@ -62,6 +66,7 @@ const CORE_DSA_TOPICS = [
     alias: ["Trees", "Tree", "Binary Search Tree", "Binary Tree", "Trie"],
     icon: FolderTree,
     tier: 2,
+    tierName: "Data Structures",
     description: "Binary search trees, traversals (DFS/BFS), recursion, and tries"
   },
   {
@@ -70,14 +75,18 @@ const CORE_DSA_TOPICS = [
     alias: ["Graphs", "Graph", "DFS", "BFS", "Topological Sort"],
     icon: Network,
     tier: 2,
+    tierName: "Data Structures",
     description: "Adjacency lists, Dijkstra, topological sort, and cycle detection"
   },
+
+  // TIER 3: Advanced Optimization & Algorithms
   {
     id: "dp",
     name: "Dynamic Programming",
     alias: ["Dynamic Programming", "DP"],
     icon: Cpu,
-    tier: 3, // Tier 3: Advanced Optimization
+    tier: 3,
+    tierName: "Advanced",
     description: "Memoization, tabulation, subproblems, state transitions, and knapsack"
   },
   {
@@ -86,14 +95,18 @@ const CORE_DSA_TOPICS = [
     alias: ["Bit Manipulation", "Bits"],
     icon: Binary,
     tier: 3,
+    tierName: "Advanced",
     description: "Bitwise XOR, AND, bit masks, shifts, and low-level arithmetic"
   },
+
+  // TIER 4: Systems & Engineering
   {
     id: "concurrency",
     name: "Concurrency",
     alias: ["Concurrency", "Multithreading"],
     icon: Zap,
-    tier: 4, // Tier 4: Engineering & Systems
+    tier: 4,
+    tierName: "Systems",
     description: "Locks, semaphores, race conditions, thread synchronization, and deadlocks"
   },
   {
@@ -102,6 +115,7 @@ const CORE_DSA_TOPICS = [
     alias: ["System Design", "Design"],
     icon: Server,
     tier: 4,
+    tierName: "Systems",
     description: "Scalability, caching, load balancing, sharding, and fault tolerance"
   }
 ];
@@ -170,7 +184,6 @@ export default function DsaSkillTree({ topicProficiency = [] }) {
   // Map real topic proficiency data to the 10 Core DSA topics
   const processedTopics = useMemo(() => {
     return CORE_DSA_TOPICS.map((core) => {
-      // Find matching items from existing topicProficiency
       const matches = topicProficiency.filter((tp) => {
         const tName = (tp.topic || "").trim().toLowerCase();
         return (
@@ -192,18 +205,15 @@ export default function DsaSkillTree({ topicProficiency = [] }) {
           acceptedSubmissions += m.acceptedSubmissions || 0;
         });
       } else {
-        // Fallback default target count if topic has no problems in database
         totalProblems = 3;
         solvedCount = 0;
       }
 
-      // Ensure minimum target problem baseline
       if (totalProblems === 0) totalProblems = 3;
 
       const accuracy =
         totalSubmissions > 0 ? Math.round((acceptedSubmissions / totalSubmissions) * 100) : solvedCount > 0 ? 100 : 0;
 
-      // Realistic mastery formula: 60% coverage + 40% accuracy
       const coverage = totalProblems > 0 ? Math.min(1, solvedCount / totalProblems) : 0;
       const calculatedMastery =
         solvedCount === 0
@@ -233,32 +243,35 @@ export default function DsaSkillTree({ topicProficiency = [] }) {
     });
   }, [topicProficiency]);
 
-  // Overall DSA Mastery percentage calculated as the average of topic masteries
+  // Overall DSA Mastery percentage
   const overallMastery = useMemo(() => {
     if (processedTopics.length === 0) return 0;
     const sum = processedTopics.reduce((acc, t) => acc + t.masteryPct, 0);
     return Math.round(sum / processedTopics.length);
   }, [processedTopics]);
 
-  // SVG Circular progress math for central mastery node
-  const radius = 48;
+  // Group by Tiers
+  const tier1Topics = processedTopics.filter((t) => t.tier === 1);
+  const tier2Topics = processedTopics.filter((t) => t.tier === 2);
+  const tier3Topics = processedTopics.filter((t) => t.tier === 3);
+  const tier4Topics = processedTopics.filter((t) => t.tier === 4);
+
+  // SVG Circular progress math for central mastery node (compact radius 36)
+  const radius = 36;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (overallMastery / 100) * circumference;
 
   const masteredCount = processedTopics.filter((t) => t.masteryPct >= 100).length;
   const strongCount = processedTopics.filter((t) => t.masteryPct >= 70 && t.masteryPct < 100).length;
-  const learningCount = processedTopics.filter((t) => t.masteryPct >= 35 && t.masteryPct < 70).length;
-  const weakCount = processedTopics.filter((t) => t.masteryPct > 0 && t.masteryPct < 35).length;
-  const notStartedCount = processedTopics.filter((t) => t.masteryPct === 0).length;
 
   return (
     <div className="dsa-tree-container" ref={containerRef}>
-      {/* 1. Header */}
+      {/* 1. Section Header */}
       <div className="dsa-tree-header">
         <div className="dsa-tree-title-group">
           <div className="dsa-tree-title-row">
             <div className="dsa-tree-spark-icon">
-              <Sparkles size={16} />
+              <Sparkles size={15} />
             </div>
             <h3 className="dsa-tree-title">DSA Skill Tree</h3>
             <span className="dsa-tree-badge-pill">
@@ -273,13 +286,99 @@ export default function DsaSkillTree({ topicProficiency = [] }) {
         </div>
       </div>
 
-      {/* 2. Visual Skill Tree Canvas */}
+      {/* 2. Visual Skill Tree Canvas with Branch Connectors */}
       <div className="dsa-tree-canvas">
-        {/* Central Root Node */}
+        {/* Curved SVG Connection Lines */}
+        <div className="dsa-branch-svg-overlay">
+          <svg className="dsa-branch-svg" viewBox="0 0 1000 600" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="tree-branch-active" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#7850ff" stopOpacity="0.8" />
+                <stop offset="50%" stopColor="#00c3ff" stopOpacity="0.6" />
+                <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.3" />
+              </linearGradient>
+              <linearGradient id="tree-branch-dim" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="rgba(255,255,255,0.15)" />
+                <stop offset="100%" stopColor="rgba(255,255,255,0.04)" />
+              </linearGradient>
+            </defs>
+
+            {/* Central Root Split Lines to Tier 1 */}
+            <path
+              d="M 500,85 C 500,120 180,110 180,150"
+              fill="none"
+              stroke="url(#tree-branch-active)"
+              strokeWidth="2"
+              className="dsa-svg-branch"
+            />
+            <path
+              d="M 500,85 C 500,125 500,125 500,150"
+              fill="none"
+              stroke="url(#tree-branch-active)"
+              strokeWidth="2"
+              className="dsa-svg-branch"
+            />
+            <path
+              d="M 500,85 C 500,120 820,110 820,150"
+              fill="none"
+              stroke="url(#tree-branch-active)"
+              strokeWidth="2"
+              className="dsa-svg-branch"
+            />
+
+            {/* Inter-Tier Connector Lines: Tier 1 to Tier 2 */}
+            <path
+              d="M 180,215 C 180,245 180,245 180,275"
+              fill="none"
+              stroke="url(#tree-branch-dim)"
+              strokeWidth="1.5"
+              strokeDasharray="4 3"
+            />
+            <path
+              d="M 500,215 C 500,245 500,245 500,275"
+              fill="none"
+              stroke="url(#tree-branch-dim)"
+              strokeWidth="1.5"
+              strokeDasharray="4 3"
+            />
+            <path
+              d="M 820,215 C 820,245 820,245 820,275"
+              fill="none"
+              stroke="url(#tree-branch-dim)"
+              strokeWidth="1.5"
+              strokeDasharray="4 3"
+            />
+
+            {/* Inter-Tier Connector Lines: Tier 2 to Tier 3 & 4 */}
+            <path
+              d="M 180,340 C 180,380 340,380 340,410"
+              fill="none"
+              stroke="url(#tree-branch-dim)"
+              strokeWidth="1.5"
+              strokeDasharray="4 3"
+            />
+            <path
+              d="M 500,340 C 500,380 500,380 500,410"
+              fill="none"
+              stroke="url(#tree-branch-dim)"
+              strokeWidth="1.5"
+              strokeDasharray="4 3"
+            />
+            <path
+              d="M 820,340 C 820,380 660,380 660,410"
+              fill="none"
+              stroke="url(#tree-branch-dim)"
+              strokeWidth="1.5"
+              strokeDasharray="4 3"
+            />
+          </svg>
+        </div>
+
+        {/* Central Master Node (Compact & Radiant) */}
         <div className="dsa-central-node-wrapper">
           <motion.div
             className="dsa-central-node"
-            whileHover={{ scale: 1.04 }}
+            whileHover={{ scale: 1.05 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
           >
             {/* Ambient Background Glow */}
@@ -294,191 +393,81 @@ export default function DsaSkillTree({ topicProficiency = [] }) {
             />
 
             {/* Circular Progress Ring */}
-            <svg className="dsa-central-svg" viewBox="0 0 120 120">
+            <svg className="dsa-central-svg" viewBox="0 0 90 90">
               <circle
                 className="dsa-ring-bg"
-                cx="60"
-                cy="60"
+                cx="45"
+                cy="45"
                 r={radius}
-                strokeWidth="7"
+                strokeWidth="5"
                 fill="none"
               />
               <circle
                 className="dsa-ring-fill"
-                cx="60"
-                cy="60"
+                cx="45"
+                cy="45"
                 r={radius}
-                strokeWidth="7"
+                strokeWidth="5"
                 fill="none"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
                 strokeLinecap="round"
-                transform="rotate(-90 60 60)"
+                transform="rotate(-90 45 45)"
               />
             </svg>
 
             {/* Inner Content */}
             <div className="dsa-central-content">
               <div className="dsa-central-icon-box">
-                <Brain size={22} className="dsa-brain-pulse" />
+                <Brain size={18} className="dsa-brain-pulse" />
               </div>
               <span className="dsa-central-pct">{overallMastery}%</span>
               <span className="dsa-central-label">DSA Mastery</span>
-              <span className="dsa-central-sublabel">Overall Mastery</span>
+              <span className="dsa-central-sublabel">Overall</span>
             </div>
           </motion.div>
-
-          {/* Central Stem Line */}
-          <div className="dsa-central-stem" />
         </div>
 
-        {/* 3. Responsive Hierarchical Topic Grid */}
-        <div className="dsa-topics-grid">
-          {processedTopics.map((topic, idx) => {
-            const Icon = topic.icon;
-            const { tierInfo } = topic;
-            const isHovered = hoveredTopic?.id === topic.id;
+        {/* 3. Multi-Tier Hierarchical Tree Structure */}
+        <div className="dsa-tree-tiers-container">
+          {/* TIER 1: Foundations (Arrays, Strings, Math) */}
+          <div className="dsa-tier-section">
+            <div className="dsa-tier-header-pill">
+              <span className="dsa-tier-num">Tier 1</span>
+              <span>Foundations &amp; Basics</span>
+            </div>
+            <div className="dsa-tier-nodes-row">
+              {tier1Topics.map((topic) => renderCompactTopicNode(topic, hoveredTopic, setHoveredTopic, navigate))}
+            </div>
+          </div>
 
-            return (
-              <motion.div
-                key={topic.id}
-                className={`dsa-topic-node ${tierInfo.accentClass} ${isHovered ? "is-hovered" : ""}`}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: idx * 0.04 }}
-                whileHover={{ y: -4, scale: 1.02 }}
-                onClick={() => navigate(`/problems?topic=${encodeURIComponent(topic.name)}`)}
-                onMouseEnter={() => setHoveredTopic(topic)}
-                onMouseLeave={() => setHoveredTopic(null)}
-              >
-                {/* Node Connector Point */}
-                <div
-                  className="dsa-node-connector-dot"
-                  style={{ background: tierInfo.color, boxShadow: `0 0 8px ${tierInfo.glowColor}` }}
-                />
+          {/* TIER 2: Core Data Structures (Hashing, Trees, Graphs) */}
+          <div className="dsa-tier-section">
+            <div className="dsa-tier-header-pill">
+              <span className="dsa-tier-num">Tier 2</span>
+              <span>Core Data Structures</span>
+            </div>
+            <div className="dsa-tier-nodes-row">
+              {tier2Topics.map((topic) => renderCompactTopicNode(topic, hoveredTopic, setHoveredTopic, navigate))}
+            </div>
+          </div>
 
-                {/* Node Header: Icon + Name + Badge */}
-                <div className="dsa-node-top">
-                  <div
-                    className="dsa-node-icon-wrap"
-                    style={{
-                      background: tierInfo.badgeBg,
-                      borderColor: tierInfo.badgeBorder,
-                      color: tierInfo.color
-                    }}
-                  >
-                    <Icon size={16} />
-                  </div>
-
-                  <div className="dsa-node-name-wrap">
-                    <h4 className="dsa-node-name">{topic.name}</h4>
-                    <span className="dsa-node-tier-tag">Tier {topic.tier}</span>
-                  </div>
-
-                  <span
-                    className="dsa-node-status-badge"
-                    style={{
-                      background: tierInfo.badgeBg,
-                      borderColor: tierInfo.badgeBorder,
-                      color: tierInfo.badgeText
-                    }}
-                  >
-                    {tierInfo.status}
-                  </span>
-                </div>
-
-                {/* Progress Metric Line */}
-                <div className="dsa-node-metric-row">
-                  <span className="dsa-node-solved-count">
-                    <strong>{topic.solvedCount}</strong> / {topic.totalProblems} solved
-                  </span>
-                  <span className="dsa-node-pct" style={{ color: tierInfo.color }}>
-                    {topic.masteryPct}%
-                  </span>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="dsa-node-progress-track">
-                  <motion.div
-                    className="dsa-node-progress-fill"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${Math.min(100, topic.masteryPct)}%` }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                    style={{
-                      background:
-                        topic.masteryPct >= 100
-                          ? "linear-gradient(90deg, #10b981, #34d399)"
-                          : topic.masteryPct >= 70
-                          ? "linear-gradient(90deg, #0284c7, #38bdf8)"
-                          : topic.masteryPct >= 35
-                          ? "linear-gradient(90deg, #d97706, #fbbf24)"
-                          : topic.masteryPct > 0
-                          ? "linear-gradient(90deg, #e11d48, #fb7185)"
-                          : "rgba(255, 255, 255, 0.1)"
-                    }}
-                  />
-                </div>
-
-                {/* Node Footer / Call to Action */}
-                <div className="dsa-node-footer">
-                  <span className="dsa-node-accuracy">
-                    {topic.accuracy > 0 ? `${topic.accuracy}% Accuracy` : "Unattempted"}
-                  </span>
-                  <div className="dsa-node-practice-btn">
-                    <span>Practice</span>
-                    <ChevronRight size={13} />
-                  </div>
-                </div>
-
-                {/* Interactive Tooltip on Hover */}
-                <AnimatePresence>
-                  {isHovered && (
-                    <motion.div
-                      className="dsa-node-tooltip"
-                      initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 4, scale: 0.95 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      <div className="dsa-tooltip-head">
-                        <span className="dsa-tooltip-title">{topic.name}</span>
-                        <span
-                          className="dsa-tooltip-status"
-                          style={{ color: tierInfo.badgeText }}
-                        >
-                          ● {tierInfo.status}
-                        </span>
-                      </div>
-                      <p className="dsa-tooltip-desc">{topic.description}</p>
-                      <div className="dsa-tooltip-stats">
-                        <div className="dsa-tooltip-stat-item">
-                          <span>Mastery</span>
-                          <strong>{topic.masteryPct}%</strong>
-                        </div>
-                        <div className="dsa-tooltip-stat-item">
-                          <span>Solved</span>
-                          <strong>
-                            {topic.solvedCount} / {topic.totalProblems}
-                          </strong>
-                        </div>
-                        <div className="dsa-tooltip-stat-item">
-                          <span>Accuracy</span>
-                          <strong>{topic.accuracy}%</strong>
-                        </div>
-                      </div>
-                      <div className="dsa-tooltip-action">
-                        <span>💡 Next:</span> {topic.nextAction}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            );
-          })}
+          {/* TIER 3 & 4: Advanced Algorithms & Systems */}
+          <div className="dsa-tier-section">
+            <div className="dsa-tier-header-pill">
+              <span className="dsa-tier-num">Tier 3 &amp; 4</span>
+              <span>Advanced Optimization &amp; Systems</span>
+            </div>
+            <div className="dsa-tier-nodes-row grid-4-col">
+              {[...tier3Topics, ...tier4Topics].map((topic) =>
+                renderCompactTopicNode(topic, hoveredTopic, setHoveredTopic, navigate)
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* 4. Legend at the Bottom */}
+      {/* 4. Legend at Bottom */}
       <div className="dsa-tree-legend">
         <div className="dsa-legend-label">Mastery Levels:</div>
         <div className="dsa-legend-items">
@@ -505,5 +494,133 @@ export default function DsaSkillTree({ topicProficiency = [] }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// Compact Topic Node Renderer
+function renderCompactTopicNode(topic, hoveredTopic, setHoveredTopic, navigate) {
+  const Icon = topic.icon;
+  const { tierInfo } = topic;
+  const isHovered = hoveredTopic?.id === topic.id;
+
+  return (
+    <motion.div
+      key={topic.id}
+      className={`dsa-compact-topic-node ${tierInfo.accentClass} ${isHovered ? "is-hovered" : ""}`}
+      whileHover={{ y: -3, scale: 1.02 }}
+      transition={{ duration: 0.15 }}
+      onClick={() => navigate(`/problems?topic=${encodeURIComponent(topic.name)}`)}
+      onMouseEnter={() => setHoveredTopic(topic)}
+      onMouseLeave={() => setHoveredTopic(null)}
+    >
+      {/* Top Connector Pip */}
+      <div
+        className="dsa-node-pip"
+        style={{ background: tierInfo.color, boxShadow: `0 0 6px ${tierInfo.glowColor}` }}
+      />
+
+      {/* Left Icon + Middle Info */}
+      <div className="dsa-node-main-body">
+        <div
+          className="dsa-compact-icon-box"
+          style={{
+            background: tierInfo.badgeBg,
+            borderColor: tierInfo.badgeBorder,
+            color: tierInfo.color
+          }}
+        >
+          <Icon size={14} />
+        </div>
+
+        <div className="dsa-compact-text">
+          <div className="dsa-compact-name-row">
+            <span className="dsa-compact-name">{topic.name}</span>
+            <span
+              className="dsa-compact-status-badge"
+              style={{
+                background: tierInfo.badgeBg,
+                color: tierInfo.badgeText,
+                borderColor: tierInfo.badgeBorder
+              }}
+            >
+              {tierInfo.status}
+            </span>
+          </div>
+
+          <div className="dsa-compact-bar-row">
+            <div className="dsa-compact-bar-track">
+              <div
+                className="dsa-compact-bar-fill"
+                style={{
+                  width: `${Math.min(100, topic.masteryPct)}%`,
+                  background:
+                    topic.masteryPct >= 100
+                      ? "linear-gradient(90deg, #10b981, #34d399)"
+                      : topic.masteryPct >= 70
+                      ? "linear-gradient(90deg, #0284c7, #38bdf8)"
+                      : topic.masteryPct >= 35
+                      ? "linear-gradient(90deg, #d97706, #fbbf24)"
+                      : topic.masteryPct > 0
+                      ? "linear-gradient(90deg, #e11d48, #fb7185)"
+                      : "rgba(255, 255, 255, 0.1)"
+                }}
+              />
+            </div>
+            <span className="dsa-compact-pct" style={{ color: tierInfo.color }}>
+              {topic.masteryPct}%
+            </span>
+          </div>
+
+          <div className="dsa-compact-footer-row">
+            <span>
+              {topic.solvedCount} / {topic.totalProblems} solved
+            </span>
+            <span className="dsa-compact-practice-tag">
+              Practice <ChevronRight size={11} />
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Rich Tooltip on Hover */}
+      <AnimatePresence>
+        {isHovered && (
+          <motion.div
+            className="dsa-node-tooltip"
+            initial={{ opacity: 0, y: 6, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 3, scale: 0.96 }}
+            transition={{ duration: 0.12 }}
+          >
+            <div className="dsa-tooltip-head">
+              <span className="dsa-tooltip-title">{topic.name}</span>
+              <span className="dsa-tooltip-status" style={{ color: tierInfo.badgeText }}>
+                ● {tierInfo.status}
+              </span>
+            </div>
+            <p className="dsa-tooltip-desc">{topic.description}</p>
+            <div className="dsa-tooltip-stats">
+              <div className="dsa-tooltip-stat-item">
+                <span>Mastery</span>
+                <strong>{topic.masteryPct}%</strong>
+              </div>
+              <div className="dsa-tooltip-stat-item">
+                <span>Solved</span>
+                <strong>
+                  {topic.solvedCount} / {topic.totalProblems}
+                </strong>
+              </div>
+              <div className="dsa-tooltip-stat-item">
+                <span>Accuracy</span>
+                <strong>{topic.accuracy}%</strong>
+              </div>
+            </div>
+            <div className="dsa-tooltip-action">
+              <span>💡 Next:</span> {topic.nextAction}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
