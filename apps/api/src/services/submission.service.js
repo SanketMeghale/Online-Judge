@@ -387,6 +387,11 @@ export class SubmissionService {
     };
   }
 
+  async getSubmissionById(submissionId) {
+    if (!submissionId) throw new Error("Submission ID is required.");
+
+    const cleanId = String(submissionId).trim();
+
     if (isDatabaseConnected() && mongoose.Types.ObjectId.isValid(cleanId)) {
       try {
         const submission = await Submission.findById(cleanId).lean();
