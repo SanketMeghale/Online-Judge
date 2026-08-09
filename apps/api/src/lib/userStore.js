@@ -271,6 +271,84 @@ export async function deleteUser(userId) {
   return false;
 }
 
+/**
+ * Record user submission verdict and update solved/attempted problem IDs and stats permanently
+ */
+export async function recordUserSubmission(userId, problemId, verdict, points = 10) {
+  if (!userId || !problemId) return null;
+  await connectDatabase();
+
+  const isAc = verdict === "AC" || verdict === "OK" || verdict === "Accepted";
+  const xpEarned = isAc ? (Number(points) || 10) * 10 : 0;
+
+  const mongoUpdate = {
+    $addToSet: { attemptedProblemIds: String(problemId) },
+    $inc: { "stats.totalSubmissions": 1 }
+  };
+
+  if (isAc) {
+    mongoUpdate.$addToSet.solvedProblemIds = String(problemId);
+    mongoUpdate.$inc["stats.acceptedSubmissions"] = 1;
+    mongoUpdate.$inc.xp = xpEarned;
+  } else if (verdict === "WA") {
+    mongoUpdate.$inc["stats.waCount"] = 1;
+  } else if (verdict === "RE") {
+    mongoUpdate.$inc["stats.reCount"] = 1;
+  } else if (verdict === "TLE") {
+    mongoUpdate.$inc["stats.tleCount"] = 1;
+  } else if (verdict === "CE") {
+    mongoUpdate.$inc["stats.ceCount"] = 1;
+  }
+
+  if (isDatabaseConnected()) {
+    try {
+      const isObjId = mongoose.Types.ObjectId.isValid(String(userId));
+      const query = isObjId ? { $or: [{ id: String(userId) }, { _id: userId }] } : { id: String(userId) };
+
+      const doc = await User.findOneAndUpdate(query, mongoUpdate, { new: true }).lean();
+      if (doc) {
+        console.log(`[UserStore] Updated user '${userId}' submission stats: AC=${isAc}, solvedCount=${doc.solvedProblemIds?.length || 0}`);
+        return sanitizeUser(doc);
+      }
+    } catch (e) {
+      console.error("[UserStore] recordUserSubmission DB error:", e);
+    }
+  }
+
+  // Fallback in-memory
+  const idx = memoryUsers.findIndex(
+    (u) => String(u.id) === String(userId) || String(u._id) === String(userId)
+  );
+
+  if (idx !== -1) {
+    const user = memoryUsers[idx];
+    const attempted = new Set(user.attemptedProblemIds || []);
+    attempted.add(String(problemId));
+    user.attemptedProblemIds = Array.from(attempted);
+
+    user.stats = user.stats || { totalSubmissions: 0, acceptedSubmissions: 0, waCount: 0, reCount: 0, tleCount: 0, ceCount: 0 };
+    user.stats.totalSubmissions = (user.stats.totalSubmissions || 0) + 1;
+
+    if (isAc) {
+      const solved = new Set(user.solvedProblemIds || []);
+      solved.add(String(problemId));
+      user.solvedProblemIds = Array.from(solved);
+      user.stats.acceptedSubmissions = (user.stats.acceptedSubmissions || 0) + 1;
+      user.xp = (user.xp || 0) + xpEarned;
+    } else if (verdict === "WA") {
+      user.stats.waCount = (user.stats.waCount || 0) + 1;
+    } else if (verdict === "RE") {
+      user.stats.reCount = (user.stats.reCount || 0) + 1;
+    } else if (verdict === "TLE") {
+      user.stats.tleCount = (user.stats.tleCount || 0) + 1;
+    }
+
+    return sanitizeUser(user);
+  }
+
+  return null;
+}
+
 export async function validateUserCredentials(identifier, password) {
   if (!identifier || !password) return null;
   await connectDatabase();

@@ -472,27 +472,64 @@ export function enrichUser(database, user) {
   };
 }
 
-export function getProblemStatusForUser(user, problemId) {
-  if (!user) return "Unsolved";
-  const solvedList = Array.isArray(user.solvedProblemIds) ? user.solvedProblemIds : [];
-  if (solvedList.includes(problemId)) {
+export function getProblemStatusForUser(user, problemId, database = null, userId = null) {
+  const cleanProbId = String(problemId || "").trim();
+  const cleanUserId = String(userId || user?.id || user?._id || "").trim();
+
+  // 1. Check if user has an Accepted submission in database.submissions
+  if (database && Array.isArray(database.submissions) && cleanUserId) {
+    const hasAc = database.submissions.some(
+      (s) =>
+        String(s.problemId || s.problem) === cleanProbId &&
+        String(s.userId || "") === cleanUserId &&
+        (s.verdict === "AC" || s.verdict === "OK" || s.verdict === "Accepted")
+    );
+    if (hasAc) return "Solved";
+  }
+
+  // 2. Check user's solvedProblemIds
+  const solvedList = Array.isArray(user?.solvedProblemIds) ? user.solvedProblemIds : [];
+  if (solvedList.includes(cleanProbId)) {
     return "Solved";
   }
 
-  const attemptedList = Array.isArray(user.attemptedProblemIds) ? user.attemptedProblemIds : [];
-  if (attemptedList.includes(problemId)) {
+  // 3. Check if user has any submission (attempted) in database.submissions
+  if (database && Array.isArray(database.submissions) && cleanUserId) {
+    const hasAttempt = database.submissions.some(
+      (s) =>
+        String(s.problemId || s.problem) === cleanProbId &&
+        String(s.userId || "") === cleanUserId
+    );
+    if (hasAttempt) return "Attempted";
+  }
+
+  // 4. Check user's attemptedProblemIds
+  const attemptedList = Array.isArray(user?.attemptedProblemIds) ? user.attemptedProblemIds : [];
+  if (attemptedList.includes(cleanProbId)) {
     return "Attempted";
   }
 
   return "Unsolved";
 }
 
-export function listProblemsForUser(database, user) {
+export function listProblemsForUser(database, user, userId = null) {
   const problems = Array.isArray(database?.problems) && database.problems.length > 0 ? database.problems : baseProblems;
-  return problems.map((problem) => ({
-    ...problem,
-    status: getProblemStatusForUser(user, problem.id)
-  }));
+  const targetUserId = userId || user?.id || user?._id || "";
+
+  return problems.map((problem) => {
+    let status = getProblemStatusForUser(user, problem.id, database, targetUserId);
+    // If problem already has server-confirmed Solved status, preserve it
+    if (status === "Unsolved" && (problem.status === "Solved" || problem.userStats?.solved)) {
+      status = "Solved";
+    } else if (status === "Unsolved" && problem.status === "Attempted") {
+      status = "Attempted";
+    }
+
+    return {
+      ...problem,
+      status
+    };
+  });
 }
 
 export function listSubmissionsForUser(database, userId) {
@@ -677,13 +714,7 @@ export function updateUserAfterSubmission(user, problem, verdict) {
 export function getProblemsForUser(database, userId) {
   const problems = Array.isArray(database?.problems) && database.problems.length > 0 ? database.problems : baseProblems;
   const user = findUserById(database, userId);
-  if (!user) {
-    return problems.map((problem) => ({
-      ...problem,
-      status: "Unsolved"
-    }));
-  }
-  return listProblemsForUser({ ...database, problems }, user);
+  return listProblemsForUser({ ...database, problems }, user, userId);
 }
 
 export function getSubmissionsForUser(database, userId) {

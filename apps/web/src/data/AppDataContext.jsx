@@ -120,38 +120,54 @@ export function AppDataProvider({ children }) {
   const [database, setDatabase] = useState(() => ensureDatabase());
   const [savedCode, setSavedCode] = useState(() => readSavedCode());
 
-  // Fetch & sync problems from backend API on mount
-  useEffect(() => {
-    let isMounted = true;
-    api
-      .getProblems()
-      .then((res) => {
-        const fetched = res?.problems || res;
-        if (Array.isArray(fetched) && fetched.length > 0 && isMounted) {
-          setDatabase((current) => {
-            const existingIds = new Set(current.problems.map((p) => p.id));
-            let changed = false;
-            const merged = [...current.problems];
+  // Dedicated sync function to fetch problems (with server-calculated status) and submissions from backend
+  const syncBackendData = async () => {
+    try {
+      const [problemsRes, subsRes] = await Promise.allSettled([
+        api.getProblems(),
+        api.getSubmissions()
+      ]);
 
-            for (const item of fetched) {
-              if (!existingIds.has(item.id)) {
-                merged.push(item);
-                changed = true;
-              }
-            }
+      setDatabase((current) => {
+        let nextProblems = current.problems;
+        let nextSubs = current.submissions;
+        let hasChanges = false;
 
-            if (!changed) return current;
-            const next = { ...current, problems: merged };
-            writeDatabase(next);
-            return next;
-          });
+        if (problemsRes.status === "fulfilled" && Array.isArray(problemsRes.value?.problems)) {
+          nextProblems = problemsRes.value.problems;
+          hasChanges = true;
         }
-      })
-      .catch(() => {});
 
-    return () => {
-      isMounted = false;
-    };
+        if (subsRes.status === "fulfilled") {
+          const subsList = Array.isArray(subsRes.value) ? subsRes.value : subsRes.value?.submissions || null;
+          if (Array.isArray(subsList) && subsList.length > 0) {
+            nextSubs = subsList.map((s) => ({
+              ...s,
+              id: String(s._id || s.id || s.submissionId || ""),
+              submissionId: String(s._id || s.id || s.submissionId || "")
+            }));
+            hasChanges = true;
+          }
+        }
+
+        if (!hasChanges) return current;
+
+        const next = {
+          ...current,
+          problems: nextProblems,
+          submissions: nextSubs
+        };
+        writeDatabase(next);
+        return next;
+      });
+    } catch (err) {
+      console.warn("[AppDataContext] syncBackendData notice:", err);
+    }
+  };
+
+  // Fetch & sync on mount
+  useEffect(() => {
+    syncBackendData();
   }, []);
 
   // Real-time Socket.IO updates from Judge Worker
@@ -350,6 +366,8 @@ export function AppDataProvider({ children }) {
         result
       );
 
+      const isAc = result.verdict === "AC" || result.verdict === "OK" || result.verdict === "Accepted";
+
       updateDatabase((current) => {
         const userExists = current.users?.some((u) => u.id === userId || u._id === userId);
         const updatedUsers = userExists
@@ -360,13 +378,35 @@ export function AppDataProvider({ children }) {
             )
           : [...(current.users || []), updateUserAfterSubmission(userFallback, problem, result.verdict)];
 
+        // Update problem's own status in problems list
+        const updatedProblems = (current.problems || []).map((p) => {
+          if (p.id === problem.id) {
+            return {
+              ...p,
+              status: isAc ? "Solved" : p.status === "Solved" ? "Solved" : "Attempted",
+              userStats: {
+                solved: isAc ? true : !!p.userStats?.solved,
+                attempts: (p.userStats?.attempts || 0) + 1,
+                lastVerdict: result.verdict
+              }
+            };
+          }
+          return p;
+        });
+
         return {
           ...current,
           nextSubmissionId,
+          problems: updatedProblems,
           submissions: [submission, ...(current.submissions || [])],
           users: updatedUsers
         };
       });
+
+      // Background re-sync with server
+      setTimeout(() => {
+        syncBackendData();
+      }, 500);
     } catch (dbErr) {
       console.warn("[Submit] Local DB update notice:", dbErr.message);
     }
@@ -378,6 +418,7 @@ export function AppDataProvider({ children }) {
     () => ({
       database,
       refreshDatabase,
+      syncBackendData,
       updateDatabase,
       getProblemById: (id) => getProblemById(database, id),
       getProblemsForUser: (userId, query, difficulty, status) =>

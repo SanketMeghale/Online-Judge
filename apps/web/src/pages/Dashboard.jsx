@@ -47,13 +47,20 @@ export default function Dashboard() {
     };
   }, [user?.id]);
 
-  // Compute live user stats from submissions
+  // Compute live user stats from submissions & distinct solved problem IDs
+  const distinctSolvedSet = new Set(
+    submissions.filter((s) => s.verdict === "AC" || s.verdict === "OK" || s.verdict === "Accepted").map((s) => s.problemId || s.problem)
+  );
+  if (Array.isArray(liveUser?.solvedProblemIds)) {
+    liveUser.solvedProblemIds.forEach((pid) => distinctSolvedSet.add(pid));
+  }
+  const solvedCount = distinctSolvedSet.size;
+
   const totalSubmissions = Math.max(submissions.length, liveUser?.stats?.totalSubmissions || 0);
-  const acceptedCount = submissions.filter((s) => s.verdict === "AC" || s.verdict === "Accepted").length || liveUser?.stats?.acceptedSubmissions || 0;
+  const acceptedCount = submissions.filter((s) => s.verdict === "AC" || s.verdict === "Accepted" || s.verdict === "OK").length || liveUser?.stats?.acceptedSubmissions || 0;
   const waCount = submissions.filter((s) => s.verdict === "WA" || s.verdict === "Wrong Answer").length || liveUser?.stats?.waCount || 0;
   const reCount = submissions.filter((s) => s.verdict === "RE" || s.verdict === "Runtime Error" || s.verdict === "CE").length || liveUser?.stats?.reCount || 0;
   const tleCount = submissions.filter((s) => s.verdict === "TLE" || s.verdict === "Time Limit Exceeded").length || liveUser?.stats?.tleCount || 0;
-  const solvedCount = liveUser?.solvedProblemIds?.length || liveUser?.solved || (acceptedCount > 0 ? acceptedCount : 0);
 
   const acceptanceRate = totalSubmissions > 0 ? ((acceptedCount / totalSubmissions) * 100).toFixed(1) : "0.0";
   const acceptanceRateNum = Number(acceptanceRate);

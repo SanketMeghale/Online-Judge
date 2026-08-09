@@ -7,6 +7,7 @@ import { calculatePercentile } from "../lib/benchmarkEngine.js";
 import { wrapCodeWithHarness } from "../lib/codeHarness.js";
 import { executeCode } from "../lib/executeCode.js";
 import { problems as defaultProblems } from "../data/problems.js";
+import { recordUserSubmission } from "../lib/userStore.js";
 
 function normalizeOutput(str) {
   if (typeof str !== "string") return "";
@@ -364,6 +365,13 @@ export class SubmissionService {
 
     await updateSubmissionRecord(submissionId, updatedRecord);
 
+    // Update user solvedProblemIds, attemptedProblemIds, and submission stats permanently in DB/memory
+    try {
+      await recordUserSubmission(userId, problemId, evaluation.verdict, problem?.points || 10);
+    } catch (userErr) {
+      console.warn("[SubmissionService] Notice: could not update user stats:", userErr.message);
+    }
+
     console.log(`[SubmissionService] [STAGE 9: DATABASE_UPDATED] Submission ${submissionId} evaluation complete: ${evaluation.verdict} (${evaluation.statusText})`);
 
     return {
@@ -378,10 +386,6 @@ export class SubmissionService {
       testResults: evaluation.testResults || []
     };
   }
-
-  async getSubmissionById(submissionId) {
-    if (!submissionId) throw new Error("Submission ID is required.");
-    const cleanId = String(submissionId).trim();
 
     if (isDatabaseConnected() && mongoose.Types.ObjectId.isValid(cleanId)) {
       try {

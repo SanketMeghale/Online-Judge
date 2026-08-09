@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CheckCircle2,
@@ -28,14 +28,28 @@ const DIFF_META = {
 
 export default function ProblemsList() {
   const { user } = useAuth();
-  const { getProblemsForUser, getSubmissionsForUser } = useAppData();
+  const { getProblemsForUser, getSubmissionsForUser, syncBackendData } = useAppData();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const initialTopic = searchParams.get("topic") || "All";
 
   const [query,        setQuery]        = useState("");
   const [difficulty,   setDifficulty]   = useState("All");
-  const [topic,        setTopic]        = useState("All");
+  const [topic,        setTopic]        = useState(initialTopic);
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortBy,       setSortBy]       = useState("default");
+
+  useEffect(() => {
+    if (syncBackendData) {
+      syncBackendData();
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    const t = searchParams.get("topic");
+    if (t) setTopic(t);
+  }, [searchParams]);
 
   const problems        = getProblemsForUser(user?.id);
   const userSubmissions = getSubmissionsForUser(user?.id) || [];
