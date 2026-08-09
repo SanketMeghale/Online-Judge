@@ -27,6 +27,7 @@ import {
 import { api } from "../api/apiClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
+import DsaSkillTree from "../components/progress/DsaSkillTree.jsx";
 
 const TIME_RANGES = [
   { id: "7d", label: "Last 7 Days", days: 7 },
@@ -393,57 +394,8 @@ export default function ProgressPage() {
 
       </div>
 
-      {/* ── 4. TOPIC PROFICIENCY SECTION ───────────────────────────── */}
-      <div style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "18px", display: "flex", flexDirection: "column", gap: "14px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Compass size={16} style={{ color: "#a855f7" }} />
-            <h3 style={{ fontSize: "0.95rem", fontWeight: "800", color: "#f8fafc", margin: 0 }}>Topic Proficiency</h3>
-          </div>
-          <span style={{ fontSize: "0.75rem", color: "#64748b" }}>Calculated from problem topic coverage &amp; accuracy</span>
-        </div>
-
-        {/* Topic Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "10px" }}>
-          {topicProficiency.map((t) => (
-            <div
-              key={t.topic}
-              style={{
-                background: "#080c14", border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: "8px", padding: "12px 14px",
-                display: "flex", flexDirection: "column", gap: "8px"
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <strong style={{ fontSize: "0.86rem", color: "#f8fafc" }}>{t.topic}</strong>
-                <span style={{ fontSize: "0.75rem", fontWeight: "700", color: t.proficiency >= 70 ? "#34d399" : t.proficiency >= 40 ? "#fbbf24" : "#f87171" }}>
-                  {t.proficiency}%
-                </span>
-              </div>
-
-              {/* Progress bar */}
-              <div style={{ width: "100%", height: "4px", background: "rgba(255,255,255,0.06)", borderRadius: "99px", overflow: "hidden" }}>
-                <div style={{
-                  width: `${Math.min(100, t.proficiency)}%`, height: "100%",
-                  background: t.proficiency >= 70 ? "linear-gradient(90deg, #10b981, #34d399)" : t.proficiency >= 40 ? "linear-gradient(90deg, #f59e0b, #fbbf24)" : "linear-gradient(90deg, #ef4444, #f87171)",
-                  borderRadius: "99px"
-                }} />
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.74rem", color: "#64748b" }}>
-                <span>{t.solvedCount} / {t.totalProblems} solved</span>
-                <button
-                  onClick={() => navigate(`/problems?topic=${encodeURIComponent(t.topic)}`)}
-                  type="button"
-                  style={{ background: "transparent", border: "none", color: "#818cf8", fontSize: "0.74rem", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", gap: "2px", padding: 0 }}
-                >
-                  Practice →
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* ── 4. DSA SKILL TREE SECTION ───────────────────────────── */}
+      <DsaSkillTree topicProficiency={topicProficiency} />
 
     </motion.div>
   );

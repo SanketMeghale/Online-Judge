@@ -1,0 +1,544 @@
+/* ==========================================================================
+   JUDGO DSA SKILL TREE STYLESHEET
+   ========================================================================== */
+
+.dsa-tree-container {
+  background: #0d111a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: visible;
+}
+
+/* ==========================================================================
+   1. SECTION HEADER
+   ========================================================================== */
+.dsa-tree-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dsa-tree-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dsa-tree-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dsa-tree-spark-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(120, 80, 255, 0.15);
+  border: 1px solid rgba(120, 80, 255, 0.3);
+  color: #a78bfa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dsa-tree-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.dsa-tree-badge-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.dsa-tree-subtitle {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.dsa-tree-info-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  color: #64748b;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* ==========================================================================
+   2. VISUAL SKILL TREE CANVAS
+   ========================================================================== */
+.dsa-tree-canvas {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  position: relative;
+  padding: 10px 0;
+}
+
+/* Central Mastery Node */
+.dsa-central-node-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+.dsa-central-node {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: #090d16;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6), 0 0 30px rgba(120, 80, 255, 0.2);
+}
+
+.dsa-central-glow {
+  position: absolute;
+  inset: -20px;
+  border-radius: 50%;
+  filter: blur(25px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dsa-central-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.dsa-ring-bg {
+  stroke: rgba(255, 255, 255, 0.06);
+}
+
+.dsa-ring-fill {
+  stroke: url(#dsa-gradient, #7850ff);
+  stroke: #7850ff;
+  transition: stroke-dashoffset 1s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: drop-shadow(0 0 6px rgba(120, 80, 255, 0.8));
+}
+
+.dsa-central-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.dsa-central-icon-box {
+  color: #a78bfa;
+  margin-bottom: 2px;
+}
+
+.dsa-brain-pulse {
+  animation: brain-pulse 3s ease-in-out infinite;
+}
+
+@keyframes brain-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(120, 80, 255, 0.4)); }
+  50% { transform: scale(1.1); filter: drop-shadow(0 0 10px rgba(0, 195, 255, 0.8)); }
+}
+
+.dsa-central-pct {
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: #ffffff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: -0.03em;
+}
+
+.dsa-central-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #c4b5fd;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 1px;
+}
+
+.dsa-central-sublabel {
+  font-size: 0.62rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.dsa-central-stem {
+  width: 2px;
+  height: 24px;
+  background: linear-gradient(180deg, rgba(120, 80, 255, 0.7) 0%, rgba(255, 255, 255, 0.1) 100%);
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   3. TOPIC NODES GRID (Tree Branches)
+   ========================================================================== */
+.dsa-topics-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.dsa-topic-node {
+  position: relative;
+  background: rgba(13, 17, 26, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.dsa-topic-node:hover {
+  background: rgba(18, 24, 38, 0.95);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 20px rgba(120, 80, 255, 0.15);
+}
+
+/* Node Variants Based on Mastery */
+.dsa-topic-node.node-mastered {
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25), inset 0 0 12px rgba(16, 185, 129, 0.06);
+}
+
+.dsa-topic-node.node-strong {
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.dsa-topic-node.node-learning {
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.dsa-topic-node.node-not-started {
+  opacity: 0.82;
+}
+
+.dsa-topic-node.node-not-started:hover {
+  opacity: 1;
+}
+
+/* Connection Dot */
+.dsa-node-connector-dot {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid #0d111a;
+}
+
+/* Node Header */
+.dsa-node-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dsa-node-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dsa-node-name-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.dsa-node-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dsa-node-tier-tag {
+  font-size: 0.65rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dsa-node-status-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+/* Node Metrics */
+.dsa-node-metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.76rem;
+}
+
+.dsa-node-solved-count {
+  color: #94a3b8;
+}
+
+.dsa-node-solved-count strong {
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.dsa-node-pct {
+  font-weight: 800;
+  font-family: ui-monospace, monospace;
+}
+
+/* Progress Track */
+.dsa-node-progress-track {
+  width: 100%;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.dsa-node-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+/* Node Footer */
+.dsa-node-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: #64748b;
+  padding-top: 4px;
+}
+
+.dsa-node-accuracy {
+  font-weight: 500;
+}
+
+.dsa-node-practice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: #818cf8;
+  font-weight: 700;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.dsa-topic-node:hover .dsa-node-practice-btn {
+  color: #38bdf8;
+  transform: translateX(2px);
+}
+
+/* ==========================================================================
+   4. INTERACTIVE TOOLTIP ON HOVER
+   ========================================================================== */
+.dsa-node-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 250px;
+  background: rgba(9, 13, 22, 0.96);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  padding: 12px 14px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), 0 0 20px rgba(120, 80, 255, 0.2);
+  z-index: 100;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dsa-tooltip-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dsa-tooltip-title {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.dsa-tooltip-status {
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.dsa-tooltip-desc {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.dsa-tooltip-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.dsa-tooltip-stat-item {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.68rem;
+  color: #64748b;
+}
+
+.dsa-tooltip-stat-item strong {
+  color: #e2e8f0;
+  font-size: 0.78rem;
+}
+
+.dsa-tooltip-action {
+  font-size: 0.72rem;
+  color: #38bdf8;
+  line-height: 1.3;
+}
+
+.dsa-tooltip-action span {
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+/* ==========================================================================
+   5. LEGEND AT BOTTOM
+   ========================================================================== */
+.dsa-tree-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.76rem;
+  color: #94a3b8;
+}
+
+.dsa-legend-label {
+  font-weight: 600;
+  color: #64748b;
+}
+
+.dsa-legend-items {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dsa-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dsa-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dsa-legend-dot.mastered {
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+
+.dsa-legend-dot.strong {
+  background: #38bdf8;
+  box-shadow: 0 0 6px #38bdf8;
+}
+
+.dsa-legend-dot.learning {
+  background: #f59e0b;
+  box-shadow: 0 0 6px #f59e0b;
+}
+
+.dsa-legend-dot.weak {
+  background: #f43f5e;
+  box-shadow: 0 0 6px #f43f5e;
+}
+
+.dsa-legend-dot.not-started {
+  background: #64748b;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dsa-topics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dsa-tree-legend {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
