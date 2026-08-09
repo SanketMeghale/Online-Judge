@@ -42,14 +42,15 @@ const SNIPPETS = [
     runtime: "12ms",
     memory: "15.1 MB",
     complexity: "O(N) Hash",
-    testcases: ["nums=[2,7..]", "target=9", "negatives", "duplicates", "large N"],
+    testcases: ["TC #1", "TC #2", "TC #3", "TC #4", "TC #5"],
     lines: [
       { num: 1, content: <><span className="syn-kw">def</span> <span className="syn-fn">twoSum</span>(nums: <span className="syn-type">list</span>[<span className="syn-type">int</span>], target: <span className="syn-type">int</span>):</> },
       { num: 2, indent: 1, content: <><span className="syn-var">seen</span> = &#123;&#125;</> },
       { num: 3, indent: 1, content: <><span className="syn-kw">for</span> i, n <span className="syn-kw">in</span> <span className="syn-fn">enumerate</span>(nums):</> },
       { num: 4, indent: 2, content: <><span className="syn-kw">if</span> target - n <span className="syn-kw">in</span> seen:</> },
       { num: 5, indent: 3, content: <><span className="syn-kw">return</span> [seen[target - n], i]</> },
-      { num: 6, indent: 2, content: <>seen[n] = i</> }
+      { num: 6, indent: 2, content: <>seen[n] = i</> },
+      { num: 7, indent: 1, content: <><span className="syn-kw">return</span> []</> }
     ]
   },
   {
@@ -59,16 +60,15 @@ const SNIPPETS = [
     runtime: "4ms",
     memory: "14.8 MB",
     complexity: "O(log N)",
-    testcases: ["arr=[1..10k]", "x=42", "not found", "single elem", "boundaries"],
+    testcases: ["TC #1", "TC #2", "TC #3", "TC #4", "TC #5"],
     lines: [
-      { num: 1, content: <><span className="syn-kw">function</span> <span className="syn-fn">binarySearch</span>(arr: <span className="syn-type">number[]</span>, x: <span className="syn-type">number</span>): <span className="syn-type">number</span> &#123;</> },
+      { num: 1, content: <><span className="syn-kw">function</span> <span className="syn-fn">binarySearch</span>(arr: <span className="syn-type">number[]</span>, x: <span className="syn-type">number</span>) &#123;</> },
       { num: 2, indent: 1, content: <><span className="syn-kw">let</span> [l, r] = [<span className="syn-num">0</span>, arr.length - <span className="syn-num">1</span>];</> },
       { num: 3, indent: 1, content: <><span className="syn-kw">while</span> (l &lt;= r) &#123;</> },
       { num: 4, indent: 2, content: <><span className="syn-kw">const</span> m = (l + r) &gt;&gt; <span className="syn-num">1</span>;</> },
       { num: 5, indent: 2, content: <><span className="syn-kw">if</span> (arr[m] === x) <span className="syn-kw">return</span> m;</> },
       { num: 6, indent: 2, content: <>arr[m] &lt; x ? (l = m + <span className="syn-num">1</span>) : (r = m - <span className="syn-num">1</span>);</> },
-      { num: 7, indent: 1, content: <>&#125; <span className="syn-kw">return</span> -<span className="syn-num">1</span>;</> },
-      { num: 8, content: <>&#125;</> }
+      { num: 7, indent: 1, content: <>&#125; <span className="syn-kw">return</span> -<span className="syn-num">1</span>;</> }
     ]
   }
 ];
