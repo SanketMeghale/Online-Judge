@@ -77,5 +77,14 @@ export const api = {
   getProgress: (range = "30d") => request(`/progress?range=${range}`),
 
   // Dashboard Summary & Analytics
-  getDashboard: () => request("/dashboard")
+  getDashboard: () => request("/dashboard"),
+
+  // AI Mentor & Coach
+  getAIProfile: () => request("/ai/profile"),
+  getAIConversations: (conversationId) => request(`/ai/conversations${conversationId ? `?conversationId=${conversationId}` : ""}`),
+  sendAIMessage: (body) => request("/ai/mentor", { method: "POST", body: JSON.stringify(body) }),
+  reviewCodeAI: (body) => request("/ai/review", { method: "POST", body: JSON.stringify(body) }),
+  getProblemHintAI: (body) => request("/ai/hint", { method: "POST", body: JSON.stringify(body) }),
+  interviewAI: (body) => request("/ai/interview", { method: "POST", body: JSON.stringify(body) }),
+  clearAIConversation: (conversationId) => request(`/ai/conversations${conversationId ? `?conversationId=${conversationId}` : ""}`, { method: "DELETE" })
 };

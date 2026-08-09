@@ -73,7 +73,29 @@ function ProblemDetailsInner() {
   const [selectedCaseIndex, setSelectedCaseIndex] = useState(0);
   const [customInput, setCustomInput] = useState("");
   const [showHint, setShowHint] = useState(false);
+  const [hintLevel, setHintLevel] = useState(1);
+  const [hintText, setHintText] = useState("");
+  const [isHintLoading, setIsHintLoading] = useState(false);
   const [scrollTrigger, setScrollTrigger] = useState(0);
+
+  const fetchAIHint = async (level = 1) => {
+    setIsHintLoading(true);
+    try {
+      const res = await api.getProblemHintAI({
+        problemId,
+        hintLevel: level,
+        currentCode: code
+      });
+      if (res?.hint) {
+        setHintText(res.hint);
+        setHintLevel(level);
+      }
+    } catch (e) {
+      setHintText("💡 Focus on identifying the core invariant and cache repeated subproblem lookups in a Hash Map.");
+    } finally {
+      setIsHintLoading(false);
+    }
+  };
 
   const resultPanelRef = useRef(null);
 
@@ -449,18 +471,48 @@ function ProblemDetailsInner() {
                 alignItems: "center",
                 cursor: "pointer"
               }}
-              onClick={() => setShowHint(!showHint)}
+              onClick={() => {
+                const next = !showHint;
+                setShowHint(next);
+                if (next && !hintText) {
+                  fetchAIHint(1);
+                }
+              }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#cbd5e1", fontSize: "0.85rem" }}>
                 <Lightbulb size={16} style={{ color: "#eab308" }} />
-                <span>Hint</span>
+                <span>AI Progressive Hint {showHint ? `(Level ${hintLevel}/4)` : ""}</span>
               </div>
-              <span style={{ fontSize: "0.75rem", color: "#8b9bb4" }}>1 available <ChevronDown size={14} /></span>
+              <span style={{ fontSize: "0.75rem", color: "#8b9bb4" }}>4 levels <ChevronDown size={14} /></span>
             </div>
             {showHint ? (
-              <p style={{ background: "#080c14", border: "1px solid rgba(234, 179, 8, 0.2)", color: "#fef08a", padding: "10px", borderRadius: "8px", fontSize: "0.82rem", margin: 0 }}>
-                💡 Consider storing seen values in a Hash Map to look up complementary targets in O(1) time.
-              </p>
+              <div style={{ background: "#080c14", border: "1px solid rgba(234, 179, 8, 0.2)", borderRadius: "8px", padding: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                <p style={{ color: "#fef08a", fontSize: "0.82rem", margin: 0, lineHeight: "1.5" }}>
+                  {isHintLoading ? "Analyzing problem and generating personalized hint..." : (hintText || "💡 Consider identifying repeating subproblems and storing intermediate calculations.")}
+                </p>
+                {hintLevel < 4 && !isHintLoading && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fetchAIHint(hintLevel + 1);
+                    }}
+                    style={{
+                      alignSelf: "flex-start",
+                      background: "rgba(234, 179, 8, 0.15)",
+                      border: "1px solid rgba(234, 179, 8, 0.3)",
+                      color: "#fbbf24",
+                      borderRadius: "6px",
+                      padding: "4px 10px",
+                      fontSize: "0.74rem",
+                      fontWeight: "600",
+                      cursor: "pointer"
+                    }}
+                  >
+                    Need more guidance? Request Level {hintLevel + 1} Hint →
+                  </button>
+                )}
+              </div>
             ) : null}
           </section>
 
@@ -787,7 +839,11 @@ function ProblemDetailsInner() {
                         </p>
                       </div>
                     </div>
-                    <button style={{ background: "#7850ff", border: "none", borderRadius: "6px", color: "#fff", fontSize: "0.78rem", fontWeight: "bold", padding: "6px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" }}>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/ai-coach")}
+                      style={{ background: "#7850ff", border: "none", borderRadius: "6px", color: "#fff", fontSize: "0.78rem", fontWeight: "bold", padding: "6px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" }}
+                    >
                       + Explain with AI
                     </button>
                   </div>
