@@ -19,6 +19,10 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const githubProvider = new GithubAuthProvider();
 
+// Request email scope for GitHub users
+githubProvider.addScope("user:email");
+githubProvider.addScope("read:user");
+
 // Custom parameters to ensure Google account picker is always prompt
 googleProvider.setCustomParameters({
   prompt: "select_account"
