@@ -989,3 +989,528 @@ export function calculateLocalHiringEvaluation(database, userId, sessionOptions 
     timestamp: new Date().toISOString()
   };
 }
+
+export const seedCompanies = [
+  {
+    id: "google",
+    name: "Google",
+    slug: "google",
+    category: "FAANG",
+    difficulty: "Hard",
+    tier: "Tier 1 FAANG",
+    description: "Focuses heavily on algorithmic complexity, graph traversals, dynamic programming invariants, and tree manipulation with zero tolerance for suboptimal $O(N^2)$ approaches.",
+    frequentTopics: ["Dynamic Programming", "Graphs", "Trees", "Binary Search", "Sliding Window", "Arrays"],
+    problems: [
+      { problemId: "two-sum", frequency: 5, interviewTags: ["Phone Screen", "Warmup"], year: "2025-2026", source: "Online Assessment" },
+      { problemId: "merge-islands", frequency: 5, interviewTags: ["Onsite Round 2", "Graph BFS"], year: "2025-2026", source: "Onsite Technical Round" },
+      { problemId: "binary-lift", frequency: 4, interviewTags: ["Onsite Round 1", "Binary Lifting"], year: "2025-2026", source: "L5 Bar Raiser" },
+      { problemId: "climbing-stairs", frequency: 4, interviewTags: ["Screening", "DP State"], year: "2024-2025", source: "Technical Phone Screen" },
+      { problemId: "best-time-to-buy-and-sell-stock", frequency: 5, interviewTags: ["Array Greedy", "Trading"], year: "2025-2026", source: "Onsite Coding" },
+      { problemId: "valid-parentheses", frequency: 4, interviewTags: ["Stack Invariant", "Parsing"], year: "2025-2026", source: "Phone Screen" }
+    ]
+  },
+  {
+    id: "meta",
+    name: "Meta",
+    slug: "meta",
+    category: "FAANG",
+    difficulty: "Hard",
+    tier: "Tier 1 FAANG",
+    description: "High-speed coding rounds with strict 2-problem per 45-minute format. Focuses heavily on Binary Trees, Hash Maps, Prefix Sums, and Multi-Source BFS.",
+    frequentTopics: ["Trees", "Arrays", "Hashing", "Strings", "Graphs", "Two Pointers"],
+    problems: [
+      { problemId: "two-sum", frequency: 5, interviewTags: ["Speed Round", "Hash Map"], year: "2025-2026", source: "Screening" },
+      { problemId: "valid-parentheses", frequency: 5, interviewTags: ["Stack", "Grammar"], year: "2025-2026", source: "E4/E5 Round" },
+      { problemId: "reverse-string", frequency: 4, interviewTags: ["Two Pointers", "In-Place"], year: "2024-2025", source: "Screening" },
+      { problemId: "merge-islands", frequency: 5, interviewTags: ["Social Graph", "Connected Components"], year: "2025-2026", source: "Onsite Coding 1" },
+      { problemId: "cache-stampede", frequency: 4, interviewTags: ["Feed Cache", "Concurrency"], year: "2025-2026", source: "Systems Coding" }
+    ]
+  },
+  {
+    id: "amazon",
+    name: "Amazon",
+    slug: "amazon",
+    category: "FAANG",
+    difficulty: "Medium-Hard",
+    tier: "Tier 1 FAANG",
+    description: "Evaluates Leadership Principles alongside Sliding Window, Min-Heaps, Multi-Source BFS, and Hash Maps with focus on customer-scale data structures.",
+    frequentTopics: ["Arrays", "Strings", "Trees", "Hashing", "Graphs", "Heap"],
+    problems: [
+      { problemId: "two-sum", frequency: 5, interviewTags: ["Warehouse Inventory", "Hash Map"], year: "2025-2026", source: "OA2" },
+      { problemId: "best-time-to-buy-and-sell-stock", frequency: 5, interviewTags: ["Price Prediction", "Greedy"], year: "2025-2026", source: "Onsite Round" },
+      { problemId: "single-number", frequency: 4, interviewTags: ["Bitwise XOR", "ID Match"], year: "2024-2025", source: "SDE-1 Screening" },
+      { problemId: "palindrome-number", frequency: 4, interviewTags: ["Math", "Reverse"], year: "2024-2025", source: "OA1" },
+      { problemId: "valid-parentheses", frequency: 5, interviewTags: ["JSON Parsing", "Stack"], year: "2025-2026", source: "Bar Raiser" }
+    ]
+  },
+  {
+    id: "microsoft",
+    name: "Microsoft",
+    slug: "microsoft",
+    category: "Product Based",
+    difficulty: "Medium-Hard",
+    tier: "Tier 1 Global",
+    description: "Emphasizes clean modular code, Binary Search Trees, Matrix boundary traversals, and Doubly Linked Lists.",
+    frequentTopics: ["Strings", "Trees", "Arrays", "Linked List", "Dynamic Programming"],
+    problems: [
+      { problemId: "two-sum", frequency: 5, interviewTags: ["Warmup", "Lookup"], year: "2025-2026", source: "Round 1" },
+      { problemId: "binary-lift", frequency: 4, interviewTags: ["Azure Directory", "Tree Ancestors"], year: "2025-2026", source: "L63 Technical" },
+      { problemId: "reverse-string", frequency: 4, interviewTags: ["String Manipulation", "Pointers"], year: "2024-2025", source: "Campus Round" },
+      { problemId: "single-number", frequency: 4, interviewTags: ["Low-Level OS", "Bitwise"], year: "2025-2026", source: "Core OS Round" }
+    ]
+  },
+  {
+    id: "apple",
+    name: "Apple",
+    slug: "apple",
+    category: "FAANG",
+    difficulty: "Medium-Hard",
+    tier: "Tier 1 FAANG",
+    description: "Focuses on memory management, hardware-level trade-offs, pointer arithmetic, and rigorous boundary-condition correctness.",
+    frequentTopics: ["Arrays", "Two Pointers", "Bit Manipulation", "Strings", "Trees"],
+    problems: [
+      { problemId: "best-time-to-buy-and-sell-stock", frequency: 5, interviewTags: ["Two Pointers", "State Tracking"], year: "2025-2026", source: "Onsite Round" },
+      { problemId: "single-number", frequency: 5, interviewTags: ["Core OS", "Bitwise Engine"], year: "2025-2026", source: "Systems Round" },
+      { problemId: "palindrome-number", frequency: 4, interviewTags: ["Numerical Safety", "Overflow"], year: "2024-2025", source: "Phone Screen" }
+    ]
+  },
+  {
+    id: "adobe",
+    name: "Adobe",
+    slug: "adobe",
+    category: "Product Based",
+    difficulty: "Medium-Hard",
+    tier: "Tier 1 Global",
+    description: "High prevalence of mathematical geometry, Dynamic Programming, String Parsing, and Complex Tree traversals.",
+    frequentTopics: ["Dynamic Programming", "Strings", "Math", "Arrays", "Trees"],
+    problems: [
+      { problemId: "climbing-stairs", frequency: 5, interviewTags: ["DP Memoization", "Combinatorics"], year: "2025-2026", source: "Member of Tech Staff" },
+      { problemId: "palindrome-number", frequency: 5, interviewTags: ["Math Parsing", "Logic"], year: "2025-2026", source: "OA Round" },
+      { problemId: "valid-parentheses", frequency: 4, interviewTags: ["Syntax Tree", "Stack"], year: "2024-2025", source: "Round 2" }
+    ]
+  },
+  {
+    id: "uber",
+    name: "Uber",
+    slug: "uber",
+    category: "Product Based",
+    difficulty: "Hard",
+    tier: "Tier 1 Unicorn",
+    description: "Heavy emphasis on Graph algorithms (Dijkstra, Shortest Path), Distributed Caching, Sliding Windows, and GeoSpatial Proximity indexing.",
+    frequentTopics: ["Graphs", "Hashing", "Heap", "Sliding Window", "Dynamic Programming"],
+    problems: [
+      { problemId: "cache-stampede", frequency: 5, interviewTags: ["Surge Pricing Cache", "Concurrency"], year: "2025-2026", source: "L5 System Coding" },
+      { problemId: "merge-islands", frequency: 5, interviewTags: ["Driver Grid Index", "Connected Regions"], year: "2025-2026", source: "Onsite Round 1" },
+      { problemId: "best-time-to-buy-and-sell-stock", frequency: 4, interviewTags: ["Dynamic Pricing", "Array"], year: "2024-2025", source: "Screening" }
+    ]
+  },
+  {
+    id: "atlassian",
+    name: "Atlassian",
+    slug: "atlassian",
+    category: "Product Based",
+    difficulty: "Medium-Hard",
+    tier: "Tier 1 Global",
+    description: "Known for clean object-oriented architecture, Rate Limiting data structures, Trie Autocomplete, and Tree traversals.",
+    frequentTopics: ["Hashing", "Strings", "Trees", "Design", "Arrays"],
+    problems: [
+      { problemId: "cache-stampede", frequency: 5, interviewTags: ["Jira Cache", "Rate Limiter"], year: "2025-2026", source: "Onsite Architecture" },
+      { problemId: "valid-parentheses", frequency: 5, interviewTags: ["Markdown Parsing", "Stack"], year: "2025-2026", source: "Core Coding" },
+      { problemId: "two-sum", frequency: 4, interviewTags: ["Warmup", "Lookup Map"], year: "2024-2025", source: "Screening" }
+    ]
+  },
+  {
+    id: "goldman-sachs",
+    name: "Goldman Sachs",
+    slug: "goldman-sachs",
+    category: "Product Based",
+    difficulty: "Medium-Hard",
+    tier: "Tier 1 FinTech",
+    description: "High volume of mathematical number theory, Subarray sums, Dynamic Programming, and High-Frequency Ledger simulations.",
+    frequentTopics: ["Math", "Dynamic Programming", "Arrays", "Hashing", "Strings"],
+    problems: [
+      { problemId: "best-time-to-buy-and-sell-stock", frequency: 5, interviewTags: ["Quantitative Trading", "Max Profit"], year: "2025-2026", source: "CoderPad Round" },
+      { problemId: "palindrome-number", frequency: 4, interviewTags: ["Number Theory", "Math"], year: "2025-2026", source: "Round 1" },
+      { problemId: "climbing-stairs", frequency: 4, interviewTags: ["Fibonacci Sequence", "DP"], year: "2024-2025", source: "Superday" }
+    ]
+  },
+  {
+    id: "jpmorgan",
+    name: "JPMorgan Chase",
+    slug: "jpmorgan",
+    category: "Product Based",
+    difficulty: "Medium",
+    tier: "Tier 1 Banking",
+    description: "Tests core Data Structures, SQL, String sanitization, and Banking Transaction validation.",
+    frequentTopics: ["Arrays", "Strings", "Hashing", "Linked List", "Math"],
+    problems: [
+      { problemId: "two-sum", frequency: 5, interviewTags: ["Ledger Match", "Hash Map"], year: "2025-2026", source: "CodeVue Assessment" },
+      { problemId: "valid-parentheses", frequency: 5, interviewTags: ["Transaction Validator", "Stack"], year: "2025-2026", source: "Superday" },
+      { problemId: "palindrome-number", frequency: 4, interviewTags: ["Routing Number Check", "Math"], year: "2024-2025", source: "Technical Round" }
+    ]
+  },
+  {
+    id: "walmart",
+    name: "Walmart Global Tech",
+    slug: "walmart",
+    category: "Product Based",
+    difficulty: "Medium",
+    tier: "Tier 1 Retail",
+    description: "Focuses on Inventory Multi-source BFS, Cart management, Two Pointers, and String operations.",
+    frequentTopics: ["Arrays", "Hashing", "Graphs", "Dynamic Programming", "Strings"],
+    problems: [
+      { problemId: "two-sum", frequency: 5, interviewTags: ["Cart Discount", "Hash Map"], year: "2025-2026", source: "HackerEarth OA" },
+      { problemId: "best-time-to-buy-and-sell-stock", frequency: 5, interviewTags: ["Price Drop Alert", "Array"], year: "2025-2026", source: "Round 1" },
+      { problemId: "climbing-stairs", frequency: 4, interviewTags: ["Optimal Pathway", "DP"], year: "2024-2025", source: "Technical Interview" }
+    ]
+  },
+  {
+    id: "flipkart",
+    name: "Flipkart",
+    slug: "flipkart",
+    category: "Indian Product Companies",
+    difficulty: "Medium-Hard",
+    tier: "Indian Unicorn",
+    description: "Famous for machine coding rounds, Big-O trade-offs, Graph logistics, and Dynamic Programming.",
+    frequentTopics: ["Dynamic Programming", "Graphs", "Arrays", "Trees", "Hashing"],
+    problems: [
+      { problemId: "merge-islands", frequency: 5, interviewTags: ["Supply Hub Clusters", "Graphs"], year: "2025-2026", source: "Onsite Round" },
+      { problemId: "climbing-stairs", frequency: 5, interviewTags: ["Flash Sale DP", "Combinatorics"], year: "2025-2026", source: "Problem Solving" },
+      { problemId: "two-sum", frequency: 4, interviewTags: ["Coupon Match", "Hash Map"], year: "2024-2025", source: "Screening" }
+    ]
+  },
+  {
+    id: "razorpay",
+    name: "Razorpay",
+    slug: "razorpay",
+    category: "Indian Product Companies",
+    difficulty: "Medium-Hard",
+    tier: "FinTech Unicorn",
+    description: "Tests concurrency, idempotent ledger double-spend prevention, caching, and tree hierarchies.",
+    frequentTopics: ["Hashing", "Arrays", "Trees", "Strings", "Design"],
+    problems: [
+      { problemId: "cache-stampede", frequency: 5, interviewTags: ["Idempotent Webhook Cache", "Hashing"], year: "2025-2026", source: "Technical Round 1" },
+      { problemId: "valid-parentheses", frequency: 5, interviewTags: ["Signature Validation", "Stack"], year: "2025-2026", source: "Core Coding" },
+      { problemId: "two-sum", frequency: 4, interviewTags: ["Payment Split", "Hash Map"], year: "2024-2025", source: "Screening" }
+    ]
+  },
+  {
+    id: "tcs",
+    name: "TCS",
+    slug: "tcs",
+    category: "Service Based",
+    difficulty: "Easy-Medium",
+    tier: "IT Services",
+    description: "Focuses on fundamental math, string reversing, array manipulation, and basic searching in TCS NQT & Digital tracks.",
+    frequentTopics: ["Arrays", "Strings", "Math", "Bit Manipulation"],
+    problems: [
+      { problemId: "reverse-string", frequency: 5, interviewTags: ["TCS NQT", "Strings"], year: "2025-2026", source: "Digital Assessment" },
+      { problemId: "palindrome-number", frequency: 5, interviewTags: ["NQT Math", "Conditionals"], year: "2025-2026", source: "Technical Round" },
+      { problemId: "single-number", frequency: 4, interviewTags: ["Ninja/Digital", "Arrays"], year: "2024-2025", source: "Digital Interview" }
+    ]
+  },
+  {
+    id: "infosys",
+    name: "Infosys",
+    slug: "infosys",
+    category: "Service Based",
+    difficulty: "Easy-Medium",
+    tier: "IT Services",
+    description: "Evaluates core programming logic, array operations, recursion, and string manipulation for InfyTQ & Specialist Programmer roles.",
+    frequentTopics: ["Arrays", "Strings", "Math", "Dynamic Programming"],
+    problems: [
+      { problemId: "two-sum", frequency: 5, interviewTags: ["InfyTQ", "Hash Map"], year: "2025-2026", source: "SP Coding Assessment" },
+      { problemId: "climbing-stairs", frequency: 5, interviewTags: ["Specialist Programmer", "DP"], year: "2025-2026", source: "DSE Round" },
+      { problemId: "reverse-string", frequency: 4, interviewTags: ["Foundation", "Strings"], year: "2024-2025", source: "HR Technical" }
+    ]
+  },
+  {
+    id: "accenture",
+    name: "Accenture",
+    slug: "accenture",
+    category: "Service Based",
+    difficulty: "Easy-Medium",
+    tier: "Global Consulting",
+    description: "Assesses coding logic, Bit Manipulation, String operations, and Arrays in the Accenture Advanced Technical Assessment.",
+    frequentTopics: ["Strings", "Bit Manipulation", "Arrays", "Math"],
+    problems: [
+      { problemId: "single-number", frequency: 5, interviewTags: ["Advanced Technical", "Bitwise"], year: "2025-2026", source: "Coding Assessment" },
+      { problemId: "valid-parentheses", frequency: 5, interviewTags: ["Logic Round", "Stack"], year: "2025-2026", source: "Technical Interview" },
+      { problemId: "palindrome-number", frequency: 4, interviewTags: ["Core Math", "Algorithms"], year: "2024-2025", source: "Campus Hiring" }
+    ]
+  },
+  {
+    id: "cognizant",
+    name: "Cognizant",
+    slug: "cognizant",
+    category: "Service Based",
+    difficulty: "Easy-Medium",
+    tier: "IT Services",
+    description: "GenC Next and Elevate tracks focus on Array manipulation, basic Dynamic Programming, and String parsing.",
+    frequentTopics: ["Arrays", "Strings", "Math", "Hashing"],
+    problems: [
+      { problemId: "two-sum", frequency: 5, interviewTags: ["GenC Next", "Array Lookup"], year: "2025-2026", source: "GenC Elevate Assessment" },
+      { problemId: "reverse-string", frequency: 5, interviewTags: ["GenC", "Strings"], year: "2025-2026", source: "Technical Round" },
+      { problemId: "best-time-to-buy-and-sell-stock", frequency: 4, interviewTags: ["GenC Next", "Greedy"], year: "2024-2025", source: "Advanced Coding" }
+    ]
+  },
+  {
+    id: "netflix",
+    name: "Netflix",
+    slug: "netflix",
+    category: "FAANG",
+    difficulty: "Hard",
+    tier: "Tier 1 FAANG",
+    description: "Evaluates high-scale distributed data structures, chunking, concurrency, caching, and monotonic deques for Senior Engineers.",
+    frequentTopics: ["Hashing", "Graphs", "Heap", "Sliding Window", "Trees"],
+    problems: [
+      { problemId: "cache-stampede", frequency: 5, interviewTags: ["Video Buffer Cache", "Concurrency"], year: "2025-2026", source: "Senior SWE Round" },
+      { problemId: "merge-islands", frequency: 5, interviewTags: ["CDN Region Mesh", "Graphs"], year: "2025-2026", source: "Onsite Architecture" },
+      { problemId: "binary-lift", frequency: 4, interviewTags: ["Hierarchy Tree", "Binary Lifting"], year: "2024-2025", source: "Technical Assessment" }
+    ]
+  }
+];
+
+export function calculateLocalCompanyList(database, userId = null) {
+  const companies = Array.isArray(database?.companies) && database.companies.length > 0 ? database.companies : seedCompanies;
+  const user = userId ? (database?.users || []).find((u) => u.id === userId || u._id === userId) : null;
+  const submissions = Array.isArray(database?.submissions) ? database.submissions : [];
+  const userSubs = userId ? submissions.filter((s) => s.userId === userId || s.user === userId) : [];
+
+  const solvedSet = new Set(
+    (user?.solvedProblemIds || []).concat(
+      userSubs.filter((s) => s.verdict === "AC" || s.verdict === "Accepted" || s.status === "ACCEPTED").map((s) => s.problemId || s.problem)
+    )
+  );
+
+  return companies.map((comp) => {
+    const compProblemIds = (comp.problems || []).map((p) => p.problemId);
+    const totalProblems = compProblemIds.length;
+
+    let solvedCount = 0;
+    for (const pid of compProblemIds) {
+      if (solvedSet.has(pid)) solvedCount++;
+    }
+
+    const companySubs = userSubs.filter((s) => compProblemIds.includes(s.problemId || s.problem));
+    const acSubs = companySubs.filter((s) => s.verdict === "AC" || s.verdict === "Accepted" || s.status === "ACCEPTED").length;
+    const accuracy = companySubs.length > 0 ? Math.round((acSubs / companySubs.length) * 100) : 0;
+    const completionPercentage = totalProblems > 0 ? Math.round((solvedCount / totalProblems) * 100) : 0;
+
+    return {
+      ...comp,
+      totalProblems,
+      solvedCount,
+      completionPercentage,
+      accuracy
+    };
+  });
+}
+
+export function calculateLocalCompanySheet(database, companyIdOrSlug, userId = null) {
+  const target = String(companyIdOrSlug || "").toLowerCase().trim();
+  const companies = Array.isArray(database?.companies) && database.companies.length > 0 ? database.companies : seedCompanies;
+  const company = companies.find((c) => c.id === target || c.slug === target || c.name.toLowerCase() === target) || companies[0];
+
+  const user = userId ? (database?.users || []).find((u) => u.id === userId || u._id === userId) : null;
+  const allProblems = Array.isArray(database?.problems) && database.problems.length > 0 ? database.problems : baseProblems;
+  const problemMap = new Map(allProblems.map((p) => [p.id, p]));
+
+  const submissions = Array.isArray(database?.submissions) ? database.submissions : [];
+  const userSubs = userId ? submissions.filter((s) => s.userId === userId || s.user === userId) : [];
+
+  const solvedSet = new Set(
+    (user?.solvedProblemIds || []).concat(
+      userSubs.filter((s) => s.verdict === "AC" || s.verdict === "Accepted" || s.status === "ACCEPTED").map((s) => s.problemId || s.problem)
+    )
+  );
+  const attemptedSet = new Set(
+    (user?.attemptedProblemIds || []).concat(userSubs.map((s) => s.problemId || s.problem))
+  );
+
+  const compProblems = company.problems || [];
+  const problemList = [];
+  const topicStats = {};
+
+  let easyTotal = 0, easySolved = 0;
+  let mediumTotal = 0, mediumSolved = 0;
+  let hardTotal = 0, hardSolved = 0;
+
+  for (const cp of compProblems) {
+    const meta = problemMap.get(cp.problemId) || {
+      id: cp.problemId,
+      title: cp.problemId.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+      difficulty: "Medium",
+      topic: "Arrays",
+      acceptance: 75,
+      points: 10
+    };
+
+    const isSolved = solvedSet.has(cp.problemId);
+    const isAttempted = attemptedSet.has(cp.problemId);
+    const status = isSolved ? "Solved" : isAttempted ? "Attempted" : "Not Started";
+
+    const diff = (meta.difficulty || "Medium").toLowerCase();
+    if (diff === "easy") {
+      easyTotal++;
+      if (isSolved) easySolved++;
+    } else if (diff === "hard") {
+      hardTotal++;
+      if (isSolved) hardSolved++;
+    } else {
+      mediumTotal++;
+      if (isSolved) mediumSolved++;
+    }
+
+    const topic = meta.topic || "General";
+    if (!topicStats[topic]) {
+      topicStats[topic] = { topic, total: 0, solved: 0, subs: 0, acSubs: 0, freqScore: 0 };
+    }
+    topicStats[topic].total++;
+    topicStats[topic].freqScore += cp.frequency || 4;
+    if (isSolved) topicStats[topic].solved++;
+
+    const probSubs = userSubs.filter((s) => (s.problemId || s.problem) === cp.problemId);
+    topicStats[topic].subs += probSubs.length;
+    topicStats[topic].acSubs += probSubs.filter((s) => s.verdict === "AC" || s.verdict === "Accepted" || s.status === "ACCEPTED").length;
+
+    const lastSub = probSubs[0];
+
+    problemList.push({
+      id: cp.problemId,
+      title: meta.title,
+      difficulty: meta.difficulty || "Medium",
+      topic,
+      companyFrequency: cp.frequency || 5,
+      status,
+      lastAttempt: lastSub ? lastSub.createdAt || lastSub.submittedAt : null,
+      interviewTags: cp.interviewTags || ["Technical Round"],
+      source: cp.source || "Onsite Interview",
+      year: cp.year || "2025-2026",
+      acceptance: meta.acceptance || 75,
+      points: meta.points || 10
+    });
+  }
+
+  const topicBreakdown = Object.values(topicStats).map((t) => {
+    const avg = t.total > 0 ? t.freqScore / t.total : 4;
+    const frequency = avg >= 4.5 ? "Very High" : avg >= 3.5 ? "High" : "Medium";
+    const accuracy = t.subs > 0 ? Math.round((t.acSubs / t.subs) * 100) : 0;
+    const progressPercent = t.total > 0 ? Math.round((t.solved / t.total) * 100) : 0;
+
+    return {
+      topicName: t.topic,
+      frequency,
+      problemsAvailable: t.total,
+      userSolved: t.solved,
+      accuracy,
+      progressPercent
+    };
+  }).sort((a, b) => b.problemsAvailable - a.problemsAvailable);
+
+  const totalProblems = compProblems.length;
+  const solvedCount = problemList.filter((p) => p.status === "Solved").length;
+  const attemptedCount = problemList.filter((p) => p.status === "Attempted").length;
+  const compSubmissions = userSubs.filter((s) => compProblems.some((cp) => cp.problemId === (s.problemId || s.problem)));
+  const compAcCount = compSubmissions.filter((s) => s.verdict === "AC" || s.verdict === "Accepted" || s.status === "ACCEPTED").length;
+  const accuracy = compSubmissions.length > 0 ? Math.round((compAcCount / compSubmissions.length) * 100) : 0;
+  const completionPercentage = totalProblems > 0 ? Math.round((solvedCount / totalProblems) * 100) : 0;
+
+  let readinessScore = 0;
+  if (totalProblems > 0) {
+    const solveWeight = (solvedCount / totalProblems) * 55;
+    const accuracyWeight = (accuracy / 100) * 25;
+    const depthWeight = Math.min(20, (mediumSolved * 2.0 + hardSolved * 4.0) * 2);
+    readinessScore = Math.min(100, Math.max(0, Math.round(solveWeight + accuracyWeight + depthWeight)));
+  }
+
+  const strongTopics = [];
+  const weakTopics = [];
+  const recommendedNext = [];
+
+  for (const t of topicBreakdown) {
+    if (t.progressPercent >= 60 || (t.userSolved >= 2 && t.accuracy >= 75)) {
+      strongTopics.push(t.topicName);
+    } else if (t.userSolved === 0 || t.accuracy < 60) {
+      weakTopics.push(t.topicName);
+      if (recommendedNext.length < 3) {
+        recommendedNext.push(`Practice ${t.topicName}`);
+      }
+    }
+  }
+
+  if (recommendedNext.length === 0) {
+    recommendedNext.push(`Practice ${company.name} Hard Challenges`);
+  }
+
+  const standardRoadmapSteps = [
+    { step: 1, topic: "Arrays", description: "Array lookups, prefix sums, and two-pointer sweeps." },
+    { step: 2, topic: "Hashing", description: "O(1) dictionary state tracking and cache invariants." },
+    { step: 3, topic: "Strings", description: "Sliding window substrings, string parsing, and anagrams." },
+    { step: 4, topic: "Trees", description: "Binary trees, lowest common ancestors, and recursion." },
+    { step: 5, topic: "Graphs", description: "Multi-source BFS, Dijkstra shortest paths, and cycles." },
+    { step: 6, topic: "Dynamic Programming", description: "State transitions, memoization, and optimal substructure." }
+  ];
+
+  let unlockedPrev = true;
+  const preparationRoadmap = standardRoadmapSteps.map((s) => {
+    const stat = topicStats[s.topic];
+    const solved = stat?.solved || 0;
+    const total = stat?.total || 1;
+    const isMastered = solved >= Math.max(1, Math.floor(total * 0.6));
+
+    let status = "Locked";
+    if (isMastered) {
+      status = "Mastered";
+    } else if (unlockedPrev) {
+      status = "In Progress";
+      unlockedPrev = false;
+    } else {
+      status = "Locked";
+    }
+
+    return {
+      ...s,
+      status,
+      solvedCount: solved,
+      totalCount: total
+    };
+  });
+
+  return {
+    success: true,
+    company: {
+      id: company.id,
+      name: company.name,
+      slug: company.slug,
+      logo: company.logo || "",
+      category: company.category,
+      difficulty: company.difficulty,
+      description: company.description,
+      tier: company.tier,
+      frequentTopics: company.frequentTopics || []
+    },
+    stats: {
+      totalProblems,
+      solvedCount,
+      attemptedCount,
+      accuracy,
+      completionPercentage,
+      difficultyProgress: {
+        easy: { solved: easySolved, total: easyTotal },
+        medium: { solved: mediumSolved, total: mediumTotal },
+        hard: { solved: hardSolved, total: hardTotal }
+      }
+    },
+    readiness: {
+      score: readinessScore,
+      strongTopics: strongTopics.slice(0, 4),
+      weakTopics: weakTopics.slice(0, 4),
+      recommendedNext
+    },
+    topicBreakdown,
+    problemList,
+    preparationRoadmap,
+    timestamp: new Date().toISOString()
+  };
+}

@@ -91,5 +91,18 @@ export const api = {
 
   // Data-Driven Hiring Committee Evaluation
   getEvaluation: (query = "") => request(`/evaluation${query ? `?${query}` : ""}`),
-  getUserEvaluation: (userId, query = "") => request(`/evaluation/${userId}${query ? `?${query}` : ""}`)
+  getUserEvaluation: (userId, query = "") => request(`/evaluation/${userId}${query ? `?${query}` : ""}`),
+
+  // Company Interview Sheets
+  getCompanies: (query = "") => request(`/companies${query ? `?${query}` : ""}`),
+  getCompanySheet: (companyId, query = "") => request(`/companies/${companyId}${query ? `?${query}` : ""}`),
+  askCompanyAI: (companyId, body) => request(`/companies/${companyId}/ai-chat`, { method: "POST", body: JSON.stringify(body) }),
+
+  // Admin Company Management
+  adminGetCompanies: (query = "") => request(`/admin/companies${query ? `?${query}` : ""}`),
+  adminCreateCompany: (body) => request("/admin/companies", { method: "POST", body: JSON.stringify(body) }),
+  adminUpdateCompany: (id, body) => request(`/admin/companies/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  adminDeleteCompany: (id) => request(`/admin/companies/${id}`, { method: "DELETE" }),
+  adminAddCompanyProblem: (id, body) => request(`/admin/companies/${id}/problems`, { method: "POST", body: JSON.stringify(body) }),
+  adminRemoveCompanyProblem: (id, problemId) => request(`/admin/companies/${id}/problems/${problemId}`, { method: "DELETE" })
 };

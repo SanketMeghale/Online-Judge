@@ -14,6 +14,7 @@ import dashboardRoutes from "./routes/dashboard.js";
 import aiRoutes from "./routes/ai.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import evaluationRoutes from "./routes/evaluation.routes.js";
+import companyRoutes from "./routes/company.routes.js";
 
 function parseCookies(cookieHeader = "") {
   const list = {};
@@ -94,6 +95,9 @@ export function createApp() {
 
   app.use("/api/evaluation", evaluationRoutes);
   app.use("/evaluation", evaluationRoutes);
+
+  app.use("/api/companies", companyRoutes);
+  app.use("/companies", companyRoutes);
 
   app.use("/api/admin", adminRoutes);
   app.use("/admin", adminRoutes);

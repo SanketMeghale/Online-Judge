@@ -27,6 +27,7 @@ import Register from "./pages/Register.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import Settings from "./pages/Settings.jsx";
 import SubmissionHistoryPage from "./pages/SubmissionHistoryPage.jsx";
+import CompanyDetailPage from "./pages/CompanyDetailPage.jsx";
 
 // Admin Panel Pages
 import AdminLogin from "./pages/admin/AdminLogin.jsx";
@@ -40,6 +41,7 @@ import AdminContests from "./pages/admin/AdminContests.jsx";
 import AdminAnalytics from "./pages/admin/AdminAnalytics.jsx";
 import AdminReports from "./pages/admin/AdminReports.jsx";
 import AdminAICoach from "./pages/admin/AdminAICoach.jsx";
+import AdminCompanies from "./pages/admin/AdminCompanies.jsx";
 import AdminAuditLogs from "./pages/admin/AdminAuditLogs.jsx";
 import AdminSettings from "./pages/admin/AdminSettings.jsx";
 
@@ -93,6 +95,8 @@ createRoot(document.getElementById("root")).render(
                 <Route path="/collaboration" element={<FeaturePage title="Collaboration" />} />
                 <Route path="/interviewer" element={<AICoachPage />} />
                 <Route path="/ai-coach" element={<AICoachPage />} />
+                <Route path="/companies" element={<AICoachPage />} />
+                <Route path="/companies/:companyId" element={<CompanyDetailPage />} />
                 <Route path="/stats" element={<ProgressPage />} />
                 <Route path="/progress" element={<ProgressPage />} />
                 <Route path="/settings" element={<Settings />} />
@@ -118,6 +122,7 @@ createRoot(document.getElementById("root")).render(
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
                 <Route path="/admin/reports" element={<AdminReports />} />
                 <Route path="/admin/ai-coach" element={<AdminAICoach />} />
+                <Route path="/admin/companies" element={<AdminCompanies />} />
                 <Route path="/admin/audit-logs" element={<AdminAuditLogs />} />
                 <Route path="/admin/settings" element={<AdminSettings />} />
               </Route>

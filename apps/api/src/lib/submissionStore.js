@@ -2,7 +2,8 @@ import { connectDatabase, isDatabaseConnected } from "./db.js";
 import { Submission } from "../models/Submission.js";
 import mongoose from "mongoose";
 
-const memorySubmissions = [];
+export const memorySubmissions = [];
+export const submissions = memorySubmissions;
 
 export async function createSubmissionRecord(record) {
   await connectDatabase();

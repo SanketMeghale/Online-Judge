@@ -28,6 +28,12 @@ import {
   getAdminAuditLogs,
   getAdminSettings,
   updateAdminSettings,
+  getAdminCompanies,
+  createAdminCompany,
+  updateAdminCompany,
+  deleteAdminCompany,
+  addProblemToCompany,
+  removeProblemFromCompany,
   logAdminAction
 } from "../services/admin.service.js";
 
@@ -341,6 +347,68 @@ router.patch("/settings", async (req, res) => {
   } catch (error) {
     console.error("[AdminAPI] PATCH /settings error:", error);
     res.status(500).json({ success: false, error: "Failed to update platform settings." });
+  }
+});
+
+// 12. COMPANY SHEETS CONTROL
+router.get("/companies", async (req, res) => {
+  try {
+    const result = await getAdminCompanies(req.query);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error("[AdminAPI] /companies error:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch companies." });
+  }
+});
+
+router.post("/companies", async (req, res) => {
+  try {
+    const company = await createAdminCompany(req.body, req.user, req);
+    res.status(201).json({ success: true, company });
+  } catch (error) {
+    console.error("[AdminAPI] POST /companies error:", error);
+    res.status(500).json({ success: false, error: error.message || "Failed to create company sheet." });
+  }
+});
+
+router.put("/companies/:id", async (req, res) => {
+  try {
+    const company = await updateAdminCompany(req.params.id, req.body, req.user, req);
+    if (!company) return res.status(404).json({ success: false, error: "Company not found." });
+    res.json({ success: true, company });
+  } catch (error) {
+    console.error("[AdminAPI] PUT /companies/:id error:", error);
+    res.status(500).json({ success: false, error: "Failed to update company sheet." });
+  }
+});
+
+router.delete("/companies/:id", async (req, res) => {
+  try {
+    const result = await deleteAdminCompany(req.params.id, req.user, req);
+    res.json({ success: true, ...result });
+  } catch (error) {
+    console.error("[AdminAPI] DELETE /companies/:id error:", error);
+    res.status(500).json({ success: false, error: "Failed to delete company sheet." });
+  }
+});
+
+router.post("/companies/:id/problems", async (req, res) => {
+  try {
+    const company = await addProblemToCompany(req.params.id, req.body, req.user, req);
+    res.json({ success: true, company });
+  } catch (error) {
+    console.error("[AdminAPI] POST /companies/:id/problems error:", error);
+    res.status(500).json({ success: false, error: error.message || "Failed to add problem to company sheet." });
+  }
+});
+
+router.delete("/companies/:id/problems/:problemId", async (req, res) => {
+  try {
+    const company = await removeProblemFromCompany(req.params.id, req.params.problemId, req.user, req);
+    res.json({ success: true, company });
+  } catch (error) {
+    console.error("[AdminAPI] DELETE /companies/:id/problems/:problemId error:", error);
+    res.status(500).json({ success: false, error: error.message || "Failed to remove problem from company sheet." });
   }
 });
 

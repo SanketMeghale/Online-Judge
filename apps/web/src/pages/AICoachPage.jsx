@@ -30,12 +30,15 @@ import {
   Briefcase,
   HelpCircle,
   CheckCircle2,
+  Building2,
   Flame
 } from "lucide-react";
 import { api } from "../api/apiClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
 import MockInterviewStudio from "../components/ai/MockInterviewStudio.jsx";
+import CompanySheetsDashboard from "../components/company/CompanySheetsDashboard.jsx";
+import CompanyDetailSheet from "../components/company/CompanyDetailSheet.jsx";
 
 // Authentic SVGs for Tech Companies
 export function GoogleLogo({ size = 18 }) {
@@ -398,19 +401,34 @@ export default function AICoachPage() {
   const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
   const displayName = String(liveUser?.name || liveUser?.username || "Coder").trim().split(" ")[0] || "Coder";
 
-  // Tab State: "mentor" | "interview" | "weak"
+  // Tab State: "mentor" | "interview" | "weak" | "companies"
   const [activeTab, setActiveTab] = useState(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    if (searchParams.get("tab") === "interview" || window.location.pathname === "/interviewer") {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "interview" || window.location.pathname === "/interviewer") {
       return "interview";
     }
+    if (tabParam === "companies" || tabParam === "company" || window.location.pathname.startsWith("/companies")) {
+      return "companies";
+    }
+    if (tabParam === "weak") return "weak";
     return "mentor";
+  });
+
+  const [selectedCompanySheetId, setSelectedCompanySheetId] = useState(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    return searchParams.get("companyId") || null;
   });
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
-    if (searchParams.get("tab") === "interview" || location.pathname === "/interviewer") {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "interview" || location.pathname === "/interviewer") {
       setActiveTab("interview");
+    } else if (tabParam === "companies" || tabParam === "company" || location.pathname.startsWith("/companies")) {
+      setActiveTab("companies");
+      const compId = searchParams.get("companyId");
+      if (compId) setSelectedCompanySheetId(compId);
     }
   }, [location.pathname, location.search]);
 
@@ -796,7 +814,8 @@ export default function AICoachPage() {
         {[
           { id: "mentor", label: "AI Mentor", icon: Sparkles },
           { id: "interview", label: "AI Mock Interview", icon: Compass },
-          { id: "weak", label: "Weak Topics", icon: Target }
+          { id: "weak", label: "Weak Topics", icon: Target },
+          { id: "companies", label: "Company Sheets", icon: Building2 }
         ].map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -1418,6 +1437,20 @@ export default function AICoachPage() {
               ))}
             </div>
           </div>
+        )}
+
+        {/* TAB 4: COMPANY INTERVIEW SHEETS */}
+        {activeTab === "companies" && (
+          selectedCompanySheetId ? (
+            <CompanyDetailSheet
+              companyId={selectedCompanySheetId}
+              onBack={() => setSelectedCompanySheetId(null)}
+            />
+          ) : (
+            <CompanySheetsDashboard
+              onSelectCompany={(companyId) => setSelectedCompanySheetId(companyId)}
+            />
+          )
         )}
       </div>
     </div>

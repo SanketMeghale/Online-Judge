@@ -10,6 +10,8 @@ import { AuditLog } from "../models/AuditLog.js";
 import { PlatformSettings } from "../models/PlatformSettings.js";
 import { AIUsage } from "../models/AIUsage.js";
 import { AIConversation } from "../models/AIConversation.js";
+import { Company } from "../models/Company.js";
+import { seedCompanies } from "../data/companies.seed.js";
 import {
   getAllUsers,
   findUserById,
@@ -1112,3 +1114,223 @@ export async function updateAdminSettings(settingsData, adminUser, req) {
   });
   return memoryPlatformSettings;
 }
+
+// 12. COMPANY SHEETS MANAGEMENT
+export async function getAdminCompanies(query = {}) {
+  await connectDatabase();
+  let companies = seedCompanies;
+
+  if (isDatabaseConnected()) {
+    try {
+      const count = await Company.countDocuments();
+      if (count === 0) {
+        await Company.insertMany(seedCompanies);
+      }
+      companies = await Company.find().sort({ name: 1 }).lean();
+    } catch (e) {
+      console.error("[AdminService] getAdminCompanies DB error:", e);
+    }
+  }
+
+  const { search, category, difficulty } = query;
+  let filtered = [...companies];
+
+  if (search) {
+    const s = search.toLowerCase();
+    filtered = filtered.filter((c) => c.name.toLowerCase().includes(s) || c.description?.toLowerCase().includes(s));
+  }
+  if (category && category !== "all") {
+    filtered = filtered.filter((c) => c.category === category);
+  }
+  if (difficulty && difficulty !== "all") {
+    filtered = filtered.filter((c) => c.difficulty === difficulty);
+  }
+
+  return {
+    companies: filtered,
+    total: filtered.length
+  };
+}
+
+export async function createAdminCompany(companyData, adminUser, req) {
+  await connectDatabase();
+  const id = companyData.id || companyData.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  const slug = companyData.slug || id;
+
+  const newCompany = {
+    id,
+    slug,
+    name: companyData.name,
+    category: companyData.category || "Product Based",
+    difficulty: companyData.difficulty || "Medium-Hard",
+    description: companyData.description || "",
+    tier: companyData.tier || "Tier 1",
+    frequentTopics: companyData.frequentTopics || [],
+    isActive: companyData.isActive !== false,
+    problems: companyData.problems || []
+  };
+
+  if (isDatabaseConnected()) {
+    try {
+      const created = await Company.create(newCompany);
+      await logAdminAction({
+        adminUser,
+        action: "COMPANY_CREATE",
+        targetType: "company",
+        targetId: id,
+        description: `Created new Company Sheet for '${newCompany.name}'.`,
+        metadata: { id, name: newCompany.name },
+        req
+      });
+      return created.toObject();
+    } catch (e) {
+      console.error("[AdminService] createAdminCompany error:", e);
+      throw e;
+    }
+  }
+
+  await logAdminAction({
+    adminUser,
+    action: "COMPANY_CREATE",
+    targetType: "company",
+    targetId: id,
+    description: `Created new Company Sheet '${newCompany.name}' in memory.`,
+    metadata: { id },
+    req
+  });
+  return newCompany;
+}
+
+export async function updateAdminCompany(id, companyData, adminUser, req) {
+  await connectDatabase();
+  if (isDatabaseConnected()) {
+    try {
+      const updated = await Company.findOneAndUpdate(
+        { $or: [{ id: String(id) }, { _id: id }] },
+        companyData,
+        { new: true }
+      ).lean();
+
+      if (updated) {
+        await logAdminAction({
+          adminUser,
+          action: "COMPANY_UPDATE",
+          targetType: "company",
+          targetId: id,
+          description: `Updated Company Sheet '${updated.name}'.`,
+          metadata: { id, fields: Object.keys(companyData) },
+          req
+        });
+        return updated;
+      }
+    } catch (e) {
+      console.error("[AdminService] updateAdminCompany error:", e);
+    }
+  }
+  return null;
+}
+
+export async function deleteAdminCompany(id, adminUser, req) {
+  await connectDatabase();
+  let deletedName = id;
+
+  if (isDatabaseConnected()) {
+    try {
+      const doc = await Company.findOneAndDelete({ $or: [{ id: String(id) }, { _id: id }] }).lean();
+      if (doc) deletedName = doc.name;
+    } catch (e) {}
+  }
+
+  await logAdminAction({
+    adminUser,
+    action: "COMPANY_DELETE",
+    targetType: "company",
+    targetId: id,
+    description: `Deleted Company Sheet '${deletedName}' (ID: ${id}).`,
+    metadata: { id, name: deletedName },
+    req
+  });
+
+  return { success: true, id };
+}
+
+export async function addProblemToCompany(companyId, problemMapping, adminUser, req) {
+  await connectDatabase();
+  const { problemId, frequency, interviewTags, source, year } = problemMapping;
+
+  if (!problemId) throw new Error("Problem ID is required.");
+
+  if (isDatabaseConnected()) {
+    try {
+      const comp = await Company.findOne({ $or: [{ id: String(companyId) }, { _id: companyId }] });
+      if (!comp) throw new Error("Company not found.");
+
+      const existingIdx = comp.problems.findIndex((p) => p.problemId === problemId);
+      if (existingIdx !== -1) {
+        comp.problems[existingIdx] = {
+          problemId,
+          frequency: Number(frequency) || 5,
+          interviewTags: interviewTags || comp.problems[existingIdx].interviewTags,
+          source: source || comp.problems[existingIdx].source,
+          year: year || comp.problems[existingIdx].year
+        };
+      } else {
+        comp.problems.push({
+          problemId,
+          frequency: Number(frequency) || 5,
+          interviewTags: interviewTags || ["Technical Round"],
+          source: source || "Onsite Interview",
+          year: year || "2025-2026"
+        });
+      }
+
+      await comp.save();
+
+      await logAdminAction({
+        adminUser,
+        action: "COMPANY_PROBLEM_ADD",
+        targetType: "company",
+        targetId: companyId,
+        description: `Added problem '${problemId}' to '${comp.name}' sheet.`,
+        metadata: { companyId, problemId },
+        req
+      });
+
+      return comp.toObject();
+    } catch (e) {
+      console.error("[AdminService] addProblemToCompany error:", e);
+      throw e;
+    }
+  }
+  return null;
+}
+
+export async function removeProblemFromCompany(companyId, problemId, adminUser, req) {
+  await connectDatabase();
+  if (isDatabaseConnected()) {
+    try {
+      const comp = await Company.findOne({ $or: [{ id: String(companyId) }, { _id: companyId }] });
+      if (!comp) throw new Error("Company not found.");
+
+      comp.problems = comp.problems.filter((p) => p.problemId !== problemId);
+      await comp.save();
+
+      await logAdminAction({
+        adminUser,
+        action: "COMPANY_PROBLEM_REMOVE",
+        targetType: "company",
+        targetId: companyId,
+        description: `Removed problem '${problemId}' from '${comp.name}' sheet.`,
+        metadata: { companyId, problemId },
+        req
+      });
+
+      return comp.toObject();
+    } catch (e) {
+      console.error("[AdminService] removeProblemFromCompany error:", e);
+      throw e;
+    }
+  }
+  return null;
+}
+
