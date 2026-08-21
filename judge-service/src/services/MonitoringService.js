@@ -150,7 +150,7 @@ export class MonitoringService {
    */
   getWorkerHealth() {
     return {
-      status: "HEALTHY",
+      status: queueConsumer.isListening ? "HEALTHY" : "DEGRADED",
       isListening: queueConsumer.isListening,
       uptimeSeconds: Number(((Date.now() - this.startTime) / 1000).toFixed(1)),
       nodeVersion: process.version,
@@ -169,7 +169,7 @@ export class MonitoringService {
     const cpu = this.getCpuUsage();
     const worker = this.getWorkerHealth();
 
-    const isHealthy = sandbox.dockerAvailable || queue.isOnline || worker.isListening;
+    const isHealthy = sandbox.dockerAvailable && queue.isOnline && worker.isListening;
 
     return {
       status: isHealthy ? "HEALTHY" : "DEGRADED",

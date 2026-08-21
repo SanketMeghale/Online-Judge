@@ -37,28 +37,27 @@ export function createApp() {
   const app = express();
   app.set("trust proxy", 1);
 
-  const allowedOrigins = [
-    process.env.CLIENT_ORIGIN,
-    "https://online-judge-api-six.vercel.app",
-    "http://localhost:8080",
-    "http://localhost:5173",
-    "http://127.0.0.1:8080",
-    "http://127.0.0.1:5173"
-  ].filter(Boolean);
+  const production = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL_ENV);
+  const configuredOrigins = String(process.env.CLIENT_ORIGIN || "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const allowedOrigins = production
+    ? configuredOrigins
+    : [...configuredOrigins, "http://localhost:8080", "http://localhost:5173", "http://127.0.0.1:8080", "http://127.0.0.1:5173"];
 
   app.use(
     cors({
       origin: (origin, callback) => {
         if (
           !origin ||
-          allowedOrigins.includes(origin) ||
-          origin.includes("vercel.app") ||
-          origin.includes("localhost") ||
-          origin.includes("127.0.0.1")
+          allowedOrigins.includes(origin)
         ) {
           callback(null, true);
         } else {
-          callback(null, true); // Safe permissive for online judge API
+          const error = new Error("Origin is not allowed by CORS.");
+          error.statusCode = 403;
+          callback(error);
         }
       },
       credentials: true,
@@ -124,7 +123,7 @@ export function createApp() {
     const status = error.status || error.statusCode || 500;
     response.status(status).json({
       success: false,
-      error: error?.message || "Internal server error."
+      error: status >= 500 ? "Internal server error." : error?.message || "Request failed."
     });
   });
 

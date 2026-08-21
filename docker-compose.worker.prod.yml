@@ -1,0 +1,90 @@
+services:
+  realtime:
+    image: ${JUDGO_REALTIME_IMAGE:-judgo-realtime:latest}
+    build:
+      context: .
+      dockerfile: services/realtime/Dockerfile
+    restart: unless-stopped
+    init: true
+    user: "1000:1000"
+    env_file:
+      - ${WORKER_ENV_FILE:-judge-service/.env.example}
+    environment:
+      NODE_ENV: production
+      PORT: 4001
+    ports:
+      - "127.0.0.1:4001:4001"
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,noexec,nosuid,nodev
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:4001/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  worker:
+    image: ${JUDGO_WORKER_IMAGE:-judgo-worker:latest}
+    build:
+      context: .
+      dockerfile: judge-service/Dockerfile
+    restart: unless-stopped
+    init: true
+    user: "0:0"
+    env_file:
+      - ${WORKER_ENV_FILE:-judge-service/.env.example}
+    environment:
+      NODE_ENV: production
+      MONITORING_PORT: 4002
+      JUDGE_TEMP_ROOT: /var/lib/judgo/jobs
+      LOG_DIR: /var/log/judgo
+      REALTIME_SERVICE_URL: http://realtime:4001
+    ports:
+      - "127.0.0.1:4002:4002"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/judgo/jobs:/var/lib/judgo/jobs
+      - judgo-worker-logs:/var/log/judgo
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid,nodev
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - fetch('http://127.0.0.1:4002/live').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 20s
+    stop_grace_period: 30s
+    depends_on:
+      realtime:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  judgo-worker-logs:

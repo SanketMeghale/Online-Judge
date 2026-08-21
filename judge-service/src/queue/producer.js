@@ -14,7 +14,7 @@ export class QueueProducer {
       maxRetriesPerRequest: null,
       enableReadyCheck: true,
       connectTimeout: Number(process.env.REDIS_CONNECT_TIMEOUT_MS || 3000),
-      retryStrategy: () => null
+      retryStrategy: (attempt) => Math.min(attempt * 250, 5000)
     });
     this.connection.on("error", (error) => {
       console.warn(`[BullMQ] Redis error: ${error.message}`);

@@ -4,6 +4,8 @@
  * for Python, C, C++, and Java.
  */
 
+const SANDBOX_IMAGE = process.env.SANDBOX_IMAGE || "online-judge-sandbox:latest";
+
 export class LanguageConfig {
   /**
    * @param {Object} options
@@ -22,7 +24,7 @@ export class LanguageConfig {
     extension,
     sourceFileName,
     compiledBinaryName = null,
-    dockerImage = "online-judge-sandbox:latest",
+    dockerImage = SANDBOX_IMAGE,
     memoryLimitMb = 256,
     timeLimitMs = 2000
   }) {
@@ -69,7 +71,7 @@ export class PythonConfig extends LanguageConfig {
       extension: ".py",
       sourceFileName: "solution.py",
       compiledBinaryName: null,
-      dockerImage: "online-judge-sandbox:latest",
+      dockerImage: SANDBOX_IMAGE,
       memoryLimitMb: 256,
       timeLimitMs: 3000,
       ...overrides
@@ -94,7 +96,7 @@ export class JavaScriptConfig extends LanguageConfig {
       extension: ".js",
       sourceFileName: "solution.js",
       compiledBinaryName: null,
-      dockerImage: "online-judge-sandbox:latest",
+      dockerImage: SANDBOX_IMAGE,
       memoryLimitMb: 256,
       timeLimitMs: 3000,
       ...overrides
@@ -117,7 +119,7 @@ export class CConfig extends LanguageConfig {
       extension: ".c",
       sourceFileName: "solution.c",
       compiledBinaryName: "solution",
-      dockerImage: "online-judge-sandbox:latest",
+      dockerImage: SANDBOX_IMAGE,
       memoryLimitMb: 256,
       timeLimitMs: 2000,
       ...overrides
@@ -144,7 +146,7 @@ export class CppConfig extends LanguageConfig {
       extension: ".cpp",
       sourceFileName: "solution.cpp",
       compiledBinaryName: "solution",
-      dockerImage: "online-judge-sandbox:latest",
+      dockerImage: SANDBOX_IMAGE,
       memoryLimitMb: 256,
       timeLimitMs: 2000,
       ...overrides
@@ -170,8 +172,8 @@ export class JavaConfig extends LanguageConfig {
       name: "Java (OpenJDK 21)",
       extension: ".java",
       sourceFileName: "Main.java",
-      compiledBinaryName: "Solution.class",
-      dockerImage: "online-judge-sandbox:latest",
+      compiledBinaryName: "Main.class",
+      dockerImage: SANDBOX_IMAGE,
       memoryLimitMb: 256,
       timeLimitMs: 3000,
       ...overrides
@@ -183,7 +185,7 @@ export class JavaConfig extends LanguageConfig {
   }
 
   getRunCommand() {
-    return `java -Xmx128m -cp . Solution`;
+    return `java -Xmx128m -cp . Main`;
   }
 }
 

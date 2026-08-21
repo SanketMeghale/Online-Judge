@@ -41,7 +41,8 @@ describe("MonitoringService Unit Tests", () => {
   test("4. Evaluates Worker Health state", () => {
     const worker = monitoringService.getWorkerHealth();
 
-    expect(worker.status).toBe("HEALTHY");
+    expect(worker.status).toBe("DEGRADED");
+    expect(worker.isListening).toBe(false);
     expect(worker.uptimeSeconds).toBeGreaterThanOrEqual(0);
     expect(worker.nodeVersion).toBe(process.version);
   });

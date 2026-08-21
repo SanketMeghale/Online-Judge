@@ -1,36 +1,33 @@
 import { Router } from "express";
+import { connectDatabase } from "../lib/db.js";
+import { getSubmissionQueueHealth } from "../lib/submissionQueue.js";
 
 const router = Router();
-const JUDGE_MONITORING_URL = process.env.JUDGE_MONITORING_URL ||
-  `${(process.env.EXECUTION_SERVICE_URL || "http://localhost:4002").replace(/\/$/, "")}/health`;
 
-/**
- * GET /health
- * Aggregates API Gateway and Judge Worker Monitoring Metrics
- */
 router.get("/", async (_request, response) => {
-  let judgeMonitoring = null;
+  const checks = {
+    database: "DOWN",
+    queue: "DOWN",
+    worker: "DOWN"
+  };
 
   try {
-    const res = await fetch(JUDGE_MONITORING_URL, {
-      headers: process.env.EXECUTION_SERVICE_TOKEN
-        ? { Authorization: `Bearer ${process.env.EXECUTION_SERVICE_TOKEN}` }
-        : {},
-      signal: AbortSignal.timeout(2000)
-    });
-    judgeMonitoring = await res.json();
-  } catch (err) {
-    judgeMonitoring = {
-      status: "DEGRADED",
-      notice: "Judge worker monitoring is temporarily unavailable."
-    };
-  }
+    checks.database = (await connectDatabase()) ? "UP" : "DOWN";
+  } catch {}
 
-  response.json({
-    ok: true,
+  try {
+    const queueHealth = await getSubmissionQueueHealth();
+    checks.queue = "UP";
+    checks.worker = queueHealth.workerCount > 0 ? "UP" : "DOWN";
+  } catch {}
+
+  const ready = Object.values(checks).every((value) => value === "UP");
+  response.status(ready ? 200 : 503).json({
+    ok: ready,
+    status: ready ? "HEALTHY" : "DEGRADED",
     service: "online-judge-api",
     timestamp: new Date().toISOString(),
-    judgeWorker: judgeMonitoring
+    checks
   });
 });
 

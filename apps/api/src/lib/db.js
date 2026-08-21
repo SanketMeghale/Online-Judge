@@ -56,7 +56,10 @@ export async function connectDatabase() {
       })
       .catch((err) => {
         cached.promise = null;
-        console.warn(`[MongoDB] Notice: ${err.message}. Operating with in-memory dataset mode.`);
+        const suffix = process.env.NODE_ENV === "production" || process.env.VERCEL_ENV
+          ? "Production requests will fail closed."
+          : "Operating with development-only in-memory data.";
+        console.warn(`[MongoDB] Notice: ${err.message}. ${suffix}`);
         return null;
       });
   }
@@ -74,5 +77,11 @@ export async function connectDatabase() {
 }
 
 export function isDatabaseConnected() {
-  return Boolean(mongoose.connection && mongoose.connection.readyState === 1);
+  const connected = Boolean(mongoose.connection && mongoose.connection.readyState === 1);
+  if (!connected && (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV)) {
+    const error = new Error("Persistence is temporarily unavailable.");
+    error.statusCode = 503;
+    throw error;
+  }
+  return connected;
 }

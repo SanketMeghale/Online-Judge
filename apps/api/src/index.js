@@ -1,6 +1,6 @@
 import "dotenv/config"; // Load .env variables FIRST before any other import
 import { createApp } from "./app.js";
-import { validateApiEnvironment } from "./config/env.config.js";
+import { isProductionEnvironment, validateApiEnvironment } from "./config/env.config.js";
 import { connectDatabase } from "./lib/db.js";
 
 const port = Number(process.env.PORT || 4000);
@@ -13,11 +13,12 @@ async function startServer() {
     if (dbConnected) {
       console.log("[Server] MongoDB connected successfully.");
     } else {
-      console.warn("[Server] MongoDB not connected — running with in-memory fallback.");
+      if (isProductionEnvironment()) throw new Error("MongoDB is unavailable.");
+      console.warn("[Server] MongoDB not connected — development-only in-memory data remains available.");
     }
   } catch (err) {
     console.error("[Server] Startup failed:", err.message);
-    if (process.env.NODE_ENV === "production") {
+    if (isProductionEnvironment()) {
       process.exitCode = 1;
       return;
     }

@@ -93,7 +93,13 @@ function createDemoUsers() {
 }
 
 const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL_ENV);
-const memoryUsers = createDemoUsers();
+const memoryUsers = !isProduction && process.env.ENABLE_DEMO_USERS === "true" ? createDemoUsers() : [];
+
+function persistenceUnavailable() {
+  const error = new Error("User storage is temporarily unavailable.");
+  error.statusCode = 503;
+  return error;
+}
 
 export async function findUserByEmail(email) {
   if (!email) return null;
@@ -106,6 +112,7 @@ export async function findUserByEmail(email) {
       if (doc) return sanitizeUser(doc);
     } catch (e) {
       console.error("[UserStore] findUserByEmail DB error:", e);
+      if (isProduction) throw persistenceUnavailable();
     }
   }
 
@@ -123,6 +130,7 @@ export async function findUserByFirebaseUid(firebaseUid) {
       if (doc) return sanitizeUser(doc);
     } catch (e) {
       console.error("[UserStore] findUserByFirebaseUid DB error:", e);
+      if (isProduction) throw persistenceUnavailable();
     }
   }
 
@@ -217,8 +225,11 @@ export async function upsertFirebaseUser({ firebaseUid, email, displayName, phot
       return sanitizeUser(created.toObject());
     } catch (e) {
       console.error("[UserStore] upsertFirebaseUser DB error:", e);
+      if (isProduction) throw persistenceUnavailable();
     }
   }
+
+  if (isProduction) throw persistenceUnavailable();
 
   let user = memoryUsers.find((item) => item.firebaseUid === String(firebaseUid) || item.email?.toLowerCase() === cleanEmail);
   if (!user) {
@@ -278,6 +289,7 @@ export async function findUserByUsername(username) {
       if (doc) return sanitizeUser(doc);
     } catch (e) {
       console.error("[UserStore] findUserByUsername DB error:", e);
+      if (isProduction) throw persistenceUnavailable();
     }
   }
 
@@ -300,6 +312,7 @@ export async function findUserById(id) {
       if (docByObjId) return sanitizeUser(docByObjId);
     } catch (e) {
       console.error("[UserStore] findUserById error:", e);
+      if (isProduction) throw persistenceUnavailable();
     }
   }
 
@@ -326,6 +339,7 @@ export async function isUsernameAvailable(username, currentUserId = null) {
       return !existing;
     } catch (e) {
       console.error("[UserStore] isUsernameAvailable DB error:", e);
+      if (isProduction) throw persistenceUnavailable();
     }
   }
 
@@ -386,8 +400,6 @@ export async function createUser({ name, username, email, password, firebaseUid 
     createdAt: new Date()
   };
 
-  memoryUsers.push(userObj);
-
   if (isDatabaseConnected()) {
     try {
       const doc = await User.create(userObj);
@@ -395,9 +407,12 @@ export async function createUser({ name, username, email, password, firebaseUid 
       return sanitizeUser(doc.toObject());
     } catch (e) {
       console.error("[UserStore] createUser DB error:", e);
+      if (isProduction) throw persistenceUnavailable();
     }
   }
 
+  if (isProduction) throw persistenceUnavailable();
+  memoryUsers.push(userObj);
   return sanitizeUser(userObj);
 }
 
@@ -709,6 +724,7 @@ export async function validateUserCredentials(identifier, password) {
       }).lean();
     } catch (e) {
       console.error("[UserStore] DB lookup error:", e);
+      if (isProduction) throw persistenceUnavailable();
     }
   }
 
@@ -741,6 +757,7 @@ export async function verifyUserRawPassword(userId, currentPassword) {
       rawUser = await User.findOne(query).lean();
     } catch (e) {
       console.error("[UserStore] verifyUserRawPassword DB error:", e);
+      if (isProduction) throw persistenceUnavailable();
     }
   }
 

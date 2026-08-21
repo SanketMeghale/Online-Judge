@@ -29,6 +29,8 @@ describe("DockerService Hardened Security & Execution Unit Tests", () => {
     expect(createdConfig).toBeDefined();
     expect(createdConfig.User).toBe("10001:10001");
     expect(createdConfig.WorkingDir).toBe("/workspace");
+    expect(createdConfig.Labels).toEqual({ "com.judgo.sandbox": "true" });
+    expect(createdConfig.HostConfig.Init).toBe(true);
     expect(createdConfig.HostConfig.PidsLimit).toBe(32);
     expect(createdConfig.HostConfig.NetworkMode).toBe("none");
     expect(createdConfig.HostConfig.ReadonlyRootfs).toBe(true);

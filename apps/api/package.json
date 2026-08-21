@@ -10,7 +10,8 @@
     "start": "node src/index.js",
     "build": "echo 'API ready'",
     "build:web": "echo 'API ready'",
-    "test": "node --test"
+    "test": "node --test",
+    "migrate:user-search-index": "node src/scripts/migrateUserSearchIndex.js"
   },
   "dependencies": {
     "@online-judge/shared": "*",

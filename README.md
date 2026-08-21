@@ -94,4 +94,4 @@ npm --workspace judge-service test -- DockerIntegration.test.js --runInBand
 
 The Vercel configuration can host the SPA and API, but Vercel cannot run Docker execution workers, Redis, or the persistent realtime service. Deploy those separately and configure their URLs and secrets. Prefer routing the browser to the API on the same site so the `SameSite=Lax` HttpOnly cookie works predictably.
 
-Do not enable `ENABLE_DEMO_USERS` in production. Bootstrap the first administrator with `apps/api/src/scripts/bootstrapAdmin.js` and environment-provided credentials; the project contains no default production administrator password. See `docs/execution-architecture.md` for the complete flow, deployment model, and limitations.
+Do not enable `ENABLE_DEMO_USERS` in production. Bootstrap the first administrator with `apps/api/src/scripts/bootstrapAdmin.js` and environment-provided credentials; the project contains no default production administrator password. Follow `docs/production-deployment.md` for the production checklist and `docs/execution-architecture.md` for the complete execution flow and limitations.

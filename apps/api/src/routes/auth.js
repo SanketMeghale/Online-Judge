@@ -40,6 +40,14 @@ const COOKIE_OPTIONS = {
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERNAME_REGEX = /^[a-zA-Z0-9_.-]{3,30}$/;
 
+function sendAuthFailure(response, error, fallback, defaultStatus = 500) {
+  const status = Number(error?.statusCode || defaultStatus);
+  response.status(status).json({
+    success: false,
+    error: status === 503 ? "Authentication storage is temporarily unavailable." : fallback
+  });
+}
+
 router.post("/register", authLimiter, async (request, response) => {
   try {
     const { name, username, email, password } = request.body ?? {};
@@ -105,10 +113,7 @@ router.post("/register", authLimiter, async (request, response) => {
     });
   } catch (err) {
     console.error("[Auth Register Error]:", err);
-    response.status(500).json({
-      success: false,
-      error: err?.message || "Internal server error during registration."
-    });
+    sendAuthFailure(response, err, "Internal server error during registration.");
   }
 });
 
@@ -141,10 +146,7 @@ router.post("/login", authLimiter, async (request, response) => {
     });
   } catch (err) {
     console.error("[Auth Login Error]:", err);
-    response.status(500).json({
-      success: false,
-      error: err?.message || "Internal server error during login."
-    });
+    sendAuthFailure(response, err, "Internal server error during login.");
   }
 });
 
@@ -189,10 +191,7 @@ router.post("/google", authLimiter, async (request, response) => {
     });
   } catch (err) {
     console.error("[Auth Google Error]:", err);
-    response.status(401).json({
-      success: false,
-      error: err?.message || "Invalid or expired Google authentication token."
-    });
+    sendAuthFailure(response, err, "Invalid or expired Google authentication token.", 401);
   }
 });
 

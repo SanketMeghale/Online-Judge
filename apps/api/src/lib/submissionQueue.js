@@ -50,8 +50,12 @@ export async function publishSubmissionJob({ submissionId }) {
 }
 
 export async function getSubmissionQueueHealth() {
-  const counts = await getQueue().getJobCounts("wait", "active", "delayed", "failed");
-  return { ok: true, counts };
+  const executionQueue = getQueue();
+  const [counts, workers] = await Promise.all([
+    executionQueue.getJobCounts("wait", "active", "delayed", "failed"),
+    executionQueue.getWorkers()
+  ]);
+  return { ok: true, counts, workerCount: workers.length };
 }
 
 export async function closeSubmissionQueue() {

@@ -6,94 +6,85 @@ import { queueConsumer } from "./queue/consumer.js";
 import { queueProducer } from "./queue/producer.js";
 import { judgeWorker } from "./workers/JudgeWorker.js";
 import { monitoringService } from "./services/MonitoringService.js";
+import { dockerService } from "./services/DockerService.js";
+import { validateWorkerEnvironment } from "./config/env.config.js";
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/online-judge";
-const WORKER_CONCURRENCY = Number(process.env.WORKER_CONCURRENCY || 2);
+const SANDBOX_IMAGE = process.env.SANDBOX_IMAGE || "online-judge-sandbox:latest";
+const WORKER_CONCURRENCY = Math.max(1, Number(process.env.WORKER_CONCURRENCY || 2));
 const MONITORING_PORT = Number(process.env.MONITORING_PORT || 4002);
 
 const app = express();
+app.disable("x-powered-by");
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "16kb" }));
 
-/**
- * GET /health Endpoint
- * Returns real-time metrics for queue length, execution times, running containers, worker health, memory, and CPU usage.
- */
+app.get("/live", (_req, res) => {
+  res.status(200).json({ status: "ALIVE" });
+});
+
 app.get("/health", async (req, res) => {
   const healthToken = process.env.EXECUTION_SERVICE_TOKEN;
   if (healthToken && req.headers.authorization !== `Bearer ${healthToken}`) {
     res.status(401).json({ status: "UNAUTHORIZED" });
     return;
   }
-  const healthReport = await monitoringService.getHealthReport();
-  const httpStatus = healthReport.status === "HEALTHY" ? 200 : 503;
-  res.status(httpStatus).json(healthReport);
+
+  try {
+    const healthReport = await monitoringService.getHealthReport();
+    res.status(healthReport.status === "HEALTHY" ? 200 : 503).json(healthReport);
+  } catch {
+    res.status(503).json({ status: "DEGRADED" });
+  }
 });
 
-console.log("======================================================================");
-console.log("🚀 STARTING STANDALONE JUDGE SERVICE WORKER MICROSERVICE");
-console.log("======================================================================\n");
+let httpServer;
+let shuttingDown = false;
 
 async function startJudgeService() {
-  const isProduction = process.env.NODE_ENV === "production";
-  if (isProduction && (!process.env.MONGODB_URI || !/^rediss?:\/\//.test(process.env.REDIS_URL || ""))) {
-    throw new Error("MONGODB_URI and a valid REDIS_URL are required in production.");
-  }
+  validateWorkerEnvironment();
 
-  // 1. Connect to MongoDB Database
-  try {
-    await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
-    console.log("✓ [MongoDB] Connected to database successfully.");
-  } catch (dbErr) {
-    if (isProduction) throw dbErr;
-    console.warn(`⚠️ [MongoDB] Connection offline: ${dbErr.message}. Operating in hybrid mode.`);
-  }
+  await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
+  console.log("[MongoDB] Connected.");
 
-  // 2. Connect to Redis/BullMQ
   const queue = await queueProducer.connect();
-  if (queue) {
-    console.log("✓ [BullMQ] Connected to Redis execution queue.");
-  } else {
-    throw new Error("Redis is unavailable; refusing to start the execution worker.");
-  }
+  if (!queue) throw new Error("Redis is unavailable; refusing to start the execution worker.");
+  console.log("[BullMQ] Connected.");
 
-  // 3. Start Judge Worker Listener on 'judge_queue'
+  await dockerService.assertReady(SANDBOX_IMAGE);
+  console.log(`[Docker] Sandbox image ready: ${SANDBOX_IMAGE}`);
+
   await queueConsumer.startJudgeWorker(
-    async (jobData) => {
-      return await judgeWorker.processJob(jobData);
-    },
+    (jobData) => judgeWorker.processJob(jobData),
     {
       concurrency: WORKER_CONCURRENCY,
       onExhausted: (jobData, error) => judgeWorker.markSystemError(jobData, error)
     }
   );
 
-  // 4. Start HTTP Health Monitoring Server
-  app.listen(MONITORING_PORT, () => {
-    console.log(`✓ [Monitoring Service] GET /health HTTP endpoint running on http://localhost:${MONITORING_PORT}/health`);
+  httpServer = app.listen(MONITORING_PORT, "0.0.0.0", () => {
+    console.log(`[Judge Worker] Ready on port ${MONITORING_PORT}; concurrency=${WORKER_CONCURRENCY}`);
   });
-
-  console.log(`\n✓ [Judge Worker Engine] Ready and awaiting submission jobs (Concurrency: ${WORKER_CONCURRENCY})...\n`);
 }
 
-// Graceful Shutdown Handlers
-process.on("SIGINT", async () => {
-  console.log("\n[Judge Service] Gracefully shutting down worker process...");
-  await queueConsumer.disconnect();
-  await queueProducer.disconnect();
-  await mongoose.disconnect();
-  process.exit(0);
-});
+async function shutdown(reason, exitCode = 0) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`[Judge Worker] Shutting down: ${reason}`);
 
-process.on("SIGTERM", async () => {
-  console.log("\n[Judge Service] SIGTERM received. Shutting down...");
-  await queueConsumer.disconnect();
-  await queueProducer.disconnect();
-  await mongoose.disconnect();
-  process.exit(0);
-});
+  if (httpServer) await new Promise((resolve) => httpServer.close(resolve));
+  await Promise.allSettled([
+    queueConsumer.disconnect(),
+    queueProducer.disconnect(),
+    mongoose.disconnect()
+  ]);
+  process.exit(exitCode);
+}
+
+process.once("SIGINT", () => void shutdown("SIGINT"));
+process.once("SIGTERM", () => void shutdown("SIGTERM"));
 
 startJudgeService().catch((error) => {
-  console.error(`[Judge Service] Fatal startup error: ${error.message}`);
-  process.exitCode = 1;
+  console.error(`[Judge Worker] Fatal startup error: ${error.message}`);
+  void shutdown("startup failure", 1);
 });

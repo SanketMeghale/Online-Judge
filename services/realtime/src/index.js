@@ -1,4 +1,5 @@
 import "dotenv/config";
+import crypto from "crypto";
 import http from "http";
 import cors from "cors";
 import express from "express";
@@ -12,18 +13,19 @@ if (process.env.NODE_ENV === "production") {
   if (missing.length > 0) throw new Error(`Missing realtime configuration: ${missing.join(", ")}`);
   if (process.env.REALTIME_JWT_SECRET.trim().length < 32) throw new Error("REALTIME_JWT_SECRET must contain at least 32 characters.");
   if (process.env.REALTIME_INTERNAL_SECRET.trim().length < 32) throw new Error("REALTIME_INTERNAL_SECRET must contain at least 32 characters.");
+  if (!process.env.CLIENT_ORIGIN.startsWith("https://") && process.env.ALLOW_INSECURE_ORIGIN !== "true") {
+    throw new Error("CLIENT_ORIGIN must use https:// in production.");
+  }
 }
 const app = express();
-const allowedOrigins = [
-  process.env.CLIENT_ORIGIN,
-  "http://localhost:8080",
-  "http://localhost:5173",
-  "http://127.0.0.1:8080",
-  "http://127.0.0.1:5173"
-].filter(Boolean);
+app.disable("x-powered-by");
+const configuredOrigins = String(process.env.CLIENT_ORIGIN || "").split(",").map((value) => value.trim()).filter(Boolean);
+const allowedOrigins = process.env.NODE_ENV === "production"
+  ? configuredOrigins
+  : [...configuredOrigins, "http://localhost:8080", "http://localhost:5173", "http://127.0.0.1:8080", "http://127.0.0.1:5173"];
 
 app.use(cors({ origin: allowedOrigins, credentials: true }));
-app.use(express.json());
+app.use(express.json({ limit: "64kb" }));
 
 const httpServer = http.createServer(app);
 
@@ -44,6 +46,12 @@ function verifyClientToken(token) {
   } catch {
     return null;
   }
+}
+
+function secretsMatch(expected, supplied) {
+  const expectedBuffer = Buffer.from(expected || "");
+  const suppliedBuffer = Buffer.from(supplied || "");
+  return expectedBuffer.length === suppliedBuffer.length && crypto.timingSafeEqual(expectedBuffer, suppliedBuffer);
 }
 
 io.use((socket, next) => {
@@ -106,7 +114,7 @@ app.get("/api/realtime/stream", (_req, res) => {
 app.post("/api/realtime/broadcast", (req, res) => {
   const configuredSecret = process.env.REALTIME_INTERNAL_SECRET?.trim();
   const suppliedSecret = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
-  if (!configuredSecret || suppliedSecret !== configuredSecret) {
+  if (!configuredSecret || !secretsMatch(configuredSecret, suppliedSecret)) {
     return res.status(401).json({ error: "Internal service authentication required." });
   }
 
@@ -159,5 +167,17 @@ httpServer.listen(PORT, () => {
   console.log(`Socket.IO Endpoint: ws://localhost:${PORT}`);
   console.log("--------------------------------------------------");
 });
+
+let shuttingDown = false;
+async function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`[Socket.IO Realtime] Shutting down: ${signal}`);
+  io.close(() => process.exit(0));
+  setTimeout(() => process.exit(1), 10_000).unref();
+}
+
+process.once("SIGINT", () => void shutdown("SIGINT"));
+process.once("SIGTERM", () => void shutdown("SIGTERM"));
 
 export { io, httpServer };

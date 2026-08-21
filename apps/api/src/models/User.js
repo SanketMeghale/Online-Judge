@@ -62,7 +62,13 @@ const userSchema = new mongoose.Schema(
 );
 
 // Compound index for search and sorting
-userSchema.index({ name: "text", username: "text", email: "text" });
+// Do not let MongoDB treat the user's UI locale field (`language`) as the
+// text-index language override. Locale values such as `en-US` are not valid
+// MongoDB stemmer names and would otherwise make user inserts fail.
+userSchema.index(
+  { name: "text", username: "text", email: "text" },
+  { default_language: "english", language_override: "searchLanguage" }
+);
 userSchema.index({ createdAt: -1 });
 userSchema.index({ xp: -1 });
 

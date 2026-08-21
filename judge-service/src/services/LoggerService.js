@@ -19,7 +19,7 @@ import fs from "fs";
  */
 export class LoggerService {
   constructor(options = {}) {
-    const logsDir = options.logsDir || path.resolve(process.cwd(), "logs");
+    const logsDir = options.logsDir || process.env.LOG_DIR || path.resolve(process.cwd(), "logs");
 
     // Ensure logs directory exists
     if (!fs.existsSync(logsDir)) {

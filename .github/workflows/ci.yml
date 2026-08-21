@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: bash -n scripts/deploy-worker.sh && node --check scripts/verify-production.mjs
+      - run: npm run test:api
+      - run: npm --workspace judge-service test -- --runInBand
+      - run: npm run build
+      - run: docker build -t online-judge-sandbox:latest judge-service/infra/docker
+      - run: RUN_DOCKER_INTEGRATION=true npm --workspace judge-service test -- DockerIntegration.test.js --runInBand
+      - run: docker compose -f docker-compose.worker.prod.yml config

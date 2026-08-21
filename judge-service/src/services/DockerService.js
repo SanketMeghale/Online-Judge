@@ -48,6 +48,12 @@ export class DockerService {
     }
   }
 
+  async assertReady(image = process.env.SANDBOX_IMAGE || "online-judge-sandbox:latest") {
+    await this.docker.ping();
+    await this.docker.getImage(image).inspect();
+    return true;
+  }
+
   /**
    * Creates a Hardened Sandboxed Container Instance
    * Applies multi-layered security constraints against untrusted user code.
@@ -84,6 +90,7 @@ export class DockerService {
 
     const containerConfig = {
       Image: image,
+      Labels: { "com.judgo.sandbox": "true" },
       Cmd: command,
       User: `${sandboxUid}:${sandboxGid}`,
       Tty: false,
@@ -91,6 +98,7 @@ export class DockerService {
       StdinOnce: false,
       WorkingDir: "/workspace",
       HostConfig: {
+        Init: true,
         // Mount local host temp directory to container /sandbox (read-write)
         Binds: [`${normalizedHostDir}:/workspace:rw`],
 
