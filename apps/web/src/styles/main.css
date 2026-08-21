@@ -2,8 +2,36 @@
 @import "./dashboard.css";
 
 :root {
-  color: #f7f9ff;
-  background: #030814;
+  --bg-app: #050a18;
+  --bg-base: #030814;
+  --bg-surface: #080c14;
+  --bg-card: #0d111a;
+  --bg-card-hover: #131b2e;
+  --bg-card-elevated: #111827;
+  --bg-input: #080c14;
+  --bg-input-focus: #0b1020;
+  --bg-gutter: #060910;
+  --nav-bg: rgba(8, 12, 20, 0.94);
+  --sidebar-bg: #080c14;
+  --modal-bg: #0c101a;
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-card: rgba(255, 255, 255, 0.08);
+  --border-input: rgba(255, 255, 255, 0.12);
+  --border-focus: rgba(124, 58, 237, 0.4);
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-heading: #ffffff;
+  --text-on-card: #cbd5e1;
+
+  --table-row-hover: rgba(255, 255, 255, 0.03);
+  --pill-bg: rgba(255, 255, 255, 0.06);
+  --pill-border: rgba(255, 255, 255, 0.08);
+
+  color: var(--text-primary);
+  background: var(--bg-base);
   font-family: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -11,9 +39,44 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+[data-theme="light"],
+body[data-theme="light"],
+.theme-light {
+  --bg-app: #f8fafc;
+  --bg-base: #f1f5f9;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --bg-card-elevated: #f1f5f9;
+  --bg-input: #ffffff;
+  --bg-input-focus: #ffffff;
+  --bg-gutter: #f1f5f9;
+  --nav-bg: rgba(255, 255, 255, 0.94);
+  --sidebar-bg: #ffffff;
+  --modal-bg: #ffffff;
+
+  --border-subtle: #e2e8f0;
+  --border-card: #e2e8f0;
+  --border-input: #cbd5e1;
+  --border-focus: rgba(99, 102, 241, 0.5);
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-heading: #0f172a;
+  --text-on-card: #334155;
+
+  --table-row-hover: rgba(0, 0, 0, 0.03);
+  --pill-bg: rgba(0, 0, 0, 0.04);
+  --pill-border: rgba(0, 0, 0, 0.08);
+
+  color: var(--text-primary);
+  background: var(--bg-base);
+}
+
 strong, b, .font-bold {
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-heading);
   letter-spacing: -0.01em;
 }
 
@@ -28,6 +91,8 @@ code, pre, kbd {
 body {
   margin: 0;
   min-width: 320px;
+  background: var(--bg-base);
+  color: var(--text-primary);
 }
 
 button,
@@ -48,16 +113,31 @@ a {
 
 .app {
   min-height: 100vh;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+[data-theme="dark"] .app,
+:root:not([data-theme="light"]) .app {
   background:
     radial-gradient(circle at 66% 0%, rgba(79, 46, 218, 0.28), transparent 26rem),
     radial-gradient(circle at 100% 16%, rgba(0, 153, 255, 0.14), transparent 24rem),
     linear-gradient(180deg, #050a18 0%, #040816 100%);
 }
 
+[data-theme="light"] .app {
+  background:
+    radial-gradient(circle at 66% 0%, rgba(99, 102, 241, 0.07), transparent 26rem),
+    radial-gradient(circle at 100% 16%, rgba(59, 130, 246, 0.05), transparent 24rem),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
 .navbar {
   align-items: center;
-  background: rgba(4, 9, 22, 0.88);
-  border-bottom: 1px solid #172443;
+  background: var(--nav-bg) !important;
+  border-bottom: 1px solid var(--border-card) !important;
+  color: var(--text-primary);
   display: grid;
   gap: 20px;
   grid-template-columns: 210px minmax(360px, 560px) 1fr auto;
@@ -66,6 +146,7 @@ a {
   position: sticky;
   top: 0;
   z-index: 20;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .brand,
@@ -2817,3 +2898,180 @@ select {
   .dash-shortcuts-grid { grid-template-columns: repeat(2, 1fr); }
   .hero-stats-row { flex-direction: column; align-items: flex-start; }
 }
+
+/* ==========================================================================
+   GLOBAL LIGHT THEME OVERRIDES & COMPONENT ADAPTATIONS
+   ========================================================================== */
+
+[data-theme="light"],
+body[data-theme="light"],
+.theme-light {
+  color-scheme: light;
+}
+
+[data-theme="light"] .navbar {
+  background: rgba(255, 255, 255, 0.94) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .brand,
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4,
+[data-theme="light"] strong,
+[data-theme="light"] b,
+[data-theme="light"] .font-bold {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] p,
+[data-theme="light"] span,
+[data-theme="light"] .text-secondary {
+  color: #334155;
+}
+
+[data-theme="light"] .sidebar {
+  background: #ffffff !important;
+  border-right: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] .sidebar-link {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .sidebar-link:hover {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .sidebar-link.active,
+[data-theme="light"] .sidebar-link[data-active="true"] {
+  background: #eef2ff !important;
+  color: #4f46e5 !important;
+  font-weight: 700;
+}
+
+[data-theme="light"] .search-pill,
+[data-theme="light"] .search-command-btn {
+  background: #f8fafc !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #64748b !important;
+}
+
+[data-theme="light"] .search-pill input {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] kbd {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+[data-theme="light"] .dash-hero {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06) !important;
+}
+
+[data-theme="light"] .dash-hero-grid {
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.04) 1px, transparent 1px) !important;
+}
+
+[data-theme="light"] .dash-hero-glyph {
+  color: rgba(15, 23, 42, 0.06) !important;
+}
+
+[data-theme="light"] .floating-code-glyph {
+  color: rgba(99, 102, 241, 0.14) !important;
+}
+
+[data-theme="light"] .dash-card,
+[data-theme="light"] .stat-card,
+[data-theme="light"] .problem-statement-card,
+[data-theme="light"] .testcases-list-card,
+[data-theme="light"] .editor-panel,
+[data-theme="light"] .shortcut-card,
+[data-theme="light"] .continue-inner-box,
+[data-theme="light"] .card-head-between,
+[data-theme="light"] .topic-card,
+[data-theme="light"] .company-card,
+[data-theme="light"] .contest-card,
+[data-theme="light"] .settings-card,
+[data-theme="light"] .profile-card,
+[data-theme="light"] .table-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .problem-item-row,
+[data-theme="light"] table tbody tr {
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+[data-theme="light"] table tbody tr:hover,
+[data-theme="light"] .problem-item-row:hover {
+  background: #f8fafc !important;
+}
+
+[data-theme="light"] table thead th {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+[data-theme="light"] table tbody td {
+  color: #1e293b !important;
+}
+
+[data-theme="light"] input,
+[data-theme="light"] textarea,
+[data-theme="light"] select {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] textarea:focus,
+[data-theme="light"] select:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+
+[data-theme="light"] .editor-toolbar,
+[data-theme="light"] .editor-status {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+[data-theme="light"] .editor-gutter {
+  background: #f8fafc !important;
+  color: #94a3b8 !important;
+  border-color: #e2e8f0 !important;
+}
+
+[data-theme="light"] .act-prob,
+[data-theme="light"] .shortcut-text h4,
+[data-theme="light"] .problem-title-row h4 {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .shortcut-arrow {
+  color: #94a3b8 !important;
+}
+
+[data-theme="light"] .shortcut-card:hover .shortcut-arrow {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .line-track {
+  background: #e2e8f0 !important;
+}
+

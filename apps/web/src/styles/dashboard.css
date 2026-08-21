@@ -25,6 +25,19 @@
   --dash-radius-lg: 12px;
 }
 
+[data-theme="light"] {
+  --dash-bg-deep: #f1f5f9;
+  --dash-bg-card: #ffffff;
+  --dash-bg-card-hover: #f8fafc;
+  --dash-bg-elevated: #f1f5f9;
+  --dash-border: #e2e8f0;
+  --dash-border-hover: rgba(99, 102, 241, 0.4);
+  --dash-border-subtle: #e2e8f0;
+  --dash-text-primary: #0f172a;
+  --dash-text-secondary: #475569;
+  --dash-text-muted: #64748b;
+}
+
 /* Dashboard Container */
 .premium-dashboard {
   display: flex;

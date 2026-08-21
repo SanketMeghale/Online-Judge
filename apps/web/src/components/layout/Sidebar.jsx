@@ -20,6 +20,7 @@ import {
 import { useAuth } from "../../auth/AuthContext.jsx";
 import { getUserDisplayName } from "../../auth/displayName.js";
 import { useAppData } from "../../data/AppDataContext.jsx";
+import { useTheme } from "../../context/ThemeContext.jsx";
 
 const navSections = [
   {
@@ -50,6 +51,7 @@ const navSections = [
 export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }) {
   const { user } = useAuth();
   const { getUserById } = useAppData();
+  const { isLight } = useTheme();
   const currentUserId = user?.id || user?._id || "";
   const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
   const displayName = getUserDisplayName(liveUser);
@@ -88,14 +90,14 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
         }`}
         style={{
           width: sidebarWidth,
-          background: "#080c14",
-          borderRight: "1px solid rgba(255, 255, 255, 0.07)",
+          background: isLight ? "#ffffff" : "#080c14",
+          borderRight: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.07)",
           display: "flex",
           flexDirection: "column",
           minHeight: "calc(100vh - 68px)",
           position: "sticky",
           top: "68px",
-          transition: "width 0.24s cubic-bezier(0.16, 1, 0.3, 1)",
+          transition: "width 0.24s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease",
           zIndex: 95,
           padding: collapsed ? "14px 8px 16px" : "14px 12px 18px",
           userSelect: "none"
@@ -109,7 +111,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
             justifyContent: collapsed ? "center" : "space-between",
             alignItems: "center",
             padding: "0 4px 12px",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+            borderBottom: isLight ? "1px solid #f1f5f9" : "1px solid rgba(255, 255, 255, 0.06)",
             marginBottom: "12px"
           }}
         >
@@ -119,7 +121,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                 fontSize: "0.72rem",
                 fontWeight: "700",
                 letterSpacing: "0.06em",
-                color: "#64748b",
+                color: isLight ? "#64748b" : "#475569",
                 textTransform: "uppercase"
               }}
             >
@@ -134,15 +136,15 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
             className="sidebar-collapse-btn"
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             style={{
-              background: "rgba(255, 255, 255, 0.03)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
+              background: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.03)",
+              border: isLight ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(255, 255, 255, 0.08)",
               borderRadius: "6px",
               width: "28px",
               height: "28px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#94a3b8",
+              color: isLight ? "#475569" : "#94a3b8",
               cursor: "pointer",
               transition: "all 0.15s ease"
             }}
@@ -170,7 +172,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                     fontSize: "0.68rem",
                     fontWeight: "700",
                     letterSpacing: "0.08em",
-                    color: "#475569",
+                    color: isLight ? "#94a3b8" : "#475569",
                     padding: "0 10px 4px",
                     textTransform: "uppercase"
                   }}
@@ -178,7 +180,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                   {category}
                 </span>
               ) : (
-                <div style={{ height: "1px", background: "rgba(255,255,255,0.04)", margin: "4px 8px" }} />
+                <div style={{ height: "1px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)", margin: "4px 8px" }} />
               )}
 
               {/* Items List */}
@@ -203,13 +205,17 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                       textDecoration: "none",
                       fontSize: "0.86rem",
                       fontWeight: isActive ? "600" : "500",
-                      color: isActive ? "#ffffff" : "#94a3b8",
+                      color: isActive
+                        ? isLight ? "#4f46e5" : "#ffffff"
+                        : isLight ? "#475569" : "#94a3b8",
                       background: isActive
-                        ? "rgba(99, 102, 241, 0.12)"
+                        ? isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.12)"
                         : hoveredItem === label
-                        ? "rgba(255, 255, 255, 0.04)"
+                        ? isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.04)"
                         : "transparent",
-                      border: isActive ? "1px solid rgba(99, 102, 241, 0.28)" : "1px solid transparent",
+                      border: isActive
+                        ? isLight ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid rgba(99, 102, 241, 0.28)"
+                        : "1px solid transparent",
                       position: "relative",
                       transition: "all 0.15s ease"
                     })}
@@ -219,7 +225,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                         <Icon
                           size={17}
                           style={{
-                            color: isActive ? "#818cf8" : "#64748b",
+                            color: isActive ? "#6366f1" : isLight ? "#64748b" : "#64748b",
                             flexShrink: 0,
                             transition: "color 0.15s ease"
                           }}
@@ -259,16 +265,16 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                         left: "calc(100% + 10px)",
                         top: "50%",
                         transform: "translateY(-50%)",
-                        background: "#0f1628",
-                        border: "1px solid rgba(255, 255, 255, 0.12)",
-                        color: "#f8fafc",
+                        background: isLight ? "#ffffff" : "#0f1628",
+                        border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.12)",
+                        color: isLight ? "#0f172a" : "#f8fafc",
                         padding: "4px 10px",
                         borderRadius: "6px",
                         fontSize: "0.78rem",
                         fontWeight: "600",
                         whiteSpace: "nowrap",
                         zIndex: 110,
-                        boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+                        boxShadow: isLight ? "0 4px 12px rgba(0,0,0,0.1)" : "0 8px 24px rgba(0,0,0,0.5)",
                         pointerEvents: "none"
                       }}
                     >
@@ -287,8 +293,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
             className="sidebar-pro-card"
             style={{
               marginTop: "auto",
-              background: "linear-gradient(135deg, rgba(15, 22, 40, 0.95) 0%, rgba(99, 102, 241, 0.08) 100%)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
+              background: isLight
+                ? "linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)"
+                : "linear-gradient(135deg, rgba(15, 22, 40, 0.95) 0%, rgba(99, 102, 241, 0.08) 100%)",
+              border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
               borderRadius: "10px",
               padding: "12px 14px",
               display: "flex",
@@ -298,9 +306,9 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
           >
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <Sparkles size={14} style={{ color: "#a855f7" }} />
-              <strong style={{ fontSize: "0.82rem", color: "#f8fafc", fontWeight: "700" }}>{displayName}</strong>
+              <strong style={{ fontSize: "0.82rem", color: isLight ? "#0f172a" : "#f8fafc", fontWeight: "700" }}>{displayName}</strong>
             </div>
-            <p style={{ fontSize: "0.74rem", color: "#94a3b8", margin: 0, lineHeight: "1.4", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <p style={{ fontSize: "0.74rem", color: isLight ? "#475569" : "#94a3b8", margin: 0, lineHeight: "1.4", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {userHandle ? (liveUser?.username ? `@${userHandle}` : userHandle) : "Authenticated user"}
             </p>
             <NavLink
@@ -312,7 +320,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                 gap: "4px",
                 fontSize: "0.76rem",
                 fontWeight: "600",
-                color: "#818cf8",
+                color: "#6366f1",
                 textDecoration: "none",
                 marginTop: "4px"
               }}

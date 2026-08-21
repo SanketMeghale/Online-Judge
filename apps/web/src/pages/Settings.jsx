@@ -29,6 +29,7 @@ import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
 import { api } from "../api/apiClient.js";
 import { applyThemeAndAppearance } from "../utils/themeApplier.js";
+import { useTheme } from "../context/ThemeContext.jsx";
 import { writeStoredSession, readStoredSession } from "../auth/authStorage.js";
 import { getUserDisplayName } from "../auth/displayName.js";
 
@@ -55,13 +56,14 @@ const TIMEZONES = [
 
 const LANGUAGES = [
   { id: "en-US", name: "English (United States)" },
-  { id: "hi-IN", name: "Hindi (हिंदी)" },
-  { id: "mr-IN", name: "Marathi (मराठी)" }
+  { id: "hi-IN", name: "Hindi" },
+  { id: "mr-IN", name: "Marathi" }
 ];
 
 export default function Settings() {
-  const { user, logout } = useAuth();
+  const { user, login } = useAuth();
   const { getUserById, updateDatabase } = useAppData();
+  const { theme, setTheme, accentColor, setAccentColor, density, setDensity, isLight } = useTheme();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -110,10 +112,10 @@ export default function Settings() {
       bio: liveUser?.bio || "",
       language: liveUser?.language || localPrefs?.language || "en-US",
       timezone: liveUser?.timezone || localPrefs?.timezone || "UTC-5 (Eastern Time / US & Canada)",
-      theme: userPrefs?.theme || localPrefs?.theme || "dark",
-      accentColor: userPrefs?.accentColor || localPrefs?.accentColor || "indigo",
-      density: userPrefs?.density || localPrefs?.density || "comfortable",
-      compactMode: userPrefs?.compactMode ?? localPrefs?.compactMode ?? false,
+      theme: userPrefs?.theme || localPrefs?.theme || theme || "dark",
+      accentColor: userPrefs?.accentColor || localPrefs?.accentColor || accentColor || "indigo",
+      density: userPrefs?.density || localPrefs?.density || density || "comfortable",
+      compactMode: userPrefs?.compactMode ?? localPrefs?.compactMode ?? (density === "compact"),
       fontSize: userPrefs?.fontSize || localPrefs?.fontSize || 14,
       tabSize: userPrefs?.tabSize || localPrefs?.tabSize || 4,
       wordWrap: userPrefs?.wordWrap ?? localPrefs?.wordWrap ?? true,
@@ -159,16 +161,6 @@ export default function Settings() {
     }
   }, [searchParams]);
 
-  // Apply theme & appearance immediately when appearance settings change
-  useEffect(() => {
-    applyThemeAndAppearance({
-      theme: formData.theme,
-      accentColor: formData.accentColor,
-      density: formData.density,
-      compactMode: formData.compactMode
-    });
-  }, [formData.theme, formData.accentColor, formData.density, formData.compactMode]);
-
   // Compute if form is dirty
   const isDirty = useMemo(() => {
     return JSON.stringify(formData) !== JSON.stringify(savedBaseline);
@@ -184,6 +176,19 @@ export default function Settings() {
       ...prev,
       [key]: value
     }));
+
+    if (key === "theme") {
+      setTheme(value);
+    }
+    if (key === "accentColor") {
+      setAccentColor(value);
+    }
+    if (key === "density") {
+      setDensity(value);
+    }
+    if (key === "compactMode") {
+      setDensity(value ? "compact" : "comfortable");
+    }
 
     // Check username availability when typing username
     if (key === "username") {
@@ -488,13 +493,14 @@ export default function Settings() {
         <nav
           className="settings-nav-card"
           style={{
-            background: "#0d111a",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            background: isLight ? "#ffffff" : "#0d111a",
+            border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
             borderRadius: "12px",
             padding: "8px",
             display: "flex",
             flexDirection: "column",
-            gap: "4px"
+            gap: "4px",
+            boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none"
           }}
         >
           {tabs.map(({ key, label, icon: Icon, desc }) => {
@@ -510,19 +516,25 @@ export default function Settings() {
                   gap: "12px",
                   padding: "10px 14px",
                   borderRadius: "8px",
-                  background: isActive ? "rgba(99, 102, 241, 0.12)" : "transparent",
-                  border: isActive ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid transparent",
-                  color: isActive ? "#ffffff" : "#94a3b8",
+                  background: isActive
+                    ? isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.12)"
+                    : "transparent",
+                  border: isActive
+                    ? isLight ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid rgba(99, 102, 241, 0.3)"
+                    : "1px solid transparent",
+                  color: isActive
+                    ? isLight ? "#4f46e5" : "#ffffff"
+                    : isLight ? "#475569" : "#94a3b8",
                   textAlign: "left",
                   cursor: "pointer",
                   transition: "all 0.15s ease",
                   width: "100%"
                 }}
               >
-                <Icon size={18} style={{ color: isActive ? "#818cf8" : "#64748b" }} />
+                <Icon size={18} style={{ color: isActive ? "#6366f1" : isLight ? "#64748b" : "#64748b" }} />
                 <div>
                   <div style={{ fontSize: "0.88rem", fontWeight: isActive ? "600" : "500" }}>{label}</div>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b", marginTop: "1px" }}>{desc}</div>
+                  <div style={{ fontSize: "0.72rem", color: isLight ? "#94a3b8" : "#64748b", marginTop: "1px" }}>{desc}</div>
                 </div>
               </button>
             );
@@ -533,37 +545,38 @@ export default function Settings() {
         <main
           className="settings-content-card"
           style={{
-            background: "#0d111a",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            background: isLight ? "#ffffff" : "#0d111a",
+            border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
             borderRadius: "14px",
             padding: "28px 32px",
             display: "flex",
             flexDirection: "column",
-            gap: "28px"
+            gap: "28px",
+            boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none"
           }}
         >
           {/* TAB 1: GENERAL */}
           {activeTab === "general" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "14px" }}>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 4px 0" }}>General Settings</h2>
-                <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Manage your personal identity, bio, and locale settings.</p>
+              <div style={{ borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", paddingBottom: "14px" }}>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc", margin: "0 0 4px 0" }}>General Settings</h2>
+                <p style={{ fontSize: "0.85rem", color: isLight ? "#475569" : "#94a3b8", margin: 0 }}>Manage your personal identity, bio, and locale settings.</p>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
                 {/* Display Name */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Display Name</label>
+                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1" }}>Display Name</label>
                   <input
                     type="text"
                     value={formData.displayName}
                     onChange={(e) => handleChange("displayName", e.target.value)}
                     style={{
-                      background: "#080c14",
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: isLight ? "#ffffff" : "#080c14",
+                      border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)",
                       borderRadius: "8px",
                       padding: "10px 14px",
-                      color: "#ffffff",
+                      color: isLight ? "#0f172a" : "#ffffff",
                       fontSize: "0.88rem"
                     }}
                     placeholder="Jane Doe"
@@ -574,7 +587,7 @@ export default function Settings() {
                 {/* Username */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Username</label>
+                    <label style={{ fontSize: "0.82rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1" }}>Username</label>
                     {usernameCheck.message && (
                       <span style={{ fontSize: "0.72rem", color: usernameCheck.available ? "#4ade80" : "#f87171", fontWeight: "600" }}>
                         {usernameCheck.message}
@@ -586,11 +599,11 @@ export default function Settings() {
                     value={formData.username}
                     onChange={(e) => handleChange("username", e.target.value)}
                     style={{
-                      background: "#080c14",
-                      border: usernameCheck.available === false ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)",
+                      background: isLight ? "#ffffff" : "#080c14",
+                      border: usernameCheck.available === false ? "1px solid #ef4444" : isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)",
                       borderRadius: "8px",
                       padding: "10px 14px",
-                      color: "#ffffff",
+                      color: isLight ? "#0f172a" : "#ffffff",
                       fontSize: "0.88rem"
                     }}
                     placeholder="janedoe"
@@ -601,17 +614,17 @@ export default function Settings() {
 
               {/* Email Address (Read-only / Authenticated) */}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Email Address</label>
+                <label style={{ fontSize: "0.82rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1" }}>Email Address</label>
                 <input
                   type="email"
                   disabled
                   value={formData.email}
                   style={{
-                    background: "rgba(8, 12, 20, 0.6)",
-                    border: "1px solid rgba(255,255,255,0.06)",
+                    background: isLight ? "#f1f5f9" : "rgba(8, 12, 20, 0.6)",
+                    border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)",
                     borderRadius: "8px",
                     padding: "10px 14px",
-                    color: "#94a3b8",
+                    color: isLight ? "#64748b" : "#94a3b8",
                     fontSize: "0.88rem",
                     cursor: "not-allowed"
                   }}
@@ -623,7 +636,7 @@ export default function Settings() {
               {/* Bio / Headline */}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Bio / Headline</label>
+                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1" }}>Bio / Headline</label>
                   <span style={{ fontSize: "0.72rem", color: formData.bio.length > 280 ? "#f59e0b" : "#64748b" }}>
                     {formData.bio.length}/300
                   </span>
@@ -634,11 +647,11 @@ export default function Settings() {
                   value={formData.bio}
                   onChange={(e) => handleChange("bio", e.target.value)}
                   style={{
-                    background: "#080c14",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    background: isLight ? "#ffffff" : "#080c14",
+                    border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)",
                     borderRadius: "8px",
                     padding: "10px 14px",
-                    color: "#ffffff",
+                    color: isLight ? "#0f172a" : "#ffffff",
                     fontSize: "0.88rem",
                     resize: "vertical"
                   }}
@@ -649,16 +662,16 @@ export default function Settings() {
               {/* Language & Time Zone */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Interface Language</label>
+                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1" }}>Interface Language</label>
                   <select
                     value={formData.language}
                     onChange={(e) => handleChange("language", e.target.value)}
                     style={{
-                      background: "#080c14",
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: isLight ? "#ffffff" : "#080c14",
+                      border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)",
                       borderRadius: "8px",
                       padding: "10px 14px",
-                      color: "#ffffff",
+                      color: isLight ? "#0f172a" : "#ffffff",
                       fontSize: "0.88rem"
                     }}
                   >
@@ -671,16 +684,16 @@ export default function Settings() {
                 </div>
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Time Zone</label>
+                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1" }}>Time Zone</label>
                   <select
                     value={formData.timezone}
                     onChange={(e) => handleChange("timezone", e.target.value)}
                     style={{
-                      background: "#080c14",
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: isLight ? "#ffffff" : "#080c14",
+                      border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)",
                       borderRadius: "8px",
                       padding: "10px 14px",
-                      color: "#ffffff",
+                      color: isLight ? "#0f172a" : "#ffffff",
                       fontSize: "0.88rem"
                     }}
                   >
@@ -698,14 +711,14 @@ export default function Settings() {
           {/* TAB 2: APPEARANCE */}
           {activeTab === "appearance" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "14px" }}>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 4px 0" }}>Appearance & Theme</h2>
-                <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Customize color palette, system theme, and UI density.</p>
+              <div style={{ borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", paddingBottom: "14px" }}>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc", margin: "0 0 4px 0" }}>Appearance & Theme</h2>
+                <p style={{ fontSize: "0.85rem", color: isLight ? "#475569" : "#94a3b8", margin: 0 }}>Customize color palette, system theme, and UI density.</p>
               </div>
 
               {/* Theme Mode Selector (Dark / Light / System) */}
               <div>
-                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "#cbd5e1", display: "block", marginBottom: "10px" }}>Theme Mode</label>
+                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1", display: "block", marginBottom: "10px" }}>Theme Mode</label>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
                   {[
                     { id: "dark", label: "Dark", icon: Moon, desc: "Default charcoal navy" },
@@ -719,19 +732,24 @@ export default function Settings() {
                         key={t.id}
                         onClick={() => handleChange("theme", t.id)}
                         style={{
-                          background: isSelected ? "rgba(99, 102, 241, 0.15)" : "#080c14",
-                          border: isSelected ? "1.5px solid #6366f1" : "1px solid rgba(255,255,255,0.08)",
+                          background: isSelected
+                            ? isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.15)"
+                            : isLight ? "#ffffff" : "#080c14",
+                          border: isSelected
+                            ? "1.5px solid #6366f1"
+                            : isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
                           borderRadius: "10px",
                           padding: "14px",
                           cursor: "pointer",
+                          boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none",
                           transition: "all 0.2s ease"
                         }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", color: isSelected ? "#818cf8" : "#94a3b8", fontWeight: "600", fontSize: "0.9rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", color: isSelected ? "#6366f1" : isLight ? "#0f172a" : "#94a3b8", fontWeight: "600", fontSize: "0.9rem" }}>
                           <Icon size={16} />
                           <span>{t.label}</span>
                         </div>
-                        <span style={{ fontSize: "0.76rem", color: "#64748b", marginTop: "4px", display: "block" }}>{t.desc}</span>
+                        <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#64748b", marginTop: "4px", display: "block" }}>{t.desc}</span>
                       </div>
                     );
                   })}
@@ -740,7 +758,7 @@ export default function Settings() {
 
               {/* Accent Color Palette (Blue, Purple, Indigo, Green) */}
               <div>
-                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "#cbd5e1", display: "block", marginBottom: "10px" }}>Accent Color</label>
+                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1", display: "block", marginBottom: "10px" }}>Accent Color</label>
                 <div style={{ display: "flex", gap: "14px", flexWrap: "wrap" }}>
                   {[
                     { id: "blue", color: "#3b82f6", label: "Blue" },
@@ -758,13 +776,19 @@ export default function Settings() {
                           display: "flex",
                           alignItems: "center",
                           gap: "8px",
-                          background: isSelected ? "rgba(255,255,255,0.08)" : "#080c14",
-                          border: isSelected ? `2px solid ${c.color}` : "1px solid rgba(255,255,255,0.08)",
+                          background: isSelected
+                            ? isLight ? "#f1f5f9" : "rgba(255,255,255,0.08)"
+                            : isLight ? "#ffffff" : "#080c14",
+                          border: isSelected
+                            ? `2px solid ${c.color}`
+                            : isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
                           borderRadius: "8px",
                           padding: "8px 14px",
-                          color: "#ffffff",
+                          color: isLight ? "#0f172a" : "#ffffff",
                           fontSize: "0.82rem",
-                          cursor: "pointer"
+                          cursor: "pointer",
+                          boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none",
+                          transition: "all 0.15s ease"
                         }}
                       >
                         <span style={{ width: 12, height: 12, borderRadius: "50%", background: c.color }} />
@@ -777,7 +801,7 @@ export default function Settings() {
 
               {/* Display Density Mode (Comfortable vs Compact) */}
               <div>
-                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "#cbd5e1", display: "block", marginBottom: "10px" }}>Display Density</label>
+                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1", display: "block", marginBottom: "10px" }}>Display Density</label>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   {[
                     { id: "comfortable", label: "Comfortable", desc: "Standard spacing for relaxed reading" },
@@ -792,15 +816,21 @@ export default function Settings() {
                           handleChange("compactMode", d.id === "compact");
                         }}
                         style={{
-                          background: isSelected ? "rgba(99, 102, 241, 0.15)" : "#080c14",
-                          border: isSelected ? "1.5px solid #6366f1" : "1px solid rgba(255,255,255,0.08)",
+                          background: isSelected
+                            ? isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.15)"
+                            : isLight ? "#ffffff" : "#080c14",
+                          border: isSelected
+                            ? "1.5px solid #6366f1"
+                            : isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
                           borderRadius: "10px",
                           padding: "14px",
-                          cursor: "pointer"
+                          cursor: "pointer",
+                          boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none",
+                          transition: "all 0.2s ease"
                         }}
                       >
-                        <strong style={{ color: isSelected ? "#818cf8" : "#f8fafc", fontSize: "0.88rem", display: "block" }}>{d.label}</strong>
-                        <span style={{ color: "#64748b", fontSize: "0.76rem", marginTop: "2px", display: "block" }}>{d.desc}</span>
+                        <strong style={{ color: isSelected ? "#6366f1" : isLight ? "#0f172a" : "#f8fafc", fontSize: "0.88rem", display: "block" }}>{d.label}</strong>
+                        <span style={{ color: isLight ? "#64748b" : "#64748b", fontSize: "0.76rem", marginTop: "2px", display: "block" }}>{d.desc}</span>
                       </div>
                     );
                   })}

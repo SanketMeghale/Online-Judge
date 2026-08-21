@@ -21,18 +21,19 @@ import {
 import { useAuth } from "../../auth/AuthContext.jsx";
 import { getUserDisplayName } from "../../auth/displayName.js";
 import { useAppData } from "../../data/AppDataContext.jsx";
+import { useTheme } from "../../context/ThemeContext.jsx";
 import CommandPalette from "../dashboard/CommandPalette.jsx";
 
 export default function Navbar({ onToggleSidebar = () => {} }) {
   const { isAuthenticated, logout, user } = useAuth();
   const { getUserById } = useAppData();
+  const { theme, resolvedTheme, isLight, toggleTheme, setTheme } = useTheme();
   const navigate = useNavigate();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [themeMode, setThemeMode] = useState("dark");
 
   const currentUserId = user?.id || user?._id || "";
   const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
@@ -220,7 +221,32 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                 <span>{streakCount} {streakCount === 1 ? "Day" : "Days"}</span>
               </Link>
 
-              {/* 2. Notifications Bell */}
+              {/* 2. Quick Theme Toggle Button (Sun/Moon) */}
+              <motion.button
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.94 }}
+                type="button"
+                onClick={toggleTheme}
+                title={`Current theme: ${theme} (${resolvedTheme}). Click to switch to ${isLight ? "Dark" : "Light"} mode.`}
+                aria-label="Toggle light or dark theme"
+                style={{
+                  background: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.04)",
+                  border: isLight ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(255, 255, 255, 0.08)",
+                  borderRadius: "8px",
+                  width: "36px",
+                  height: "36px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: isLight ? "#f59e0b" : "#818cf8",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease"
+                }}
+              >
+                {isLight ? <Sun size={17} /> : <Moon size={17} />}
+              </motion.button>
+
+              {/* 3. Notifications Bell */}
               <div style={{ position: "relative" }}>
                 <button
                   type="button"
@@ -229,15 +255,15 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                     setDropdownOpen(false);
                   }}
                   style={{
-                    background: "rgba(255, 255, 255, 0.04)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    background: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.04)",
+                    border: isLight ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "8px",
                     width: "36px",
                     height: "36px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: "#94a3b8",
+                    color: isLight ? "#475569" : "#94a3b8",
                     cursor: "pointer",
                     position: "relative"
                   }}
@@ -268,26 +294,26 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                         top: "calc(100% + 8px)",
                         right: 0,
                         width: "280px",
-                        background: "#0d111a",
-                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        background: isLight ? "#ffffff" : "#0d111a",
+                        border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.1)",
                         borderRadius: "12px",
-                        boxShadow: "0 14px 35px rgba(0, 0, 0, 0.55)",
+                        boxShadow: isLight ? "0 10px 30px rgba(0, 0, 0, 0.1)" : "0 14px 35px rgba(0, 0, 0, 0.55)",
                         padding: "12px",
                         zIndex: 200
                       }}
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                        <strong style={{ fontSize: "0.85rem", color: "#f8fafc" }}>Notifications</strong>
+                        <strong style={{ fontSize: "0.85rem", color: isLight ? "#0f172a" : "#f8fafc" }}>Notifications</strong>
                         <span style={{ fontSize: "0.72rem", color: "#818cf8", cursor: "pointer" }}>Mark all read</span>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "0.78rem" }}>
-                        <div style={{ padding: "8px 10px", background: "rgba(255,255,255,0.03)", borderRadius: "8px" }}>
+                        <div style={{ padding: "8px 10px", background: isLight ? "#f8fafc" : "rgba(255,255,255,0.03)", border: isLight ? "1px solid #e2e8f0" : "none", borderRadius: "8px" }}>
                           <span style={{ color: "#10b981", fontWeight: "600" }}>✓ Solution Accepted</span>
-                          <p style={{ margin: "2px 0 0 0", color: "#94a3b8" }}>Valid Parentheses passed all test cases.</p>
+                          <p style={{ margin: "2px 0 0 0", color: isLight ? "#475569" : "#94a3b8" }}>Valid Parentheses passed all test cases.</p>
                         </div>
-                        <div style={{ padding: "8px 10px", background: "rgba(255,255,255,0.03)", borderRadius: "8px" }}>
-                          <span style={{ color: "#fbbf24", fontWeight: "600" }}>🏆 Weekly Contest</span>
-                          <p style={{ margin: "2px 0 0 0", color: "#94a3b8" }}>Algorithm Sprint 42 starts in 2 days.</p>
+                        <div style={{ padding: "8px 10px", background: isLight ? "#f8fafc" : "rgba(255,255,255,0.03)", border: isLight ? "1px solid #e2e8f0" : "none", borderRadius: "8px" }}>
+                          <span style={{ color: "#f59e0b", fontWeight: "600" }}>🏆 Weekly Contest</span>
+                          <p style={{ margin: "2px 0 0 0", color: isLight ? "#475569" : "#94a3b8" }}>Algorithm Sprint 42 starts in 2 days.</p>
                         </div>
                       </div>
                     </motion.div>
@@ -307,8 +333,12 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                   type="button"
                   style={{
                     cursor: "pointer",
-                    background: dropdownOpen ? "rgba(99, 102, 241, 0.12)" : "rgba(255, 255, 255, 0.04)",
-                    border: dropdownOpen ? "1px solid rgba(99, 102, 241, 0.35)" : "1px solid rgba(255, 255, 255, 0.08)",
+                    background: dropdownOpen
+                      ? "rgba(99, 102, 241, 0.12)"
+                      : isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.04)",
+                    border: dropdownOpen
+                      ? "1px solid rgba(99, 102, 241, 0.35)"
+                      : isLight ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "999px",
                     padding: "4px 12px 4px 4px",
                     display: "flex",
@@ -337,7 +367,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                   </span>
 
                   {/* User Full Name */}
-                  <strong style={{ color: "#f8fafc", fontSize: "0.86rem", fontWeight: "600" }}>
+                  <strong style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.86rem", fontWeight: "600" }}>
                     {fullName}
                   </strong>
 
@@ -345,7 +375,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                   <ChevronDown
                     size={14}
                     style={{
-                      color: "#94a3b8",
+                      color: isLight ? "#64748b" : "#94a3b8",
                       transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
                       transition: "transform 0.15s ease"
                     }}
@@ -365,10 +395,10 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                         top: "calc(100% + 8px)",
                         right: 0,
                         width: "230px",
-                        background: "#0d111a",
-                        border: "1px solid rgba(255, 255, 255, 0.1)",
+                        background: isLight ? "#ffffff" : "#0d111a",
+                        border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.1)",
                         borderRadius: "12px",
-                        boxShadow: "0 16px 40px rgba(0, 0, 0, 0.6)",
+                        boxShadow: isLight ? "0 10px 30px rgba(0, 0, 0, 0.1)" : "0 16px 40px rgba(0, 0, 0, 0.6)",
                         padding: "8px",
                         zIndex: 200,
                         display: "flex",
@@ -380,7 +410,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                       <div
                         style={{
                           padding: "10px 12px 12px",
-                          borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+                          borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
                           marginBottom: "4px",
                           display: "flex",
                           alignItems: "center",
@@ -485,20 +515,64 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                           alignItems: "center",
                           gap: "10px",
                           padding: "8px 12px",
-                          color: "#cbd5e1",
+                          color: isLight ? "#334155" : "#cbd5e1",
                           textDecoration: "none",
                           fontSize: "0.84rem",
                           borderRadius: "6px",
                           transition: "background 0.12s ease"
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.05)")}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
                         <Code2 size={15} style={{ color: "#818cf8" }} />
                         <span>Editor Preferences</span>
                       </Link>
 
-                      <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", margin: "4px 0" }} />
+                      <div style={{ borderTop: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", margin: "6px 0 4px" }} />
+
+                      {/* Theme Mode Quick Selector */}
+                      <div style={{ padding: "4px 6px" }}>
+                        <span style={{ fontSize: "0.7rem", color: isLight ? "#64748b" : "#94a3b8", textTransform: "uppercase", fontWeight: "700", display: "block", marginBottom: "6px", paddingLeft: "4px" }}>
+                          Theme Mode
+                        </span>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "4px", background: isLight ? "#f1f5f9" : "rgba(0,0,0,0.3)", padding: "3px", borderRadius: "8px" }}>
+                          {[
+                            { id: "dark", label: "Dark", icon: Moon },
+                            { id: "light", label: "Light", icon: Sun },
+                            { id: "system", label: "System", icon: Laptop }
+                          ].map((t) => {
+                            const Icon = t.icon;
+                            const isSelected = theme === t.id;
+                            return (
+                              <button
+                                key={t.id}
+                                type="button"
+                                onClick={() => setTheme(t.id)}
+                                style={{
+                                  background: isSelected ? "var(--dash-accent-primary, #6366f1)" : "transparent",
+                                  color: isSelected ? "#ffffff" : isLight ? "#475569" : "#94a3b8",
+                                  border: "none",
+                                  borderRadius: "6px",
+                                  padding: "5px 4px",
+                                  fontSize: "0.73rem",
+                                  fontWeight: isSelected ? "700" : "500",
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  gap: "4px",
+                                  transition: "all 0.12s ease"
+                                }}
+                              >
+                                <Icon size={12} />
+                                <span>{t.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div style={{ borderTop: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", margin: "4px 0" }} />
 
                       {/* Sign Out Button */}
                       <button

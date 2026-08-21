@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { AlignLeft, ChevronDown, Copy, Maximize2, Play, RotateCcw, TerminalSquare, Zap } from "lucide-react";
+import { useTheme } from "../../context/ThemeContext.jsx";
 
 const languages = [
   { id: "Python", name: "Python 3" },
@@ -42,10 +43,10 @@ const THEME_STYLES = {
     caretColor: "#bd93f9"
   },
   light: {
-    bg: "#f8fafc",
-    gutterBg: "#f1f5f9",
+    bg: "#ffffff",
+    gutterBg: "#f8fafc",
     gutterColor: "#94a3b8",
-    gutterBorder: "rgba(0,0,0,0.08)",
+    gutterBorder: "#e2e8f0",
     textColor: "#0f172a",
     caretColor: "#2563eb"
   }
@@ -116,6 +117,7 @@ export default function CodeEditor({
   isRunning,
   isSubmitting
 }) {
+  const { isLight } = useTheme();
   const textareaRef = useRef(null);
   const preRef = useRef(null);
 
@@ -144,8 +146,12 @@ export default function CodeEditor({
   const tabSize = editorSettings.tabSize || (language === "Python" ? 4 : 2);
   const wordWrap = editorSettings.wordWrap !== false;
   const showLineNumbers = editorSettings.showLineNumbers !== false;
-  const currentEditorTheme = editorSettings.editorTheme || "judgo-dark";
-  const themePalette = THEME_STYLES[currentEditorTheme] || THEME_STYLES["judgo-dark"];
+  
+  const configuredTheme = editorSettings.editorTheme;
+  const currentEditorTheme = configuredTheme
+    ? (configuredTheme === "judgo-dark" && isLight ? "light" : configuredTheme)
+    : (isLight ? "light" : "judgo-dark");
+  const themePalette = THEME_STYLES[currentEditorTheme] || (isLight ? THEME_STYLES.light : THEME_STYLES["judgo-dark"]);
 
   const indentStr = " ".repeat(tabSize);
   const linesCount = (code || "").split("\n").length;
@@ -243,11 +249,11 @@ export default function CodeEditor({
   }
 
   return (
-    <section className="editor-panel" style={{ background: themePalette.bg, border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+    <section className="editor-panel" style={{ background: themePalette.bg, border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none" }}>
       {/* Editor Header Bar */}
-      <div className="editor-toolbar" style={{ background: themePalette.gutterBg, padding: "8px 14px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div className="editor-toolbar" style={{ background: themePalette.gutterBg, padding: "8px 14px", borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <label className="editor-title" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "4px 10px", display: "flex", alignItems: "center", gap: "6px", color: themePalette.textColor, cursor: "pointer" }}>
+          <label className="editor-title" style={{ background: isLight ? "#ffffff" : "rgba(255,255,255,0.06)", border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", padding: "4px 10px", display: "flex", alignItems: "center", gap: "6px", color: themePalette.textColor, cursor: "pointer" }}>
             <TerminalSquare size={15} style={{ color: "#a855f7" }} />
             <select
               onChange={(event) => onLanguageChange(event.target.value)}
@@ -255,16 +261,16 @@ export default function CodeEditor({
               style={{ background: "transparent", border: "none", color: themePalette.textColor, fontSize: "0.85rem", fontWeight: "bold", cursor: "pointer", outline: "none" }}
             >
               {languages.map((item) => (
-                <option key={item.id} value={item.id} style={{ background: "#131826", color: "#fff" }}>{item.name}</option>
+                <option key={item.id} value={item.id} style={{ background: isLight ? "#ffffff" : "#131826", color: isLight ? "#0f172a" : "#fff" }}>{item.name}</option>
               ))}
             </select>
-            <ChevronDown size={14} style={{ color: "#888" }} />
+            <ChevronDown size={14} style={{ color: isLight ? "#64748b" : "#888" }} />
           </label>
-          <span style={{ fontSize: "0.75rem", background: "rgba(34, 197, 94, 0.15)", color: "#4ade80", border: "1px solid rgba(34, 197, 94, 0.3)", padding: "2px 8px", borderRadius: "999px", fontWeight: "600" }}>
+          <span style={{ fontSize: "0.75rem", background: "rgba(34, 197, 94, 0.15)", color: "#16a34a", border: "1px solid rgba(34, 197, 94, 0.3)", padding: "2px 8px", borderRadius: "999px", fontWeight: "600" }}>
             • Auto
           </span>
 
-          <div style={{ display: "flex", gap: "8px", marginLeft: "6px", color: "#8b9bb4" }}>
+          <div style={{ display: "flex", gap: "8px", marginLeft: "6px", color: isLight ? "#64748b" : "#8b9bb4" }}>
             <AlignLeft size={15} style={{ cursor: "pointer" }} title="Format code" />
             <Copy size={15} style={{ cursor: "pointer" }} title="Copy code" />
             <RotateCcw size={15} style={{ cursor: "pointer" }} title="Reset code" />
@@ -280,10 +286,10 @@ export default function CodeEditor({
               disabled={isRunning || isSubmitting}
               type="button"
               style={{
-                background: "transparent",
-                border: "1px solid rgba(255,255,255,0.18)",
+                background: isLight ? "#f8fafc" : "transparent",
+                border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.18)",
                 borderRadius: "8px",
-                color: "#eee",
+                color: isLight ? "#0f172a" : "#eee",
                 padding: "6px 14px",
                 fontSize: "0.85rem",
                 fontWeight: "bold",
