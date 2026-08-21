@@ -9,7 +9,21 @@ if (!/^mongodb(?:\+srv)?:\/\//.test(mongoUri)) {
 
 try {
   await mongoose.connect(mongoUri, { serverSelectionTimeoutMS: 10_000 });
-  const indexes = await User.collection.indexes();
+  const listIndexes = async () => {
+    try {
+      return await User.collection.indexes();
+    } catch (error) {
+      // A new production database may not have a users collection yet.
+      // Creating the index below also creates the collection, so treat a
+      // missing namespace exactly like an empty index list.
+      if (error?.code === 26 || error?.codeName === "NamespaceNotFound") {
+        return [];
+      }
+      throw error;
+    }
+  };
+
+  const indexes = await listIndexes();
   const textIndex = indexes.find((index) => Object.values(index.key || {}).includes("text"));
 
   if (textIndex && textIndex.language_override !== "searchLanguage") {
@@ -17,7 +31,7 @@ try {
     await User.collection.dropIndex(textIndex.name);
   }
 
-  const currentIndexes = await User.collection.indexes();
+  const currentIndexes = await listIndexes();
   if (!currentIndexes.some((index) => Object.values(index.key || {}).includes("text"))) {
     await User.collection.createIndex(
       { name: "text", username: "text", email: "text" },
