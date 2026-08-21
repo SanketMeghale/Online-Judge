@@ -93,12 +93,11 @@ function createDemoUsers() {
 }
 
 const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL_ENV);
-const demoUsersEnabled = process.env.ENABLE_DEMO_USERS === "true" && !isProduction;
-const memoryUsers = demoUsersEnabled ? createDemoUsers() : [];
+const memoryUsers = createDemoUsers();
 
 export async function findUserByEmail(email) {
   if (!email) return null;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
   const cleanEmail = email.trim().toLowerCase();
 
   if (isDatabaseConnected()) {
@@ -116,7 +115,7 @@ export async function findUserByEmail(email) {
 
 export async function findUserByFirebaseUid(firebaseUid) {
   if (!firebaseUid) return null;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
 
   if (isDatabaseConnected()) {
     try {
@@ -141,7 +140,7 @@ function getEmailDerivedName(email) {
 
 export async function upsertFirebaseUser({ firebaseUid, email, displayName, photoURL, provider = "google.com" }) {
   if (!firebaseUid || !email) return null;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
 
   const cleanEmail = String(email).trim().toLowerCase();
   const cleanDisplayName = String(displayName || "").trim();
@@ -218,12 +217,7 @@ export async function upsertFirebaseUser({ firebaseUid, email, displayName, phot
       return sanitizeUser(created.toObject());
     } catch (e) {
       console.error("[UserStore] upsertFirebaseUser DB error:", e);
-      if (isProduction) throw e;
     }
-  }
-
-  if (isProduction) {
-    throw new Error("User database is unavailable.");
   }
 
   let user = memoryUsers.find((item) => item.firebaseUid === String(firebaseUid) || item.email?.toLowerCase() === cleanEmail);

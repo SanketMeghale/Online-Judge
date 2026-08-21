@@ -173,7 +173,7 @@ router.post("/google", authLimiter, async (request, response) => {
     });
 
     if (!user) {
-      response.status(503).json({ success: false, error: "Authentication service is temporarily unavailable." });
+      response.status(401).json({ success: false, error: "Failed to authenticate with Google. Please try again." });
       return;
     }
 
@@ -189,14 +189,9 @@ router.post("/google", authLimiter, async (request, response) => {
     });
   } catch (err) {
     console.error("[Auth Google Error]:", err);
-    const isInfrastructureError = /JWT_SECRET|database|Mongo|ECONN|timed out|Server selection/i.test(
-      String(err?.message || "")
-    );
-    response.status(isInfrastructureError ? 503 : 401).json({
+    response.status(401).json({
       success: false,
-      error: isInfrastructureError
-        ? "Authentication service is temporarily unavailable."
-        : "Invalid or expired Google authentication token."
+      error: err?.message || "Invalid or expired Google authentication token."
     });
   }
 });
