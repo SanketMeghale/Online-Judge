@@ -1,8 +1,5 @@
 import { languageRegistry } from "../config/languages.js";
-import { CExecutor } from "./CExecutor.js";
-import { CppExecutor } from "./CppExecutor.js";
-import { JavaExecutor } from "./JavaExecutor.js";
-import { PythonExecutor } from "./PythonExecutor.js";
+import { SandboxExecutor } from "./SandboxExecutor.js";
 
 /**
  * ExecutorFactory - Production SOLID Compliant Factory
@@ -18,10 +15,11 @@ export class ExecutorFactory {
     this.registry = new Map();
 
     // Default registered executor classes
-    this.register("python", PythonExecutor);
-    this.register("c", CExecutor);
-    this.register("cpp", CppExecutor);
-    this.register("java", JavaExecutor);
+    this.register("python", SandboxExecutor);
+    this.register("javascript", SandboxExecutor);
+    this.register("c", SandboxExecutor);
+    this.register("cpp", SandboxExecutor);
+    this.register("java", SandboxExecutor);
   }
 
   /**

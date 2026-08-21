@@ -5,6 +5,18 @@ const REALTIME_SOCKET_URL =
 
 let socketInstance = null;
 
+async function connectAuthenticatedSocket(socket) {
+  try {
+    const response = await fetch("/api/auth/realtime-token", { credentials: "include" });
+    const data = await response.json();
+    if (!response.ok || !data.token) throw new Error(data.error || "Realtime authentication failed.");
+    socket.auth = { token: data.token };
+    socket.connect();
+  } catch (error) {
+    console.warn(`[Socket.IO Client] ${error.message}`);
+  }
+}
+
 /**
  * Returns or initializes the Socket.IO client instance
  * @returns {import("socket.io-client").Socket}
@@ -13,7 +25,8 @@ export function getSocket() {
   if (!socketInstance) {
     socketInstance = io(REALTIME_SOCKET_URL, {
       transports: ["websocket", "polling"],
-      autoConnect: true,
+      autoConnect: false,
+      withCredentials: true,
       reconnection: true,
       reconnectionAttempts: 20,
       reconnectionDelay: 1000
@@ -30,6 +43,8 @@ export function getSocket() {
     socketInstance.on("disconnect", (reason) => {
       console.log(`[Socket.IO Client] Disconnected from server: ${reason}`);
     });
+
+    connectAuthenticatedSocket(socketInstance);
   }
 
   return socketInstance;

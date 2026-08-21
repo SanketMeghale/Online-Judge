@@ -116,7 +116,7 @@ export default function AdminLogin() {
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="sanket@example.com or admin username"
+                placeholder="admin@example.com or username"
                 required
                 className="admin-form-input"
                 style={{ width: "100%", paddingLeft: "38px" }}

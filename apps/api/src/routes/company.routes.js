@@ -14,7 +14,7 @@ const router = express.Router();
  */
 router.get("/", optionalAuth, async (req, res) => {
   try {
-    const userId = req.user?.id || req.user?._id || req.query.userId || null;
+    const userId = req.user?.id || req.user?._id || null;
     const companies = await getAllCompaniesWithUserProgress(userId);
     res.json({
       success: true,
@@ -32,7 +32,7 @@ router.get("/", optionalAuth, async (req, res) => {
  */
 router.get("/:companyId", optionalAuth, async (req, res) => {
   try {
-    const userId = req.user?.id || req.user?._id || req.query.userId || null;
+    const userId = req.user?.id || req.user?._id || null;
     const sheet = await getCompanyDetailSheet(req.params.companyId, userId);
     res.json({
       success: true,
@@ -48,7 +48,7 @@ router.get("/:companyId", optionalAuth, async (req, res) => {
  * POST /api/companies/:companyId/ai-chat
  * Real-time personalized AI coaching for target company
  */
-router.post("/:companyId/ai-chat", optionalAuth, async (req, res) => {
+router.post("/:companyId/ai-chat", requireAuth, async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || null;
     const { message, context } = req.body || {};

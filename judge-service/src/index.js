@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
@@ -6,8 +6,6 @@ import { queueConsumer } from "./queue/consumer.js";
 import { queueProducer } from "./queue/producer.js";
 import { judgeWorker } from "./workers/JudgeWorker.js";
 import { monitoringService } from "./services/MonitoringService.js";
-
-dotenv.config();
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/online-judge";
 const WORKER_CONCURRENCY = Number(process.env.WORKER_CONCURRENCY || 2);
@@ -32,11 +30,17 @@ console.log("🚀 STARTING STANDALONE JUDGE SERVICE WORKER MICROSERVICE");
 console.log("======================================================================\n");
 
 async function startJudgeService() {
+  const isProduction = process.env.NODE_ENV === "production";
+  if (isProduction && (!process.env.MONGODB_URI || !/^amqps?:\/\//.test(process.env.RABBITMQ_URL || "") || !process.env.REALTIME_INTERNAL_SECRET || !process.env.REALTIME_SERVICE_URL)) {
+    throw new Error("MONGODB_URI, a valid RABBITMQ_URL, REALTIME_INTERNAL_SECRET, and REALTIME_SERVICE_URL are required in production.");
+  }
+
   // 1. Connect to MongoDB Database
   try {
     await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
     console.log("✓ [MongoDB] Connected to database successfully.");
   } catch (dbErr) {
+    if (isProduction) throw dbErr;
     console.warn(`⚠️ [MongoDB] Connection offline: ${dbErr.message}. Operating in hybrid mode.`);
   }
 
@@ -45,6 +49,7 @@ async function startJudgeService() {
   if (channel) {
     console.log("✓ [RabbitMQ] Connected to message broker exchange & queues.");
   } else {
+    if (isProduction) throw new Error("RabbitMQ is unavailable; refusing to start a production judge worker.");
     console.warn("⚠️ [RabbitMQ] Server offline. Operating in fallback mode.");
   }
 
@@ -81,4 +86,7 @@ process.on("SIGTERM", async () => {
   process.exit(0);
 });
 
-startJudgeService();
+startJudgeService().catch((error) => {
+  console.error(`[Judge Service] Fatal startup error: ${error.message}`);
+  process.exitCode = 1;
+});

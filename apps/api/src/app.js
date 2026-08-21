@@ -15,6 +15,7 @@ import aiRoutes from "./routes/ai.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import evaluationRoutes from "./routes/evaluation.routes.js";
 import companyRoutes from "./routes/company.routes.js";
+import { validateApiEnvironment } from "./config/env.config.js";
 
 function parseCookies(cookieHeader = "") {
   const list = {};
@@ -25,12 +26,17 @@ function parseCookies(cookieHeader = "") {
     if (!name) return;
     const value = rest.join("=").trim();
     if (!value) return;
-    list[name] = decodeURIComponent(value);
+    try {
+      list[name] = decodeURIComponent(value);
+    } catch {
+      list[name] = value;
+    }
   });
   return list;
 }
 
 export function createApp() {
+  validateApiEnvironment();
   const app = express();
   app.set("trust proxy", 1);
 
@@ -46,7 +52,7 @@ export function createApp() {
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+        if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
           callback(new Error("Not allowed by CORS"));
@@ -103,11 +109,16 @@ export function createApp() {
   app.use("/api/admin", adminRoutes);
   app.use("/admin", adminRoutes);
 
+  app.use((_req, res) => {
+    res.status(404).json({ success: false, error: "API endpoint not found." });
+  });
+
   app.use((error, _request, response, _next) => {
     console.error("[Unhandled API Error]:", error);
-    response.status(error.status || 500).json({
+    const status = error.status || error.statusCode || 500;
+    response.status(status).json({
       success: false,
-      error: error?.message ?? "Internal server error."
+      error: status < 500 ? error?.message : "Internal server error."
     });
   });
 

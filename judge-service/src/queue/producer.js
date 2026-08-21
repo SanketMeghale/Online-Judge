@@ -32,7 +32,7 @@ export class QueueProducer {
 
     try {
       this.connection = await amqp.connect(QUEUE_CONFIG.RABBITMQ_URL);
-      this.channel = await this.connection.createChannel();
+      this.channel = await this.connection.createConfirmChannel();
 
       // Handle connection errors & reconnect
       this.connection.on("error", (err) => {
@@ -49,7 +49,6 @@ export class QueueProducer {
 
       // 1. Assert Direct Exchanges
       await this.channel.assertExchange(QUEUE_CONFIG.EXCHANGES.JUDGE_EXCHANGE, "direct", { durable: true });
-      await this.channel.assertExchange(QUEUE_CONFIG.EXCHANGES.RETRY_EXCHANGE, "direct", { durable: true });
       await this.channel.assertExchange(QUEUE_CONFIG.EXCHANGES.DLX_EXCHANGE, "direct", { durable: true });
 
       // 2. Assert Durable Queues
@@ -60,12 +59,6 @@ export class QueueProducer {
         deadLetterRoutingKey: QUEUE_CONFIG.ROUTING_KEYS.DEAD_LETTER
       });
 
-      // Submission Queue (Alias/Entry point)
-      await this.channel.assertQueue(QUEUE_CONFIG.QUEUES.SUBMISSION_QUEUE, { durable: true });
-
-      // Verdict Queue: Queue consumed by API server for Socket.IO realtime stream
-      await this.channel.assertQueue(QUEUE_CONFIG.QUEUES.VERDICT_QUEUE, { durable: true });
-
       // Dead Letter Queue (DLQ) for failed retries
       await this.channel.assertQueue(QUEUE_CONFIG.QUEUES.DEAD_LETTER_QUEUE, { durable: true });
 
@@ -74,12 +67,6 @@ export class QueueProducer {
         QUEUE_CONFIG.QUEUES.JUDGE_QUEUE,
         QUEUE_CONFIG.EXCHANGES.JUDGE_EXCHANGE,
         QUEUE_CONFIG.ROUTING_KEYS.SUBMISSION_JOB
-      );
-
-      await this.channel.bindQueue(
-        QUEUE_CONFIG.QUEUES.VERDICT_QUEUE,
-        QUEUE_CONFIG.EXCHANGES.JUDGE_EXCHANGE,
-        QUEUE_CONFIG.ROUTING_KEYS.VERDICT_RESULT
       );
 
       await this.channel.bindQueue(
@@ -113,7 +100,7 @@ export class QueueProducer {
         retryCount: submissionJob.retryCount || 0
       }));
 
-      const published = channel.publish(
+      channel.publish(
         QUEUE_CONFIG.EXCHANGES.JUDGE_EXCHANGE,
         QUEUE_CONFIG.ROUTING_KEYS.SUBMISSION_JOB,
         payloadBuffer,
@@ -125,38 +112,10 @@ export class QueueProducer {
         }
       );
 
-      return published;
+      await channel.waitForConfirms();
+      return true;
     } catch (err) {
       console.error(`[RabbitMQ Producer] Failed to publish submission job: ${err.message}`);
-      return false;
-    }
-  }
-
-  /**
-   * Publishes Completed Evaluation Verdict Result to Verdict Queue
-   * @param {Object} verdictPayload - Payload ({ submissionId, verdict, statusText, passCount, totalCount, runtimeMs, memoryMb, testcases })
-   * @returns {Promise<boolean>} True if successfully published to RabbitMQ
-   */
-  async publishVerdictResult(verdictPayload) {
-    try {
-      const channel = await this.connect();
-      if (!channel) return false;
-
-      const payloadBuffer = Buffer.from(JSON.stringify({
-        ...verdictPayload,
-        completedAt: Date.now()
-      }));
-
-      const published = channel.publish(
-        QUEUE_CONFIG.EXCHANGES.JUDGE_EXCHANGE,
-        QUEUE_CONFIG.ROUTING_KEYS.VERDICT_RESULT,
-        payloadBuffer,
-        { persistent: true }
-      );
-
-      return published;
-    } catch (err) {
-      console.error(`[RabbitMQ Producer] Failed to publish verdict result: ${err.message}`);
       return false;
     }
   }

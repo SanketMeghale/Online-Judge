@@ -1,10 +1,8 @@
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080/api";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/$/, "");
 
 function getAuthHeaders() {
-  const token = localStorage.getItem("token");
   return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
+    "Content-Type": "application/json"
   };
 }
 
@@ -276,9 +274,7 @@ export const adminApi = {
   },
 
   downloadReportCsv: async (type = "users") => {
-    const token = localStorage.getItem("token");
     const res = await fetch(`${API_BASE}/admin/reports/export/${type}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
       credentials: "include"
     });
     if (!res.ok) throw new Error("Failed to download CSV report.");

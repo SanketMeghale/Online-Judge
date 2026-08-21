@@ -1,99 +1,97 @@
 # Online Judge
 
-Online Judge is a modern coding practice and contest platform inspired by systems like LeetCode and Codeforces. It is designed to support secure code execution, automated evaluation, live contests, team battles, realtime collaboration, AI-assisted interview practice, and learner gamification.
+A monorepo for a coding-practice and contest application. The API records submissions and publishes RabbitMQ jobs; a dedicated judge worker runs them in locked-down Docker containers, stores verdicts, and sends authenticated realtime updates.
 
-The project follows a multi-service architecture so that core judging, realtime updates, AI workflows, and the user-facing application can scale independently.
-
-## Project Overview
-
-The platform allows users to browse programming problems, write solutions in a browser-based editor, run custom test cases, and submit code for automated judging. Submitted code is evaluated inside isolated Docker containers by distributed judge workers, which helps keep execution secure and prevents long-running programs from blocking the main API.
-
-Beyond normal problem solving, the system includes contest support with realtime leaderboards, team-based contests, collaborative coding rooms, and an AI interviewer module that can simulate technical interviews and generate feedback reports.
-
-## Main Features
-
-- JWT-based user authentication and profile management
-- Problem management with topics, difficulty levels, statements, samples, and hidden test cases
-- Multi-language code submission support for C, C++, Java, and Python
-- Docker-based judging with verdicts such as AC, WA, CE, RE, TLE, MLE, and SYSTEM_ERROR
-- Custom test case runner for quick local-style execution
-- Live individual and team contests
-- Realtime contest leaderboard updates using WebSocket communication
-- Collaboration rooms with shared code editing support
-- AI interviewer service for mock technical interviews and feedback
-- Gamification through XP, streaks, badges, and lightweight coding games
-- Redis-backed caching for leaderboards, cooldown checks, pub/sub events, and presence
-
-## Architecture & Deployment Model
-
-The platform utilizes a modern decoupled architecture separating the user-facing web tier from the isolated execution engine:
+## Architecture
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│                    Vercel Cloud Platform                     │
-│  ┌───────────────────────┐        ┌───────────────────────┐  │
-│  │   React (Vite) SPA    │───────▶│ Express API Gateway   │  │
-│  │   Client Application  │        │ (Serverless Functions)│  │
-│  └───────────────────────┘        └───────────┬───────────┘  │
-└───────────────────────────────────────────────┼──────────────┘
-                                                │
-                 ┌──────────────────────────────┼──────────────────────────────┐
-                 │                              │                              │
-                 ▼                              ▼                              ▼
-  ┌─────────────────────────────┐ ┌───────────────────────────┐ ┌─────────────────────────────┐
-  │   MongoDB Atlas & Redis     │ │  Isolated Execution Layer │ │   Judgo Intelligence Suite  │
-  │   • Users, Submissions      │ │  • Judge0 CE Containerized│ │   • FAANG Bar Raiser Persona│
-  │   • Contests, Leaderboards  │ │    Docker Sandboxes       │ │   • Progressive AI Hints    │
-  │   • Company Sheets & Stats  │ │  • Multi-Language Runner  │ │   • Big-O Complexity Engine │
-  └─────────────────────────────┘ └───────────────────────────┘ └─────────────────────────────┘
+React/Vite web app
+        |
+        | HTTPS, HttpOnly session cookie
+        v
+Express API  ---> MongoDB
+        |
+        | confirmed RabbitMQ message
+        v
+Judge worker ---> isolated Docker sandbox
+        |
+        | authenticated internal event
+        v
+Socket.IO realtime service ---> submitting user only
 ```
 
-### 🐳 Execution Sandboxing vs. Vercel Serverless
-> **Design Decision & Architecture Clarification:**  
-> Vercel Serverless Functions execute in lightweight, ephemeral runtimes with short execution timeouts and cannot run nested Docker daemons. To maintain zero-compromise security and support multi-language compilation (C, C++, Java, Python, JavaScript), code execution is decoupled:
-> - **API Gateway & Routing (Vercel):** Manages auth, session persistence, problem metadata, AI orchestration, and submission queueing.
-> - **Sandboxed Execution Layer (Judge0 / Workers):** Submissions are securely dispatched to dedicated, containerized Judge0 CE sandboxes with strict CPU, wall-time, and memory isolation.
+The workspace contains:
 
-### 🔒 Security & Server-Side Grading
-- **Zero-Leak Testcase Protection:** Public API endpoints (`/api/problems`, `/api/problems/:id`, `/api/contests`) strictly sanitize problem objects, omitting `hiddenTestCases` and internal judge keys.
-- **Server-Side Evaluation:** All verification and verdict scoring occur exclusively in server-side services (`submission.service.js` & `judgeEvaluator.js`).
+- `apps/web`: React 19 and Vite client.
+- `apps/api`: Express REST API, authentication, problem/contest data, and submission producer.
+- `judge-service`: the only component allowed to execute submitted code. It supports C, C++, Java, JavaScript, and Python through the sandbox image.
+- `services/realtime`: authenticated Socket.IO delivery for per-user submission updates.
+- `packages/shared`: language, verdict, and queue contracts shared across services.
 
----
+MongoDB is required in production. Development can use in-memory application data, but queued judging still needs MongoDB so the API and worker share records. RabbitMQ is mandatory for production judging. The optional inline Judge0 path is intended only for explicitly enabled development use.
 
-## 🤖 Judgo Intelligence Multi-Mode Assistant
+## Security model
 
-Judgo features 5 specialized, individually tuned AI modes:
-1. **Progressive Hint Engine:** 5-tier scaffolding (intuition $\rightarrow$ invariants $\rightarrow$ algorithm $\rightarrow$ pseudocode $\rightarrow$ optimal solution) preventing premature spoilers.
-2. **Automated Code Review:** Mathematical Big-O Time & Space complexity breakdown, recursion call stack analysis, and edge-case vulnerability detection.
-3. **FAANG Mock Interview Studio:** Strict Bar Raiser persona conducting realistic DSA, System Design, and Behavioral rounds with instant evaluation scorecards.
-4. **Company-Wise Preparation Sheets:** Tailored roadmaps and hiring rubrics for Google, Meta, Amazon, Microsoft, Uber, and Apple.
-5. **Personalized DSA Recommendations:** Data-driven weak-topic targeting calibrated against real submission accuracy and active streaks.
+- Browser sessions use signed JWTs in HttpOnly cookies; tokens are not returned in response bodies or persisted in browser storage.
+- Firebase identity tokens are verified against Google's public keys and the configured Firebase project.
+- Hidden tests, reference solutions, judge output, and internal problem data are removed from public responses.
+- Submission ownership comes from the authenticated user and is enforced on reads.
+- Production judging fails closed if RabbitMQ or MongoDB is unavailable.
+- Containers have no network or Linux capabilities, use a read-only root filesystem and non-root user, and enforce CPU, memory, process, file, timeout, and output limits.
+- Realtime clients use a separate five-minute signing secret. Judge-to-realtime calls use a distinct internal service secret.
 
----
+Docker is a security boundary here, but the host still needs normal hardening: keep Docker and the sandbox image patched, do not expose the Docker socket outside the judge worker, and run the worker separately from the public API.
 
-## Tech Stack
+## Local setup
 
-- **Frontend:** React 18, Vite, Monaco Editor, Framer Motion, Lucide Icons
-- **Backend API:** Node.js, Express (REST API Gateway)
-- **Database & Cache:** MongoDB Atlas, Redis
-- **Code Execution:** Isolated Judge0 CE Containerized Sandboxes (Docker)
-- **Authentication:** JWT, bcryptjs, Firebase Auth
-- **AI Engine:** Google Gemini / Custom LLM Provider with Local Fallbacks
+Requirements: Node.js 20+, MongoDB, RabbitMQ, and Docker.
 
----
+```bash
+npm install
+docker build -t online-judge-sandbox:latest judge-service/infra/docker
+```
 
-## Running Locally
+Copy `apps/api/.env.example` to the environment used by each service and replace every placeholder secret. At minimum, configure:
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+```text
+JWT_SECRET
+REALTIME_JWT_SECRET
+REALTIME_INTERNAL_SECRET
+REALTIME_SERVICE_URL
+MONGODB_URI
+RABBITMQ_URL
+CLIENT_ORIGIN
+```
 
-2. **Start Development Environment:**
-   ```bash
-   # Run frontend web client
-   npm run dev:web
+Start each process in a separate terminal:
 
-   # Run backend API
-   npm run dev:api
-   ```
+```bash
+npm run dev:web
+npm run dev:api
+npm run dev:realtime
+npm run dev:judge
+```
+
+The default ports are web `8080`, API `4000`, realtime `4001`, and judge health monitoring `4002`.
+
+## Verification
+
+```bash
+npm run test:api
+npm --workspace judge-service test -- --runInBand
+npm run build
+npm audit --omit=dev
+```
+
+With Docker running, execute the real sandbox integration suite from PowerShell:
+
+```powershell
+$env:RUN_DOCKER_INTEGRATION="true"
+npm --workspace judge-service test -- DockerIntegration.test.js --runInBand
+```
+
+## Deployment notes
+
+The Vercel configuration can host the SPA and API, but Vercel cannot run the Docker judge worker, RabbitMQ, or persistent realtime service. Deploy those separately and configure their URLs and secrets. Prefer routing the browser to the API on the same site so the `SameSite=Lax` HttpOnly cookie works predictably.
+
+Do not enable `ENABLE_DEMO_USERS` or `ALLOW_INLINE_JUDGE` in production. Bootstrap the first administrator with `apps/api/src/scripts/bootstrapAdmin.js` and environment-provided credentials; the project contains no default production administrator password.

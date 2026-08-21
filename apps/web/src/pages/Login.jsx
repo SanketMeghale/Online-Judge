@@ -86,11 +86,7 @@ export default function Login() {
       } else if (provider === "GitHub") {
         await loginGitHub();
       } else {
-        await login({
-          email: `coder_${provider.toLowerCase()}@judgo.dev`,
-          username: `coder_${provider.toLowerCase()}`,
-          password: "password123"
-        });
+        throw new Error("Unsupported identity provider.");
       }
       navigate(redirectTo, { replace: true });
     } catch (err) {

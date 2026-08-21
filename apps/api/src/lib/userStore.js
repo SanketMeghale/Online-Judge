@@ -4,71 +4,14 @@ import { hashPassword, hashPasswordSync, verifyPassword } from "./jwt.js";
 import { User } from "../models/User.js";
 import { calculateUserStreak, formatDateKey } from "./streakEngine.js";
 
-const DEFAULT_SEED_USERS = [
-  {
-    id: "u-admin",
-    name: "Platform Administrator",
-    username: "admin",
-    email: "admin@judgo.dev",
-    passwordHash: hashPasswordSync("admin123"),
-    bio: "Judgo System Administrator",
-    role: "admin",
-    status: "active",
-    suspendedReason: "",
-    language: "en-US",
-    timezone: "UTC",
-    ranking: 1,
-    xp: 9999,
-    streak: 30,
-    bestStreak: 100,
-    badges: ["Platform Administrator", "Algorithm Pioneer"],
-    solvedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number"],
-    attemptedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number"],
-    activeDates: [formatDateKey(new Date())],
-    stats: {
-      totalSubmissions: 100,
-      acceptedSubmissions: 95,
-      waCount: 4,
-      reCount: 1,
-      tleCount: 0
-    },
-    createdAt: new Date("2026-01-01")
-  },
-  {
-    id: "u-sanketmeghale",
-    name: "Sanket Meghale",
-    username: "sanketmeghale",
-    email: "sanket@example.com",
-    passwordHash: hashPasswordSync("password123"),
-    bio: "Full Stack & Algorithms Engineer",
-    role: "admin",
-    status: "active",
-    suspendedReason: "",
-    language: "en-US",
-    timezone: "UTC+5:30 (IST)",
-    ranking: 14,
-    xp: 2450,
-    streak: 5,
-    bestStreak: 12,
-    badges: ["New Challenger", "Three Problem Sprint", "Algorithm Pioneer"],
-    solvedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number"],
-    attemptedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number", "reverse-linked-list"],
-    activeDates: [formatDateKey(new Date())],
-    stats: {
-      totalSubmissions: 28,
-      acceptedSubmissions: 22,
-      waCount: 4,
-      reCount: 1,
-      tleCount: 1
-    },
-    createdAt: new Date("2026-01-01")
-  },
+function createDemoUsers() {
+  return [
   {
     id: "u-demouser",
     name: "Judgo Demo Coder",
     username: "demouser",
     email: "demo@judgo.dev",
-    passwordHash: hashPasswordSync("password123"),
+    passwordHash: hashPasswordSync("demo-password-123"),
     bio: "Passionate about algorithms and system design.",
     role: "user",
     status: "active",
@@ -97,7 +40,7 @@ const DEFAULT_SEED_USERS = [
     name: "Google Developer",
     username: "coder_google",
     email: "coder_google@judgo.dev",
-    passwordHash: hashPasswordSync("password123"),
+    passwordHash: hashPasswordSync("demo-password-123"),
     bio: "Google Developer Account",
     ranking: 55,
     xp: 1400,
@@ -115,7 +58,7 @@ const DEFAULT_SEED_USERS = [
     name: "GitHub Developer",
     username: "coder_github",
     email: "coder_github@judgo.dev",
-    passwordHash: hashPasswordSync("password123"),
+    passwordHash: hashPasswordSync("demo-password-123"),
     bio: "GitHub Developer Account",
     ranking: 75,
     xp: 1100,
@@ -133,7 +76,7 @@ const DEFAULT_SEED_USERS = [
     name: "GitLab Developer",
     username: "coder_gitlab",
     email: "coder_gitlab@judgo.dev",
-    passwordHash: hashPasswordSync("password123"),
+    passwordHash: hashPasswordSync("demo-password-123"),
     bio: "GitLab Developer Account",
     ranking: 85,
     xp: 950,
@@ -146,9 +89,12 @@ const DEFAULT_SEED_USERS = [
     stats: { totalSubmissions: 2, acceptedSubmissions: 2, waCount: 0, reCount: 0, tleCount: 0 },
     createdAt: new Date("2026-01-01")
   }
-];
+  ];
+}
 
-const memoryUsers = [...DEFAULT_SEED_USERS];
+const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL_ENV);
+const demoUsersEnabled = process.env.ENABLE_DEMO_USERS === "true" && !isProduction;
+const memoryUsers = demoUsersEnabled ? createDemoUsers() : [];
 
 export async function findUserByEmail(email) {
   if (!email) return null;

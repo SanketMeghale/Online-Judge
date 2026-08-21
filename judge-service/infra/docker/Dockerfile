@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     openjdk-21-jdk-headless \
+    nodejs \
     python3 \
     time \
     coreutils \
@@ -34,14 +35,16 @@ RUN groupadd -g 10001 sandboxgroup && \
     useradd -u 10001 -g sandboxgroup -m -s /bin/bash sandboxuser
 
 # 5. Create Sandbox Execution Directory & Permissions
-WORKDIR /sandbox
-RUN chown -R sandboxuser:sandboxgroup /sandbox && \
-    chmod 755 /sandbox
+WORKDIR /workspace
+RUN mkdir -p /workspace /opt/judge/scripts && \
+    chown -R sandboxuser:sandboxgroup /workspace /opt/judge && \
+    chmod 755 /workspace /opt/judge
 
 # 6. Copy Execution & Compilation Scripts into Image
-COPY scripts/ /sandbox/scripts/
-RUN chmod +x /sandbox/scripts/*.sh && \
-    chown -R sandboxuser:sandboxgroup /sandbox/scripts
+COPY scripts/ /opt/judge/scripts/
+RUN sed -i 's/\r$//' /opt/judge/scripts/*.sh && \
+    chmod +x /opt/judge/scripts/*.sh && \
+    chown -R sandboxuser:sandboxgroup /opt/judge/scripts
 
 # 7. Switch to Non-Root Sandbox User
 USER sandboxuser

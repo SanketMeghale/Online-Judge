@@ -26,24 +26,24 @@ const navSections = [
   {
     category: "MAIN",
     items: [
-      { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
-      { label: "Practice", to: "/problems", icon: Code2 },
-      { label: "Contest", to: "/contests", icon: Swords }
+      { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard, iconColor: "#4f46e5" },
+      { label: "Practice", to: "/problems", icon: Code2, iconColor: "#0284c7" },
+      { label: "Contest", to: "/contests", icon: Swords, iconColor: "#ea580c" }
     ]
   },
   {
     category: "LEARNING",
     items: [
-      { label: "Judgo Intelligence", to: "/ai-coach", icon: Bot },
-      { label: "Mock Interview", to: "/interviewer", icon: Sparkles },
-      { label: "Progress", to: "/stats", icon: TrendingUp }
+      { label: "Judgo Intelligence", to: "/ai-coach", icon: Bot, iconColor: "#7c3aed" },
+      { label: "Mock Interview", to: "/interviewer", icon: Sparkles, iconColor: "#0891b2" },
+      { label: "Progress", to: "/stats", icon: TrendingUp, iconColor: "#059669" }
     ]
   },
   {
     category: "ACCOUNT",
     items: [
-      { label: "Profile", to: "/profile", icon: User },
-      { label: "Settings", to: "/settings", icon: Settings }
+      { label: "Profile", to: "/profile", icon: User, iconColor: "#4f46e5" },
+      { label: "Settings", to: "/settings", icon: Settings, iconColor: "#64748b" }
     ]
   }
 ];
@@ -184,7 +184,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
               )}
 
               {/* Items List */}
-              {items.map(({ label, to, icon: Icon }) => (
+              {items.map(({ label, to, icon: Icon, iconColor }) => (
                 <div
                   key={label}
                   style={{ position: "relative" }}
@@ -225,7 +225,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                         <Icon
                           size={17}
                           style={{
-                            color: isActive ? "#6366f1" : isLight ? "#64748b" : "#64748b",
+                            color: isActive ? "#4f46e5" : isLight ? iconColor : "#64748b",
                             flexShrink: 0,
                             transition: "color 0.15s ease"
                           }}

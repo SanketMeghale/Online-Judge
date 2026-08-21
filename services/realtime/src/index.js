@@ -1,13 +1,28 @@
+import "dotenv/config";
 import http from "http";
 import cors from "cors";
 import express from "express";
 import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
 import { getOnlineCount, getRoomUsers, joinRoom, leaveRoom } from "./roomManager.js";
 
 const PORT = process.env.PORT || 4001;
+if (process.env.NODE_ENV === "production") {
+  const missing = ["REALTIME_JWT_SECRET", "REALTIME_INTERNAL_SECRET", "CLIENT_ORIGIN"].filter((key) => !process.env[key]);
+  if (missing.length > 0) throw new Error(`Missing realtime configuration: ${missing.join(", ")}`);
+  if (process.env.REALTIME_JWT_SECRET.trim().length < 32) throw new Error("REALTIME_JWT_SECRET must contain at least 32 characters.");
+  if (process.env.REALTIME_INTERNAL_SECRET.trim().length < 32) throw new Error("REALTIME_INTERNAL_SECRET must contain at least 32 characters.");
+}
 const app = express();
+const allowedOrigins = [
+  process.env.CLIENT_ORIGIN,
+  "http://localhost:8080",
+  "http://localhost:5173",
+  "http://127.0.0.1:8080",
+  "http://127.0.0.1:5173"
+].filter(Boolean);
 
-app.use(cors());
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 
 const httpServer = http.createServer(app);
@@ -15,12 +30,31 @@ const httpServer = http.createServer(app);
 // Initialize Socket.IO Server with CORS enabled for frontend clients
 const io = new Server(httpServer, {
   cors: {
-    origin: "*",
+    origin: allowedOrigins,
     methods: ["GET", "POST"]
   }
 });
 
-const clients = new Set();
+function verifyClientToken(token) {
+  const secret = (process.env.REALTIME_JWT_SECRET || (process.env.NODE_ENV !== "production" ? process.env.JWT_SECRET : ""))?.trim();
+  if (!secret || secret.length < 32 || !token) return null;
+  try {
+    const payload = jwt.verify(token, secret, { algorithms: ["HS256"] });
+    return payload?.purpose === "realtime" ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
+io.use((socket, next) => {
+  const authHeader = socket.handshake.headers.authorization || "";
+  const token = socket.handshake.auth?.token || (authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "");
+  const payload = verifyClientToken(token);
+  if (!payload?.userId) return next(new Error("Authentication required."));
+  socket.data.userId = String(payload.userId);
+  socket.join(`user:${socket.data.userId}`);
+  next();
+});
 
 // Socket.IO Connection Event Handler
 io.on("connection", (socket) => {
@@ -28,10 +62,12 @@ io.on("connection", (socket) => {
 
   // 1. Join room (e.g., submission room or contest room)
   socket.on("join:room", ({ roomId, user }) => {
-    if (roomId) {
-      socket.join(roomId);
-      joinRoom(socket.id, roomId, user);
-      console.log(`[Socket.IO Realtime] Socket ${socket.id} joined room '${roomId}'`);
+    const safeRoomId = String(roomId || "");
+    const canJoin = safeRoomId.startsWith("contest:") || safeRoomId === `user:${socket.data.userId}`;
+    if (canJoin) {
+      socket.join(safeRoomId);
+      joinRoom(socket.id, safeRoomId, { ...(user || {}), id: socket.data.userId });
+      console.log(`[Socket.IO Realtime] Socket ${socket.id} joined room '${safeRoomId}'`);
     }
   });
 
@@ -56,40 +92,35 @@ app.get("/health", (_req, res) => {
     ok: true,
     service: "@online-judge/realtime",
     activeSockets: io.sockets.sockets.size,
-    activeClients: clients.size,
     onlineUsers: getOnlineCount(),
     timestamp: new Date().toISOString()
   });
 });
 
-// SSE endpoint for legacy/fallback stream
-app.get("/api/realtime/stream", (req, res) => {
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-  res.setHeader("Access-Control-Allow-Origin", "*");
-
-  const client = { id: Date.now(), res };
-  clients.add(client);
-
-  res.write(`data: ${JSON.stringify({ type: "connected", clientId: client.id })}\n\n`);
-
-  req.on("close", () => {
-    clients.delete(client);
-    leaveRoom(client.id);
-  });
+// Legacy unauthenticated SSE was removed in favor of authenticated Socket.IO.
+app.get("/api/realtime/stream", (_req, res) => {
+  res.status(410).json({ error: "SSE streaming has been retired. Use authenticated Socket.IO." });
 });
 
 // Broadcast endpoint called by API server & Judge Workers upon submission completion
 app.post("/api/realtime/broadcast", (req, res) => {
+  const configuredSecret = process.env.REALTIME_INTERNAL_SECRET?.trim();
+  const suppliedSecret = String(req.headers.authorization || "").replace(/^Bearer\s+/i, "");
+  if (!configuredSecret || suppliedSecret !== configuredSecret) {
+    return res.status(401).json({ error: "Internal service authentication required." });
+  }
+
   const { event, payload } = req.body ?? {};
 
-  if (!event && !payload) {
-    res.status(400).json({ error: "Event or payload required." });
+  if (!event || !payload || typeof payload !== "object") {
+    res.status(400).json({ error: "A valid event and payload are required." });
     return;
   }
 
-  const targetEvent = event || "submission:update";
+  const targetEvent = event;
+  if (!new Set(["submission:update", "contest:update"]).has(targetEvent)) {
+    return res.status(400).json({ error: "Unsupported realtime event." });
+  }
 
   // Normalize standard submission payload according to specifications:
   // submissionId, status, verdict, runtime, memory
@@ -103,30 +134,21 @@ app.post("/api/realtime/broadcast", (req, res) => {
   };
 
   // 1. Emit Socket.IO 'submission:update' event
-  io.emit("submission:update", updatePayload);
+  const targetRoom = updatePayload.userId ? `user:${updatePayload.userId}` : null;
+  if (!targetRoom) return res.status(400).json({ error: "A target userId is required." });
+  io.to(targetRoom).emit("submission:update", updatePayload);
 
   // If a custom event name was provided, also emit under that specific name
   if (targetEvent !== "submission:update") {
-    io.emit(targetEvent, updatePayload);
+    io.to(targetRoom).emit(targetEvent, updatePayload);
   }
 
-  // 2. Also send to SSE clients
-  const message = `data: ${JSON.stringify({ type: targetEvent, payload: updatePayload, timestamp: new Date().toISOString() })}\n\n`;
-  let sseCount = 0;
-  for (const client of clients) {
-    try {
-      client.res.write(message);
-      sseCount++;
-    } catch {}
-  }
-
-  console.log(`[Socket.IO Realtime] Emitted 'submission:update' for submissionId: ${updatePayload.submissionId} (Sockets: ${io.sockets.sockets.size})`);
+  console.log(`[Socket.IO Realtime] Emitted '${targetEvent}' to ${targetRoom} for submissionId: ${updatePayload.submissionId}`);
 
   res.json({
     ok: true,
     event: "submission:update",
-    emittedSockets: io.sockets.sockets.size,
-    sseDelivered: sseCount,
+    targetRoom,
     payload: updatePayload
   });
 });
@@ -135,7 +157,6 @@ httpServer.listen(PORT, () => {
   console.log("--------------------------------------------------");
   console.log(`Online Judge Socket.IO Realtime Service running on http://localhost:${PORT}`);
   console.log(`Socket.IO Endpoint: ws://localhost:${PORT}`);
-  console.log(`SSE Stream Endpoint: http://localhost:${PORT}/api/realtime/stream`);
   console.log("--------------------------------------------------");
 });
 

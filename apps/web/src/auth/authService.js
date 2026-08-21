@@ -1,6 +1,12 @@
-import { signInWithPopup } from "firebase/auth";
-import { auth, googleProvider, githubProvider } from "../firebase/firebase.js";
 import { api } from "../api/apiClient.js";
+
+async function loadFirebaseAuth() {
+  const [{ signInWithPopup }, firebase] = await Promise.all([
+    import("firebase/auth"),
+    import("../firebase/firebase.js")
+  ]);
+  return { signInWithPopup, ...firebase };
+}
 
 function assertIdentifier(identifier) {
   if (!identifier || !identifier.trim()) {
@@ -15,28 +21,21 @@ function assertEmail(email) {
 }
 
 function assertPassword(password) {
-  if (!password || password.length < 6) {
-    throw new Error("Password must be at least 6 characters.");
+  if (!password || password.length < 12) {
+    throw new Error("Password must be at least 12 characters.");
   }
 }
 
 export async function loginWithGoogle() {
+  const { signInWithPopup, auth, googleProvider } = await loadFirebaseAuth();
   const result = await signInWithPopup(auth, googleProvider);
   const fbUser = result.user;
-
-  console.log("[AUTH] Firebase user:", {
-    uid: fbUser.uid,
-    displayName: fbUser.displayName,
-    email: fbUser.email
-  });
 
   const idToken = await fbUser.getIdToken();
   const res = await api.loginGoogle({ idToken });
 
-  console.log("[AUTH] Backend user:", res.user);
-
   return {
-    accessToken: res.token || res.accessToken,
+    authenticated: true,
     user: {
       ...res.user,
       firebaseUid: res.user?.firebaseUid || fbUser.uid,
@@ -49,6 +48,7 @@ export async function loginWithGoogle() {
 }
 
 export async function loginWithGitHub() {
+  const { signInWithPopup, auth, githubProvider } = await loadFirebaseAuth();
   const result = await signInWithPopup(auth, githubProvider);
   const fbUser = result.user;
 
@@ -57,7 +57,7 @@ export async function loginWithGitHub() {
   const res = await api.loginGoogle({ idToken });
 
   return {
-    accessToken: res.token || res.accessToken,
+    authenticated: true,
     user: res.user
   };
 }
@@ -71,7 +71,7 @@ export async function loginWithEmail(credentials = {}) {
   try {
     const res = await api.login({ email: identifier, username: identifier, password });
     return {
-      accessToken: res.token || res.accessToken,
+      authenticated: true,
       user: res.user
     };
   } catch (err) {
@@ -98,20 +98,17 @@ export async function registerWithEmail({ name, username, email, password }) {
     password
   });
   return {
-    accessToken: res.token || res.accessToken,
+    authenticated: true,
     user: res.user
   };
 }
 
-export async function refreshCurrentSession(session) {
-  const accessToken = session?.accessToken ?? session?.token;
-  if (!accessToken) return null;
-
+export async function refreshCurrentSession() {
   try {
     const res = await api.getMe();
     if (res && res.user) {
       return {
-        accessToken,
+        authenticated: true,
         user: res.user
       };
     }

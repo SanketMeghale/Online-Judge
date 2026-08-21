@@ -17,5 +17,4 @@ if [ $COMPILE_STATUS -ne 0 ]; then
     exit 1
 fi
 
-echo "[SUCCESS] C Compilation completed."
 exit 0

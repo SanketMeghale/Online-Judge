@@ -115,7 +115,7 @@ const aiTabs = [
   {
     id: "explain",
     label: "Explain Wrong Answer",
-    prompt: "Why did my solution fail on Testcase 4: nums = [3, 3], target = 6?",
+      prompt: "Why did my solution fail on the duplicate-values edge case?",
     response:
       "💡 Analysis: Your hash map lookup is overwriting index `0` when encountering duplicate value `3`. Store indices in an array or check for matching complement before inserting current element.",
     complexity: "Time: O(N) • Space: O(N)"

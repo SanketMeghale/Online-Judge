@@ -67,16 +67,6 @@ export class QueueConsumer {
             // Execute code evaluation via job handler callback
             const verdictResult = await jobHandler(jobData);
 
-            // Publish completed verdict back to Verdict Queue for Socket.IO streaming
-            if (verdictResult) {
-              await queueProducer.publishVerdictResult({
-                submissionId: jobData.submissionId,
-                userId: jobData.userId,
-                problemId: jobData.problemId,
-                ...verdictResult
-              });
-            }
-
             // Explicit Manual Acknowledgement: Remove message from RabbitMQ
             channel.ack(msg);
           } catch (err) {
@@ -86,13 +76,13 @@ export class QueueConsumer {
             if (retryCount < QUEUE_CONFIG.MAX_RETRY_ATTEMPTS && jobData) {
               console.warn(`[RabbitMQ Worker] Retrying job ${jobData.submissionId} (Attempt ${retryCount + 1}/${QUEUE_CONFIG.MAX_RETRY_ATTEMPTS})`);
               
-              await queueProducer.publishSubmissionJob({
+              const republished = await queueProducer.publishSubmissionJob({
                 ...jobData,
                 retryCount: retryCount + 1
               });
 
-              // Acknowledge original failing message after queuing retry
-              channel.ack(msg);
+              if (republished) channel.ack(msg);
+              else channel.nack(msg, false, false);
             } else {
               console.error(`[RabbitMQ Worker] Job ${jobData?.submissionId} exceeded max retries. Moving to Dead Letter Queue (DLQ).`);
               // Negative Acknowledgement without requeue -> Sends message to Dead Letter Queue (DLQ)
@@ -106,41 +96,6 @@ export class QueueConsumer {
       this.isListening = true;
     } catch (err) {
       console.warn(`[RabbitMQ Worker] Could not start worker listener: ${err.message}. Operating in fallback mode.`);
-    }
-  }
-
-  /**
-   * Starts Verdict Listener consuming results from VERDICT_QUEUE (consumed by API Gateway)
-   * 
-   * @param {Function} verdictHandler - Async callback function (verdictPayload) => void
-   */
-  async startVerdictConsumer(verdictHandler) {
-    try {
-      const channel = await this.connect();
-      await queueProducer.connect();
-
-      await channel.prefetch(10);
-
-      console.log(`[RabbitMQ Verdict Consumer] Listening on '${QUEUE_CONFIG.QUEUES.VERDICT_QUEUE}'...`);
-
-      await channel.consume(
-        QUEUE_CONFIG.QUEUES.VERDICT_QUEUE,
-        async (msg) => {
-          if (!msg) return;
-
-          try {
-            const verdictData = JSON.parse(msg.content.toString("utf8"));
-            await verdictHandler(verdictData);
-            channel.ack(msg);
-          } catch (err) {
-            console.error(`[RabbitMQ Verdict Consumer] Verdict handler error: ${err.message}`);
-            channel.ack(msg);
-          }
-        },
-        { noAck: false }
-      );
-    } catch (err) {
-      console.warn(`[RabbitMQ Verdict Consumer] Verdict consumer offline: ${err.message}`);
     }
   }
 

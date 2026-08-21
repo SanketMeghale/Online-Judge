@@ -13,9 +13,11 @@ mongoose.set("bufferCommands", false);
 
 export async function connectDatabase() {
   const rawUri = (process.env.MONGODB_URI || "").trim();
+  const isProduction = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL_ENV);
 
   // If no valid MongoDB URI, immediately operate in fast in-memory mode
   if (!rawUri || (!rawUri.startsWith("mongodb://") && !rawUri.startsWith("mongodb+srv://"))) {
+    if (isProduction) throw new Error("A valid MONGODB_URI is required in production.");
     return false;
   }
 
@@ -56,6 +58,7 @@ export async function connectDatabase() {
       })
       .catch((err) => {
         cached.promise = null;
+        if (isProduction) throw err;
         console.warn(`[MongoDB] Notice: ${err.message}. Operating with in-memory dataset mode.`);
         return null;
       });
@@ -66,6 +69,7 @@ export async function connectDatabase() {
     return mongoose.connection.readyState === 1;
   } catch (err) {
     cached.promise = null;
+    if (isProduction) throw err;
     return false;
   }
 }

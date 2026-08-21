@@ -82,7 +82,7 @@ router.get("/users/:id", async (req, res) => {
   }
 });
 
-router.patch("/users/:id/role", async (req, res) => {
+router.patch("/users/:id/role", requireSuperAdmin, async (req, res) => {
   try {
     const { role } = req.body;
     if (!["user", "admin", "super_admin"].includes(role)) {
@@ -97,7 +97,7 @@ router.patch("/users/:id/role", async (req, res) => {
   }
 });
 
-router.patch("/users/:id/status", async (req, res) => {
+router.patch("/users/:id/status", requireSuperAdmin, async (req, res) => {
   try {
     const { status, reason } = req.body;
     if (!["active", "suspended"].includes(status)) {
@@ -112,7 +112,7 @@ router.patch("/users/:id/status", async (req, res) => {
   }
 });
 
-router.delete("/users/:id", async (req, res) => {
+router.delete("/users/:id", requireSuperAdmin, async (req, res) => {
   try {
     const result = await deleteAdminUser(req.params.id, true, req.user, req);
     res.json(result);

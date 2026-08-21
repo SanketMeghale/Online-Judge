@@ -9,6 +9,42 @@ import { executeCode } from "../lib/executeCode.js";
 import { problems as defaultProblems } from "../data/problems.js";
 import { recordUserSubmission } from "../lib/userStore.js";
 import { compareOutputs } from "../lib/outputChecker.js";
+import { isValidLanguage, normalizeLanguage } from "@online-judge/shared";
+import { publishSubmissionJob } from "../lib/submissionQueue.js";
+
+function sanitizeTestResult(result = {}) {
+  return {
+    id: result.id,
+    testCase: result.testCase ?? result.testcaseIndex,
+    status: result.status,
+    passed: Boolean(result.passed),
+    verdict: result.verdict,
+    execution_time_ms: result.execution_time_ms ?? result.runtimeMs ?? 0,
+    memory_kb: result.memory_kb ?? 0
+  };
+}
+
+function sanitizeSubmissionForUser(submission) {
+  if (!submission) return null;
+  const value = typeof submission.toObject === "function" ? submission.toObject() : submission;
+  const { expectedOutput, stdin, stdout, stderr, output, compileOutput, testcases, testResults, __v, ...safe } = value;
+  const rawResults = Array.isArray(testResults) && testResults.length > 0 ? testResults : testcases;
+  return {
+    ...safe,
+    id: String(value.id || value._id || value.submissionId),
+    submissionId: String(value.submissionId || value.id || value._id),
+    diagnostic: value.verdict === "CE" ? String(compileOutput || stderr || "").slice(0, 16_000) : "",
+    testResults: Array.isArray(rawResults) ? rawResults.map(sanitizeTestResult) : []
+  };
+}
+
+async function loadProblem(problemId) {
+  let problem = null;
+  if (isDatabaseConnected()) {
+    problem = await Problem.findOne({ id: String(problemId), isDeleted: { $ne: true }, status: "published" }).lean();
+  }
+  return problem || defaultProblems.find((item) => item.id === problemId) || null;
+}
 
 function cleanErrorMessage(stderr = "") {
   return stderr
@@ -73,19 +109,6 @@ function buildCppJavaStdin(problemId, lcInput) {
   } catch {}
 
   return raw;
-}
-
-async function publishSubmissionJob(jobPayload) {
-  if (process.env.VERCEL || process.env.VERCEL_ENV) {
-    return false;
-  }
-
-  try {
-    const { queueProducer } = await import("../../../../judge-service/src/queue/producer.js");
-    return await queueProducer.publishSubmissionJob(jobPayload);
-  } catch {
-    return false;
-  }
 }
 
 async function evaluateSubmissionInline({ submission, problem }) {
@@ -313,12 +336,29 @@ async function evaluateSubmissionInline({ submission, problem }) {
  * SubmissionService - Coordinates Submission Queuing and Lifecycle
  */
 export class SubmissionService {
-  async submitCode({ userId, problemId, language, code, stdin, expectedOutput }) {
+  async submitCode({ userId, problemId, language, code }) {
     if (!problemId || !language || !code) {
       throw new Error("Missing required parameters for submission.");
     }
 
-    const cleanLanguage = String(language).toLowerCase().trim();
+    const cleanLanguage = normalizeLanguage(language);
+    if (!isValidLanguage(cleanLanguage)) {
+      const error = new Error("Unsupported programming language.");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (String(code).length > 100_000) {
+      const error = new Error("Source code exceeds the 100 KB submission limit.");
+      error.statusCode = 413;
+      throw error;
+    }
+
+    const problem = await loadProblem(problemId);
+    if (!problem) {
+      const error = new Error("Problem not found or unavailable for submissions.");
+      error.statusCode = 404;
+      throw error;
+    }
 
     // 1. Save Initial Submission Record
     const submissionData = {
@@ -346,9 +386,7 @@ export class SubmissionService {
       problemId,
       userId,
       language: cleanLanguage,
-      code,
-      stdin,
-      expectedOutput
+      code
     };
 
     let published = false;
@@ -360,7 +398,7 @@ export class SubmissionService {
 
     if (published) {
       console.log(`[SubmissionService] [STAGE 3: JOB_QUEUED] Published job ${submissionId} to RabbitMQ.`);
-      return {
+      return sanitizeSubmissionForUser({
         id: submissionId,
         submissionId,
         problemId,
@@ -370,24 +408,23 @@ export class SubmissionService {
         verdict: "PENDING",
         statusText: "Queued for evaluation",
         createdAt: newSubmission.createdAt || new Date()
-      };
+      });
     }
 
-    // 3. Fallback: If RabbitMQ is offline, execute inline synchronously
-    console.warn(`[SubmissionService] [STAGE 3: JOB_QUEUED] RabbitMQ offline. Running inline synchronous evaluation for job ${submissionId}...`);
+    const inlineJudgeAllowed = process.env.ALLOW_INLINE_JUDGE === "true" && process.env.NODE_ENV !== "production";
+    if (!inlineJudgeAllowed) {
+      await updateSubmissionRecord(submissionId, {
+        status: "SYSTEM_ERROR",
+        verdict: "SYSTEM_ERROR",
+        statusText: "Judge queue unavailable",
+        completedAt: new Date()
+      });
+      const error = new Error("The judge queue is currently unavailable. Please retry shortly.");
+      error.statusCode = 503;
+      throw error;
+    }
 
-    let problem = null;
-    if (isDatabaseConnected()) {
-      try {
-        problem = await Problem.findOne({ id: problemId }).lean();
-      } catch (err) {}
-    }
-    if (!problem) {
-      problem = defaultProblems.find((p) => p.id === problemId) ?? {
-        id: problemId,
-        examples: stdin ? [{ input: stdin, output: expectedOutput }] : []
-      };
-    }
+    console.warn(`[SubmissionService] RabbitMQ offline. Using explicitly enabled development inline judge for ${submissionId}.`);
 
     const evaluation = await evaluateSubmissionInline({
       submission: { id: submissionId, language: cleanLanguage, code },
@@ -427,7 +464,7 @@ export class SubmissionService {
 
     console.log(`[SubmissionService] [STAGE 9: DATABASE_UPDATED] Submission ${submissionId} evaluation complete: ${evaluation.verdict} (${evaluation.statusText})`);
 
-    return {
+    return sanitizeSubmissionForUser({
       id: submissionId,
       submissionId,
       problemId,
@@ -452,31 +489,73 @@ export class SubmissionService {
       stdout: updatedRecord.stdout,
       stderr: updatedRecord.stderr,
       output: updatedRecord.output,
-      testcases: updatedRecord.testcases,
       testResults: updatedRecord.testcases,
       createdAt: newSubmission.createdAt || new Date(),
       completedAt: updatedRecord.completedAt
-    };
+    });
   }
 
-  async getSubmissionById(id) {
+  async getSubmissionById(id, requestingUser) {
+    let submission = null;
     if (isDatabaseConnected()) {
       try {
         if (mongoose.Types.ObjectId.isValid(id)) {
           const doc = await Submission.findById(id).lean();
-          if (doc) return doc;
+          if (doc) submission = doc;
         }
-        const docByCustomId = await Submission.findOne({
-          $or: [{ submissionId: id }, { id }]
-        }).lean();
-        if (docByCustomId) return docByCustomId;
+        if (!submission) {
+          submission = await Submission.findOne({
+            $or: [{ submissionId: id }, { id }]
+          }).lean();
+        }
       } catch (err) {
         console.warn(`[SubmissionService] MongoDB find error for ${id}:`, err.message);
       }
     }
 
-    const records = listSubmissionRecords({});
-    return records.find((r) => String(r._id || r.id || r.submissionId) === String(id)) || null;
+    if (!submission) {
+      const records = await listSubmissionRecords({});
+      submission = records.find((r) => String(r._id || r.id || r.submissionId) === String(id)) || null;
+    }
+
+    if (!submission) return null;
+    const requesterIds = [requestingUser?.id, requestingUser?._id].filter(Boolean).map(String);
+    const isAdmin = requestingUser?.role === "admin" || requestingUser?.role === "super_admin";
+    if (!isAdmin && !requesterIds.includes(String(submission.userId))) return null;
+    return sanitizeSubmissionForUser(submission);
+  }
+
+  async getUserSubmissionHistory({ userId, problemId, verdict, language, limit = 50, page = 1 }) {
+    const userIds = (Array.isArray(userId) ? userId : [userId]).filter(Boolean).map(String);
+    const safeLimit = Math.max(1, Math.min(Number(limit) || 50, 100));
+    const safePage = Math.max(1, Number(page) || 1);
+    const filter = { userId: { $in: userIds } };
+    if (problemId) filter.problemId = String(problemId);
+    if (verdict) filter.verdict = String(verdict).toUpperCase();
+    if (language) filter.language = String(language).toLowerCase();
+
+    let records;
+    let total;
+    if (isDatabaseConnected()) {
+      [records, total] = await Promise.all([
+        Submission.find(filter).sort({ createdAt: -1 }).skip((safePage - 1) * safeLimit).limit(safeLimit).lean(),
+        Submission.countDocuments(filter)
+      ]);
+    } else {
+      const all = (await listSubmissionRecords({})).filter((item) => {
+        return userIds.includes(String(item.userId)) &&
+          (!problemId || String(item.problemId) === String(problemId)) &&
+          (!verdict || String(item.verdict).toUpperCase() === String(verdict).toUpperCase()) &&
+          (!language || String(item.language).toLowerCase() === String(language).toLowerCase());
+      });
+      total = all.length;
+      records = all.slice((safePage - 1) * safeLimit, safePage * safeLimit);
+    }
+
+    return {
+      submissions: records.map(sanitizeSubmissionForUser),
+      pagination: { page: safePage, limit: safeLimit, total, pages: Math.ceil(total / safeLimit) }
+    };
   }
 
   async getSubmissions(query = {}) {

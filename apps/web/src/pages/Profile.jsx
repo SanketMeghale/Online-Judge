@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Activity,
-  Award,
   BadgeCheck,
   Brain,
   CalendarDays,
@@ -40,13 +39,13 @@ export default function Profile() {
               margin: "0 auto 1.25rem",
               width: 36,
               height: 36,
-              border: "3px solid rgba(255,255,255,0.1)",
-              borderTopColor: "#7850ff",
+              border: "3px solid #e2e8f0",
+              borderTopColor: "#4f46e5",
               borderRadius: "50%",
               animation: "spin 0.8s linear infinite"
             }}
           />
-          <h2 style={{ color: "#fff", fontSize: "1.1rem", fontWeight: "600" }}>Loading coder profile...</h2>
+          <h2 style={{ color: "#0f172a", fontSize: "1.1rem", fontWeight: "600" }}>Loading coder profile...</h2>
         </div>
       </div>
     );
@@ -193,7 +192,7 @@ export default function Profile() {
           <div className="prof-badges-strip">
             {badges.map((b) => (
               <span className="prof-badge-pill" key={b}>
-                <BadgeCheck size={13} style={{ color: "#38bdf8" }} />
+                <BadgeCheck size={13} style={{ color: "#0284c7" }} />
                 {b}
               </span>
             ))}
@@ -218,43 +217,14 @@ export default function Profile() {
             {1000 - currentLevelXp} XP to Level {currentLevel + 1}
           </div>
 
-          <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-            <Link
-              to="/settings"
-              style={{
-                flex: 1,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "5px",
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: "#e2e8f0",
-                fontSize: "0.74rem",
-                fontWeight: "600",
-                padding: "5px 10px",
-                borderRadius: "6px",
-                textDecoration: "none"
-              }}
-            >
+          <div className="prof-level-actions">
+            <Link to="/settings" className="prof-secondary-action">
               <Settings size={13} /> Settings
             </Link>
             <button
+              type="button"
               onClick={handleShareProfile}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "5px",
-                background: copied ? "rgba(16,185,129,0.2)" : "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                color: copied ? "#34d399" : "#e2e8f0",
-                fontSize: "0.74rem",
-                fontWeight: "600",
-                padding: "5px 10px",
-                borderRadius: "6px",
-                cursor: "pointer"
-              }}
+              className={`prof-secondary-action${copied ? " is-success" : ""}`}
             >
               <Share2 size={13} /> {copied ? "Copied!" : "Share"}
             </button>
@@ -297,7 +267,7 @@ export default function Profile() {
         <article className="prof-glass-panel">
           <div className="prof-panel-head">
             <h3 className="prof-panel-title">
-              <Zap size={16} style={{ color: "#38bdf8" }} />
+              <Zap size={16} style={{ color: "#0284c7" }} />
               <span>Algorithmic Topic Mastery</span>
             </h3>
             <span style={{ fontSize: "0.76rem", color: "#94a3b8" }}>
@@ -334,7 +304,7 @@ export default function Profile() {
         <article className="prof-glass-panel">
           <div className="prof-panel-head">
             <h3 className="prof-panel-title">
-              <Target size={16} style={{ color: "#10b981" }} />
+              <Target size={16} style={{ color: "#059669" }} />
               <span>Difficulty Distribution</span>
             </h3>
             <span style={{ fontSize: "0.76rem", color: "#94a3b8" }}>
@@ -377,7 +347,7 @@ export default function Profile() {
             </div>
 
             <div className="prof-act-stat-box">
-              <div className="prof-act-icon" style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}>
+              <div className="prof-act-icon is-green">
                 <Activity size={18} />
               </div>
               <div className="prof-act-details">
@@ -390,7 +360,7 @@ export default function Profile() {
           {/* Quick AI Mentor Launch Banner */}
           <div className="prof-mentor-banner">
             <div className="prof-mentor-info">
-              <Brain size={22} style={{ color: "#a78bfa" }} />
+              <Brain size={22} style={{ color: "#7c3aed" }} />
               <div className="prof-mentor-text">
                 <h4>Judgo Intelligence</h4>
                 <p>Personalized weakness diagnostics &amp; mocks</p>
@@ -415,7 +385,7 @@ export default function Profile() {
       >
         <div className="prof-panel-head">
           <h3 className="prof-panel-title">
-            <CheckCircle2 size={16} style={{ color: "#10b981" }} />
+            <CheckCircle2 size={16} style={{ color: "#059669" }} />
             <span>Recent Code Submissions</span>
           </h3>
           <Link
@@ -423,7 +393,7 @@ export default function Profile() {
             style={{
               fontSize: "0.8rem",
               fontWeight: "600",
-              color: "#38bdf8",
+              color: "#4338ca",
               textDecoration: "none",
               display: "inline-flex",
               alignItems: "center",

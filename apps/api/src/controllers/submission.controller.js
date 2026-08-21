@@ -6,9 +6,9 @@ import { submissionService } from "../services/submission.service.js";
 export class SubmissionController {
   async submit(req, res) {
     try {
-      const userId = req.user?.id || req.user?._id || req.body?.userId || "guest_coder";
+      const userId = req.user?.id || req.user?._id;
 
-      const { problemId, language, code, stdin, expectedOutput } = req.body ?? {};
+      const { problemId, language, code } = req.body ?? {};
 
       console.log(`[SubmissionController] [STAGE 1: SUBMISSION_RECEIVED] problemId: '${problemId}', language: '${language}', userId: '${userId}'`);
 
@@ -23,9 +23,7 @@ export class SubmissionController {
         userId,
         problemId,
         language,
-        code,
-        stdin,
-        expectedOutput
+        code
       });
 
       return res.status(202).json({
@@ -35,7 +33,7 @@ export class SubmissionController {
       });
     } catch (err) {
       console.error("[SubmissionController] submit error:", err);
-      return res.status(500).json({
+      return res.status(err.statusCode || 500).json({
         success: false,
         error: err.message || "Failed to submit code for evaluation."
       });
@@ -45,7 +43,11 @@ export class SubmissionController {
   async getSubmission(req, res) {
     try {
       const { id } = req.params;
-      const submission = await submissionService.getSubmissionById(id);
+      const submission = await submissionService.getSubmissionById(id, req.user);
+
+      if (!submission) {
+        return res.status(404).json({ success: false, error: "Submission not found." });
+      }
 
       return res.status(200).json({
         success: true,

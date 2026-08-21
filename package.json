@@ -6,7 +6,8 @@
   "workspaces": [
     "apps/*",
     "packages/*",
-    "services/*"
+    "services/*",
+    "judge-service"
   ],
   "scripts": {
     "build": "npm --workspace apps/web run build",
@@ -14,8 +15,11 @@
     "dev:api": "npm --workspace apps/api run dev",
     "dev:web": "npm --workspace apps/web run dev",
     "dev:realtime": "npm --workspace services/realtime run dev",
+    "dev:judge": "npm --workspace judge-service run dev",
     "start:api": "npm --workspace apps/api run start",
-    "preview:web": "npm --workspace apps/web run preview"
+    "preview:web": "npm --workspace apps/web run preview",
+    "test:api": "npm --workspace apps/api test",
+    "test:judge": "npm --workspace judge-service test --"
   },
   "engines": {
     "node": ">=20"
@@ -23,8 +27,5 @@
   "devDependencies": {
     "playwright": "^1.61.1"
   },
-  "dependencies": {
-    "dockerode": "^5.0.1",
-    "firebase": "^12.17.1"
-  }
+  "dependencies": {}
 }

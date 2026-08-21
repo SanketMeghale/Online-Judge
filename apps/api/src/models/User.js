@@ -16,7 +16,7 @@ const userSchema = new mongoose.Schema(
     language: { type: String, default: "en-US" },
     timezone: { type: String, default: "UTC-5 (Eastern Time)" },
     preferences: {
-      theme: { type: String, default: "dark" },
+      theme: { type: String, default: "light" },
       accentColor: { type: String, default: "indigo" },
       density: { type: String, default: "comfortable" },
       fontSize: { type: Number, default: 14 },

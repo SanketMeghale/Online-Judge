@@ -84,11 +84,6 @@ export class OutputComparator {
     const normActual = OutputComparator.normalize(rawActual);
     const normExpected = OutputComparator.normalize(rawExpected);
 
-    console.log(`[OutputComparator] raw stdout: ${JSON.stringify(rawActual)}`);
-    console.log(`[OutputComparator] raw expected output: ${JSON.stringify(rawExpected)}`);
-    console.log(`[OutputComparator] normalized stdout: ${JSON.stringify(normActual)}`);
-    console.log(`[OutputComparator] normalized expected: ${JSON.stringify(normExpected)}`);
-
     const normActualLines = this.normalizeLines(rawActual, options);
     const normExpectedLines = this.normalizeLines(rawExpected, options);
 
@@ -132,8 +127,6 @@ export class OutputComparator {
     }
 
     const isMatch = firstFailedLine === null;
-
-    console.log(`[OutputComparator] comparison result -> match: ${isMatch ? "MATCH (AC)" : "MISMATCH (WA)"}`);
 
     return {
       verdict: isMatch ? "AC" : "WA",

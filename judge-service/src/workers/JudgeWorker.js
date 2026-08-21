@@ -5,15 +5,29 @@ import { outputComparator } from "../services/OutputComparator.js";
 import { verdictService } from "../services/VerdictService.js";
 import { loggerService } from "../services/LoggerService.js";
 import { monitoringService } from "../services/MonitoringService.js";
-import { queueProducer } from "../queue/producer.js";
 import { Submission } from "../../../apps/api/src/models/Submission.js";
 import { Problem } from "../../../apps/api/src/models/Problem.js";
 import { User } from "../../../apps/api/src/models/User.js";
+import mongoose from "mongoose";
+import { wrapCodeWithHarness } from "../../../apps/api/src/lib/codeHarness.js";
 
 /**
  * JudgeWorker - Asynchronous Code Evaluation Worker Engine
  */
 export class JudgeWorker {
+  async loadTestCases(problemId) {
+    if (!problemId) throw new Error("A problem ID is required for judging.");
+    const dbProblem = await Problem.findOne({
+      id: String(problemId),
+      isDeleted: { $ne: true },
+      status: "published"
+    }).lean();
+    if (!dbProblem) throw new Error("The submitted problem does not exist or is not published.");
+    const testcases = [...(dbProblem.examples || []), ...(dbProblem.hiddenTestCases || [])];
+    if (testcases.length === 0) throw new Error("No server-managed test cases were found for this problem.");
+    return testcases;
+  }
+
   async processJob(jobData) {
     const startTime = Date.now();
     const { submissionId, problemId, userId, language, code } = jobData;
@@ -42,25 +56,7 @@ export class JudgeWorker {
       });
 
       // Step 3: Resolve Testcases
-      let testcases = jobData.testcases || [];
-
-      if ((!testcases || testcases.length === 0) && problemId) {
-        try {
-          const dbProblem = await Problem.findById(problemId).lean();
-          if (dbProblem && dbProblem.testCases && dbProblem.testCases.length > 0) {
-            testcases = dbProblem.testCases;
-          }
-        } catch (dbErr) {}
-      }
-
-      if (!testcases || testcases.length === 0) {
-        testcases = [
-          {
-            input: jobData.stdin || "",
-            output: jobData.expectedOutput || jobData.stdin || "Output"
-          }
-        ];
-      }
+      const testcases = await this.loadTestCases(problemId);
 
       const testcaseResults = [];
 
@@ -77,7 +73,13 @@ export class JudgeWorker {
         try {
           tempDir = await tempFileService.createTempDirectory();
 
-          await tempFileService.writeSourceCode(tempDir, langConfig.sourceFileName, code);
+          const executableCode = wrapCodeWithHarness({
+            code,
+            language: langConfig.id,
+            problemId,
+            stdin: inputData
+          });
+          await tempFileService.writeSourceCode(tempDir, langConfig.sourceFileName, executableCode);
           await tempFileService.writeInput(tempDir, inputData);
 
           execResult = await executor.execute({
@@ -188,11 +190,11 @@ export class JudgeWorker {
       await this.updateDatabase(finalResult);
 
       // Step 8: Emit Completion Event via RabbitMQ & Realtime Socket.IO
-      await queueProducer.publishVerdictResult(finalResult);
       await this.broadcastRealtimeUpdate(finalResult);
 
       return finalResult;
     } catch (err) {
+      if (err?.code === "JUDGE_PERSISTENCE_ERROR") throw err;
       // Log Errors & Exceptions
       loggerService.logError({
         submissionId: submissionId || "demo",
@@ -206,7 +208,7 @@ export class JudgeWorker {
         userId,
         language,
         status: "COMPLETED",
-        verdict: "SE",
+        verdict: "SYSTEM_ERROR",
         statusText: "System Error",
         description: err.message || "Internal Judge Worker Failure",
         badgeColor: "red",
@@ -221,7 +223,6 @@ export class JudgeWorker {
       };
 
       await this.updateDatabase(errorVerdict);
-      await queueProducer.publishVerdictResult(errorVerdict);
       await this.broadcastRealtimeUpdate(errorVerdict);
 
       return errorVerdict;
@@ -237,9 +238,12 @@ export class JudgeWorker {
 
     try {
       const REALTIME_URL = process.env.REALTIME_SERVICE_URL || "http://localhost:4001";
-      await fetch(`${REALTIME_URL}/api/realtime/broadcast`, {
+      const response = await fetch(`${REALTIME_URL}/api/realtime/broadcast`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.REALTIME_INTERNAL_SECRET || ""}`
+        },
         body: JSON.stringify({
           event: "submission:update",
           payload: {
@@ -257,17 +261,25 @@ export class JudgeWorker {
             totalCount: resPayload.totalCount,
             passedCount: resPayload.passCount,
             totalCases: resPayload.totalCount,
-            stdout: resPayload.stdout || "",
-            stderr: resPayload.stderr || "",
-            output: resPayload.output || resPayload.stdout || "",
-            expectedOutput: resPayload.expectedOutput || "",
-            testcases: resPayload.testcases || []
+            diagnostic: resPayload.verdict === "CE" ? String(resPayload.stderr || "").slice(0, 16000) : "",
+            testResults: (resPayload.testcases || []).map((item) => ({
+              id: item.id,
+              testCase: item.testCase ?? item.testcaseIndex,
+              status: item.status,
+              passed: Boolean(item.passed),
+              verdict: item.verdict,
+              execution_time_ms: item.execution_time_ms ?? item.runtimeMs ?? 0,
+              memory_kb: item.memory_kb ?? 0
+            }))
           }
         })
       });
+      if (!response.ok) {
+        throw new Error(`Realtime service returned HTTP ${response.status}`);
+      }
       console.log(`[JudgeWorker] [REALTIME_BROADCAST] Emitted submission:update for ${resPayload.submissionId}`);
     } catch (err) {
-      // Graceful notice if realtime service offline
+      console.warn(`[JudgeWorker] Realtime update unavailable: ${err.message}`);
     }
   }
 
@@ -279,7 +291,7 @@ export class JudgeWorker {
     if (!finalResult.submissionId) return;
 
     try {
-      console.log(`[JudgeWorker] [MONGODB_UPDATE] Updating submission ${finalResult.submissionId} -> verdict: ${finalResult.verdict}, stdout: ${JSON.stringify(finalResult.stdout)}`);
+      console.log(`[JudgeWorker] [MONGODB_UPDATE] Updating submission ${finalResult.submissionId} -> verdict: ${finalResult.verdict}`);
       // 1. Update Submission Document with stdout, stderr, status, and metrics
       await Submission.findByIdAndUpdate(
         finalResult.submissionId,
@@ -301,22 +313,34 @@ export class JudgeWorker {
 
       // 2. If Verdict is Accepted (AC) and User ID exists, update User solved stats & XP
       if (finalResult.verdict === "AC" && finalResult.userId) {
-        await User.findByIdAndUpdate(
-          finalResult.userId,
+        const userQuery = mongoose.Types.ObjectId.isValid(String(finalResult.userId))
+          ? { $or: [{ _id: finalResult.userId }, { id: String(finalResult.userId) }] }
+          : { id: String(finalResult.userId) };
+        await User.findOneAndUpdate(
+          userQuery,
           {
-            $addToSet: { solvedProblems: finalResult.problemId },
-            $inc: { xp: 50, totalSubmissions: 1 }
+            $addToSet: { solvedProblemIds: finalResult.problemId, attemptedProblemIds: finalResult.problemId },
+            $inc: { xp: 50, "stats.totalSubmissions": 1, "stats.acceptedSubmissions": 1 }
           }
         );
       } else if (finalResult.userId) {
-        await User.findByIdAndUpdate(
-          finalResult.userId,
-          { $inc: { totalSubmissions: 1 } }
+        const userQuery = mongoose.Types.ObjectId.isValid(String(finalResult.userId))
+          ? { $or: [{ _id: finalResult.userId }, { id: String(finalResult.userId) }] }
+          : { id: String(finalResult.userId) };
+        await User.findOneAndUpdate(
+          userQuery,
+          {
+            $addToSet: { attemptedProblemIds: finalResult.problemId },
+            $inc: { "stats.totalSubmissions": 1 }
+          }
         );
       }
       console.log(`[JudgeWorker] [MONGODB_UPDATE_SUCCESS] Submission ${finalResult.submissionId} updated in MongoDB.`);
     } catch (dbErr) {
       console.warn(`[JudgeWorker] MongoDB record update notice: ${dbErr.message}`);
+      const persistenceError = new Error("Failed to persist judge result.", { cause: dbErr });
+      persistenceError.code = "JUDGE_PERSISTENCE_ERROR";
+      throw persistenceError;
     }
   }
 }

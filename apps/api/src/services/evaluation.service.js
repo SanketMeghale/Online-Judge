@@ -29,6 +29,10 @@ const STANDARD_TOPICS = [
   "Math"
 ];
 
+function isAcceptedSubmission(submission) {
+  return ["AC", "OK", "ACCEPTED", "ACCEPTED"].includes(String(submission?.verdict || submission?.status || "").toUpperCase());
+}
+
 /**
  * Calculates a 100% real, data-driven hiring committee evaluation for a user.
  * Derived entirely from the user's real submissions, problem difficulties,
@@ -89,7 +93,7 @@ export async function calculateUserHiringEvaluation(userId, sessionOptions = {})
   // 2. Aggregate Real Metrics
   const solvedProblemIds = new Set(
     (userDoc?.solvedProblemIds || []).concat(
-      allUserSubmissions.filter((s) => s.status === "ACCEPTED" || s.verdict === "ACCEPTED").map((s) => s.problemId)
+      allUserSubmissions.filter(isAcceptedSubmission).map((s) => s.problemId)
     )
   );
 
@@ -102,9 +106,7 @@ export async function calculateUserHiringEvaluation(userId, sessionOptions = {})
     (s) => s.status !== "QUEUED" && s.status !== "PENDING" && s.verdict !== "PENDING"
   );
 
-  const acceptedSubmissions = allUserSubmissions.filter(
-    (s) => s.status === "ACCEPTED" || s.verdict === "ACCEPTED"
-  ).length;
+  const acceptedSubmissions = allUserSubmissions.filter(isAcceptedSubmission).length;
 
   const waCount = allUserSubmissions.filter(
     (s) => s.status === "WRONG_ANSWER" || s.verdict === "WRONG_ANSWER"
@@ -162,7 +164,7 @@ export async function calculateUserHiringEvaluation(userId, sessionOptions = {})
       .filter((s) => s.problemId === pid)
       .sort((a, b) => new Date(a.createdAt || a.submittedAt || 0) - new Date(b.createdAt || b.submittedAt || 0));
 
-    if (problemSubs.length > 0 && (problemSubs[0].status === "ACCEPTED" || problemSubs[0].verdict === "ACCEPTED")) {
+    if (problemSubs.length > 0 && isAcceptedSubmission(problemSubs[0])) {
       firstAttemptAccepts++;
     }
   }

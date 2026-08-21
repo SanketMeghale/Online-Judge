@@ -1,4 +1,8 @@
-import jwt from "jsonwebtoken";
+import { createRemoteJWKSet, jwtVerify } from "jose";
+
+const firebaseKeys = createRemoteJWKSet(
+  new URL("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com")
+);
 
 /**
  * Verifies and decodes a Firebase ID token.
@@ -13,30 +17,20 @@ export async function verifyFirebaseIdToken(idToken) {
   }
 
   try {
-    // 1. Decode token payload
-    const decoded = jwt.decode(idToken, { complete: true });
-    if (!decoded || !decoded.payload) {
-      console.warn("[FirebaseAdmin] Failed to decode Firebase ID token");
-      return null;
-    }
+    const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
+    if (!projectId) throw new Error("FIREBASE_PROJECT_ID is not configured.");
 
-    const payload = decoded.payload;
-    const uid = payload.user_id || payload.sub || payload.uid;
+    const { payload } = await jwtVerify(idToken, firebaseKeys, {
+      algorithms: ["RS256"],
+      audience: projectId,
+      issuer: `https://securetoken.google.com/${projectId}`
+    });
+    const uid = payload.user_id || payload.sub;
     const email = payload.email || "";
-    const name = payload.name || payload.displayName || "";
-    const picture = payload.picture || payload.photoURL || "";
+    const name = payload.name || "";
+    const picture = payload.picture || "";
 
-    if (!uid) {
-      console.warn("[FirebaseAdmin] Firebase ID token missing uid/sub");
-      return null;
-    }
-
-    // Optional: check token expiration (with 10-minute clock skew tolerance)
-    const nowInSec = Math.floor(Date.now() / 1000);
-    if (payload.exp && payload.exp < nowInSec - 600) {
-      console.warn("[FirebaseAdmin] Firebase ID token has expired");
-      return null;
-    }
+    if (!uid || !email || payload.email_verified !== true || !payload.auth_time) return null;
 
     return {
       uid: String(uid),
@@ -45,7 +39,7 @@ export async function verifyFirebaseIdToken(idToken) {
       picture: String(picture)
     };
   } catch (err) {
-    console.error("[FirebaseAdmin] Error verifying Firebase ID token:", err.message);
+    console.warn("[FirebaseAdmin] Firebase ID token verification failed:", err.message);
     return null;
   }
 }

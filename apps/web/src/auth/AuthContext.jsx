@@ -18,14 +18,6 @@ export function AuthProvider({ children }) {
       refreshDatabase();
       const storedSession = readStoredSession();
 
-      if (!storedSession || (!storedSession.accessToken && !storedSession.token)) {
-        if (isMounted) {
-          setSession(null);
-          setStatus("idle");
-        }
-        return;
-      }
-
       try {
         const nextSession = await refreshCurrentSession(storedSession);
 
@@ -198,7 +190,7 @@ export function AuthProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      isAuthenticated: Boolean(session?.accessToken || session?.token),
+      isAuthenticated: Boolean(session?.authenticated && session?.user),
       isCheckingSession: status === "checking",
       isAuthLoading: status === "checking",
       session,

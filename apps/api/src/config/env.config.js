@@ -8,6 +8,28 @@ export const envConfig = {
   nodeEnv: process.env.NODE_ENV || "development",
   mongoUri: process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/online-judge",
   rabbitmqUrl: process.env.RABBITMQ_URL || "amqp://guest:guest@127.0.0.1:5672",
-  jwtSecret: process.env.JWT_SECRET || "super-secret-online-judge-key",
-  corsOrigin: process.env.CORS_ORIGIN || "http://localhost:8080"
+  jwtSecret: process.env.JWT_SECRET || "",
+  corsOrigin: process.env.CLIENT_ORIGIN || "http://localhost:8080"
 };
+
+export function validateApiEnvironment() {
+  const errors = [];
+  if (!envConfig.jwtSecret || envConfig.jwtSecret.length < 32) {
+    errors.push("JWT_SECRET must contain at least 32 characters");
+  }
+
+  const isProduction = envConfig.nodeEnv === "production" || Boolean(process.env.VERCEL_ENV);
+  if (isProduction) {
+    if (!process.env.MONGODB_URI) errors.push("MONGODB_URI is required in production");
+    if (!/^amqps?:\/\//.test(process.env.RABBITMQ_URL || "")) errors.push("A valid RABBITMQ_URL is required in production");
+    if (!process.env.CLIENT_ORIGIN) errors.push("CLIENT_ORIGIN is required in production");
+    if (!process.env.REALTIME_JWT_SECRET || process.env.REALTIME_JWT_SECRET.trim().length < 32) {
+      errors.push("REALTIME_JWT_SECRET must contain at least 32 characters in production");
+    }
+    if (process.env.ENABLE_DEMO_USERS === "true") errors.push("ENABLE_DEMO_USERS cannot be enabled in production");
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Invalid API configuration: ${errors.join("; ")}`);
+  }
+}

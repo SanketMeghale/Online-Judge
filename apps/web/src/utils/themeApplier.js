@@ -32,7 +32,7 @@ export function applyThemeAndAppearance(preferences = {}) {
   const body = document.body;
 
   // 1. Resolve Theme mode (dark, light, system)
-  const theme = preferences.theme || "dark";
+  const theme = preferences.theme || "light";
   let resolvedTheme = theme;
   if (theme === "system") {
     resolvedTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";

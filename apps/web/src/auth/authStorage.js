@@ -7,7 +7,7 @@ export function readStoredSession() {
       return null;
     }
     const parsed = JSON.parse(rawSession);
-    if (parsed && (parsed.accessToken || parsed.token)) {
+    if (parsed?.authenticated && parsed?.user) {
       return parsed;
     }
     return null;
@@ -22,9 +22,6 @@ export function writeStoredSession(session) {
     return;
   }
   window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
-  if (session.accessToken || session.token) {
-    window.localStorage.setItem("token", session.accessToken || session.token);
-  }
   if (session.user) {
     window.localStorage.setItem("user", JSON.stringify(session.user));
   }

@@ -97,6 +97,9 @@ export class TempFileService {
     const tempDirPath = path.join(os.tmpdir(), `oj-sandbox-${uuid}`);
 
     await fs.mkdir(tempDirPath, { recursive: true, mode: 0o700 });
+    if (process.platform !== "win32" && typeof process.getuid === "function" && process.getuid() === 0) {
+      await fs.chown(tempDirPath, 10001, 10001);
+    }
     return tempDirPath;
   }
 

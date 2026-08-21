@@ -1,25 +1,8 @@
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/$/, "");
 
-function getStoredToken() {
-  try {
-    const raw = localStorage.getItem("online-judge-auth") || localStorage.getItem("online-judge-session");
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed?.accessToken || parsed?.token) {
-        return parsed.accessToken || parsed.token;
-      }
-    }
-    return localStorage.getItem("token") || null;
-  } catch {
-    return localStorage.getItem("token") || null;
-  }
-}
-
 async function request(endpoint, options = {}) {
-  const token = getStoredToken();
   const headers = {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers
   };
 
@@ -46,8 +29,7 @@ export const api = {
   logout: () => request("/auth/logout", { method: "POST" }),
   getMe: () => request("/auth/me"),
   updateSettings: (body) => request("/auth/settings", { method: "PATCH", body: JSON.stringify(body) }),
-  checkUsername: (username, currentUserId = "") =>
-    request(`/auth/check-username?username=${encodeURIComponent(username)}${currentUserId ? `&currentUserId=${encodeURIComponent(currentUserId)}` : ""}`),
+  checkUsername: (username) => request(`/auth/check-username?username=${encodeURIComponent(username)}`),
   changePassword: (body) => request("/auth/change-password", { method: "POST", body: JSON.stringify(body) }),
   deleteAccount: (body) => request("/auth/account", { method: "DELETE", body: JSON.stringify(body) }),
 
@@ -101,7 +83,7 @@ export const api = {
   // Admin Company Management
   adminGetCompanies: (query = "") => request(`/admin/companies${query ? `?${query}` : ""}`),
   adminCreateCompany: (body) => request("/admin/companies", { method: "POST", body: JSON.stringify(body) }),
-  adminUpdateCompany: (id, body) => request(`/admin/companies/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  adminUpdateCompany: (id, body) => request(`/admin/companies/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   adminDeleteCompany: (id) => request(`/admin/companies/${id}`, { method: "DELETE" }),
   adminAddCompanyProblem: (id, body) => request(`/admin/companies/${id}/problems`, { method: "POST", body: JSON.stringify(body) }),
   adminRemoveCompanyProblem: (id, problemId) => request(`/admin/companies/${id}/problems/${problemId}`, { method: "DELETE" })

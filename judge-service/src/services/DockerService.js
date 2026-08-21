@@ -77,17 +77,22 @@ export class DockerService {
     // Format host directory path for Docker volume bind mount
     const normalizedHostDir = path.resolve(hostTempDir).replace(/\\/g, "/");
 
+    const hostUid = typeof process.getuid === "function" ? process.getuid() : 0;
+    const hostGid = typeof process.getgid === "function" ? process.getgid() : 0;
+    const sandboxUid = hostUid === 0 ? 10001 : hostUid;
+    const sandboxGid = hostGid === 0 ? 10001 : hostGid;
+
     const containerConfig = {
       Image: image,
       Cmd: command,
-      User: "1000:1000", // Security Choice 5: Run as unprivileged non-root user
+      User: `${sandboxUid}:${sandboxGid}`,
       Tty: false,
       OpenStdin: true,
       StdinOnce: false,
-      WorkingDir: "/sandbox",
+      WorkingDir: "/workspace",
       HostConfig: {
         // Mount local host temp directory to container /sandbox (read-write)
-        Binds: [`${normalizedHostDir}:/sandbox:rw`],
+        Binds: [`${normalizedHostDir}:/workspace:rw`],
 
         // Security Choice 2 & 4: Strict memory & swap limits
         Memory: memorySizeBytes,
@@ -162,28 +167,28 @@ export class DockerService {
     const outStream = new stream.PassThrough();
     const errStream = new stream.PassThrough();
 
-    let stdoutData = "";
-    let stderrData = "";
+    const stdoutChunks = [];
+    const stderrChunks = [];
+    let stdoutBytes = 0;
+    let stderrBytes = 0;
+    let stderrTail = Buffer.alloc(0);
     let outputTruncated = false;
 
     outStream.on("data", (chunk) => {
-      if (Buffer.byteLength(stdoutData) < DockerService.MAX_OUTPUT_BYTES) {
-        stdoutData += chunk.toString("utf8");
-        if (Buffer.byteLength(stdoutData) >= DockerService.MAX_OUTPUT_BYTES) {
-          outputTruncated = true;
-          stdoutData += "\n[Output Truncated: Exceeded Maximum Output Limit (512 KB)]";
-        }
-      }
+      const buffer = Buffer.from(chunk);
+      const remaining = DockerService.MAX_OUTPUT_BYTES - stdoutBytes;
+      if (remaining > 0) stdoutChunks.push(buffer.subarray(0, remaining));
+      stdoutBytes += Math.min(buffer.length, Math.max(remaining, 0));
+      if (buffer.length > remaining) outputTruncated = true;
     });
 
     errStream.on("data", (chunk) => {
-      if (Buffer.byteLength(stderrData) < DockerService.MAX_OUTPUT_BYTES) {
-        stderrData += chunk.toString("utf8");
-        if (Buffer.byteLength(stderrData) >= DockerService.MAX_OUTPUT_BYTES) {
-          outputTruncated = true;
-          stderrData += "\n[Error Output Truncated: Exceeded Maximum Output Limit (512 KB)]";
-        }
-      }
+      const buffer = Buffer.from(chunk);
+      const remaining = DockerService.MAX_OUTPUT_BYTES - stderrBytes;
+      if (remaining > 0) stderrChunks.push(buffer.subarray(0, remaining));
+      stderrBytes += Math.min(buffer.length, Math.max(remaining, 0));
+      if (buffer.length > remaining) outputTruncated = true;
+      stderrTail = Buffer.concat([stderrTail, buffer]).subarray(-4096);
     });
 
     // Dockerode stream demuxing (splits stdout and stderr buffers)
@@ -191,13 +196,22 @@ export class DockerService {
 
     return new Promise((resolve) => {
       logStream.on("end", () => {
-        const cleanStdout = stdoutData.trim();
-        const cleanStderr = stderrData.trim();
-        console.log(`[DockerService] [STAGE 3: STDOUT] Captured stdout: ${JSON.stringify(cleanStdout)}`);
-        console.log(`[DockerService] [STAGE 4: STDERR] Captured stderr: ${JSON.stringify(cleanStderr)}`);
+        const stdoutNotice = "\n[Output Truncated: Exceeded Maximum Output Limit (512 KB)]";
+        const stderrNotice = "\n[Error Output Truncated: Exceeded Maximum Output Limit (512 KB)]";
+        const formatOutput = (chunks, notice) => {
+          const data = Buffer.concat(chunks);
+          if (!outputTruncated || data.length < DockerService.MAX_OUTPUT_BYTES) return data.toString("utf8").trim();
+          return Buffer.concat([
+            data.subarray(0, DockerService.MAX_OUTPUT_BYTES - Buffer.byteLength(notice)),
+            Buffer.from(notice)
+          ]).toString("utf8").trim();
+        };
+        const cleanStdout = formatOutput(stdoutChunks, stdoutNotice);
+        const cleanStderr = formatOutput(stderrChunks, stderrNotice);
         resolve({
           stdout: cleanStdout,
           stderr: cleanStderr,
+          stderrTail: stderrTail.toString("utf8"),
           outputTruncated
         });
       });
@@ -252,6 +266,21 @@ export class DockerService {
     }
   }
 
+  async inspectResourceUsage(container) {
+    let oomKilled = false;
+    let memoryMb = 0;
+    try {
+      const details = await container.inspect();
+      oomKilled = Boolean(details?.State?.OOMKilled);
+    } catch {}
+    try {
+      const stats = await container.stats({ stream: false });
+      const peakBytes = Number(stats?.memory_stats?.max_usage || stats?.memory_stats?.usage || 0);
+      if (Number.isFinite(peakBytes) && peakBytes > 0) memoryMb = Number((peakBytes / 1024 / 1024).toFixed(2));
+    } catch {}
+    return { oomKilled, memoryMb };
+  }
+
   /**
    * Master Sandboxed Run Method (Full Lifecycle Orchestration)
    * 
@@ -292,21 +321,72 @@ export class DockerService {
       // 3. Wait for Completion or Force Kill on Timeout
       const { statusCode, timedOut } = await this.waitForContainerWithTimeout(container, timeoutMs);
 
+      const resourceUsage = await this.inspectResourceUsage(container);
+
       // 4. Capture Stdout & Stderr Logs with Output Cap
-      const { stdout, stderr, outputTruncated } = await this.captureLogs(container);
+      const { stdout, stderr, stderrTail, outputTruncated } = await this.captureLogs(container);
 
       const durationMs = Date.now() - startTime;
-      const memoryMb = Number((12.5 + (durationMs % 5)).toFixed(1));
+      const markerSource = `${stderr}\n${stderrTail}`;
+      const marker = markerSource.match(/__OJ_VERDICT__:(CE|RE|TLE|MLE)/)?.[1];
+      const reportedMemoryKb = Number(markerSource.match(/__OJ_MEMORY_KB__:(\d+)/)?.[1]);
+      const memoryMb = Math.max(
+        resourceUsage.memoryMb,
+        Number.isFinite(reportedMemoryKb) ? Number((reportedMemoryKb / 1024).toFixed(2)) : 0
+      );
+      const cleanStderr = stderr
+        .replace(/__OJ_VERDICT__:(CE|RE|TLE|MLE)\s*/g, "")
+        .replace(/__OJ_RUNTIME_MS__:\d+\s*/g, "")
+        .replace(/__OJ_MEMORY_KB__:\d+\s*/g, "")
+        .trim();
+      const reportedRuntime = Number(markerSource.match(/__OJ_RUNTIME_MS__:(\d+)/)?.[1]);
+      const runtimeMs = Number.isFinite(reportedRuntime) ? reportedRuntime : durationMs;
 
-      if (timedOut || statusCode === 124) {
+      if (timedOut) {
         return {
           ok: false,
           verdict: "TLE",
-          statusText: `Time Limit Exceeded (${Math.ceil(timeoutMs / 1000)}s)`,
-          runtimeMs: durationMs,
+          statusText: "Time Limit Exceeded",
+          runtimeMs,
           memoryMb,
           stdout,
-          stderr: stderr || `Execution timed out after ${timeoutMs}ms.`
+          stderr: cleanStderr || `Execution timed out after ${timeoutMs}ms.`
+        };
+      }
+
+      if (resourceUsage.oomKilled) {
+        return {
+          ok: false,
+          verdict: "MLE",
+          statusText: "Memory Limit Exceeded",
+          runtimeMs,
+          memoryMb,
+          stdout,
+          stderr: cleanStderr || `Execution exceeded the ${memoryLimitMb} MB memory limit.`
+        };
+      }
+
+      if (marker) {
+        return {
+          ok: false,
+          verdict: marker,
+          statusText: marker === "CE" ? "Compilation Error" : marker === "TLE" ? "Time Limit Exceeded" : marker === "MLE" ? "Memory Limit Exceeded" : "Runtime Error",
+          runtimeMs,
+          memoryMb,
+          stdout,
+          stderr: cleanStderr
+        };
+      }
+
+      if (statusCode === 124) {
+        return {
+          ok: false,
+          verdict: "TLE",
+          statusText: "Time Limit Exceeded",
+          runtimeMs,
+          memoryMb,
+          stdout,
+          stderr: cleanStderr || "Execution timed out."
         };
       }
 
@@ -315,10 +395,10 @@ export class DockerService {
           ok: false,
           verdict: "RE",
           statusText: "Runtime Error",
-          runtimeMs: durationMs,
+          runtimeMs,
           memoryMb,
           stdout,
-          stderr: stderr || `Process exited with code ${statusCode}`
+          stderr: cleanStderr || `Process exited with code ${statusCode}`
         };
       }
 
@@ -326,15 +406,15 @@ export class DockerService {
         ok: true,
         verdict: "AC",
         statusText: outputTruncated ? "Accepted (Output Truncated)" : "Accepted",
-        runtimeMs: durationMs,
+        runtimeMs,
         memoryMb,
         stdout,
-        stderr
+        stderr: cleanStderr
       };
     } catch (err) {
       return {
         ok: false,
-        verdict: "RE",
+        verdict: "SYSTEM_ERROR",
         statusText: "Docker Sandbox Execution Failure",
         runtimeMs: Date.now() - startTime,
         memoryMb: 0,

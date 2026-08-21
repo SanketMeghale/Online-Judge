@@ -14,7 +14,11 @@ async function startServer() {
       console.warn("[Server] MongoDB not connected — running with in-memory fallback.");
     }
   } catch (err) {
-    console.warn("[Server] MongoDB connection warning:", err.message);
+    console.error("[Server] Startup failed:", err.message);
+    if (process.env.NODE_ENV === "production") {
+      process.exitCode = 1;
+      return;
+    }
   }
 
   app.listen(port, () => {

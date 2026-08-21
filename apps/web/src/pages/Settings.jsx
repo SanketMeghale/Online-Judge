@@ -112,7 +112,7 @@ export default function Settings() {
       bio: liveUser?.bio || "",
       language: liveUser?.language || localPrefs?.language || "en-US",
       timezone: liveUser?.timezone || localPrefs?.timezone || "UTC-5 (Eastern Time / US & Canada)",
-      theme: userPrefs?.theme || localPrefs?.theme || theme || "dark",
+      theme: userPrefs?.theme || localPrefs?.theme || theme || "light",
       accentColor: userPrefs?.accentColor || localPrefs?.accentColor || accentColor || "indigo",
       density: userPrefs?.density || localPrefs?.density || density || "comfortable",
       compactMode: userPrefs?.compactMode ?? localPrefs?.compactMode ?? (density === "compact"),
@@ -207,7 +207,7 @@ export default function Settings() {
 
       checkTimeoutRef.current = setTimeout(async () => {
         try {
-          const res = await api.checkUsername(cleanUser, currentUserId);
+          const res = await api.checkUsername(cleanUser);
           if (res?.available) {
             setUsernameCheck({ checking: false, available: true, message: "Username available" });
           } else {
@@ -339,8 +339,8 @@ export default function Settings() {
       setPasswordStatus({ type: "error", text: "Please enter your current password." });
       return;
     }
-    if (newPassword.length < 6) {
-      setPasswordStatus({ type: "error", text: "New password must be at least 6 characters long." });
+    if (newPassword.length < 12) {
+      setPasswordStatus({ type: "error", text: "New password must be at least 12 characters long." });
       return;
     }
     if (newPassword === currentPassword) {

@@ -1,5 +1,5 @@
 import express from "express";
-import { optionalAuth, requireAuth } from "../middleware/auth.middleware.js";
+import { requireAuth } from "../middleware/auth.middleware.js";
 import {
   getCoachProfile,
   getOrCreateConversation,
@@ -11,12 +11,13 @@ import {
 } from "../services/aiCoach.service.js";
 
 const router = express.Router();
+router.use(requireAuth);
 
 /**
  * GET /api/ai/profile
  * Returns authenticated user's real skill profile, weak topics, and Today's Focus
  */
-router.get("/profile", optionalAuth, async (req, res) => {
+router.get("/profile", async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || "guest_coder";
     const data = await getCoachProfile(userId);
@@ -31,7 +32,7 @@ router.get("/profile", optionalAuth, async (req, res) => {
  * GET /api/ai/conversations
  * Returns active chat history for authenticated user
  */
-router.get("/conversations", optionalAuth, async (req, res) => {
+router.get("/conversations", async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || "guest_coder";
     const conversation = await getOrCreateConversation(userId, req.query.conversationId);
@@ -49,7 +50,7 @@ router.get("/conversations", optionalAuth, async (req, res) => {
  * POST /api/ai/mentor
  * Real-time personalized chat with AI Mentor
  */
-router.post("/mentor", optionalAuth, async (req, res) => {
+router.post("/mentor", async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || "guest_coder";
     const { message, context, conversationId } = req.body || {};
@@ -79,7 +80,7 @@ router.post("/mentor", optionalAuth, async (req, res) => {
  * POST /api/ai/review
  * Structured AI code review and complexity scoring
  */
-router.post("/review", optionalAuth, async (req, res) => {
+router.post("/review", async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || "guest_coder";
     const { code, language, problemId } = req.body || {};
@@ -106,7 +107,7 @@ router.post("/review", optionalAuth, async (req, res) => {
  * POST /api/ai/hint
  * Progressive 5-level hint generator
  */
-router.post("/hint", optionalAuth, async (req, res) => {
+router.post("/hint", async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || "guest_coder";
     const { problemId, hintLevel, currentCode } = req.body || {};
@@ -129,7 +130,7 @@ router.post("/hint", optionalAuth, async (req, res) => {
  * POST /api/ai/interview
  * Mock technical interview session interaction
  */
-router.post("/interview", optionalAuth, async (req, res) => {
+router.post("/interview", async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || "guest_coder";
     const { company, track, difficulty, action, answer, code, language, history } = req.body || {};
@@ -157,7 +158,7 @@ router.post("/interview", optionalAuth, async (req, res) => {
  * DELETE /api/ai/conversations
  * Clears chat history for authenticated user
  */
-router.delete("/conversations", optionalAuth, async (req, res) => {
+router.delete("/conversations", async (req, res) => {
   try {
     const userId = req.user?.id || req.user?._id || "guest_coder";
     const result = await clearUserConversation(userId, req.query.conversationId);

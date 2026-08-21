@@ -16,7 +16,7 @@ router.get("/", async (_request, response) => {
   } catch (err) {
     judgeMonitoring = {
       status: "DEGRADED",
-      notice: `Could not reach Judge Monitoring Service at ${JUDGE_MONITORING_URL}: ${err.message}`
+      notice: "Judge worker monitoring is temporarily unavailable."
     };
   }
 

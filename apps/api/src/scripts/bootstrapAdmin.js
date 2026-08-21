@@ -7,9 +7,13 @@ import { hashPassword } from "../lib/jwt.js";
 dotenv.config();
 
 async function bootstrapSuperAdmin() {
-  const email = process.argv[2] || process.env.ADMIN_EMAIL || "admin@judgo.dev";
-  const password = process.argv[3] || process.env.ADMIN_PASSWORD || "Admin@123456";
+  const email = process.argv[2] || process.env.ADMIN_EMAIL;
+  const password = process.argv[3] || process.env.ADMIN_PASSWORD;
   const name = process.argv[4] || "Judgo Super Administrator";
+
+  if (!email || !password || password.length < 12) {
+    throw new Error("ADMIN_EMAIL and a unique ADMIN_PASSWORD of at least 12 characters are required.");
+  }
 
   console.log(`[Bootstrap] Initializing database connection...`);
   await connectDatabase();

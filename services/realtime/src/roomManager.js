@@ -7,7 +7,7 @@ export function joinRoom(socketId, roomId, userDetails) {
   }
 
   const room = rooms.get(roomId);
-  const user = { socketId, roomId, ...userDetails, joinedAt: new Date().toISOString() };
+  const user = { ...(userDetails || {}), socketId, roomId, joinedAt: new Date().toISOString() };
   room.set(socketId, user);
   activeUsers.set(socketId, user);
 

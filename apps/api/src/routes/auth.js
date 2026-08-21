@@ -1,6 +1,6 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
-import { signToken } from "../lib/jwt.js";
+import { signRealtimeToken, signToken } from "../lib/jwt.js";
 import { verifyFirebaseIdToken } from "../lib/firebaseAdmin.js";
 import {
   createUser,
@@ -15,7 +15,7 @@ import {
   validateUserCredentials,
   verifyUserRawPassword
 } from "../lib/userStore.js";
-import { requireAuth } from "../middleware/auth.middleware.js";
+import { optionalAuth, requireAuth } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
@@ -24,8 +24,6 @@ const authLimiter = rateLimit({
   max: 30,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: () => Boolean(process.env.VERCEL) || Boolean(process.env.VERCEL_ENV),
-  validate: { trustProxy: false, xForwardedForHeader: false },
   message: {
     success: false,
     error: "Too many login/registration attempts. Please try again in 15 minutes."
@@ -34,8 +32,8 @@ const authLimiter = rateLimit({
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  secure: process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL_ENV),
+  sameSite: "lax",
   maxAge: 24 * 60 * 60 * 1000
 };
 
@@ -71,8 +69,8 @@ router.post("/register", authLimiter, async (request, response) => {
       return;
     }
 
-    if (password.length < 6) {
-      response.status(400).json({ success: false, error: "Password must be at least 6 characters long." });
+    if (password.length < 12) {
+      response.status(400).json({ success: false, error: "Password must be at least 12 characters long." });
       return;
     }
 
@@ -103,8 +101,6 @@ router.post("/register", authLimiter, async (request, response) => {
     response.status(201).json({
       success: true,
       message: "Account registered successfully.",
-      token,
-      accessToken: token,
       user
     });
   } catch (err) {
@@ -141,8 +137,6 @@ router.post("/login", authLimiter, async (request, response) => {
     response.json({
       success: true,
       message: "Logged in successfully.",
-      token,
-      accessToken: token,
       user
     });
   } catch (err) {
@@ -185,15 +179,13 @@ router.post("/google", authLimiter, async (request, response) => {
     response.json({
       success: true,
       message: "Authenticated with Google successfully.",
-      token,
-      accessToken: token,
       user
     });
   } catch (err) {
     console.error("[Auth Google Error]:", err);
-    response.status(500).json({
+    response.status(401).json({
       success: false,
-      error: err?.message || "Failed to authenticate with Google."
+      error: "Invalid or expired Google authentication token."
     });
   }
 });
@@ -223,10 +215,15 @@ router.get("/me", requireAuth, async (request, response) => {
   }
 });
 
+router.get("/realtime-token", requireAuth, (request, response) => {
+  const token = signRealtimeToken(request.user.id);
+  response.json({ success: true, token, expiresInSeconds: 300 });
+});
+
 // Check username availability
-router.get("/check-username", async (request, response) => {
+router.get("/check-username", optionalAuth, async (request, response) => {
   try {
-    const { username, currentUserId } = request.query;
+    const { username } = request.query;
     if (!username || !USERNAME_REGEX.test(String(username).trim())) {
       return response.status(400).json({
         success: false,
@@ -235,7 +232,7 @@ router.get("/check-username", async (request, response) => {
       });
     }
 
-    const available = await isUsernameAvailable(String(username).trim(), currentUserId);
+    const available = await isUsernameAvailable(String(username).trim(), request.user?.id);
     response.json({
       success: true,
       available,
@@ -295,8 +292,6 @@ router.patch("/settings", requireAuth, async (request, response) => {
     response.json({
       success: true,
       message: "Changes saved successfully",
-      token,
-      accessToken: token,
       user: updatedUser
     });
   } catch (err) {
@@ -318,8 +313,8 @@ router.post("/change-password", requireAuth, async (request, response) => {
       return response.status(400).json({ success: false, error: "Current password and new password are required." });
     }
 
-    if (newPassword.length < 6) {
-      return response.status(400).json({ success: false, error: "New password must be at least 6 characters long." });
+    if (newPassword.length < 12) {
+      return response.status(400).json({ success: false, error: "New password must be at least 12 characters long." });
     }
 
     if (newPassword === currentPassword) {

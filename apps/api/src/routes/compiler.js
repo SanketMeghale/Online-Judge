@@ -5,8 +5,18 @@ import { isDatabaseConnected } from "../lib/db.js";
 import { Problem } from "../models/Problem.js";
 import { problems as seedProblems } from "../data/problems.js";
 import { compareOutputs } from "../lib/outputChecker.js";
+import rateLimit from "express-rate-limit";
+import { requireAuth } from "../middleware/auth.middleware.js";
+import { isValidLanguage, normalizeLanguage } from "@online-judge/shared";
 
 const router = Router();
+const executionLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: "Too many execution requests. Please retry shortly." }
+});
 
 function cleanStderr(stderr = "") {
   return stderr
@@ -74,7 +84,7 @@ function buildCppJavaStdin(problemId, lcInput) {
   return raw;
 }
 
-router.post("/run", async (request, response) => {
+router.post("/run", requireAuth, executionLimiter, async (request, response) => {
   const { problemId, language, code, stdin = "", timeoutMs } = request.body ?? {};
 
   // 1. Validations
@@ -88,9 +98,8 @@ router.post("/run", async (request, response) => {
     return;
   }
 
-  const normLang = language.toLowerCase().trim();
-  const supportedLangs = ["javascript", "js", "python", "py", "python3", "cpp", "c++", "java", "c"];
-  if (!supportedLangs.includes(normLang)) {
+  const normLang = normalizeLanguage(language);
+  if (!isValidLanguage(normLang)) {
     response.status(400).json({
       error: `Unsupported language: '${language}'. Supported languages: Python, JavaScript, C++, Java, C.`
     });

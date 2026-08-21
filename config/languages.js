@@ -86,6 +86,26 @@ export class PythonConfig extends LanguageConfig {
   }
 }
 
+export class JavaScriptConfig extends LanguageConfig {
+  constructor(overrides = {}) {
+    super({
+      id: "javascript",
+      name: "JavaScript (Node.js)",
+      extension: ".js",
+      sourceFileName: "solution.js",
+      compiledBinaryName: null,
+      dockerImage: "online-judge-sandbox:latest",
+      memoryLimitMb: 256,
+      timeLimitMs: 3000,
+      ...overrides
+    });
+  }
+
+  getRunCommand(sourcePath = this.sourceFileName) {
+    return `node ${sourcePath}`;
+  }
+}
+
 /**
  * C Language Configuration Class (GCC C17)
  */
@@ -177,6 +197,7 @@ export class LanguageRegistry {
 
     // Register supported language instances
     this.register(new PythonConfig());
+    this.register(new JavaScriptConfig());
     this.register(new CConfig());
     this.register(new CppConfig());
     this.register(new JavaConfig());
@@ -184,6 +205,7 @@ export class LanguageRegistry {
     // Register language alias lookups
     this.aliasMap.set("py", "python");
     this.aliasMap.set("python3", "python");
+    this.aliasMap.set("js", "javascript");
     this.aliasMap.set("c++", "cpp");
   }
 

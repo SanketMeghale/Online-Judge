@@ -21,12 +21,12 @@ export default function SubmissionTable({ rows = [] }) {
 
   if (!safeRows.length) {
     return (
-      <div className="empty-state" style={{ padding: "40px 20px", textAlign: "center" }}>
-        <Code size={32} style={{ color: "#7850ff", marginBottom: "12px" }} />
-        <strong style={{ display: "block", fontSize: "1.1rem", marginBottom: "6px", color: "#f8fafc" }}>
+      <div className="empty-state submission-empty-state">
+        <Code size={32} className="submission-empty-icon" />
+        <strong>
           No submissions found.
         </strong>
-        <span style={{ color: "#8b949e" }}>
+        <span>
           Your accepted and failed attempts will appear here when you submit code.
         </span>
       </div>
@@ -107,22 +107,15 @@ export default function SubmissionTable({ rows = [] }) {
 
               return (
                 <tr key={idString || idx}>
-                  <td style={{ fontFamily: "monospace", fontSize: "0.85rem", color: "#8b949e" }}>
+                  <td className="submission-id-cell">
                     {shortId}
                   </td>
                   <td>
-                    <strong style={{ color: "#e6edf3" }}>{problemName}</strong>
+                    <strong className="submission-problem-name">{problemName}</strong>
                   </td>
                   <td>
                     <span
                       className="lang-tag"
-                      style={{
-                        textTransform: "capitalize",
-                        background: "rgba(255, 255, 255, 0.05)",
-                        padding: "2px 8px",
-                        borderRadius: "4px",
-                        fontSize: "0.85rem"
-                      }}
                     >
                       {languageName}
                     </span>
@@ -132,9 +125,9 @@ export default function SubmissionTable({ rows = [] }) {
                       {displayVerdict}
                     </span>
                   </td>
-                  <td style={{ fontSize: "0.88rem", color: "#a8b3d6" }}>{displayRuntime}</td>
-                  <td style={{ fontSize: "0.88rem", color: "#a8b3d6" }}>{displayMemory}</td>
-                  <td style={{ fontSize: "0.85rem", color: "#8b949e" }}>{displayDate}</td>
+                  <td className="submission-metric-cell">{displayRuntime}</td>
+                  <td className="submission-metric-cell">{displayMemory}</td>
+                  <td className="submission-date-cell">{displayDate}</td>
                   <td>
                     {codeText ? (
                       <button
@@ -147,23 +140,12 @@ export default function SubmissionTable({ rows = [] }) {
                             codeText
                           })
                         }
-                        style={{
-                          background: "rgba(120, 80, 255, 0.15)",
-                          color: "#7850ff",
-                          border: "1px solid rgba(120, 80, 255, 0.3)",
-                          padding: "4px 10px",
-                          borderRadius: "6px",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "6px",
-                          fontSize: "0.82rem"
-                        }}
+                        className="submission-view-button"
                       >
                         <Eye size={14} /> View Code
                       </button>
                     ) : (
-                      <span style={{ color: "#555", fontSize: "0.82rem" }}>N/A</span>
+                      <span className="submission-unavailable">N/A</span>
                     )}
                   </td>
                 </tr>
@@ -174,69 +156,28 @@ export default function SubmissionTable({ rows = [] }) {
       </div>
 
       {selectedCode && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.75)",
-            backdropFilter: "blur(6px)",
-            zIndex: 1000,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "20px"
-          }}
-        >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: "700px",
-              background: "#121620",
-              border: "1px solid rgba(255,255,255,0.12)",
-              borderRadius: "12px",
-              overflow: "hidden",
-              boxShadow: "0 20px 50px rgba(0,0,0,0.8)"
-            }}
-          >
-            <div
-              style={{
-                padding: "16px 20px",
-                background: "#181d28",
-                borderBottom: "1px solid rgba(255,255,255,0.08)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between"
-              }}
-            >
+        <div className="submission-modal-backdrop" role="presentation" onMouseDown={() => setSelectedCode(null)}>
+          <div className="submission-modal" role="dialog" aria-modal="true" aria-label="Submitted code preview" onMouseDown={(event) => event.stopPropagation()}>
+            <div className="submission-modal-header">
               <div>
-                <strong style={{ color: "#fff", fontSize: "1.05rem", display: "block" }}>
+                <strong className="submission-modal-title">
                   {selectedCode.problemName} - Code Preview
                 </strong>
-                <span style={{ color: "#8b949e", fontSize: "0.82rem" }}>
+                <span className="submission-modal-meta">
                   Language: {selectedCode.languageName} | Verdict: {selectedCode.displayVerdict}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedCode(null)}
-                style={{ background: "none", border: "none", color: "#8b949e", cursor: "pointer" }}
+                className="submission-modal-close"
+                aria-label="Close code preview"
               >
                 <X size={20} />
               </button>
             </div>
-            <div style={{ padding: "20px", maxHeight: "450px", overflowY: "auto" }}>
-              <pre
-                style={{
-                  margin: 0,
-                  fontFamily: "'Fira Code', 'JetBrains Mono', Consolas, monospace",
-                  fontSize: "0.9rem",
-                  color: "#38bdf8",
-                  background: "#0a0c12",
-                  padding: "16px",
-                  borderRadius: "8px",
-                  overflowX: "auto"
-                }}
-              >
+            <div className="submission-code-wrap">
+              <pre className="submission-code-preview">
                 <code>{selectedCode.codeText}</code>
               </pre>
             </div>

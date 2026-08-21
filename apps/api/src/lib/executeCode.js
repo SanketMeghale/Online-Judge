@@ -1,62 +1,26 @@
 import { executeWithJudge0 } from "./judge0Service.js";
-import { executeCpp } from "./executeCpp.js";
-import { executeJava } from "./executeJava.js";
-import { executeJavaScript } from "./executeJavaScript.js";
-import { executePython } from "./executePython.js";
 
 export async function executeCode({ language, code, stdin = "", timeoutMs = 5000 }) {
   const normalizedLang = (language || "").toLowerCase().trim();
-  const isServerlessRuntime = Boolean(process.env.VERCEL || process.env.VERCEL_ENV || process.env.NODE_ENV === "production");
+  const safeTimeoutMs = Math.max(1000, Math.min(Number(timeoutMs) || 5000, 10000));
 
-  // 1. Attempt Judge0 execution first if configured or in production
-  if (process.env.JUDGE0_URL || process.env.RAPIDAPI_KEY || process.env.JUDGE0_API_KEY || isServerlessRuntime) {
-    try {
-      const judge0Result = await executeWithJudge0({ language: normalizedLang, code, stdin, timeoutMs });
-      if (judge0Result && judge0Result.verdict) {
-        return judge0Result;
-      }
-    } catch (judge0Err) {
-      console.warn(`[executeCode] Judge0 execution unavailable (${judge0Err.message}). Falling back to local engine...`);
-      if (isServerlessRuntime) {
-        return {
-          ok: false,
-          exitCode: null,
-          stdout: "",
-          stderr: `Judge0 execution unavailable: ${judge0Err.message}. Configure JUDGE0_URL or RAPIDAPI_KEY in Vercel environment variables.`,
-          verdict: "SYSTEM_ERROR",
-          runtimeMs: 0
-        };
-      }
-    }
-  }
-
-  // 2. Local Fallback Execution Engine
-  switch (normalizedLang) {
-    case "js":
-    case "javascript":
-      return executeJavaScript({ code, stdin, timeoutMs });
-
-    case "py":
-    case "python":
-    case "python3":
-      return executePython({ code, stdin, timeoutMs });
-
-    case "c":
-    case "cpp":
-    case "c++":
-      return executeCpp({ code, stdin, timeoutMs });
-
-    case "java":
-      return executeJava({ code, stdin, timeoutMs });
-
-    default:
-      return {
-        ok: false,
-        exitCode: null,
-        stdout: "",
-        stderr: `Unsupported language: '${language}'. Supported languages: javascript, python, cpp, java, c.`,
-        verdict: "SYSTEM_ERROR",
-        runtimeMs: 0
-      };
+  try {
+    return await executeWithJudge0({
+      language: normalizedLang,
+      code,
+      stdin,
+      timeoutMs: safeTimeoutMs
+    });
+  } catch (error) {
+    return {
+      ok: false,
+      exitCode: null,
+      stdout: "",
+      stderr: "The isolated execution service is currently unavailable.",
+      verdict: "SYSTEM_ERROR",
+      statusText: "Execution Service Unavailable",
+      runtimeMs: 0,
+      internalError: process.env.NODE_ENV === "development" ? error.message : undefined
+    };
   }
 }

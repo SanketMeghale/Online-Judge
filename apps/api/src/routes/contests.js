@@ -124,17 +124,21 @@ router.get("/:id/registration", requireAuth, async (req, res) => {
 router.get("/:id/problems", requireAuth, async (req, res) => {
   try {
     const userId = req.user.id || req.user._id;
-    const contest = await getContestById(req.params.id, userId);
+    const contest = await getContestById(req.params.id, userId, { includeProblems: true });
 
     if (!contest) {
       return res.status(404).json({ success: false, error: "Contest not found." });
     }
 
-    if (contest.status === "UPCOMING" && !contest.isRegistered) {
+    if (contest.status === "UPCOMING") {
       return res.status(403).json({
         success: false,
-        error: "Contest problem set is locked until contest begins or registration is complete."
+        error: "Contest problem set is locked until the contest begins."
       });
+    }
+
+    if (contest.status === "LIVE" && !contest.isRegistered) {
+      return res.status(403).json({ success: false, error: "Register for the contest to access its problem set." });
     }
 
     res.json({

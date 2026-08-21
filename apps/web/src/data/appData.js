@@ -19,23 +19,12 @@ export const baseProblems = [
       { input: "nums = [2, 7, 11, 15], target = 9", output: "[0, 1]" },
       { input: "nums = [3, 2, 4], target = 6", output: "[1, 2]" }
     ],
-    hiddenTestCases: [
-      { input: "nums = [2, 7, 11, 15], target = 9", output: "[0, 1]" },
-      { input: "nums = [3, 2, 4], target = 6", output: "[1, 2]" },
-      { input: "nums = [3, 3], target = 6", output: "[0, 1]" },
-      { input: "nums = [-1, -8, 14, 7], target = 6", output: "[1, 2]" },
-      { input: "nums = [0, 4, 3, 0], target = 0", output: "[0, 3]" }
-    ],
     constraints: ["2 <= nums.length <= 10^4", "-10^9 <= nums[i] <= 10^9", "-10^9 <= target <= 10^9"],
     starterCode: {
       python: "class Solution:\n    def twoSum(self, nums, target):\n        pass",
       javascript: "function twoSum(nums, target) {\n  return [0, 1];\n}",
       java: "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        return new int[]{0, 1};\n    }\n}",
       cpp: "class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        return {0, 1};\n    }\n};"
-    },
-    judge: {
-      acceptedTokens: ["map", "dict", "target", "complement", "hash", "seen"],
-      output: "[0, 1]"
     }
   },
   {
@@ -55,22 +44,12 @@ export const baseProblems = [
       { input: 's = "()[]{}"', output: "true" },
       { input: 's = "(]"', output: "false" }
     ],
-    hiddenTestCases: [
-      { input: 's = "()[]{}"', output: "true" },
-      { input: 's = "(]"', output: "false" },
-      { input: 's = "([{}])"', output: "true" },
-      { input: 's = "(((())"', output: "false" }
-    ],
     constraints: ["1 <= s.length <= 10^4", "s consists of parentheses only '()[]{}'"],
     starterCode: {
       python: "class Solution:\n    def isValid(self, s: str) -> bool:\n        pass",
       javascript: "function isValid(s) {\n  return true;\n}",
       java: "class Solution {\n    public boolean isValid(String s) {\n        return true;\n    }\n}",
       cpp: "class Solution {\npublic:\n    bool isValid(string s) {\n        return true;\n    }\n};"
-    },
-    judge: {
-      acceptedTokens: ["stack", "pop", "push", "bracket", "pair", "dict", "{}"],
-      output: "true"
     }
   },
   {
@@ -90,22 +69,12 @@ export const baseProblems = [
       { input: "x = 121", output: "true" },
       { input: "x = -121", output: "false" }
     ],
-    hiddenTestCases: [
-      { input: "x = 121", output: "true" },
-      { input: "x = -121", output: "false" },
-      { input: "x = 10", output: "false" },
-      { input: "x = 12321", output: "true" }
-    ],
     constraints: ["-2^31 <= x <= 2^31 - 1"],
     starterCode: {
       python: "class Solution:\n    def isPalindrome(self, x: int) -> bool:\n        pass",
       javascript: "function isPalindrome(x) {\n  return true;\n}",
       java: "class Solution {\n    public boolean isPalindrome(int x) {\n        return true;\n    }\n}",
       cpp: "class Solution {\npublic:\n    bool isPalindrome(int x) {\n        return true;\n    }\n};"
-    },
-    judge: {
-      acceptedTokens: ["str", "reverse", "rev", "%", "//", "10", "palindrome"],
-      output: "true"
     }
   },
   {
@@ -125,21 +94,12 @@ export const baseProblems = [
       { input: 's = ["h","e","l","l","o"]', output: '["o","l","l","e","h"]' },
       { input: 's = ["H","a","n","n","a","h"]', output: '["h","a","n","n","a","H"]' }
     ],
-    hiddenTestCases: [
-      { input: 's = ["h","e","l","l","o"]', output: '["o","l","l","e","h"]' },
-      { input: 's = ["H","a","n","n","a","h"]', output: '["h","a","n","n","a","H"]' },
-      { input: 's = ["a"]', output: '["a"]' }
-    ],
     constraints: ["1 <= s.length <= 10^5", "s[i] is a printable ascii character."],
     starterCode: {
       python: "class Solution:\n    def reverseString(self, s: list[str]) -> None:\n        pass",
       javascript: "function reverseString(s) {\n  s.reverse();\n}",
       java: "class Solution {\n    public void reverseString(char[] s) {\n        \n    }\n}",
       cpp: "class Solution {\npublic:\n    void reverseString(vector<char>& s) {\n        \n    }\n};"
-    },
-    judge: {
-      acceptedTokens: ["reverse", "left", "right", "swap", "two pointers", "[::-1]"],
-      output: '["o","l","l","e","h"]'
     }
   },
   {
@@ -159,22 +119,12 @@ export const baseProblems = [
       { input: "prices = [7,1,5,3,6,4]", output: "5" },
       { input: "prices = [7,6,4,3,1]", output: "0" }
     ],
-    hiddenTestCases: [
-      { input: "prices = [7,1,5,3,6,4]", output: "5" },
-      { input: "prices = [7,6,4,3,1]", output: "0" },
-      { input: "prices = [2,4,1]", output: "2" },
-      { input: "prices = [1,2]", output: "1" }
-    ],
     constraints: ["1 <= prices.length <= 10^5", "0 <= prices[i] <= 10^4"],
     starterCode: {
       python: "class Solution:\n    def maxProfit(self, prices: list[int]) -> int:\n        pass",
       javascript: "function maxProfit(prices) {\n  return 0;\n}",
       java: "class Solution {\n    public int maxProfit(int[] prices) {\n        return 0;\n    }\n}",
       cpp: "class Solution {\npublic:\n    int maxProfit(vector<int>& prices) {\n        return 0;\n    }\n};"
-    },
-    judge: {
-      acceptedTokens: ["min", "max", "profit", "buy", "sell", "dp"],
-      output: "5"
     }
   },
   {
@@ -194,21 +144,12 @@ export const baseProblems = [
       { input: "nums = [2,2,1]", output: "1" },
       { input: "nums = [4,1,2,1,2]", output: "4" }
     ],
-    hiddenTestCases: [
-      { input: "nums = [2,2,1]", output: "1" },
-      { input: "nums = [4,1,2,1,2]", output: "4" },
-      { input: "nums = [1]", output: "1" }
-    ],
     constraints: ["1 <= nums.length <= 3 * 10^4", "-3 * 10^4 <= nums[i] <= 3 * 10^4"],
     starterCode: {
       python: "class Solution:\n    def singleNumber(self, nums: list[int]) -> int:\n        pass",
       javascript: "function singleNumber(nums) {\n  return 0;\n}",
       java: "class Solution {\n    public int singleNumber(int[] nums) {\n        return 0;\n    }\n}",
       cpp: "class Solution {\npublic:\n    int singleNumber(vector<int>& nums) {\n        return 0;\n    }\n};"
-    },
-    judge: {
-      acceptedTokens: ["^", "xor", "reduce", "accumulate", "bit"],
-      output: "1"
     }
   },
   {
@@ -228,22 +169,12 @@ export const baseProblems = [
       { input: "n = 2", output: "2" },
       { input: "n = 3", output: "3" }
     ],
-    hiddenTestCases: [
-      { input: "n = 2", output: "2" },
-      { input: "n = 3", output: "3" },
-      { input: "n = 4", output: "5" },
-      { input: "n = 5", output: "8" }
-    ],
     constraints: ["1 <= n <= 45"],
     starterCode: {
       python: "class Solution:\n    def climbStairs(self, n: int) -> int:\n        pass",
       javascript: "function climbStairs(n) {\n  return 0;\n}",
       java: "class Solution {\n    public int climbStairs(int n) {\n        return 0;\n    }\n}",
       cpp: "class Solution {\npublic:\n    int climbStairs(int n) {\n        return 0;\n    }\n};"
-    },
-    judge: {
-      acceptedTokens: ["dp", "fib", "ways", "a, b", "range", "memo"],
-      output: "2"
     }
   },
   {
@@ -266,10 +197,6 @@ export const baseProblems = [
     starterCode: {
       python: "def prevent_cache_stampede(keys, fetcher):\n    pass",
       javascript: "async function preventCacheStampede(keys, fetcher) {\n  return [];\n}"
-    },
-    judge: {
-      acceptedTokens: ["lock", "mutex", "promise", "singleflight", "map"],
-      output: '["fetch(a)", "fetch(b)", "fetch(c)"]'
     }
   },
   {
@@ -292,10 +219,6 @@ export const baseProblems = [
     starterCode: {
       python: "class RateLimiter:\n    def allow_request(self, client_id, timestamp):\n        pass",
       javascript: "class RateLimiter {\n  allowRequest(clientId, timestamp) {\n    return true;\n  }\n}"
-    },
-    judge: {
-      acceptedTokens: ["window", "sliding", "timestamp", "count", "expire"],
-      output: "[true, true, true, false]"
     }
   },
   {
@@ -318,10 +241,6 @@ export const baseProblems = [
     starterCode: {
       python: "class Solution:\n    def numIslands2(self, m: int, n: int, positions: list[list[int]]) -> list[int]:\n        pass",
       javascript: "function numIslands2(m, n, positions) {\n  return [];\n}"
-    },
-    judge: {
-      acceptedTokens: ["union", "find", "parent", "rank", "disjoint"],
-      output: "[1, 1, 2, 3]"
     }
   }
 ];
@@ -332,41 +251,28 @@ export function nowIso() {
 
 function seedDatabase() {
   return {
-    users: [
-      {
-        id: "u-admin",
-        name: "Platform Administrator",
-        username: "admin",
-        email: "admin@judgo.dev",
-        password: "admin123",
-        role: "admin",
-        status: "active",
-        ranking: 1,
-        xp: 9999,
-        streak: 30,
-        badges: ["Platform Administrator", "Algorithm Pioneer"],
-        solvedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number"],
-        attemptedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number"]
-      },
-      {
-        id: "u-sanketmeghale",
-        name: "Sanket Meghale",
-        username: "sanketmeghale",
-        email: "sanket@example.com",
-        password: "password123",
-        role: "admin",
-        status: "active",
-        ranking: 14,
-        xp: 2450,
-        streak: 5,
-        badges: ["New Challenger", "Three Problem Sprint"],
-        solvedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number"],
-        attemptedProblemIds: ["two-sum", "valid-parentheses", "palindrome-number"]
-      }
-    ],
+    users: [],
     problems: baseProblems,
     submissions: [],
     nextSubmissionId: 1001
+  };
+}
+
+function sanitizeClientProblem(problem = {}) {
+  const { hiddenTestCases, judge, solution, solutions, referenceSolution, ...safeProblem } = problem;
+  return safeProblem;
+}
+
+function sanitizeClientUser(user = {}) {
+  const { password, passwordHash, ...safeUser } = user;
+  return safeUser;
+}
+
+function sanitizeClientDatabase(database = {}) {
+  return {
+    ...database,
+    users: Array.isArray(database.users) ? database.users.map(sanitizeClientUser) : [],
+    problems: Array.isArray(database.problems) ? database.problems.map(sanitizeClientProblem) : []
   };
 }
 
@@ -377,7 +283,7 @@ export function readDatabase() {
       return seedDatabase();
     }
 
-    const parsed = JSON.parse(raw);
+    const parsed = sanitizeClientDatabase(JSON.parse(raw));
     const existingIds = new Set((parsed.problems || []).map((p) => p.id));
     const mergedProblems = [...(parsed.problems || [])];
 
@@ -399,7 +305,7 @@ export function readDatabase() {
 
 export function writeDatabase(database) {
   try {
-    window.localStorage.setItem(APP_DB_KEY, JSON.stringify(database));
+    window.localStorage.setItem(APP_DB_KEY, JSON.stringify(sanitizeClientDatabase(database)));
   } catch (_) {}
 }
 
@@ -422,33 +328,6 @@ export function writeSavedCode(codeMap) {
   try {
     window.localStorage.setItem(SAVED_CODE_KEY, JSON.stringify(codeMap));
   } catch (_) {}
-}
-
-export function createUserRecord({ name, username, email, password }) {
-  return {
-    id: `u-${Date.now()}`,
-    name: (name || "").trim(),
-    username: (username || "").trim(),
-    email: (email || "").trim().toLowerCase(),
-    password,
-    ranking: 999,
-    xp: 0,
-    streak: 1,
-    badges: ["New Challenger"],
-    solvedProblemIds: [],
-    attemptedProblemIds: [],
-    stats: {
-      activeDays: 1,
-      totalSubmissions: 0,
-      acceptedSubmissions: 0
-    }
-  };
-}
-
-export function findUserByEmail(database, email) {
-  if (!database || !Array.isArray(database.users) || !email) return null;
-  const target = String(email).trim().toLowerCase();
-  return database.users.find((user) => String(user.email || "").toLowerCase() === target) ?? null;
 }
 
 export function findUserById(database, userId) {

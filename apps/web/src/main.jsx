@@ -1,4 +1,4 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth/AuthContext.jsx";
@@ -11,40 +11,40 @@ import { AppDataProvider } from "./data/AppDataContext.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
 
 // Standard User Pages
-import Dashboard from "./pages/Dashboard.jsx";
-import LandingPage from "./pages/LandingPage.jsx";
-import AICoachPage from "./pages/AICoachPage.jsx";
-import ContestPage from "./pages/ContestPage.jsx";
-import ContestArenaPage from "./pages/ContestArenaPage.jsx";
-import ContestResultsPage from "./pages/ContestResultsPage.jsx";
-import FeaturePage from "./pages/FeaturePage.jsx";
-import LeaderboardPage from "./pages/LeaderboardPage.jsx";
-import Login from "./pages/Login.jsx";
-import ProblemDetails from "./pages/ProblemDetails.jsx";
-import ProblemsList from "./pages/ProblemsList.jsx";
-import Profile from "./pages/Profile.jsx";
-import ProgressPage from "./pages/ProgressPage.jsx";
-import Register from "./pages/Register.jsx";
-import ForgotPassword from "./pages/ForgotPassword.jsx";
-import Settings from "./pages/Settings.jsx";
-import SubmissionHistoryPage from "./pages/SubmissionHistoryPage.jsx";
-import CompanyDetailPage from "./pages/CompanyDetailPage.jsx";
+const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
+const LandingPage = lazy(() => import("./pages/LandingPage.jsx"));
+const AICoachPage = lazy(() => import("./pages/AICoachPage.jsx"));
+const ContestPage = lazy(() => import("./pages/ContestPage.jsx"));
+const ContestArenaPage = lazy(() => import("./pages/ContestArenaPage.jsx"));
+const ContestResultsPage = lazy(() => import("./pages/ContestResultsPage.jsx"));
+const FeaturePage = lazy(() => import("./pages/FeaturePage.jsx"));
+const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage.jsx"));
+const Login = lazy(() => import("./pages/Login.jsx"));
+const ProblemDetails = lazy(() => import("./pages/ProblemDetails.jsx"));
+const ProblemsList = lazy(() => import("./pages/ProblemsList.jsx"));
+const Profile = lazy(() => import("./pages/Profile.jsx"));
+const ProgressPage = lazy(() => import("./pages/ProgressPage.jsx"));
+const Register = lazy(() => import("./pages/Register.jsx"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword.jsx"));
+const Settings = lazy(() => import("./pages/Settings.jsx"));
+const SubmissionHistoryPage = lazy(() => import("./pages/SubmissionHistoryPage.jsx"));
+const CompanyDetailPage = lazy(() => import("./pages/CompanyDetailPage.jsx"));
 
 // Admin Panel Pages
-import AdminLogin from "./pages/admin/AdminLogin.jsx";
-import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
-import AdminUsers from "./pages/admin/AdminUsers.jsx";
-import AdminProblems from "./pages/admin/AdminProblems.jsx";
-import AdminTopics from "./pages/admin/AdminTopics.jsx";
-import AdminTestCases from "./pages/admin/AdminTestCases.jsx";
-import AdminSubmissions from "./pages/admin/AdminSubmissions.jsx";
-import AdminContests from "./pages/admin/AdminContests.jsx";
-import AdminAnalytics from "./pages/admin/AdminAnalytics.jsx";
-import AdminReports from "./pages/admin/AdminReports.jsx";
-import AdminAICoach from "./pages/admin/AdminAICoach.jsx";
-import AdminCompanies from "./pages/admin/AdminCompanies.jsx";
-import AdminAuditLogs from "./pages/admin/AdminAuditLogs.jsx";
-import AdminSettings from "./pages/admin/AdminSettings.jsx";
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin.jsx"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard.jsx"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers.jsx"));
+const AdminProblems = lazy(() => import("./pages/admin/AdminProblems.jsx"));
+const AdminTopics = lazy(() => import("./pages/admin/AdminTopics.jsx"));
+const AdminTestCases = lazy(() => import("./pages/admin/AdminTestCases.jsx"));
+const AdminSubmissions = lazy(() => import("./pages/admin/AdminSubmissions.jsx"));
+const AdminContests = lazy(() => import("./pages/admin/AdminContests.jsx"));
+const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics.jsx"));
+const AdminReports = lazy(() => import("./pages/admin/AdminReports.jsx"));
+const AdminAICoach = lazy(() => import("./pages/admin/AdminAICoach.jsx"));
+const AdminCompanies = lazy(() => import("./pages/admin/AdminCompanies.jsx"));
+const AdminAuditLogs = lazy(() => import("./pages/admin/AdminAuditLogs.jsx"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings.jsx"));
 
 import "./styles/main.css";
 
@@ -74,6 +74,7 @@ createRoot(document.getElementById("root")).render(
       <AuthProvider>
         <ThemeProvider>
           <BrowserRouter>
+            <Suspense fallback={<div className="route-loading">Loading…</div>}>
             <Routes>
               {/* Root Route: Landing Page for Unauthenticated Users, Dashboard for Authenticated */}
               <Route path="/" element={<RootPage />} />
@@ -142,6 +143,7 @@ createRoot(document.getElementById("root")).render(
               {/* Fallback Catch-All Route */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </Suspense>
           </BrowserRouter>
         </ThemeProvider>
       </AuthProvider>

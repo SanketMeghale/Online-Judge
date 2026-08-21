@@ -23,7 +23,7 @@ export default function AppLayout({ children }) {
       const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
       const localPrefs = stored ? JSON.parse(stored) : {};
       const mergedPrefs = {
-        theme: user?.preferences?.theme || localPrefs.theme || "dark",
+        theme: user?.preferences?.theme || localPrefs.theme || "light",
         accentColor: user?.preferences?.accentColor || localPrefs.accentColor || "indigo",
         density: user?.preferences?.density || localPrefs.density || "comfortable",
         compactMode: user?.preferences?.compactMode ?? localPrefs.compactMode ?? false

@@ -228,7 +228,7 @@ export function computeContestStatus(c) {
 /**
  * Format contest for API response
  */
-export function formatContest(c, userId = null) {
+export function formatContest(c, userId = null, includeProblems = false) {
   const status = computeContestStatus(c);
 
   let isRegistered = false;
@@ -238,6 +238,11 @@ export function formatContest(c, userId = null) {
     );
     if (reg) isRegistered = true;
   }
+
+  const safeProblems = (c.problems || []).map((problem) => {
+    const { hiddenTestCases, judge, solution, solutions, referenceSolution, ...safeProblem } = problem;
+    return safeProblem;
+  });
 
   return {
     id: c.id,
@@ -256,7 +261,7 @@ export function formatContest(c, userId = null) {
     badge: c.badge || "Participant",
     registrationOpen: status !== "ENDED" && (c.registrationOpen !== false),
     registrationDeadline: c.registrationDeadline || c.startTime,
-    problems: c.problems || [],
+    problems: includeProblems || status === "ENDED" ? safeProblems : [],
     rules: c.rules || "Standard contest rules apply.",
     createdAt: c.createdAt || c.startTime,
     updatedAt: c.updatedAt || c.endTime,
@@ -318,7 +323,7 @@ export async function getAllContests(userId = null) {
 /**
  * Get contest by ID or Slug
  */
-export async function getContestById(idOrSlug, userId = null) {
+export async function getContestById(idOrSlug, userId = null, options = {}) {
   if (!idOrSlug) return null;
   await connectDatabase();
 
@@ -329,7 +334,7 @@ export async function getContestById(idOrSlug, userId = null) {
       }).lean();
 
       if (doc) {
-        const formatted = formatContest(doc, userId);
+        const formatted = formatContest(doc, userId, Boolean(options.includeProblems));
         if (userId) {
           const reg = await ContestRegistration.findOne({
             contestId: doc.id,
@@ -346,7 +351,7 @@ export async function getContestById(idOrSlug, userId = null) {
 
   const fresh = getFreshSeedContests();
   const c = fresh.find((item) => item.id === idOrSlug || item.slug === idOrSlug);
-  return c ? formatContest(c, userId) : null;
+  return c ? formatContest(c, userId, Boolean(options.includeProblems)) : null;
 }
 
 /**

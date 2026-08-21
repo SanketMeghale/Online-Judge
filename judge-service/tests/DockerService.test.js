@@ -20,14 +20,15 @@ describe("DockerService Hardened Security & Execution Unit Tests", () => {
     await service.createContainer({
       image: "online-judge-sandbox:latest",
       hostTempDir: "C:/tmp/oj-sandbox-test",
-      command: ["python3", "/sandbox/Main.py"],
+      command: ["/opt/judge/scripts/run.sh", "python", "2"],
       memoryLimitMb: 256,
       cpuLimit: 1.0,
       networkDisabled: true
     });
 
     expect(createdConfig).toBeDefined();
-    expect(createdConfig.User).toBe("1000:1000");
+    expect(createdConfig.User).toBe("10001:10001");
+    expect(createdConfig.WorkingDir).toBe("/workspace");
     expect(createdConfig.HostConfig.PidsLimit).toBe(32);
     expect(createdConfig.HostConfig.NetworkMode).toBe("none");
     expect(createdConfig.HostConfig.ReadonlyRootfs).toBe(true);
@@ -79,6 +80,7 @@ describe("DockerService Hardened Security & Execution Unit Tests", () => {
     const logs = await service.captureLogs(mockContainer);
     expect(logs.outputTruncated).toBe(true);
     expect(logs.stdout).toContain("[Output Truncated: Exceeded Maximum Output Limit (512 KB)]");
+    expect(Buffer.byteLength(logs.stdout)).toBeLessThanOrEqual(DockerService.MAX_OUTPUT_BYTES);
   });
 
   test("4. Forcefully kills container process with SIGKILL on execution timeout", async () => {
@@ -107,5 +109,13 @@ describe("DockerService Hardened Security & Execution Unit Tests", () => {
 
     await service.deleteContainer(mockContainer);
     expect(deleted).toBe(true);
+  });
+
+  test("6. Detects container OOM kills and reports measured memory", async () => {
+    const usage = await service.inspectResourceUsage({
+      inspect: async () => ({ State: { OOMKilled: true } }),
+      stats: async () => ({ memory_stats: { max_usage: 64 * 1024 * 1024 } })
+    });
+    expect(usage).toEqual({ oomKilled: true, memoryMb: 64 });
   });
 });

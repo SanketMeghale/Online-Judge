@@ -48,7 +48,7 @@ export function AdminRoute() {
     );
   }
 
-  if (user?.role !== "admin") {
+  if (user?.role !== "admin" && user?.role !== "super_admin") {
     return (
       <Navigate
         to="/admin/login"

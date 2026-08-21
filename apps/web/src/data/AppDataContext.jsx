@@ -38,7 +38,7 @@ function normalizeSubmission(raw, problem) {
       : typeof sub.passed_count === "number"
       ? sub.passed_count
       : isAc
-      ? problem?.hiddenTestCases?.length || problem?.examples?.length || 2
+      ? problem?.examples?.length || 2
       : 0;
 
   const totalCases =
@@ -48,7 +48,7 @@ function normalizeSubmission(raw, problem) {
       ? sub.totalCount
       : typeof sub.total_cases === "number"
       ? sub.total_cases
-      : problem?.hiddenTestCases?.length || problem?.examples?.length || 2;
+      : problem?.examples?.length || 2;
 
   const testResults = Array.isArray(sub.testResults)
     ? sub.testResults
@@ -350,11 +350,9 @@ export function AppDataProvider({ children }) {
 
     // 1. POST to backend — may return QUEUED or already-evaluated result
     const response = await api.submitCode({
-      userId,
       problemId,
       language: language.toLowerCase(),
-      code,
-      stdin
+      code
     });
 
     if (!response) {

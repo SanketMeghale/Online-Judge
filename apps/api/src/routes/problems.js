@@ -12,7 +12,7 @@ const router = Router();
 
 function sanitizeProblemForClient(problem) {
   if (!problem) return null;
-  const { hiddenTestCases, judge, _id, __v, ...safeProblem } = problem;
+  const { hiddenTestCases, judge, solution, solutions, referenceSolution, createdBy, _id, __v, ...safeProblem } = problem;
   return safeProblem;
 }
 
@@ -22,9 +22,6 @@ router.get("/", optionalAuth, async (req, res) => {
 
     if (isDatabaseConnected()) {
       try {
-        for (const seed of seedProblems) {
-          await Problem.updateOne({ id: seed.id }, { $setOnInsert: seed }, { upsert: true }).catch(() => {});
-        }
         const fetched = await Problem.find().lean();
         if (fetched && fetched.length > 0) {
           dbProblems = fetched;

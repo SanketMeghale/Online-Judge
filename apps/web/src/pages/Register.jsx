@@ -144,13 +144,7 @@ export default function Register() {
       } else if (provider === "GitHub") {
         await loginGitHub();
       } else {
-        const demoTag = Math.floor(1000 + Math.random() * 9000);
-        await register({
-          name: `Coder ${provider}`,
-          username: `coder_${provider.toLowerCase()}_${demoTag}`,
-          email: `coder_${demoTag}@judgo.dev`,
-          password: "password123"
-        });
+        throw new Error("Unsupported identity provider.");
       }
       navigate("/dashboard", { replace: true });
     } catch (err) {
