@@ -27,7 +27,11 @@ describe("DockerService Hardened Security & Execution Unit Tests", () => {
     });
 
     expect(createdConfig).toBeDefined();
-    expect(createdConfig.User).toBe("10001:10001");
+    const hostUid = typeof process.getuid === "function" ? process.getuid() : 0;
+    const hostGid = typeof process.getgid === "function" ? process.getgid() : 0;
+    const expectedUid = hostUid === 0 ? 10001 : hostUid;
+    const expectedGid = hostGid === 0 ? 10001 : hostGid;
+    expect(createdConfig.User).toBe(`${expectedUid}:${expectedGid}`);
     expect(createdConfig.WorkingDir).toBe("/workspace");
     expect(createdConfig.Labels).toEqual({ "com.judgo.sandbox": "true" });
     expect(createdConfig.HostConfig.Init).toBe(true);
