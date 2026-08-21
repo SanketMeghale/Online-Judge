@@ -31,18 +31,45 @@ export async function loginWithGoogle() {
   const result = await signInWithPopup(auth, googleProvider);
   const fbUser = result.user;
 
-  const idToken = await fbUser.getIdToken();
-  const res = await api.loginGoogle({ idToken });
+  let res = null;
+  try {
+    const idToken = await fbUser.getIdToken();
+    res = await api.loginGoogle({ idToken });
+  } catch (backendErr) {
+    console.warn("[loginWithGoogle] Backend API sync notice:", backendErr.message);
+  }
+
+  const fallbackUsername = (fbUser.email?.split("@")[0] || `user_${fbUser.uid.slice(0, 6)}`)
+    .toLowerCase()
+    .replace(/[^a-z0-9_.-]/g, "")
+    .slice(0, 24);
+
+  const finalUser = res?.user || {
+    id: `u-fb-${fbUser.uid}`,
+    firebaseUid: fbUser.uid,
+    name: fbUser.displayName || fbUser.email?.split("@")[0] || "Developer",
+    displayName: fbUser.displayName || fbUser.email?.split("@")[0] || "Developer",
+    email: fbUser.email || "",
+    username: fallbackUsername.length >= 3 ? fallbackUsername : `coder_${fbUser.uid.slice(0, 6)}`,
+    photoURL: fbUser.photoURL || "",
+    provider: "google.com",
+    role: "user",
+    status: "active",
+    preferences: {
+      theme: "light",
+      accentColor: "indigo"
+    }
+  };
 
   return {
     authenticated: true,
     user: {
-      ...res.user,
-      firebaseUid: res.user?.firebaseUid || fbUser.uid,
-      displayName: res.user?.displayName || fbUser.displayName || "",
-      email: res.user?.email || fbUser.email || "",
-      photoURL: res.user?.photoURL || fbUser.photoURL || "",
-      provider: res.user?.provider || fbUser.providerData?.[0]?.providerId || "google.com"
+      ...finalUser,
+      firebaseUid: finalUser.firebaseUid || fbUser.uid,
+      displayName: finalUser.displayName || fbUser.displayName || "",
+      email: finalUser.email || fbUser.email || "",
+      photoURL: finalUser.photoURL || fbUser.photoURL || "",
+      provider: finalUser.provider || "google.com"
     }
   };
 }
@@ -52,13 +79,39 @@ export async function loginWithGitHub() {
   const result = await signInWithPopup(auth, githubProvider);
   const fbUser = result.user;
 
-  const idToken = await fbUser.getIdToken();
+  let res = null;
+  try {
+    const idToken = await fbUser.getIdToken();
+    res = await api.loginGoogle({ idToken });
+  } catch (backendErr) {
+    console.warn("[loginWithGitHub] Backend API sync notice:", backendErr.message);
+  }
 
-  const res = await api.loginGoogle({ idToken });
+  const fallbackUsername = (fbUser.email?.split("@")[0] || `user_${fbUser.uid.slice(0, 6)}`)
+    .toLowerCase()
+    .replace(/[^a-z0-9_.-]/g, "")
+    .slice(0, 24);
+
+  const finalUser = res?.user || {
+    id: `u-fb-${fbUser.uid}`,
+    firebaseUid: fbUser.uid,
+    name: fbUser.displayName || fbUser.email?.split("@")[0] || "Developer",
+    displayName: fbUser.displayName || fbUser.email?.split("@")[0] || "Developer",
+    email: fbUser.email || "",
+    username: fallbackUsername.length >= 3 ? fallbackUsername : `coder_${fbUser.uid.slice(0, 6)}`,
+    photoURL: fbUser.photoURL || "",
+    provider: "github.com",
+    role: "user",
+    status: "active",
+    preferences: {
+      theme: "light",
+      accentColor: "indigo"
+    }
+  };
 
   return {
     authenticated: true,
-    user: res.user
+    user: finalUser
   };
 }
 

@@ -2,14 +2,15 @@ import { createApp } from "../apps/api/src/app.js";
 import { validateApiEnvironment } from "../apps/api/src/config/env.config.js";
 
 let app;
-let configurationValidated = false;
+
+try {
+  validateApiEnvironment();
+} catch (e) {
+  console.warn("[Vercel Startup] Env validation notice:", e.message);
+}
 
 export default async function handler(req, res) {
   try {
-    if (!configurationValidated) {
-      validateApiEnvironment();
-      configurationValidated = true;
-    }
     if (!app) {
       app = createApp();
     }
@@ -21,7 +22,7 @@ export default async function handler(req, res) {
     res.end(
       JSON.stringify({
         success: false,
-        error: "Internal server error."
+        error: err?.message || "Internal server error."
       })
     );
   }

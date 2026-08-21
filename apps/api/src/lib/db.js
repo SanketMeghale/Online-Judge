@@ -63,6 +63,9 @@ export async function connectDatabase() {
 
   try {
     cached.conn = await cached.promise;
+    if (!cached.conn) {
+      cached.promise = null;
+    }
     return Boolean(mongoose.connection && mongoose.connection.readyState === 1);
   } catch (err) {
     cached.promise = null;

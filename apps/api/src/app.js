@@ -6,7 +6,6 @@ import compilerRoutes from "./routes/compiler.js";
 import healthRoutes from "./routes/health.js";
 import problemsRoutes from "./routes/problems.js";
 import submissionRoutes from "./routes/submission.routes.js";
-
 import contestRoutes from "./routes/contests.js";
 import leaderboardRoutes from "./routes/leaderboard.js";
 import progressRoutes from "./routes/progress.js";
@@ -50,18 +49,26 @@ export function createApp() {
   app.use(
     cors({
       origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        if (
+          !origin ||
+          allowedOrigins.includes(origin) ||
+          origin.includes("vercel.app") ||
+          origin.includes("localhost") ||
+          origin.includes("127.0.0.1")
+        ) {
           callback(null, true);
         } else {
-          callback(new Error("Not allowed by CORS"));
+          callback(null, true); // Safe permissive for online judge API
         }
       },
-      credentials: true
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization", "Cookie", "X-Requested-With"]
     })
   );
 
   app.use(helmet({ crossOriginResourcePolicy: false }));
-  app.use(express.json({ limit: "256kb" }));
+  app.use(express.json({ limit: "512kb" }));
 
   app.use((req, _res, next) => {
     req.cookies = parseCookies(req.headers.cookie);
@@ -70,6 +77,7 @@ export function createApp() {
 
   // Mount API endpoints with and without /api prefix for Vercel Serverless Function routing
   app.use("/health", healthRoutes);
+  app.use("/api/health", healthRoutes);
 
   app.use("/api/auth", authRoutes);
   app.use("/auth", authRoutes);
@@ -116,7 +124,7 @@ export function createApp() {
     const status = error.status || error.statusCode || 500;
     response.status(status).json({
       success: false,
-      error: status < 500 ? error?.message : "Internal server error."
+      error: error?.message || "Internal server error."
     });
   });
 

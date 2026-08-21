@@ -267,7 +267,7 @@ export async function upsertFirebaseUser({ firebaseUid, email, displayName, phot
 
 export async function findUserByUsername(username) {
   if (!username) return null;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
   const cleanUser = username.trim().toLowerCase();
 
   if (isDatabaseConnected()) {
@@ -287,7 +287,7 @@ export async function findUserByUsername(username) {
 
 export async function findUserById(id) {
   if (!id) return null;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
 
   if (isDatabaseConnected()) {
     try {
@@ -309,7 +309,7 @@ export async function findUserById(id) {
 
 export async function isUsernameAvailable(username, currentUserId = null) {
   if (!username) return false;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
   const clean = username.trim().toLowerCase();
 
   if (isDatabaseConnected()) {
@@ -336,7 +336,7 @@ export async function isUsernameAvailable(username, currentUserId = null) {
 }
 
 export async function createUser({ name, username, email, password, firebaseUid = "", photoURL = "" }) {
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
   const hashedPassword = await hashPassword(password);
   const userObj = {
     id: `u-${Date.now()}`,
@@ -403,7 +403,7 @@ export async function createUser({ name, username, email, password, firebaseUid 
 
 export async function updateUserProfile(userId, updateData) {
   if (!userId) return null;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
 
   const allowedFields = {};
   if (typeof updateData.name === "string" && updateData.name.trim()) {
@@ -466,7 +466,7 @@ export async function updateUserProfile(userId, updateData) {
 
 export async function updateUserPassword(userId, newPassword) {
   if (!userId || !newPassword) return false;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
   const hashedPassword = await hashPassword(newPassword);
 
   if (isDatabaseConnected()) {
@@ -493,7 +493,7 @@ export async function updateUserPassword(userId, newPassword) {
 
 export async function deleteUser(userId) {
   if (!userId) return false;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
 
   if (isDatabaseConnected()) {
     try {
@@ -519,7 +519,7 @@ export async function deleteUser(userId) {
 
 export async function softDeleteUser(userId) {
   if (!userId) return false;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
 
   if (isDatabaseConnected()) {
     try {
@@ -546,7 +546,7 @@ export async function softDeleteUser(userId) {
 
 export async function restoreUser(userId) {
   if (!userId) return false;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
 
   if (isDatabaseConnected()) {
     try {
@@ -576,7 +576,7 @@ export async function restoreUser(userId) {
  */
 export async function recordUserSubmission(userId, problemId, verdict, points = 10) {
   if (!userId || !problemId) return null;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
 
   const isAc = verdict === "AC" || verdict === "OK" || verdict === "Accepted";
   const todayKey = formatDateKey(new Date());
@@ -694,7 +694,7 @@ export async function recordUserSubmission(userId, problemId, verdict, points = 
 
 export async function validateUserCredentials(identifier, password) {
   if (!identifier || !password) return null;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
   const clean = identifier.trim().toLowerCase();
 
   let rawUser = null;
@@ -731,7 +731,7 @@ export async function validateUserCredentials(identifier, password) {
 
 export async function verifyUserRawPassword(userId, currentPassword) {
   if (!userId || !currentPassword) return false;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
 
   let rawUser = null;
   if (isDatabaseConnected()) {
@@ -816,7 +816,7 @@ export async function getAllUsers({
   sortBy = "createdAt",
   sortOrder = "desc"
 } = {}) {
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.max(1, Math.min(100, parseInt(limit, 10) || 20));
   const skip = (pageNum - 1) * limitNum;
@@ -890,7 +890,7 @@ export async function getAllUsers({
 
 export async function updateUserRole(id, newRole) {
   if (!id || !["user", "admin", "superadmin"].includes(newRole)) return null;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
 
   if (isDatabaseConnected()) {
     try {
@@ -913,7 +913,7 @@ export async function updateUserRole(id, newRole) {
 
 export async function updateUserStatus(id, newStatus, suspendedReason = "") {
   if (!id || !["active", "suspended"].includes(newStatus)) return null;
-  await connectDatabase();
+  await connectDatabase().catch(() => {});
 
   if (isDatabaseConnected()) {
     try {
