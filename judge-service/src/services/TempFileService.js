@@ -88,7 +88,9 @@ export class TempFileService {
 
   /**
    * Function 1: createTempDirectory()
-   * Security Choice 8: Generates a unique UUID v4 directory name under OS temp folder (mode 0o700)
+   * Security Choice 8: Generates a unique UUID v4 directory name under OS temp folder.
+   * The worker owns the directory and its sandbox group receives access; no
+   * ownership-changing Linux capability is required.
    * 
    * @returns {Promise<string>} Absolute path to created UUID temporary directory
    */
@@ -98,10 +100,8 @@ export class TempFileService {
     await fs.mkdir(tempRoot, { recursive: true, mode: 0o700 });
     const tempDirPath = path.join(tempRoot, `oj-sandbox-${uuid}`);
 
-    await fs.mkdir(tempDirPath, { recursive: true, mode: 0o700 });
-    if (process.platform !== "win32" && typeof process.getuid === "function" && process.getuid() === 0) {
-      await fs.chown(tempDirPath, 10001, 10001);
-    }
+    await fs.mkdir(tempDirPath, { recursive: true, mode: 0o770 });
+    if (process.platform !== "win32") await fs.chmod(tempDirPath, 0o770);
     return tempDirPath;
   }
 

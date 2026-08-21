@@ -24,6 +24,9 @@ describe("TempFileService Unit Tests", () => {
     expect(dir).toContain("oj-sandbox-");
     const stat = await fs.stat(dir);
     expect(stat.isDirectory()).toBe(true);
+    if (process.platform !== "win32") {
+      expect(stat.mode & 0o777).toBe(0o770);
+    }
   });
 
   test("2. Writes source code, input stdin, and expected output files safely", async () => {
