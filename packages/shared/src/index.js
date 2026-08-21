@@ -58,7 +58,7 @@ export const JUDGE_QUEUE = Object.freeze({
   queue: "judgo-execution",
   jobName: "judge-submission",
   workerHeartbeatKey: "judgo-execution:worker-heartbeat",
-  workerHeartbeatTtlMs: 30_000
+  workerHeartbeatTtlMs: 90_000
 });
 export const LANGUAGE_ALIASES = Object.freeze({
   js: "javascript",

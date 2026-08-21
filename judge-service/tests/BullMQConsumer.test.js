@@ -34,7 +34,7 @@ describe("BullMQ Consumer", () => {
       "judgo-execution:worker-heartbeat",
       expect.stringContaining('"workerId"'),
       "PX",
-      30_000
+      90_000
     );
     await consumer.worker.processor({
       id: "job-1",

@@ -15,7 +15,7 @@ export class QueueConsumer {
   async publishHeartbeat() {
     const workerId = process.env.WORKER_ID || `${process.env.HOSTNAME || "worker"}-${process.pid}`;
     const ttlMs = Math.max(
-      10_000,
+      30_000,
       Number(process.env.WORKER_HEARTBEAT_TTL_MS || JUDGE_QUEUE.workerHeartbeatTtlMs)
     );
     await this.connection.set(
@@ -30,7 +30,7 @@ export class QueueConsumer {
     await this.publishHeartbeat();
     const intervalMs = Math.max(
       1_000,
-      Number(process.env.WORKER_HEARTBEAT_INTERVAL_MS || 10_000)
+      Number(process.env.WORKER_HEARTBEAT_INTERVAL_MS || 30_000)
     );
     this.heartbeatTimer = setInterval(() => {
       void this.publishHeartbeat().catch((error) => {
