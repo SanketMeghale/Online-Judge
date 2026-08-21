@@ -4,6 +4,19 @@ const firebaseKeys = createRemoteJWKSet(
   new URL("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com")
 );
 
+// Firebase project IDs are public identifiers. This default mirrors the web
+// client's checked-in fallback and keeps serverless authentication operational
+// when only the browser-side Firebase variables were configured in Vercel.
+const DEFAULT_FIREBASE_PROJECT_ID = "judgo-d908b";
+
+export function getFirebaseProjectId() {
+  return (
+    process.env.FIREBASE_PROJECT_ID?.trim() ||
+    process.env.VITE_FIREBASE_PROJECT_ID?.trim() ||
+    DEFAULT_FIREBASE_PROJECT_ID
+  );
+}
+
 /**
  * Verifies and decodes a Firebase ID token.
  * Extracts standard Firebase token claims: uid, name, email, picture, etc.
@@ -17,8 +30,7 @@ export async function verifyFirebaseIdToken(idToken) {
   }
 
   try {
-    const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
-    if (!projectId) throw new Error("FIREBASE_PROJECT_ID is not configured.");
+    const projectId = getFirebaseProjectId();
 
     const { payload } = await jwtVerify(idToken, firebaseKeys, {
       algorithms: ["RS256"],

@@ -10,7 +10,7 @@ delete process.env.MONGODB_URI;
 
 const { createApp } = await import("../src/app.js");
 const { signToken, verifyToken } = await import("../src/lib/jwt.js");
-const { verifyFirebaseIdToken } = await import("../src/lib/firebaseAdmin.js");
+const { getFirebaseProjectId, verifyFirebaseIdToken } = await import("../src/lib/firebaseAdmin.js");
 const { validateUserCredentials } = await import("../src/lib/userStore.js");
 const { createSubmissionRecord } = await import("../src/lib/submissionStore.js");
 const { submissionService } = await import("../src/services/submission.service.js");
@@ -42,6 +42,20 @@ test("Firebase authentication rejects unsigned identity tokens", async () => {
   const encode = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
   const forged = `${encode({ alg: "none", typ: "JWT" })}.${encode({ sub: "attacker", email: "admin@example.com", email_verified: true })}.`;
   assert.equal(await verifyFirebaseIdToken(forged), null);
+});
+
+test("Firebase verification uses the deployed web project when server config is absent", () => {
+  const originalProjectId = process.env.FIREBASE_PROJECT_ID;
+  const originalViteProjectId = process.env.VITE_FIREBASE_PROJECT_ID;
+  delete process.env.FIREBASE_PROJECT_ID;
+  delete process.env.VITE_FIREBASE_PROJECT_ID;
+
+  assert.equal(getFirebaseProjectId(), "judgo-d908b");
+
+  if (originalProjectId === undefined) delete process.env.FIREBASE_PROJECT_ID;
+  else process.env.FIREBASE_PROJECT_ID = originalProjectId;
+  if (originalViteProjectId === undefined) delete process.env.VITE_FIREBASE_PROJECT_ID;
+  else process.env.VITE_FIREBASE_PROJECT_ID = originalViteProjectId;
 });
 
 test("known demo administrator credentials are disabled by default", async () => {

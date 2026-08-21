@@ -207,7 +207,12 @@ export async function upsertFirebaseUser({ firebaseUid, email, displayName, phot
       return sanitizeUser(created.toObject());
     } catch (e) {
       console.error("[UserStore] upsertFirebaseUser DB error:", e);
+      if (isProduction) throw e;
     }
+  }
+
+  if (isProduction) {
+    throw new Error("User database is unavailable.");
   }
 
   let user = memoryUsers.find((item) => item.firebaseUid === String(firebaseUid) || item.email?.toLowerCase() === cleanEmail);

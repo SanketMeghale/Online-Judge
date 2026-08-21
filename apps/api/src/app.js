@@ -15,7 +15,6 @@ import aiRoutes from "./routes/ai.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import evaluationRoutes from "./routes/evaluation.routes.js";
 import companyRoutes from "./routes/company.routes.js";
-import { validateApiEnvironment } from "./config/env.config.js";
 
 function parseCookies(cookieHeader = "") {
   const list = {};
@@ -36,7 +35,6 @@ function parseCookies(cookieHeader = "") {
 }
 
 export function createApp() {
-  validateApiEnvironment();
   const app = express();
   app.set("trust proxy", 1);
 

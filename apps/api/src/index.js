@@ -1,5 +1,6 @@
 import "dotenv/config"; // Load .env variables FIRST before any other import
 import { createApp } from "./app.js";
+import { validateApiEnvironment } from "./config/env.config.js";
 import { connectDatabase } from "./lib/db.js";
 
 const port = Number(process.env.PORT || 4000);
@@ -7,6 +8,7 @@ const app = createApp();
 
 async function startServer() {
   try {
+    validateApiEnvironment();
     const dbConnected = await connectDatabase();
     if (dbConnected) {
       console.log("[Server] MongoDB connected successfully.");
