@@ -36,6 +36,7 @@ describe("DockerService Hardened Security & Execution Unit Tests", () => {
     expect(createdConfig.Labels).toEqual({ "com.judgo.sandbox": "true" });
     expect(createdConfig.HostConfig.Init).toBe(true);
     expect(createdConfig.HostConfig.PidsLimit).toBe(32);
+    expect(createdConfig.HostConfig.Ulimits.map(({ Name }) => Name)).not.toContain("nproc");
     expect(createdConfig.HostConfig.NetworkMode).toBe("none");
     expect(createdConfig.HostConfig.ReadonlyRootfs).toBe(true);
     expect(createdConfig.HostConfig.SecurityOpt).toEqual(["no-new-privileges:true"]);

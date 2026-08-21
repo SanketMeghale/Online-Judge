@@ -6,7 +6,7 @@ import stream from "stream";
  * DockerService - Hardened Production Container Sandbox Service
  * 
  * Comprehensive Security Protections:
- * 1. Fork Bomb Protection (PidsLimit: 32 & nproc ulimit)
+ * 1. Fork Bomb Protection (container-scoped PidsLimit: 32)
  * 2. Infinite Loop Protection (CPU Quota & SIGKILL Hard Execution Timeout)
  * 3. Network Access Isolation (NetworkMode: "none")
  * 4. File System Protection (ReadonlyRootfs: true & Tmpfs noexec/nosuid)
@@ -135,9 +135,11 @@ export class DockerService {
           Config: { "max-size": "1m", "max-file": "1" }
         },
 
-        // Security Choice 1, 4, 6: Linux Resource Ulimits
+        // Security Choice 4 & 6: Linux Resource Ulimits. Do not set nproc here:
+        // RLIMIT_NPROC is counted per host UID and can prevent docker-init from
+        // starting on shared CI/production hosts. PidsLimit above is scoped to
+        // this container and provides the intended fork-bomb protection.
         Ulimits: [
-          { Name: "nproc", Soft: 32, Hard: 32 }, // Fork bomb protection
           { Name: "fsize", Soft: 10485760, Hard: 10485760 }, // 10MB max file size created
           { Name: "nofile", Soft: 64, Hard: 64 } // File descriptor limit
         ],
