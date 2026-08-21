@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronRight,
   Cpu,
+  GripVertical,
   History,
   Layers,
   Lightbulb,
@@ -85,6 +86,17 @@ function ProblemDetailsInner() {
   const [aiReview, setAiReview] = useState(null);
   const [isReviewLoading, setIsReviewLoading] = useState(false);
   const [scrollTrigger, setScrollTrigger] = useState(0);
+  const [problemPaneWidth, setProblemPaneWidth] = useState(() => {
+    try {
+      const savedWidth = Number(localStorage.getItem("judgo-problem-pane-width"));
+      return Number.isFinite(savedWidth) && savedWidth >= 32 && savedWidth <= 64 ? savedWidth : 46;
+    } catch {
+      return 46;
+    }
+  });
+  const [isPaneResizing, setIsPaneResizing] = useState(false);
+  const workspaceRef = useRef(null);
+  const problemPaneWidthRef = useRef(problemPaneWidth);
 
   const fetchAIHint = async (level = 1) => {
     setIsHintLoading(true);
@@ -131,6 +143,58 @@ function ProblemDetailsInner() {
   };
 
   const resultPanelRef = useRef(null);
+
+  function updateProblemPaneWidth(clientX) {
+    const workspace = workspaceRef.current;
+    if (!workspace) return;
+
+    const bounds = workspace.getBoundingClientRect();
+    if (!bounds.width) return;
+
+    const nextWidth = Math.min(64, Math.max(32, ((clientX - bounds.left) / bounds.width) * 100));
+    problemPaneWidthRef.current = nextWidth;
+    setProblemPaneWidth(nextWidth);
+  }
+
+  function startPaneResize(event) {
+    if (window.matchMedia("(max-width: 900px)").matches) return;
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    setIsPaneResizing(true);
+    updateProblemPaneWidth(event.clientX);
+  }
+
+  function movePaneResize(event) {
+    if (!isPaneResizing) return;
+    event.preventDefault();
+    updateProblemPaneWidth(event.clientX);
+  }
+
+  function finishPaneResize(event) {
+    if (!isPaneResizing) return;
+    try {
+      if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    } catch {}
+    setIsPaneResizing(false);
+    try {
+      localStorage.setItem("judgo-problem-pane-width", String(problemPaneWidthRef.current));
+    } catch {}
+  }
+
+  function resizePaneWithKeyboard(event) {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "Home") return;
+    event.preventDefault();
+    const nextWidth = event.key === "Home"
+      ? 46
+      : Math.min(64, Math.max(32, problemPaneWidthRef.current + (event.key === "ArrowLeft" ? -2 : 2)));
+    problemPaneWidthRef.current = nextWidth;
+    setProblemPaneWidth(nextWidth);
+    try {
+      localStorage.setItem("judgo-problem-pane-width", String(nextWidth));
+    } catch {}
+  }
 
   const userSubmissions = useMemo(() => {
     if (!problemId) return [];
@@ -376,10 +440,14 @@ function ProblemDetailsInner() {
       </nav>
 
       {/* Main 2-Column Grid Layout */}
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(380px, 0.95fr) minmax(520px, 1.05fr)", gap: "14px", width: "100%", alignItems: "start" }}>
+      <div
+        ref={workspaceRef}
+        className={`problem-workspace-split${isPaneResizing ? " is-resizing" : ""}`}
+        style={{ "--problem-pane-width": `${problemPaneWidth}%` }}
+      >
         
         {/* LEFT COLUMN: Problem Statement & Testcases List */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div className="problem-workspace-pane problem-workspace-pane-description" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           
           {/* Problem Statement Card */}
           <section
@@ -396,7 +464,7 @@ function ProblemDetailsInner() {
             }}
           >
             {/* Header Title Row */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div className="problem-title-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <span
                   className={`difficulty difficulty-${problemWithStatus.difficulty.toLowerCase()}`}
@@ -447,7 +515,7 @@ function ProblemDetailsInner() {
             </div>
 
             {/* Stats Table Grid Card */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", borderRadius: "10px", padding: "12px", textAlign: "center" }}>
+            <div className="problem-stats-grid" style={{ display: "grid", background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", borderRadius: "10px", padding: "12px", textAlign: "center" }}>
               <div>
                 <span style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#64748b", display: "block" }}>Time Limit</span>
                 <strong style={{ fontSize: "0.92rem", color: isLight ? "#0f172a" : "#eee" }}>2 sec</strong>
@@ -621,8 +689,36 @@ function ProblemDetailsInner() {
           </section>
         </div>
 
+        <div
+          className="problem-pane-resizer"
+          role="separator"
+          aria-label="Resize problem description and code editor"
+          aria-orientation="vertical"
+          aria-valuemin={32}
+          aria-valuemax={64}
+          aria-valuenow={Math.round(problemPaneWidth)}
+          tabIndex={0}
+          title="Drag to resize. Double-click or press Home to reset."
+          onPointerDown={startPaneResize}
+          onPointerMove={movePaneResize}
+          onPointerUp={finishPaneResize}
+          onPointerCancel={finishPaneResize}
+          onKeyDown={resizePaneWithKeyboard}
+          onDoubleClick={() => {
+            problemPaneWidthRef.current = 46;
+            setProblemPaneWidth(46);
+            try {
+              localStorage.setItem("judgo-problem-pane-width", "46");
+            } catch {}
+          }}
+        >
+          <span className="problem-pane-resizer-handle" aria-hidden="true">
+            <GripVertical size={16} />
+          </span>
+        </div>
+
         {/* RIGHT COLUMN: Code Editor & Console Results Panel */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div className="problem-workspace-pane problem-workspace-pane-editor" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           
           {/* Code Editor */}
           <CodeEditor
@@ -652,8 +748,8 @@ function ProblemDetailsInner() {
             }}
           >
             {/* Console Tab Bar */}
-            <div style={{ background: isLight ? "#f8fafc" : "#131826", borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 10px" }}>
-              <div style={{ display: "flex", gap: "2px" }}>
+            <div className="console-tab-bar" style={{ background: isLight ? "#f8fafc" : "#131826", borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 10px" }}>
+              <div className="console-tab-list" style={{ display: "flex", gap: "2px" }}>
                 <button
                   onClick={() => setActiveConsoleTab("testcase")}
                   type="button"
@@ -758,7 +854,7 @@ function ProblemDetailsInner() {
             </div>
 
             {/* Console Body Area */}
-            <div style={{ padding: "14px" }}>
+            <div className="console-results-body" style={{ padding: "14px" }}>
               {isRunning || isSubmitting || isProcessingResult ? (
                 <div style={{ padding: "2.5rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1rem", color: "#8b9bb4" }}>
                   <div className="spinner" style={{ width: 32, height: 32, border: "3px solid #333", borderTopColor: "#7850ff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
@@ -908,9 +1004,9 @@ function ProblemDetailsInner() {
                   </div>
 
                   {/* ── 3 DISTINCT PANELS: COMPILATION, EXECUTION, ALGORITHM ANALYSIS ── */}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+                  <div className="execution-summary-grid" style={{ display: "grid", gap: "10px" }}>
                     {/* PANEL 1: COMPILATION */}
-                    <div style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <div className="execution-summary-card" style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "6px" }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                           <Cpu size={15} style={{ color: "#818cf8" }} />
@@ -929,7 +1025,7 @@ function ProblemDetailsInner() {
                     </div>
 
                     {/* PANEL 2: EXECUTION METRICS */}
-                    <div style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <div className="execution-summary-card" style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "6px" }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                           <Zap size={15} style={{ color: "#38bdf8" }} />
@@ -958,7 +1054,7 @@ function ProblemDetailsInner() {
                     </div>
 
                     {/* PANEL 3: ALGORITHM COMPLEXITY ANALYSIS (AST) */}
-                    <div style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <div className="execution-summary-card" style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "6px" }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                           <Brain size={15} style={{ color: "#c084fc" }} />
@@ -981,7 +1077,7 @@ function ProblemDetailsInner() {
 
                   {/* Structural Complexity Explanation Bar */}
                   {result.complexity?.explanation && (
-                    <div style={{ background: isLight ? "rgba(99, 102, 241, 0.06)" : "rgba(120, 80, 255, 0.06)", border: isLight ? "1px solid rgba(99, 102, 241, 0.2)" : "1px solid rgba(120, 80, 255, 0.2)", borderRadius: "8px", padding: "10px 14px", fontSize: "0.82rem", color: isLight ? "#334155" : "#cbd5e1", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                    <div className="structural-analysis-bar" style={{ background: isLight ? "rgba(99, 102, 241, 0.06)" : "rgba(120, 80, 255, 0.06)", border: isLight ? "1px solid rgba(99, 102, 241, 0.2)" : "1px solid rgba(120, 80, 255, 0.2)", borderRadius: "8px", padding: "10px 14px", fontSize: "0.82rem", color: isLight ? "#334155" : "#cbd5e1", display: "flex", alignItems: "flex-start", gap: "8px" }}>
                       <Brain size={16} style={{ color: "#6366f1", flexShrink: 0, marginTop: "2px" }} />
                       <div>
                         <strong style={{ color: isLight ? "#4338ca" : "#a5b4fc" }}>Structural Code Analysis: </strong>
@@ -1010,7 +1106,7 @@ function ProblemDetailsInner() {
 
                   {/* 3-Column Input / Expected Output / Your Output Grid (Only shown when not CE) */}
                   {displayVerdict !== "CE" && (
-                    <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.9fr 0.9fr", gap: "10px" }}>
+                    <div className="result-io-grid" style={{ display: "grid", gap: "10px" }}>
                       <div style={{ background: isLight ? "#f8fafc" : "#080c14", padding: "10px", borderRadius: "8px", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)" }}>
                         <span style={{ fontSize: "0.75rem", color: isLight ? "#64748b" : "#64748b", fontWeight: "bold" }}>Input</span>
                         <pre style={{ margin: "4px 0 0 0", color: isLight ? "#334155" : "#cbd5e1", fontFamily: "monospace", fontSize: "0.82rem", whiteSpace: "pre-wrap" }}>
@@ -1041,8 +1137,8 @@ function ProblemDetailsInner() {
                   )}
 
                   {/* AI Hint Footer Banner */}
-                  <div style={{ background: isLight ? "rgba(99, 102, 241, 0.08)" : "rgba(120, 80, 255, 0.08)", border: isLight ? "1px solid rgba(99, 102, 241, 0.2)" : "1px solid rgba(120, 80, 255, 0.2)", borderRadius: "8px", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div className="ai-verification-banner" style={{ background: isLight ? "rgba(99, 102, 241, 0.08)" : "rgba(120, 80, 255, 0.08)", border: isLight ? "1px solid rgba(99, 102, 241, 0.2)" : "1px solid rgba(120, 80, 255, 0.2)", borderRadius: "8px", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div className="ai-verification-copy" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <Sparkles size={16} style={{ color: "#a855f7" }} />
                       <div>
                         <strong style={{ color: isLight ? "#7c3aed" : "#c084fc", fontSize: "0.82rem" }}>AI Verification & Explanation</strong>

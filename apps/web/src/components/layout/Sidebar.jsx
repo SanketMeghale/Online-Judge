@@ -35,7 +35,6 @@ const navSections = [
     category: "LEARNING",
     items: [
       { label: "Judgo Intelligence", to: "/ai-coach", icon: Bot, iconColor: "#7c3aed" },
-      { label: "Mock Interview", to: "/interviewer", icon: Sparkles, iconColor: "#0891b2" },
       { label: "Progress", to: "/stats", icon: TrendingUp, iconColor: "#059669" }
     ]
   },
