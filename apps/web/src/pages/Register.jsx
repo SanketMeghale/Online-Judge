@@ -256,7 +256,7 @@ export default function Register() {
         <div className="auth-field-row two-col">
           {/* Full Name */}
           <div className="auth-field-group">
-            <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>
+            <label className="auth-field-label">
               Full Name
             </label>
             <div
@@ -284,7 +284,7 @@ export default function Register() {
 
           {/* Username */}
           <div className="auth-field-group">
-            <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>
+            <label className="auth-field-label">
               Username
             </label>
             <div
@@ -318,7 +318,7 @@ export default function Register() {
 
         {/* Email */}
         <div className="auth-field-group">
-          <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>
+          <label className="auth-field-label">
             Email Address
           </label>
           <div
@@ -353,7 +353,7 @@ export default function Register() {
         <div className="auth-field-row two-col">
           {/* Password */}
           <div className="auth-field-group">
-            <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>
+            <label className="auth-field-label">
               Password
             </label>
             <div
@@ -391,7 +391,7 @@ export default function Register() {
 
           {/* Confirm Password */}
           <div className="auth-field-group">
-            <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>
+            <label className="auth-field-label">
               Confirm Password
             </label>
             <div

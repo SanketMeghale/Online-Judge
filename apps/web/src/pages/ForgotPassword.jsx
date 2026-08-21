@@ -101,7 +101,7 @@ export default function ForgotPassword() {
 
             <form className="auth-form-stack" onSubmit={handleSubmit}>
               <div className="auth-field-group">
-                <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>
+                <label className="auth-field-label">
                   Email Address
                 </label>
                 <div className={`auth-input-container ${focusedField ? "focused" : ""} ${error ? "error" : email && validateEmail(email) ? "valid" : ""}`}>

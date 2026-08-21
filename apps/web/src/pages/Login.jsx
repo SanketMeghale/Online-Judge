@@ -196,7 +196,7 @@ export default function Login() {
       <form className="auth-form-stack" onSubmit={handleSubmit} noValidate>
         {/* Email or Username */}
         <div className="auth-field-group">
-          <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>
+          <label className="auth-field-label">
             Email or Username
           </label>
           <div
@@ -225,7 +225,7 @@ export default function Login() {
         {/* Password */}
         <div className="auth-field-group">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>
+            <label className="auth-field-label">
               Password
             </label>
             <Link to="/forgot-password" className="auth-link">
