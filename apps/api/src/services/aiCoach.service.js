@@ -291,14 +291,22 @@ export async function reviewCode({ userId, code, language = "python", problemId 
 
   const systemPrompt = `You are a Senior Principal Code Reviewer and Algorithms Expert for Judgo Online Judge.
 Analyze the provided ${language} source code with rigorous technical precision.
-Evaluate:
-1. Correctness & Logical Flaws
-2. Time Complexity (Big-O)
-3. Space Complexity (Auxiliary & Total Big-O)
-4. Critical Edge Cases (Empty input, boundaries, duplicates, large inputs)
-5. Optimization Opportunities & Clean Code Style
 
-Format your review with clear Markdown headers and bullet points.`;
+STRUCTURE YOUR EVALUATION ACCORDING TO THESE SECTIONS:
+1. ⏱️ Time Complexity:
+   - State the worst-case, best-case, and average-case Big-O notation with mathematical rationale (e.g., $O(N)$ due to single pass hash map traversal).
+   - Account for any hidden costs in language built-ins (e.g., sorting $O(N \\log N)$, string concatenations $O(N)$, slicing).
+2. 💾 Space Complexity:
+   - Explicitly distinguish Auxiliary Memory vs. Total Memory in Big-O notation.
+   - Include recursion stack frame depth if recursive.
+3. 🔍 Correctness & Invariants:
+   - Identify any logical bugs, off-by-one errors, or incorrect state transitions.
+4. ⚠️ Critical Edge Cases:
+   - Evaluate behavior on: empty input, single element, duplicates, negative numbers, maximum bounds, and extreme values.
+5. 🚀 Clean Code & Optimization Recommendations:
+   - Provide concrete, concise idiomatic improvements.
+
+Format with crisp Markdown headers, mathematical notation ($O(...)$), and bullet points.`;
 
   const userPrompt = `Please review this ${language} solution${problem ? ` for problem '${problem.title}' (${problem.difficulty})` : ""}:
 \`\`\`${language}
@@ -312,7 +320,7 @@ ${code}
     reviewText = await aiProvider.generateCompletion({
       systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
-      temperature: 0.3
+      temperature: 0.2
     });
   } catch (e) {
     const local = new (await import("./aiProvider.service.js")).LocalMentorProvider();
@@ -928,11 +936,16 @@ Provide a strict, professional, and encouraging Bar Raiser code assessment:
   }
 
   // ACTION 4: CONVERSATIONAL ANSWER EVALUATION
-  const systemPrompt = `You are a Senior Bar Raiser Interviewer at ${companyKey} conducting a ${difficulty}-level interview on '${selectedProblem.title}'.
-Respond conversationally, thoughtfully, and constructively:
-- Validate valid candidate insights and correct misconceptions.
-- Probe candidate on time/space trade-offs.
-- Keep responses engaging, professional, and encouraging.`;
+  const systemPrompt = `You are a Senior Staff Software Engineer and Bar Raiser Interviewer at ${companyKey} conducting a ${difficulty}-level technical interview on '${selectedProblem.title}'.
+CRITICAL PERSONA RULES:
+1. Stay 100% in character as the ${companyKey} Interviewer throughout the dialogue. Never refer to yourself as a generic chatbot or mentor.
+2. If the candidate explains their approach, evaluate whether their proposed algorithm (e.g. Two Pointers, Hash Map, Heap, DP) achieves optimal time/space bounds for this problem.
+3. Probe their understanding by asking about:
+   - Big-O Time & Space complexity ($O(...)$)
+   - Corner/edge cases (e.g. empty collections, duplicates, negative numbers, extreme scale)
+   - Trade-offs between memory overhead and runtime latency
+4. When their approach is sound and constraints are clear, explicitly invite them to write out the implementation in the code editor.
+5. Be professional, direct, constructive, and articulate, matching ${companyKey}'s engineering bar.`;
 
   const messages = [
     ...history.map((h) => ({ role: h.role, content: h.content })),
@@ -944,16 +957,16 @@ Respond conversationally, thoughtfully, and constructively:
     reply = await aiProvider.generateCompletion({
       systemPrompt,
       messages,
-      temperature: 0.6
+      temperature: 0.4
     });
   } catch (e) {
     const lower = answer.toLowerCase();
     if (lower.includes("hint") || lower.includes("clue")) {
-      reply = `💡 **Interviewer Hint:**\nThink about how you can avoid redundant re-computation. If you maintain state using a **Hash Map** or **Min-Heap**, what is the amortized cost per element?`;
+      reply = `💡 **${companyKey} Interviewer Hint:**\nConsider the invariant in this problem. If we maintain state using a **Hash Map** or **Min-Heap**, what is the amortized cost per operation, and can we reduce our overall runtime from $O(N^2)$ to $O(N)$?`;
     } else if (lower.includes("approach") || lower.includes("hash") || lower.includes("pointer") || lower.includes("tree")) {
-      reply = `🎯 **Interviewer Feedback:**\nThat algorithmic decomposition makes a lot of sense. Walking through the boundary conditions first shows good rigor.\n\n**Next Step:** Let's transition to writing the code in the editor on your right. Feel free to implement it and click **Submit Solution** when ready!`;
+      reply = `🎯 **${companyKey} Bar Raiser Feedback:**\nThat algorithmic approach is on the right track! Using that structure allows us to avoid redundant passes.\n\n**Next Question:** Before writing code, what is your expected Time and Space complexity in Big-O notation, and how will your solution handle boundary inputs like an empty array or duplicates?\n\nWhenever you are ready, go ahead and implement your solution in the code editor!`;
     } else {
-      reply = `### 💬 Interviewer Response\n\nGood observation! How would your approach handle extreme edge cases, such as duplicate elements or an empty stream?`;
+      reply = `### 💬 ${companyKey} Interviewer Response\n\nGood observation! How would your design behave under extreme scale (e.g., $N = 10^5$ elements), and what is the exact auxiliary space overhead?`;
     }
   }
 

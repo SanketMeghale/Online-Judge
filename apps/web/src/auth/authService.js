@@ -91,7 +91,12 @@ export async function registerWithEmail({ name, username, email, password }) {
   assertEmail(email);
   assertPassword(password);
 
-  const res = await api.register({ name, username, email, password });
+  const res = await api.register({
+    name: name.trim(),
+    username: username.trim().toLowerCase(),
+    email: email.trim().toLowerCase(),
+    password
+  });
   return {
     accessToken: res.token || res.accessToken,
     user: res.user

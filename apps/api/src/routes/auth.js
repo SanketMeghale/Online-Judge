@@ -55,7 +55,7 @@ router.post("/register", authLimiter, async (request, response) => {
     }
 
     const cleanEmail = String(email).trim().toLowerCase();
-    const cleanUsername = String(username).trim();
+    const cleanUsername = String(username).trim().toLowerCase();
     const cleanName = String(name).trim();
 
     if (!EMAIL_REGEX.test(cleanEmail)) {

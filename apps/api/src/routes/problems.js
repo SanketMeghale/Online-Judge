@@ -10,6 +10,12 @@ import mongoose from "mongoose";
 
 const router = Router();
 
+function sanitizeProblemForClient(problem) {
+  if (!problem) return null;
+  const { hiddenTestCases, judge, _id, __v, ...safeProblem } = problem;
+  return safeProblem;
+}
+
 router.get("/", optionalAuth, async (req, res) => {
   try {
     let dbProblems = seedProblems;
@@ -34,7 +40,7 @@ router.get("/", optionalAuth, async (req, res) => {
       return res.json({
         success: true,
         problems: dbProblems.map((p) => ({
-          ...p,
+          ...sanitizeProblemForClient(p),
           status: "Unsolved",
           userStats: { solved: false, attempts: 0, lastVerdict: null }
         }))
@@ -100,7 +106,7 @@ router.get("/", optionalAuth, async (req, res) => {
       const status = isSolved ? "Solved" : isAttempted ? "Attempted" : "Unsolved";
 
       return {
-        ...p,
+        ...sanitizeProblemForClient(p),
         status,
         userStats: {
           solved: isSolved,
@@ -139,7 +145,7 @@ router.get("/:problemId", optionalAuth, async (req, res) => {
       return res.status(404).json({ success: false, error: "Problem not found." });
     }
 
-    res.json({ success: true, problem });
+    res.json({ success: true, problem: sanitizeProblemForClient(problem) });
   } catch (error) {
     res.status(500).json({ success: false, error: "Failed to fetch problem." });
   }

@@ -17,11 +17,11 @@ export const problems = [
       { input: "nums = [3, 2, 4], target = 6", output: "[1, 2]" }
     ],
     hiddenTestCases: [
-      { input: "nums = [2, 7, 11, 15], target = 9", output: "[0, 1]" },
-      { input: "nums = [3, 2, 4], target = 6", output: "[1, 2]" },
       { input: "nums = [3, 3], target = 6", output: "[0, 1]" },
-      { input: "nums = [-1, -8, 14, 7], target = 6", output: "[1, 2]" },
-      { input: "nums = [0, 4, 3, 0], target = 0", output: "[0, 3]" }
+      { input: "nums = [-1, -8, 14, 7], target = 6", output: "[0, 3]" },
+      { input: "nums = [0, 4, 3, 0], target = 0", output: "[0, 3]" },
+      { input: "nums = [1, 5, 8, 11, 14], target = 19", output: "[1, 4]" },
+      { input: "nums = [-3, 4, 3, 90], target = 0", output: "[0, 2]" }
     ],
     constraints: ["2 <= nums.length <= 10^4", "-10^9 <= nums[i] <= 10^9", "-10^9 <= target <= 10^9"],
     starterCode: {
@@ -49,10 +49,11 @@ export const problems = [
       { input: 's = "(]"', output: "false" }
     ],
     hiddenTestCases: [
-      { input: 's = "()[]{}"', output: "true" },
-      { input: 's = "(]"', output: "false" },
       { input: 's = "([{}])"', output: "true" },
-      { input: 's = "(((())"', output: "false" }
+      { input: 's = "(((())"', output: "false" },
+      { input: 's = "{[]}"', output: "true" },
+      { input: 's = "]"', output: "false" },
+      { input: 's = "(([]){})"', output: "true" }
     ],
     constraints: ["1 <= s.length <= 10^4", "s consists of parentheses only '()[]{}'"],
     starterCode: {
@@ -80,10 +81,11 @@ export const problems = [
       { input: "x = -121", output: "false" }
     ],
     hiddenTestCases: [
-      { input: "x = 121", output: "true" },
-      { input: "x = -121", output: "false" },
       { input: "x = 10", output: "false" },
-      { input: "x = 12321", output: "true" }
+      { input: "x = 12321", output: "true" },
+      { input: "x = 0", output: "true" },
+      { input: "x = 1000021", output: "false" },
+      { input: "x = 1234321", output: "true" }
     ],
     constraints: ["-2^31 <= x <= 2^31 - 1"],
     starterCode: {
@@ -111,8 +113,10 @@ export const problems = [
       { input: 's = ["H","a","n","n","a","h"]', output: '["h","a","n","n","a","H"]' }
     ],
     hiddenTestCases: [
-      { input: 's = ["h","e","l","l","o"]', output: '["o","l","l","e","h"]' },
-      { input: 's = ["H","a","n","n","a","h"]', output: '["h","a","n","n","a","H"]' }
+      { input: 's = ["a"]', output: '["a"]' },
+      { input: 's = ["A","b","C","d"]', output: '["d","C","b","A"]' },
+      { input: 's = ["1","2","3","4","5"]', output: '["5","4","3","2","1"]' },
+      { input: 's = ["R","a","c","e","c","a","r"]', output: '["r","a","c","e","c","a","R"]' }
     ],
     constraints: ["1 <= s.length <= 10^5"],
     starterCode: {

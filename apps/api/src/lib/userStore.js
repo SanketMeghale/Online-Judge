@@ -381,7 +381,7 @@ export async function createUser({ name, username, email, password, firebaseUid 
     id: `u-${Date.now()}`,
     name: name.trim(),
     displayName: name.trim(),
-    username: username.trim(),
+    username: username.trim().toLowerCase(),
     email: email.trim().toLowerCase(),
     firebaseUid: firebaseUid ? String(firebaseUid) : undefined,
     photoURL,

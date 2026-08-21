@@ -647,13 +647,13 @@ export default function MockInterviewStudio() {
       const lower = msg.toLowerCase();
 
       if (lower.includes("hint") || lower.includes("clue")) {
-        smartReply = `💡 **Interviewer Hint:**\nThink about how you can avoid redundant re-computation. If you maintain state using a **Hash Map** or **Min-Heap**, what is the amortized cost per element?`;
+        smartReply = `💡 **${selectedCompany} Interviewer Hint:**\nThink about how we can avoid redundant re-computation. If you maintain state using an auxiliary **Hash Map** or **Min-Heap**, what is the amortized cost per element, and can you reach optimal linear $O(N)$ time?`;
       } else if (lower.includes("approach") || lower.includes("hash") || lower.includes("pointer") || lower.includes("tree")) {
-        smartReply = `🎯 **Interviewer Feedback:**\nThat algorithmic decomposition makes a lot of sense. Walking through the boundary conditions first shows good rigor.\n\n**Next Step:** Let's transition to writing the code in the editor on your right. Feel free to implement it and click **Submit Solution** when ready!`;
+        smartReply = `🎯 **${selectedCompany} Bar Raiser Feedback:**\nThat algorithmic approach is on the right track! Decomposing the lookup into a single-pass structure avoids $O(N^2)$ brute force.\n\n**Interviewer Question:** What is your anticipated Time & Space complexity in Big-O notation, and how will your solution handle boundary edge cases like empty inputs or duplicates?\n\nWhenever you're ready, go ahead and implement your logic in the code editor on your right and click **Submit Solution**!`;
       } else if (lower.includes("constraint") || lower.includes("time") || lower.includes("space") || lower.includes("scale")) {
-        smartReply = `📋 **Constraint Clarification:**\n- Assume the input collection can contain up to $N = 10^5$ items.\n- Values fit in standard 64-bit integers.\n- Target Time Complexity: $O(N)$ or $O(N \\log N)$.\n- Target Space Complexity: $O(N)$ or $O(1)$ auxiliary space.`;
+        smartReply = `📋 **${selectedCompany} Constraint Clarification:**\n- Assume input length up to $N = 10^5$.\n- Values fit in standard 64-bit signed integers.\n- Target Time Complexity: $O(N)$ or $O(N \\log N)$.\n- Target Space Complexity: $O(N)$ or $O(1)$ auxiliary space.`;
       } else {
-        smartReply = `### 💬 Interviewer Response\n\nGood observation! How would your approach handle extreme edge cases, such as duplicate elements or an empty stream?`;
+        smartReply = `### 💬 ${selectedCompany} Lead Interviewer Response\n\nGood observation! How would your approach handle extreme boundary cases (e.g. large inputs, duplicate keys, or extreme values)?`;
       }
 
       setChatHistory([
