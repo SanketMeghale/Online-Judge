@@ -556,3 +556,79 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   6. LIGHT THEME OVERRIDES
+   ========================================================================== */
+[data-theme="light"] .dsa-tree-container {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .dsa-tree-header {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .dsa-tree-title {
+  color: #0f172a;
+}
+
+[data-theme="light"] .dsa-tree-subtitle {
+  color: #475569;
+}
+
+[data-theme="light"] .dsa-tree-info-tag {
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .dsa-central-node {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .dsa-ring-bg {
+  stroke: #e2e8f0;
+}
+
+[data-theme="light"] .dsa-central-pct {
+  color: #0f172a;
+}
+
+[data-theme="light"] .dsa-central-label {
+  color: #6366f1;
+}
+
+[data-theme="light"] .dsa-tier-header-pill {
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .dsa-compact-topic-node {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .dsa-compact-topic-node:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .dsa-compact-name {
+  color: #0f172a;
+}
+
+[data-theme="light"] .dsa-compact-bar-track {
+  background: #e2e8f0;
+}
+
+[data-theme="light"] .dsa-tree-legend {
+  border-top: 1px solid #e2e8f0;
+  color: #475569;
+}
+

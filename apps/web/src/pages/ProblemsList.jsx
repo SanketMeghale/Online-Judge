@@ -17,18 +17,20 @@ import {
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
+import { useTheme } from "../context/ThemeContext.jsx";
 
 const difficultyOrder = { Easy: 1, Medium: 2, Hard: 3 };
 
 const DIFF_META = {
-  Easy:   { bg: "rgba(16,185,129,0.1)",  text: "#34d399", border: "rgba(16,185,129,0.22)" },
-  Medium: { bg: "rgba(245,158,11,0.1)",  text: "#fbbf24", border: "rgba(245,158,11,0.22)" },
-  Hard:   { bg: "rgba(239,68,68,0.1)",   text: "#f87171", border: "rgba(239,68,68,0.22)" }
+  Easy:   { bg: "rgba(16,185,129,0.12)", text: "#10b981", border: "rgba(16,185,129,0.25)" },
+  Medium: { bg: "rgba(245,158,11,0.12)", text: "#f59e0b", border: "rgba(245,158,11,0.25)" },
+  Hard:   { bg: "rgba(239,68,68,0.12)",  text: "#ef4444", border: "rgba(239,68,68,0.25)" }
 };
 
 export default function ProblemsList() {
   const { user } = useAuth();
   const { getProblemsForUser, getSubmissionsForUser, syncBackendData } = useAppData();
+  const { isLight } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -116,26 +118,28 @@ export default function ProblemsList() {
               Practice Arena
             </span>
           </div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: "800", color: "#f8fafc", margin: 0, letterSpacing: "-0.02em" }}>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc", margin: 0, letterSpacing: "-0.02em" }}>
             Problems
           </h1>
         </div>
 
         {/* Inline stat chips */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-          <StatChip label="Total"     value={totalCount}     color="#818cf8" />
-          <StatChip label="Solved"    value={solvedCount}    color="#34d399" />
-          <StatChip label="Attempted" value={attemptedCount} color="#fbbf24" />
-          <StatChip label="Remaining" value={remainingCount} color="#64748b" />
+          <StatChip label="Total"     value={totalCount}     color="#818cf8" isLight={isLight} />
+          <StatChip label="Solved"    value={solvedCount}    color="#10b981" isLight={isLight} />
+          <StatChip label="Attempted" value={attemptedCount} color="#f59e0b" isLight={isLight} />
+          <StatChip label="Remaining" value={remainingCount} color={isLight ? "#64748b" : "#94a3b8"} isLight={isLight} />
 
           {/* Slim progress ring */}
           <div title={`${solvedPct}% solved`} style={{
             display: "flex", alignItems: "center", gap: "6px",
-            background: "#0d111a", border: "1px solid rgba(255,255,255,0.07)",
+            background: isLight ? "#ffffff" : "#0d111a",
+            border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)",
+            boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.04)" : "none",
             borderRadius: "8px", padding: "5px 10px"
           }}>
             <svg width="28" height="28" viewBox="0 0 28 28">
-              <circle cx="14" cy="14" r="11" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="2.5" />
+              <circle cx="14" cy="14" r="11" fill="none" stroke={isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.07)"} strokeWidth="2.5" />
               <circle cx="14" cy="14" r="11" fill="none" stroke="#6366f1" strokeWidth="2.5"
                 strokeDasharray={`${2*Math.PI*11}`}
                 strokeDashoffset={`${2*Math.PI*11 * (1 - solvedPct/100)}`}
@@ -144,71 +148,81 @@ export default function ProblemsList() {
                 style={{ transition: "stroke-dashoffset 0.6s ease" }}
               />
             </svg>
-            <span style={{ fontSize: "0.78rem", fontWeight: "700", color: "#a5b4fc" }}>{solvedPct}%</span>
+            <span style={{ fontSize: "0.78rem", fontWeight: "700", color: isLight ? "#4f46e5" : "#a5b4fc" }}>{solvedPct}%</span>
           </div>
         </div>
       </div>
 
       {/* ── DIFFICULTY BREAKDOWN BAR ────────────────────────────────────── */}
       <div style={{
-        background: "#0d111a", border: "1px solid rgba(255,255,255,0.06)",
+        background: isLight ? "#ffffff" : "#0d111a",
+        border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)",
+        boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none",
         borderRadius: "10px", padding: "10px 16px",
         display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap"
       }}>
-        <DiffBar label="Easy"   count={easyCount}   total={totalCount} color="#34d399" bg="rgba(16,185,129,0.12)" />
-        <div style={{ width: "1px", height: "28px", background: "rgba(255,255,255,0.07)" }} />
-        <DiffBar label="Medium" count={mediumCount} total={totalCount} color="#fbbf24" bg="rgba(245,158,11,0.12)" />
-        <div style={{ width: "1px", height: "28px", background: "rgba(255,255,255,0.07)" }} />
-        <DiffBar label="Hard"   count={hardCount}   total={totalCount} color="#f87171" bg="rgba(239,68,68,0.12)" />
+        <DiffBar label="Easy"   count={easyCount}   total={totalCount} color={isLight ? "#059669" : "#34d399"} bg={isLight ? "rgba(16,185,129,0.12)" : "rgba(16,185,129,0.12)"} isLight={isLight} />
+        <div style={{ width: "1px", height: "28px", background: isLight ? "#e2e8f0" : "rgba(255,255,255,0.07)" }} />
+        <DiffBar label="Medium" count={mediumCount} total={totalCount} color={isLight ? "#d97706" : "#fbbf24"} bg={isLight ? "rgba(245,158,11,0.12)" : "rgba(245,158,11,0.12)"} isLight={isLight} />
+        <div style={{ width: "1px", height: "28px", background: isLight ? "#e2e8f0" : "rgba(255,255,255,0.07)" }} />
+        <DiffBar label="Hard"   count={hardCount}   total={totalCount} color={isLight ? "#dc2626" : "#f87171"} bg={isLight ? "rgba(239,68,68,0.12)" : "rgba(239,68,68,0.12)"} isLight={isLight} />
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "6px" }}>
-          <span style={{ fontSize: "0.75rem", color: "#64748b" }}>Overall completion</span>
-          <div style={{ width: "120px", height: "5px", borderRadius: "99px", background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+          <span style={{ fontSize: "0.75rem", color: isLight ? "#64748b" : "#64748b" }}>Overall completion</span>
+          <div style={{ width: "120px", height: "5px", borderRadius: "99px", background: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.07)", overflow: "hidden" }}>
             <motion.div
               initial={{ width: 0 }} animate={{ width: `${solvedPct}%` }}
               transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
               style={{ height: "100%", background: "linear-gradient(90deg, #6366f1, #818cf8)", borderRadius: "99px" }}
             />
           </div>
-          <span style={{ fontSize: "0.75rem", fontWeight: "700", color: "#a5b4fc" }}>{solvedPct}%</span>
+          <span style={{ fontSize: "0.75rem", fontWeight: "700", color: isLight ? "#4f46e5" : "#a5b4fc" }}>{solvedPct}%</span>
         </div>
       </div>
 
       {/* ── FILTER ROW ──────────────────────────────────────────────────── */}
       <div style={{
-        background: "#0d111a", border: "1px solid rgba(255,255,255,0.07)",
+        background: isLight ? "#ffffff" : "#0d111a",
+        border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)",
+        boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none",
         borderRadius: "10px", padding: "8px 12px",
         display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap"
       }}>
         {/* Search */}
         <div style={{
           display: "flex", alignItems: "center", gap: "7px",
-          background: "#080c14", border: "1px solid rgba(255,255,255,0.09)",
+          background: isLight ? "#f8fafc" : "#080c14",
+          border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.09)",
           borderRadius: "7px", padding: "6px 11px",
           flex: "1 1 220px", minWidth: "180px"
         }}>
-          <Search size={14} style={{ color: "#64748b", flexShrink: 0 }} />
+          <Search size={14} style={{ color: isLight ? "#64748b" : "#64748b", flexShrink: 0 }} />
           <input
             type="text" value={query} onChange={e => setQuery(e.target.value)}
             placeholder="Search problems..."
-            style={{ background: "transparent", border: "none", outline: "none", color: "#f8fafc", fontSize: "0.83rem", width: "100%" }}
+            style={{ background: "transparent", border: "none", outline: "none", color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.83rem", width: "100%" }}
           />
           {query && (
-            <button onClick={() => setQuery("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b", display: "flex", padding: 0 }}>
+            <button onClick={() => setQuery("")} style={{ background: "none", border: "none", cursor: "pointer", color: isLight ? "#64748b" : "#64748b", display: "flex", padding: 0 }}>
               <X size={13} />
             </button>
           )}
         </div>
 
         {/* Difficulty tabs */}
-        <div style={{ display: "flex", gap: "2px", background: "#080c14", padding: "3px", borderRadius: "7px", border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div style={{
+          display: "flex", gap: "2px",
+          background: isLight ? "#f1f5f9" : "#080c14",
+          padding: "3px", borderRadius: "7px",
+          border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)"
+        }}>
           {["All", "Easy", "Medium", "Hard"].map(d => {
             const active = difficulty === d;
-            const col = d === "Easy" ? "#34d399" : d === "Medium" ? "#fbbf24" : d === "Hard" ? "#f87171" : "#818cf8";
+            const col = d === "Easy" ? (isLight ? "#059669" : "#34d399") : d === "Medium" ? (isLight ? "#d97706" : "#fbbf24") : d === "Hard" ? (isLight ? "#dc2626" : "#f87171") : (isLight ? "#4f46e5" : "#818cf8");
             return (
               <button key={d} onClick={() => setDifficulty(d)} style={{
-                background: active ? (d === "All" ? "rgba(99,102,241,0.16)" : `${DIFF_META[d]?.bg || "rgba(99,102,241,0.16)"}`) : "transparent",
-                border: active ? `1px solid ${d === "All" ? "rgba(99,102,241,0.35)" : DIFF_META[d]?.border || "rgba(99,102,241,0.35)"}` : "1px solid transparent",
-                color: active ? (d === "All" ? "#a5b4fc" : col) : "#64748b",
+                background: active ? (d === "All" ? (isLight ? "rgba(99,102,241,0.18)" : "rgba(99,102,241,0.16)") : `${DIFF_META[d]?.bg || "rgba(99,102,241,0.16)"}`) : "transparent",
+                border: active ? `1px solid ${d === "All" ? (isLight ? "rgba(99,102,241,0.35)" : "rgba(99,102,241,0.35)") : DIFF_META[d]?.border || "rgba(99,102,241,0.35)"}` : "1px solid transparent",
+                color: active ? (d === "All" ? (isLight ? "#4338ca" : "#a5b4fc") : col) : (isLight ? "#64748b" : "#64748b"),
                 padding: "4px 10px", borderRadius: "5px",
                 fontSize: "0.78rem", fontWeight: active ? "700" : "500",
                 cursor: "pointer", transition: "all 0.12s ease", lineHeight: 1
@@ -220,13 +234,13 @@ export default function ProblemsList() {
         </div>
 
         {/* Topic */}
-        <select value={topic} onChange={e => setTopic(e.target.value)} style={selectStyle}>
+        <select value={topic} onChange={e => setTopic(e.target.value)} style={getSelectStyle(isLight)}>
           <option value="All">All Topics</option>
           {topics.filter(t => t !== "All").map(t => <option key={t} value={t}>{t}</option>)}
         </select>
 
         {/* Status */}
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={selectStyle}>
+        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={getSelectStyle(isLight)}>
           <option value="All">All Status</option>
           <option value="Solved">✓ Solved</option>
           <option value="Attempted">○ Attempted</option>
@@ -234,7 +248,7 @@ export default function ProblemsList() {
         </select>
 
         {/* Sort */}
-        <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={selectStyle}>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={getSelectStyle(isLight)}>
           <option value="default">Sort: Default</option>
           <option value="difficulty">Difficulty ↑</option>
           <option value="acceptance">Acceptance ↓</option>
@@ -248,21 +262,23 @@ export default function ProblemsList() {
             display: "flex", alignItems: "center", gap: "4px",
             background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)",
             borderRadius: "7px", padding: "5px 10px",
-            color: "#f87171", fontSize: "0.78rem", fontWeight: "600", cursor: "pointer"
+            color: isLight ? "#dc2626" : "#f87171", fontSize: "0.78rem", fontWeight: "600", cursor: "pointer"
           }}>
             <X size={12} /> Clear
           </button>
         )}
 
         {/* Result count */}
-        <span style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#64748b", whiteSpace: "nowrap" }}>
+        <span style={{ marginLeft: "auto", fontSize: "0.75rem", color: isLight ? "#64748b" : "#64748b", whiteSpace: "nowrap" }}>
           {filteredProblems.length} / {totalCount} problems
         </span>
       </div>
 
       {/* ── PROBLEMS TABLE ──────────────────────────────────────────────── */}
       <div style={{
-        background: "#0d111a", border: "1px solid rgba(255,255,255,0.07)",
+        background: isLight ? "#ffffff" : "#0d111a",
+        border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)",
+        boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none",
         borderRadius: "12px", overflow: "hidden"
       }}>
         <div style={{ overflowX: "auto" }}>
@@ -278,9 +294,9 @@ export default function ProblemsList() {
             </colgroup>
             <thead>
               <tr style={{
-                background: "#080c14",
-                borderBottom: "1px solid rgba(255,255,255,0.07)",
-                color: "#475569", fontSize: "0.7rem",
+                background: isLight ? "#f8fafc" : "#080c14",
+                borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)",
+                color: isLight ? "#64748b" : "#475569", fontSize: "0.7rem",
                 textTransform: "uppercase", letterSpacing: "0.07em"
               }}>
                 <th style={thStyle}>#</th>
@@ -312,19 +328,19 @@ export default function ProblemsList() {
                       transition={{ duration: 0.15, delay: index * 0.012 }}
                       onClick={() => navigate(`/problems/${problem.id}`)}
                       style={{
-                        borderBottom: "1px solid rgba(255,255,255,0.04)",
+                        borderBottom: isLight ? "1px solid #f1f5f9" : "1px solid rgba(255,255,255,0.04)",
                         cursor: "pointer",
                         transition: "background 0.1s ease"
                       }}
                       onMouseEnter={e => {
-                        e.currentTarget.style.background = isSolved
-                          ? "rgba(16,185,129,0.04)"
-                          : "rgba(99,102,241,0.05)";
+                        e.currentTarget.style.background = isLight
+                          ? "rgba(0,0,0,0.02)"
+                          : (isSolved ? "rgba(16,185,129,0.04)" : "rgba(99,102,241,0.05)");
                       }}
                       onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                     >
                       {/* # */}
-                      <td style={{ ...tdStyle, color: "#334155", fontFamily: "monospace", fontSize: "0.75rem" }}>
+                      <td style={{ ...tdStyle, color: isLight ? "#94a3b8" : "#334155", fontFamily: "monospace", fontSize: "0.75rem" }}>
                         {isSolved
                           ? <CheckCircle2 size={14} style={{ color: "#10b981", display: "block", margin: "0 auto" }} />
                           : <span style={{ display: "block", textAlign: "center" }}>{String(index + 1).padStart(2, "0")}</span>
@@ -334,11 +350,11 @@ export default function ProblemsList() {
                       {/* Title */}
                       <td style={tdStyle}>
                         <div style={{ display: "flex", flexDirection: "column", gap: "1px" }}>
-                          <span style={{ color: "#e2e8f0", fontSize: "0.875rem", fontWeight: "600", lineHeight: 1.3 }}>
+                          <span style={{ color: isLight ? "#0f172a" : "#e2e8f0", fontSize: "0.875rem", fontWeight: "600", lineHeight: 1.3 }}>
                             {problem.title}
                           </span>
                           {problem.points && (
-                            <span style={{ fontSize: "0.72rem", color: "#475569" }}>
+                            <span style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#475569" }}>
                               {problem.points} pts
                             </span>
                           )}
@@ -360,9 +376,10 @@ export default function ProblemsList() {
                       {/* Topic */}
                       <td style={tdStyle}>
                         <span style={{
-                          background: "#080c14", border: "1px solid rgba(255,255,255,0.06)",
+                          background: isLight ? "#f1f5f9" : "#080c14",
+                          border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)",
                           padding: "2px 7px", borderRadius: "5px",
-                          fontSize: "0.73rem", color: "#64748b",
+                          fontSize: "0.73rem", color: isLight ? "#475569" : "#64748b",
                           overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                           display: "inline-block", maxWidth: "120px"
                         }}>
@@ -373,15 +390,15 @@ export default function ProblemsList() {
                       {/* Acceptance */}
                       <td style={{ ...tdStyle }}>
                         <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-                          <span style={{ fontSize: "0.8rem", fontWeight: "600", color: "#94a3b8" }}>
+                          <span style={{ fontSize: "0.8rem", fontWeight: "600", color: isLight ? "#334155" : "#94a3b8" }}>
                             {problem.acceptance != null ? `${problem.acceptance}%` : "—"}
                           </span>
                           {problem.acceptance != null && (
-                            <div style={{ width: "54px", height: "3px", background: "rgba(255,255,255,0.07)", borderRadius: "99px", overflow: "hidden" }}>
+                            <div style={{ width: "54px", height: "3px", background: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.07)", borderRadius: "99px", overflow: "hidden" }}>
                               <div style={{
                                 width: `${Math.min(problem.acceptance, 100)}%`,
                                 height: "100%",
-                                background: problem.acceptance >= 60 ? "#34d399" : problem.acceptance >= 40 ? "#fbbf24" : "#f87171",
+                                background: problem.acceptance >= 60 ? "#10b981" : problem.acceptance >= 40 ? "#f59e0b" : "#ef4444",
                                 borderRadius: "99px"
                               }} />
                             </div>
@@ -390,10 +407,10 @@ export default function ProblemsList() {
                       </td>
 
                       {/* Tries */}
-                      <td style={{ ...tdStyle, color: "#475569", fontSize: "0.8rem" }}>
+                      <td style={{ ...tdStyle, color: isLight ? "#64748b" : "#475569", fontSize: "0.8rem" }}>
                         {subCount > 0
-                          ? <span style={{ color: "#64748b" }}>{subCount}×</span>
-                          : <span style={{ color: "#2d3748" }}>—</span>
+                          ? <span style={{ color: isLight ? "#475569" : "#64748b" }}>{subCount}×</span>
+                          : <span style={{ color: isLight ? "#cbd5e1" : "#2d3748" }}>—</span>
                         }
                       </td>
 
@@ -408,7 +425,7 @@ export default function ProblemsList() {
                             <Timer size={13} /> Attempted
                           </span>
                         ) : (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: "#334155", fontSize: "0.75rem" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: isLight ? "#94a3b8" : "#334155", fontSize: "0.75rem" }}>
                             <Circle size={12} /> —
                           </span>
                         )}
@@ -425,18 +442,19 @@ export default function ProblemsList() {
         {!filteredProblems.length && (
           <div style={{ padding: "56px 24px", textAlign: "center" }}>
             <div style={{ fontSize: "2rem", marginBottom: "10px" }}>🔍</div>
-            <p style={{ fontSize: "0.94rem", fontWeight: "600", color: "#e2e8f0", margin: "0 0 4px 0" }}>
+            <p style={{ fontSize: "0.94rem", fontWeight: "600", color: isLight ? "#0f172a" : "#e2e8f0", margin: "0 0 4px 0" }}>
               No problems match your filters
             </p>
-            <span style={{ fontSize: "0.8rem", color: "#475569" }}>
+            <span style={{ fontSize: "0.8rem", color: isLight ? "#64748b" : "#475569" }}>
               Try adjusting search, difficulty, or topic.
             </span>
             <br />
             <button onClick={clearFilters} style={{
               marginTop: "14px",
-              background: "rgba(99,102,241,0.12)", border: "1px solid rgba(99,102,241,0.3)",
+              background: isLight ? "rgba(99,102,241,0.1)" : "rgba(99,102,241,0.12)",
+              border: isLight ? "1px solid rgba(99,102,241,0.25)" : "1px solid rgba(99,102,241,0.3)",
               borderRadius: "7px", padding: "6px 16px",
-              color: "#818cf8", fontSize: "0.8rem", fontWeight: "600", cursor: "pointer"
+              color: isLight ? "#4f46e5" : "#818cf8", fontSize: "0.8rem", fontWeight: "600", cursor: "pointer"
             }}>
               Clear filters
             </button>
@@ -446,14 +464,14 @@ export default function ProblemsList() {
         {/* Table footer */}
         {filteredProblems.length > 0 && (
           <div style={{
-            borderTop: "1px solid rgba(255,255,255,0.05)",
+            borderTop: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.05)",
             padding: "8px 16px",
             display: "flex", alignItems: "center", justifyContent: "space-between"
           }}>
-            <span style={{ fontSize: "0.73rem", color: "#334155" }}>
+            <span style={{ fontSize: "0.73rem", color: isLight ? "#64748b" : "#334155" }}>
               Showing {filteredProblems.length} of {totalCount} problems
             </span>
-            <span style={{ fontSize: "0.73rem", color: "#334155" }}>
+            <span style={{ fontSize: "0.73rem", color: isLight ? "#64748b" : "#334155" }}>
               {solvedCount} solved · {attemptedCount} attempted · {remainingCount} remaining
             </span>
           </div>
@@ -466,20 +484,22 @@ export default function ProblemsList() {
 
 /* ── small helpers ───────────────────────────────────────────────────── */
 
-function StatChip({ label, value, color }) {
+function StatChip({ label, value, color, isLight }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: "6px",
-      background: "#0d111a", border: "1px solid rgba(255,255,255,0.07)",
+      background: isLight ? "#ffffff" : "#0d111a",
+      border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)",
+      boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.04)" : "none",
       borderRadius: "8px", padding: "5px 10px"
     }}>
       <span style={{ fontSize: "0.88rem", fontWeight: "800", color }}>{value}</span>
-      <span style={{ fontSize: "0.7rem", color: "#475569", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</span>
+      <span style={{ fontSize: "0.7rem", color: isLight ? "#64748b" : "#94a3b8", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</span>
     </div>
   );
 }
 
-function DiffBar({ label, count, total, color, bg }) {
+function DiffBar({ label, count, total, color, bg, isLight }) {
   const pct = total ? Math.round((count / total) * 100) : 0;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -489,15 +509,15 @@ function DiffBar({ label, count, total, color, bg }) {
       }}>
         {label}
       </span>
-      <span style={{ fontSize: "0.88rem", fontWeight: "800", color }}>{count}</span>
-      <div style={{ width: "60px", height: "4px", background: "rgba(255,255,255,0.07)", borderRadius: "99px", overflow: "hidden" }}>
+      <span style={{ fontSize: "0.88rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc" }}>{count}</span>
+      <div style={{ width: "60px", height: "4px", background: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.07)", borderRadius: "99px", overflow: "hidden" }}>
         <motion.div
           initial={{ width: 0 }} animate={{ width: `${pct}%` }}
           transition={{ duration: 0.7, delay: 0.1, ease: "easeOut" }}
           style={{ height: "100%", background: color, borderRadius: "99px" }}
         />
       </div>
-      <span style={{ fontSize: "0.72rem", color: "#475569" }}>{pct}%</span>
+      <span style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#64748b" }}>{pct}%</span>
     </div>
   );
 }
@@ -513,13 +533,15 @@ const tdStyle = {
   verticalAlign: "middle"
 };
 
-const selectStyle = {
-  background: "#080c14",
-  border: "1px solid rgba(255,255,255,0.09)",
-  borderRadius: "7px",
-  padding: "5px 10px",
-  color: "#94a3b8",
-  fontSize: "0.8rem",
-  cursor: "pointer",
-  outline: "none"
-};
+function getSelectStyle(isLight) {
+  return {
+    background: isLight ? "#f8fafc" : "#080c14",
+    border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.09)",
+    borderRadius: "7px",
+    padding: "5px 10px",
+    color: isLight ? "#334155" : "#94a3b8",
+    fontSize: "0.8rem",
+    cursor: "pointer",
+    outline: "none"
+  };
+}

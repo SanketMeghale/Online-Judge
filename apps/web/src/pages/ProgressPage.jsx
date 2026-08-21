@@ -27,6 +27,7 @@ import {
 import { api } from "../api/apiClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
+import { useTheme } from "../context/ThemeContext.jsx";
 import DsaSkillTree from "../components/progress/DsaSkillTree.jsx";
 import LeetCodeActivityCalendar from "../components/progress/LeetCodeActivityCalendar.jsx";
 
@@ -43,6 +44,7 @@ export default function ProgressPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { getProblemsForUser, getSubmissionsForUser, getUserById } = useAppData();
+  const { isLight } = useTheme();
 
   const [timeRange, setTimeRange] = useState("30d");
   const [timelineFilter, setTimelineFilter] = useState("All"); // All | Accepted | Failed
@@ -224,28 +226,30 @@ export default function ProgressPage() {
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
             <Activity size={15} style={{ color: "#818cf8" }} />
-            <span style={{ fontSize: "0.7rem", fontWeight: "700", letterSpacing: "0.1em", textTransform: "uppercase", color: "#818cf8" }}>
+            <span style={{ fontSize: "0.7rem", fontWeight: "700", letterSpacing: "0.1em", textTransform: "uppercase", color: "#6366f1" }}>
               Analytics Workspace
             </span>
           </div>
-          <h1 style={{ fontSize: "1.55rem", fontWeight: "800", color: "#f8fafc", margin: 0, letterSpacing: "-0.02em" }}>
+          <h1 style={{ fontSize: "1.55rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc", margin: 0, letterSpacing: "-0.02em" }}>
             Progress &amp; Stats
           </h1>
-          <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: "2px 0 0 0" }}>
+          <p style={{ fontSize: "0.85rem", color: isLight ? "#475569" : "#94a3b8", margin: "2px 0 0 0" }}>
             Track your coding journey, analyze strengths, and discover what to practice next.
           </p>
         </div>
 
         {/* Range Selector */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <Calendar size={14} style={{ color: "#64748b" }} />
+          <Calendar size={14} style={{ color: isLight ? "#64748b" : "#64748b" }} />
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
             style={{
-              background: "#0d111a", border: "1px solid rgba(255, 255, 255, 0.1)",
+              background: isLight ? "#ffffff" : "#0d111a",
+              border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255, 255, 255, 0.1)",
+              boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.03)" : "none",
               borderRadius: "8px", padding: "6px 12px",
-              color: "#f8fafc", fontSize: "0.82rem", fontWeight: "600",
+              color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.82rem", fontWeight: "600",
               cursor: "pointer", outline: "none"
             }}
           >
@@ -263,7 +267,7 @@ export default function ProgressPage() {
             <AlertCircle size={18} />
             <span>{error}</span>
           </div>
-          <button onClick={loadProgressAnalytics} style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", borderRadius: "6px", padding: "5px 12px", fontSize: "0.78rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
+          <button onClick={loadProgressAnalytics} style={{ background: isLight ? "#ffffff" : "rgba(255,255,255,0.06)", border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)", color: isLight ? "#0f172a" : "#fff", borderRadius: "6px", padding: "5px 12px", fontSize: "0.78rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
             <RefreshCw size={12} /> Retry
           </button>
         </div>
@@ -273,32 +277,35 @@ export default function ProgressPage() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "12px" }}>
         {/* Card 1: Problems Solved */}
         <StatCard
-          icon={<CheckCircle2 size={18} style={{ color: "#34d399" }} />}
+          icon={<CheckCircle2 size={18} style={{ color: "#10b981" }} />}
           label="Problems Solved"
           value={loading ? "..." : overview.solvedCount ?? 0}
           subtext={overview.solvedDelta ? `${overview.solvedDelta} this period` : null}
-          subcolor="#34d399"
-          bg="rgba(16, 185, 129, 0.12)"
+          subcolor={isLight ? "#059669" : "#34d399"}
+          bg={isLight ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.12)"}
+          isLight={isLight}
         />
 
         {/* Card 2: Submissions & Breakdown */}
         <StatCard
-          icon={<Code2 size={18} style={{ color: "#818cf8" }} />}
+          icon={<Code2 size={18} style={{ color: "#6366f1" }} />}
           label="Submissions"
           value={loading ? "..." : overview.totalSubmissions ?? 0}
           subtext={`${overview.acceptedCount ?? 0} AC · ${overview.waCount ?? 0} WA`}
-          subcolor="#818cf8"
-          bg="rgba(99, 102, 241, 0.12)"
+          subcolor={isLight ? "#4f46e5" : "#818cf8"}
+          bg={isLight ? "rgba(99, 102, 241, 0.12)" : "rgba(99, 102, 241, 0.12)"}
+          isLight={isLight}
         />
 
         {/* Card 3: Acceptance Rate */}
         <StatCard
-          icon={<Target size={18} style={{ color: "#fbbf24" }} />}
+          icon={<Target size={18} style={{ color: "#f59e0b" }} />}
           label="Acceptance Rate"
           value={loading ? "..." : `${overview.acceptanceRate ?? 0}%`}
           subtext="Accuracy across period"
-          subcolor="#fbbf24"
-          bg="rgba(245, 158, 11, 0.12)"
+          subcolor={isLight ? "#d97706" : "#fbbf24"}
+          bg={isLight ? "rgba(245, 158, 11, 0.12)" : "rgba(245, 158, 11, 0.12)"}
+          isLight={isLight}
         />
 
         {/* Card 4: Streak */}
@@ -307,18 +314,20 @@ export default function ProgressPage() {
           label="Coding Streak"
           value={loading ? "..." : `${overview.currentStreak ?? 0} days`}
           subtext={`Best: ${overview.bestStreak ?? 0} consecutive days`}
-          subcolor="#f97316"
-          bg="rgba(249, 115, 22, 0.12)"
+          subcolor={isLight ? "#c2410c" : "#f97316"}
+          bg={isLight ? "rgba(249, 115, 22, 0.12)" : "rgba(249, 115, 22, 0.12)"}
+          isLight={isLight}
         />
 
         {/* Card 5: Contest Rating */}
         <StatCard
-          icon={<Trophy size={18} style={{ color: "#c084fc" }} />}
+          icon={<Trophy size={18} style={{ color: "#a855f7" }} />}
           label="Contest Rating"
           value={loading ? "..." : overview.contestRating ? `${overview.contestRating} pts` : "Not rated yet"}
           subtext="Global contest standing"
-          subcolor="#c084fc"
-          bg="rgba(168, 85, 247, 0.12)"
+          subcolor={isLight ? "#7c3aed" : "#c084fc"}
+          bg={isLight ? "rgba(168, 85, 247, 0.12)" : "rgba(168, 85, 247, 0.12)"}
+          isLight={isLight}
         />
       </div>
 
@@ -326,19 +335,24 @@ export default function ProgressPage() {
       <div style={{ display: "grid", gridTemplateColumns: "300px 1fr", gap: "14px", alignItems: "start" }}>
 
         {/* LEFT COLUMN: DIFFICULTY BREAKDOWN */}
-        <div style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "16px", display: "flex", flexDirection: "column", gap: "14px" }}>
+        <div style={{
+          background: isLight ? "#ffffff" : "#0d111a",
+          border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
+          boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none",
+          borderRadius: "12px", padding: "16px", display: "flex", flexDirection: "column", gap: "14px"
+        }}>
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <BarChart2 size={15} style={{ color: "#818cf8" }} />
-            <h3 style={{ fontSize: "0.9rem", fontWeight: "800", color: "#f8fafc", margin: 0 }}>Difficulty Breakdown</h3>
+            <BarChart2 size={15} style={{ color: "#6366f1" }} />
+            <h3 style={{ fontSize: "0.9rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc", margin: 0 }}>Difficulty Breakdown</h3>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            <DiffRow label="Easy" solved={diffs.Easy?.solved || 0} total={diffs.Easy?.total || 4} pct={diffs.Easy?.percentage || 0} color="#34d399" bg="rgba(16,185,129,0.12)" />
-            <DiffRow label="Medium" solved={diffs.Medium?.solved || 0} total={diffs.Medium?.total || 4} pct={diffs.Medium?.percentage || 0} color="#fbbf24" bg="rgba(245,158,11,0.12)" />
-            <DiffRow label="Hard" solved={diffs.Hard?.solved || 0} total={diffs.Hard?.total || 2} pct={diffs.Hard?.percentage || 0} color="#f87171" bg="rgba(239,68,68,0.12)" />
+            <DiffRow label="Easy" solved={diffs.Easy?.solved || 0} total={diffs.Easy?.total || 4} pct={diffs.Easy?.percentage || 0} color={isLight ? "#059669" : "#34d399"} bg={isLight ? "rgba(16,185,129,0.12)" : "rgba(16,185,129,0.12)"} isLight={isLight} />
+            <DiffRow label="Medium" solved={diffs.Medium?.solved || 0} total={diffs.Medium?.total || 4} pct={diffs.Medium?.percentage || 0} color={isLight ? "#d97706" : "#fbbf24"} bg={isLight ? "rgba(245,158,11,0.12)" : "rgba(245,158,11,0.12)"} isLight={isLight} />
+            <DiffRow label="Hard" solved={diffs.Hard?.solved || 0} total={diffs.Hard?.total || 2} pct={diffs.Hard?.percentage || 0} color={isLight ? "#dc2626" : "#f87171"} bg={isLight ? "rgba(239,68,68,0.12)" : "rgba(239,68,68,0.12)"} isLight={isLight} />
           </div>
 
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "10px", fontSize: "0.75rem", color: "#64748b" }}>
+          <div style={{ borderTop: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", paddingTop: "10px", fontSize: "0.75rem", color: isLight ? "#64748b" : "#64748b" }}>
             Solving harder problems increases your rating &amp; XP significantly faster.
           </div>
         </div>
@@ -363,10 +377,12 @@ export default function ProgressPage() {
 }
 
 /* ── HELPERS ───────────────────────────────────────────────────────── */
-function StatCard({ icon, label, value, subtext, subcolor, bg }) {
+function StatCard({ icon, label, value, subtext, subcolor, bg, isLight }) {
   return (
     <div style={{
-      background: "#0d111a", border: "1px solid rgba(255,255,255,0.08)",
+      background: isLight ? "#ffffff" : "#0d111a",
+      border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
+      boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none",
       borderRadius: "10px", padding: "14px 16px",
       display: "flex", alignItems: "center", gap: "12px"
     }}>
@@ -374,26 +390,26 @@ function StatCard({ icon, label, value, subtext, subcolor, bg }) {
         {icon}
       </div>
       <div>
-        <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</span>
-        <strong style={{ fontSize: "1.2rem", color: "#f8fafc", display: "block", lineHeight: 1.1 }}>{value}</strong>
+        <span style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#64748b", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.04em" }}>{label}</span>
+        <strong style={{ fontSize: "1.2rem", color: isLight ? "#0f172a" : "#f8fafc", display: "block", lineHeight: 1.1 }}>{value}</strong>
         {subtext && <span style={{ fontSize: "0.7rem", color: subcolor, fontWeight: "600" }}>{subtext}</span>}
       </div>
     </div>
   );
 }
 
-function DiffRow({ label, solved, total, pct, color, bg }) {
+function DiffRow({ label, solved, total, pct, color, bg, isLight }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.8rem" }}>
         <span style={{ color, fontWeight: "700", padding: "1px 7px", borderRadius: "4px", background: bg, fontSize: "0.72rem" }}>
           {label}
         </span>
-        <span style={{ color: "#cbd5e1", fontWeight: "600" }}>
-          {solved} / {total} <small style={{ color: "#64748b" }}>({pct}%)</small>
+        <span style={{ color: isLight ? "#334155" : "#cbd5e1", fontWeight: "600" }}>
+          {solved} / {total} <small style={{ color: isLight ? "#64748b" : "#64748b" }}>({pct}%)</small>
         </span>
       </div>
-      <div style={{ width: "100%", height: "4px", background: "rgba(255,255,255,0.06)", borderRadius: "99px", overflow: "hidden" }}>
+      <div style={{ width: "100%", height: "4px", background: isLight ? "rgba(0,0,0,0.06)" : "rgba(255,255,255,0.06)", borderRadius: "99px", overflow: "hidden" }}>
         <div style={{ width: `${Math.min(100, pct)}%`, height: "100%", background: color, borderRadius: "99px" }} />
       </div>
     </div>

@@ -792,3 +792,59 @@
 .company-ai-chat-input-row button:hover {
   background: #6d28d9;
 }
+
+/* ==========================================================================
+   LIGHT THEME OVERRIDES
+   ========================================================================== */
+[data-theme="light"] .company-sheets-container {
+  color: #0f172a;
+}
+
+[data-theme="light"] .company-sheets-hero {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .company-hero-title-group h1 {
+  background: none;
+  -webkit-text-fill-color: #0f172a;
+  color: #0f172a;
+}
+
+[data-theme="light"] .company-hero-title-group p {
+  color: #475569;
+}
+
+[data-theme="light"] .company-sheet-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .company-sheet-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .company-card-title h3 {
+  color: #0f172a;
+}
+
+[data-theme="light"] .company-card-title p {
+  color: #64748b;
+}
+
+[data-theme="light"] .company-detail-card,
+[data-theme="light"] .company-ai-assistant-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .company-ai-chat-input-row input {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+}
+

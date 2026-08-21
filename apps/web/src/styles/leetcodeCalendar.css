@@ -289,3 +289,85 @@
 .lc-legend-squares .lc-day-square:hover {
   transform: none;
 }
+
+/* ==========================================================================
+   5. LIGHT THEME OVERRIDES
+   ========================================================================== */
+[data-theme="light"] .lc-activity-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .lc-title {
+  color: #0f172a;
+}
+
+[data-theme="light"] .lc-active-pill {
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .lc-header-stats {
+  color: #64748b;
+}
+
+[data-theme="light"] .lc-stat-item strong {
+  color: #0f172a;
+}
+
+[data-theme="light"] .lc-stat-divider {
+  color: #e2e8f0;
+}
+
+[data-theme="light"] .lc-month-label,
+[data-theme="light"] .lc-day-label,
+[data-theme="light"] .lc-activity-footer,
+[data-theme="light"] .lc-footer-subtext,
+[data-theme="light"] .lc-legend-label {
+  color: #64748b;
+}
+
+[data-theme="light"] .lc-day-square.intensity-0 {
+  background: #ebedf0;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .lc-day-square.intensity-1 {
+  background: #9be9a8;
+  border: 1px solid #85e89d;
+}
+
+[data-theme="light"] .lc-day-square.intensity-2 {
+  background: #40c463;
+  border: 1px solid #34b356;
+}
+
+[data-theme="light"] .lc-day-square.intensity-3 {
+  background: #30a14e;
+  border: 1px solid #238636;
+}
+
+[data-theme="light"] .lc-day-square.intensity-4 {
+  background: #216e39;
+  border: 1px solid #196127;
+  box-shadow: 0 0 6px rgba(33, 110, 57, 0.35);
+}
+
+[data-theme="light"] .lc-day-square.is-today {
+  outline: 1.5px solid #0284c7;
+  outline-offset: 1px;
+}
+
+[data-theme="light"] .lc-day-tooltip {
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .lc-matrix-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+

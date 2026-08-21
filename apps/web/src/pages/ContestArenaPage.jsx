@@ -21,12 +21,14 @@ import { api } from "../api/apiClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import CodeEditor from "../components/editor/CodeEditor.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
+import { useTheme } from "../context/ThemeContext.jsx";
 
 export default function ContestArenaPage() {
   const { contestId, problemId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { runSolution, submitSolution } = useAppData();
+  const { isLight } = useTheme();
 
   const [contest, setContest] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -228,10 +230,10 @@ export default function ContestArenaPage() {
 
   if (error || !contest) {
     return (
-      <div style={{ maxWidth: "600px", margin: "60px auto", textAlign: "center", padding: "32px", background: "#0d111a", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px" }}>
+      <div style={{ maxWidth: "600px", margin: "60px auto", textAlign: "center", padding: "32px", background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none" }}>
         <XCircle size={36} style={{ color: "#ef4444", marginBottom: "12px" }} />
-        <h2 style={{ fontSize: "1.2rem", fontWeight: "800", color: "#f8fafc", margin: "0 0 8px 0" }}>{error || "Contest Arena Unavailable"}</h2>
-        <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "0 0 20px 0" }}>You cannot enter this contest arena at this time.</p>
+        <h2 style={{ fontSize: "1.2rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc", margin: "0 0 8px 0" }}>{error || "Contest Arena Unavailable"}</h2>
+        <p style={{ fontSize: "0.85rem", color: isLight ? "#64748b" : "#64748b", margin: "0 0 20px 0" }}>You cannot enter this contest arena at this time.</p>
         <Link to="/contests" style={{ background: "linear-gradient(135deg, #7c3aed, #4f46e5)", color: "#fff", padding: "8px 20px", borderRadius: "8px", textDecoration: "none", fontSize: "0.84rem", fontWeight: "700" }}>
           Back to Contests
         </Link>
@@ -244,7 +246,9 @@ export default function ContestArenaPage() {
 
       {/* ── ARENA TOP HEADER BAR ─────────────────────────────────────── */}
       <header style={{
-        background: "#0d111a", border: "1px solid rgba(255, 255, 255, 0.08)",
+        background: isLight ? "#ffffff" : "#0d111a",
+        border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
+        boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none",
         borderRadius: "10px", padding: "10px 16px",
         display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px"
       }}>
@@ -253,7 +257,7 @@ export default function ContestArenaPage() {
           <button
             onClick={() => navigate("/contests")}
             type="button"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "6px", color: "#94a3b8", padding: "5px 10px", fontSize: "0.78rem", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}
+            style={{ background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)", border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.08)", borderRadius: "6px", color: isLight ? "#475569" : "#94a3b8", padding: "5px 10px", fontSize: "0.78rem", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}
           >
             <ArrowLeft size={14} /> Exit
           </button>
@@ -262,38 +266,39 @@ export default function ContestArenaPage() {
               <span style={{ fontSize: "0.65rem", background: "rgba(239, 68, 68, 0.15)", color: "#ef4444", padding: "1px 6px", borderRadius: "4px", fontWeight: "800", display: "flex", alignItems: "center", gap: "3px" }}>
                 <Radio size={10} /> ARENA
               </span>
-              <span style={{ fontSize: "0.72rem", color: "#64748b" }}>{contest.organizer}</span>
+              <span style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#64748b" }}>{contest.organizer}</span>
             </div>
-            <strong style={{ fontSize: "1rem", color: "#f8fafc", lineHeight: "1.2" }}>{contest.title}</strong>
+            <strong style={{ fontSize: "1rem", color: isLight ? "#0f172a" : "#f8fafc", lineHeight: "1.2" }}>{contest.title}</strong>
           </div>
         </div>
 
         {/* Center: Live Timer Clock */}
         <div style={{
-          background: "#080c14", border: isEnded ? "1px solid rgba(239, 68, 68, 0.4)" : "1px solid rgba(255, 255, 255, 0.1)",
+          background: isLight ? "#f8fafc" : "#080c14",
+          border: isEnded ? "1px solid rgba(239, 68, 68, 0.4)" : (isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.1)"),
           borderRadius: "8px", padding: "6px 14px",
           display: "flex", alignItems: "center", gap: "8px"
         }}>
-          <Clock size={16} style={{ color: isEnded ? "#ef4444" : "#fbbf24" }} />
-          <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: "700", textTransform: "uppercase" }}>
+          <Clock size={16} style={{ color: isEnded ? "#ef4444" : (isLight ? "#d97706" : "#fbbf24") }} />
+          <span style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#64748b", fontWeight: "700", textTransform: "uppercase" }}>
             {isEnded ? "Ended" : "Time Left"}
           </span>
-          <span style={{ fontFamily: "ui-monospace, monospace", fontSize: "1.05rem", fontWeight: "800", color: isEnded ? "#ef4444" : "#f8fafc" }}>
+          <span style={{ fontFamily: "ui-monospace, monospace", fontSize: "1.05rem", fontWeight: "800", color: isEnded ? "#ef4444" : (isLight ? "#0f172a" : "#f8fafc") }}>
             {formatTime(remainingSeconds)}
           </span>
         </div>
 
         {/* Right: Score Widget */}
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{ background: "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.25)", borderRadius: "8px", padding: "5px 12px", display: "flex", alignItems: "center", gap: "6px" }}>
-            <Trophy size={15} style={{ color: "#34d399" }} />
-            <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: "600" }}>Score</span>
-            <strong style={{ fontSize: "0.95rem", color: "#34d399" }}>{score} pts</strong>
+          <div style={{ background: isLight ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.1)", border: "1px solid rgba(16, 185, 129, 0.25)", borderRadius: "8px", padding: "5px 12px", display: "flex", alignItems: "center", gap: "6px" }}>
+            <Trophy size={15} style={{ color: isLight ? "#059669" : "#34d399" }} />
+            <span style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#64748b", fontWeight: "600" }}>Score</span>
+            <strong style={{ fontSize: "0.95rem", color: isLight ? "#059669" : "#34d399" }}>{score} pts</strong>
           </div>
 
           <Link
             to={`/contests/${contest.id}/leaderboard`}
-            style={{ background: "rgba(99, 102, 241, 0.15)", border: "1px solid rgba(99, 102, 241, 0.3)", borderRadius: "8px", color: "#818cf8", padding: "6px 12px", fontSize: "0.76rem", fontWeight: "700", textDecoration: "none" }}
+            style={{ background: isLight ? "rgba(99, 102, 241, 0.12)" : "rgba(99, 102, 241, 0.15)", border: isLight ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid rgba(99, 102, 241, 0.3)", borderRadius: "8px", color: isLight ? "#4f46e5" : "#818cf8", padding: "6px 12px", fontSize: "0.76rem", fontWeight: "700", textDecoration: "none" }}
           >
             Live Standings
           </Link>
@@ -301,8 +306,8 @@ export default function ContestArenaPage() {
       </header>
 
       {/* ── PROBLEM SWITCHER TABS ───────────────────────────────────── */}
-      <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "#0d111a", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "8px", padding: "4px 8px" }}>
-        <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: "700", textTransform: "uppercase", paddingRight: "6px" }}>Problems:</span>
+      <div style={{ display: "flex", alignItems: "center", gap: "6px", background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)", boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.03)" : "none", borderRadius: "8px", padding: "4px 8px" }}>
+        <span style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#64748b", fontWeight: "700", textTransform: "uppercase", paddingRight: "6px" }}>Problems:</span>
         {(contest.problems || []).map((p, idx) => {
           const isActive = idx === activeProblemIndex;
           const isSolved = solvedProblemIds.has(p.id);
@@ -314,9 +319,9 @@ export default function ContestArenaPage() {
               onClick={() => setActiveProblemIndex(idx)}
               type="button"
               style={{
-                background: isActive ? "rgba(99, 102, 241, 0.2)" : isSolved ? "rgba(16, 185, 129, 0.15)" : "transparent",
-                border: isActive ? "1px solid rgba(99, 102, 241, 0.4)" : isSolved ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid transparent",
-                color: isActive ? "#ffffff" : isSolved ? "#34d399" : "#94a3b8",
+                background: isActive ? (isLight ? "rgba(99, 102, 241, 0.16)" : "rgba(99, 102, 241, 0.2)") : isSolved ? (isLight ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.15)") : "transparent",
+                border: isActive ? (isLight ? "1px solid rgba(99, 102, 241, 0.4)" : "1px solid rgba(99, 102, 241, 0.4)") : isSolved ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid transparent",
+                color: isActive ? (isLight ? "#4338ca" : "#ffffff") : isSolved ? (isLight ? "#059669" : "#34d399") : (isLight ? "#64748b" : "#94a3b8"),
                 borderRadius: "6px", padding: "5px 12px",
                 fontSize: "0.78rem", fontWeight: isActive ? "700" : "500",
                 cursor: "pointer", display: "flex", alignItems: "center", gap: "5px",
@@ -324,8 +329,8 @@ export default function ContestArenaPage() {
               }}
             >
               <span>{letter}. {p.name}</span>
-              {isSolved && <CheckCircle2 size={13} style={{ color: "#34d399" }} />}
-              <span style={{ fontSize: "0.68rem", opacity: 0.8, color: p.diff === "Easy" ? "#34d399" : p.diff === "Medium" ? "#fbbf24" : "#f87171" }}>
+              {isSolved && <CheckCircle2 size={13} style={{ color: isLight ? "#059669" : "#34d399" }} />}
+              <span style={{ fontSize: "0.68rem", opacity: 0.8, color: p.diff === "Easy" ? (isLight ? "#059669" : "#34d399") : p.diff === "Medium" ? (isLight ? "#d97706" : "#fbbf24") : "#f87171" }}>
                 ({p.points}pts)
               </span>
             </button>
@@ -337,27 +342,27 @@ export default function ContestArenaPage() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", flex: 1, minHeight: "500px" }}>
 
         {/* LEFT COLUMN: PROBLEM STATEMENT & DETAILS */}
-        <div style={{ background: "#0d111a", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "10px", padding: "18px", display: "flex", flexDirection: "column", gap: "14px", overflowY: "auto" }}>
+        <div style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)", boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none", borderRadius: "10px", padding: "18px", display: "flex", flexDirection: "column", gap: "14px", overflowY: "auto" }}>
           {currentProblem ? (
             <>
               <div>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-                  <span style={{ fontSize: "0.72rem", fontWeight: "700", padding: "2px 8px", borderRadius: "4px", background: currentProblem.diff === "Easy" ? "rgba(16, 185, 129, 0.15)" : currentProblem.diff === "Medium" ? "rgba(245, 158, 11, 0.15)" : "rgba(239, 68, 68, 0.15)", color: currentProblem.diff === "Easy" ? "#34d399" : currentProblem.diff === "Medium" ? "#fbbf24" : "#f87171" }}>
+                  <span style={{ fontSize: "0.72rem", fontWeight: "700", padding: "2px 8px", borderRadius: "4px", background: currentProblem.diff === "Easy" ? "rgba(16, 185, 129, 0.15)" : currentProblem.diff === "Medium" ? "rgba(245, 158, 11, 0.15)" : "rgba(239, 68, 68, 0.15)", color: currentProblem.diff === "Easy" ? (isLight ? "#059669" : "#34d399") : currentProblem.diff === "Medium" ? (isLight ? "#d97706" : "#fbbf24") : "#f87171" }}>
                     {currentProblem.diff}
                   </span>
-                  <span style={{ fontSize: "0.72rem", color: "#818cf8", fontWeight: "700" }}>{currentProblem.points} Points</span>
+                  <span style={{ fontSize: "0.72rem", color: isLight ? "#4f46e5" : "#818cf8", fontWeight: "700" }}>{currentProblem.points} Points</span>
                 </div>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: "800", color: "#f8fafc", margin: 0 }}>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc", margin: 0 }}>
                   {currentProblem.name}
                 </h2>
               </div>
 
-              <div style={{ fontSize: "0.88rem", color: "#cbd5e1", lineHeight: "1.6" }}>
+              <div style={{ fontSize: "0.88rem", color: isLight ? "#334155" : "#cbd5e1", lineHeight: "1.6" }}>
                 <p style={{ margin: "0 0 12px 0" }}>{currentProblem.statement}</p>
               </div>
 
               {/* Contest Rules Banner */}
-              <div style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "10px 12px", fontSize: "0.76rem", color: "#94a3b8" }}>
+              <div style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "10px 12px", fontSize: "0.76rem", color: isLight ? "#64748b" : "#94a3b8" }}>
                 <strong>Contest Rule:</strong> Submissions are evaluated against hidden test cases. 5-minute penalty per wrong answer.
               </div>
             </>
@@ -369,17 +374,17 @@ export default function ContestArenaPage() {
         {/* RIGHT COLUMN: CODE EDITOR & CONSOLE WORKSPACE */}
         <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
           {/* Editor Header Bar */}
-          <div style={{ background: "#0d111a", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "10px 10px 0 0", padding: "8px 12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "10px 10px 0 0", padding: "8px 12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <Code2 size={16} style={{ color: "#818cf8" }} />
-              <span style={{ fontSize: "0.8rem", fontWeight: "700", color: "#f8fafc" }}>Code Workspace</span>
+              <span style={{ fontSize: "0.8rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc" }}>Code Workspace</span>
             </div>
 
             {/* Language Selector */}
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              style={{ background: "#080c14", border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: "6px", padding: "4px 8px", color: "#cbd5e1", fontSize: "0.78rem", cursor: "pointer", outline: "none" }}
+              style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255, 255, 255, 0.1)", borderRadius: "6px", padding: "4px 8px", color: isLight ? "#0f172a" : "#cbd5e1", fontSize: "0.78rem", cursor: "pointer", outline: "none" }}
             >
               <option value="Python">Python 3</option>
               <option value="JavaScript">JavaScript</option>
@@ -389,7 +394,7 @@ export default function ContestArenaPage() {
           </div>
 
           {/* Editor Body */}
-          <div style={{ border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "0 0 10px 10px", overflow: "hidden", minHeight: "340px", flex: 1 }}>
+          <div style={{ border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "0 0 10px 10px", overflow: "hidden", minHeight: "340px", flex: 1 }}>
             <CodeEditor
               value={code}
               onChange={setCode}
@@ -400,21 +405,21 @@ export default function ContestArenaPage() {
 
           {/* Console / Output Panel */}
           {testResult && (
-            <div style={{ background: "#0d111a", border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "8px", padding: "12px" }}>
+            <div style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "8px", padding: "12px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
                 {testResult.verdict === "AC" || testResult.verdict === "OK" ? (
                   <CheckCircle2 size={16} style={{ color: "#34d399" }} />
                 ) : (
                   <XCircle size={16} style={{ color: "#ef4444" }} />
                 )}
-                <strong style={{ fontSize: "0.85rem", color: testResult.verdict === "AC" || testResult.verdict === "OK" ? "#34d399" : "#ef4444" }}>
+                <strong style={{ fontSize: "0.85rem", color: testResult.verdict === "AC" || testResult.verdict === "OK" ? (isLight ? "#059669" : "#34d399") : "#ef4444" }}>
                   {testResult.statusText}
                 </strong>
-                <span style={{ fontSize: "0.72rem", color: "#64748b", marginLeft: "auto" }}>
+                <span style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#64748b", marginLeft: "auto" }}>
                   Runtime: {testResult.runtime} | Memory: {testResult.memory}
                 </span>
               </div>
-              <pre style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "6px", padding: "8px 10px", fontSize: "0.78rem", color: "#cbd5e1", margin: 0, fontFamily: "monospace" }}>
+              <pre style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.05)", borderRadius: "6px", padding: "8px 10px", fontSize: "0.78rem", color: isLight ? "#0f172a" : "#cbd5e1", margin: 0, fontFamily: "monospace" }}>
                 {testResult.output}
               </pre>
             </div>
@@ -422,7 +427,7 @@ export default function ContestArenaPage() {
 
           {/* Bottom Action Footer Bar */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
-            <span style={{ fontSize: "0.75rem", color: "#64748b" }}>
+            <span style={{ fontSize: "0.75rem", color: isLight ? "#64748b" : "#64748b" }}>
               {isEnded ? "⚠️ Contest ended. Submissions disabled." : "Press Submit to evaluate against contest testcases."}
             </span>
 
@@ -431,7 +436,7 @@ export default function ContestArenaPage() {
                 onClick={handleRunCode}
                 disabled={isRunning}
                 type="button"
-                style={{ background: "rgba(255, 255, 255, 0.06)", border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: "6px", color: "#e2e8f0", padding: "7px 14px", fontSize: "0.78rem", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" }}
+                style={{ background: isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.06)", border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255, 255, 255, 0.1)", borderRadius: "6px", color: isLight ? "#0f172a" : "#e2e8f0", padding: "7px 14px", fontSize: "0.78rem", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" }}
               >
                 <Play size={13} /> {isRunning ? "Running..." : "Run Code"}
               </button>
@@ -440,7 +445,7 @@ export default function ContestArenaPage() {
                 onClick={handleSubmit}
                 disabled={isSubmitting || isEnded}
                 type="button"
-                style={{ background: isEnded ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "#ffffff", border: "none", borderRadius: "6px", padding: "7px 18px", fontSize: "0.78rem", fontWeight: "700", cursor: isEnded ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "5px" }}
+                style={{ background: isEnded ? (isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)") : "linear-gradient(135deg, #10b981 0%, #059669 100%)", color: "#ffffff", border: "none", borderRadius: "6px", padding: "7px 18px", fontSize: "0.78rem", fontWeight: "700", cursor: isEnded ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "5px" }}
               >
                 {isEnded ? <Lock size={13} /> : <Send size={13} />}
                 <span>{isSubmitting ? "Submitting..." : isEnded ? "Submissions Closed" : "Submit Solution"}</span>

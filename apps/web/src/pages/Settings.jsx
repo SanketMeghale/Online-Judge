@@ -1030,32 +1030,32 @@ export default function Settings() {
                 )}
 
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Current Password</label>
+                  <label style={{ fontSize: "0.8rem", color: isLight ? "#64748b" : "#94a3b8" }}>Current Password</label>
                   <input
                     type="password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "6px", padding: "8px 12px", color: "#ffffff", fontSize: "0.85rem" }}
+                    style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)", borderRadius: "6px", padding: "8px 12px", color: isLight ? "#0f172a" : "#ffffff", fontSize: "0.85rem" }}
                   />
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <label style={{ fontSize: "0.8rem", color: "#94a3b8" }}>New Password</label>
+                    <label style={{ fontSize: "0.8rem", color: isLight ? "#64748b" : "#94a3b8" }}>New Password</label>
                     <input
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "6px", padding: "8px 12px", color: "#ffffff", fontSize: "0.85rem" }}
+                      style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)", borderRadius: "6px", padding: "8px 12px", color: isLight ? "#0f172a" : "#ffffff", fontSize: "0.85rem" }}
                     />
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <label style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Confirm New Password</label>
+                    <label style={{ fontSize: "0.8rem", color: isLight ? "#64748b" : "#94a3b8" }}>Confirm New Password</label>
                     <input
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "6px", padding: "8px 12px", color: "#ffffff", fontSize: "0.85rem" }}
+                      style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)", borderRadius: "6px", padding: "8px 12px", color: isLight ? "#0f172a" : "#ffffff", fontSize: "0.85rem" }}
                     />
                   </div>
                 </div>

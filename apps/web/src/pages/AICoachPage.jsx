@@ -37,6 +37,7 @@ import { api } from "../api/apiClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { getUserDisplayName } from "../auth/displayName.js";
 import { useAppData } from "../data/AppDataContext.jsx";
+import { useTheme } from "../context/ThemeContext.jsx";
 import MockInterviewStudio from "../components/ai/MockInterviewStudio.jsx";
 import CompanySheetsDashboard from "../components/company/CompanySheetsDashboard.jsx";
 import CompanyDetailSheet from "../components/company/CompanyDetailSheet.jsx";
@@ -397,6 +398,7 @@ export default function AICoachPage() {
   const location = useLocation();
   const { user } = useAuth();
   const { getUserById, getSubmissionsForUser } = useAppData();
+  const { isLight } = useTheme();
 
   const currentUserId = user?.id || user?._id || "";
   const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
@@ -751,20 +753,20 @@ export default function AICoachPage() {
               style={{
                 fontSize: "1.75rem",
                 fontWeight: "800",
-                color: "#f8fafc",
+                color: isLight ? "#0f172a" : "#f8fafc",
                 margin: 0,
                 letterSpacing: "-0.02em"
               }}
             >
               Judgo Intelligence
             </h1>
-            <span style={{ fontSize: "0.72rem", background: "rgba(124, 58, 237, 0.18)", color: "#c084fc", border: "1px solid rgba(124, 58, 237, 0.3)", padding: "2px 8px", borderRadius: "999px", fontWeight: "700" }}>
+            <span style={{ fontSize: "0.72rem", background: isLight ? "rgba(124, 58, 237, 0.12)" : "rgba(124, 58, 237, 0.18)", color: isLight ? "#7c3aed" : "#c084fc", border: "1px solid rgba(124, 58, 237, 0.3)", padding: "2px 8px", borderRadius: "999px", fontWeight: "700" }}>
               PRO
             </span>
           </div>
           <p
             style={{
-              color: "#94a3b8",
+              color: isLight ? "#475569" : "#94a3b8",
               fontSize: "0.86rem",
               margin: "3px 0 0 0"
             }}
@@ -779,13 +781,13 @@ export default function AICoachPage() {
             display: "inline-flex",
             alignItems: "center",
             gap: "6px",
-            background: "rgba(16, 185, 129, 0.1)",
+            background: isLight ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.1)",
             border: "1px solid rgba(16, 185, 129, 0.25)",
             padding: "5px 12px",
             borderRadius: "999px",
             fontSize: "0.78rem",
             fontWeight: "600",
-            color: "#10b981"
+            color: isLight ? "#059669" : "#10b981"
           }}
         >
           <span
@@ -793,8 +795,8 @@ export default function AICoachPage() {
               width: "6px",
               height: "6px",
               borderRadius: "50%",
-              background: "#10b981",
-              boxShadow: "0 0 8px #10b981"
+              background: isLight ? "#059669" : "#10b981",
+              boxShadow: isLight ? "0 0 8px #059669" : "0 0 8px #10b981"
             }}
           />
           <span>AI Engine Online</span>
@@ -808,7 +810,7 @@ export default function AICoachPage() {
           display: "flex",
           alignItems: "center",
           gap: "8px",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
           paddingBottom: "8px"
         }}
       >
@@ -832,8 +834,8 @@ export default function AICoachPage() {
                 padding: "8px 16px",
                 borderRadius: "8px",
                 border: "none",
-                background: isActive ? "rgba(124, 58, 237, 0.15)" : "transparent",
-                color: isActive ? "#c084fc" : "#94a3b8",
+                background: isActive ? (isLight ? "rgba(124, 58, 237, 0.12)" : "rgba(124, 58, 237, 0.15)") : "transparent",
+                color: isActive ? (isLight ? "#6d28d9" : "#c084fc") : (isLight ? "#64748b" : "#94a3b8"),
                 fontSize: "0.86rem",
                 fontWeight: isActive ? "700" : "500",
                 cursor: "pointer",
@@ -841,7 +843,7 @@ export default function AICoachPage() {
                 transition: "all 0.15s ease"
               }}
             >
-              <Icon size={15} style={{ color: isActive ? "#c084fc" : "#64748b" }} />
+              <Icon size={15} style={{ color: isActive ? (isLight ? "#6d28d9" : "#c084fc") : (isLight ? "#64748b" : "#64748b") }} />
               <span>{tab.label}</span>
               {isActive && (
                 <motion.div
@@ -852,7 +854,7 @@ export default function AICoachPage() {
                     left: "12px",
                     right: "12px",
                     height: "2px",
-                    background: "#818cf8",
+                    background: isLight ? "#6366f1" : "#818cf8",
                     borderRadius: "999px"
                   }}
                 />
@@ -888,14 +890,14 @@ export default function AICoachPage() {
               {/* CARD 1: TODAY'S FOCUS */}
               <div
                 style={{
-                  background: "#0d111a",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  background: isLight ? "#ffffff" : "#0d111a",
+                  border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
+                  boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "0 2px 10px rgba(0,0,0,0.2)",
                   borderRadius: "12px",
                   padding: "18px 20px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "10px",
-                  boxShadow: "0 2px 10px rgba(0,0,0,0.2)"
+                  gap: "10px"
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -907,7 +909,7 @@ export default function AICoachPage() {
                         fontWeight: "700",
                         textTransform: "uppercase",
                         letterSpacing: "0.06em",
-                        color: "#a855f7"
+                        color: isLight ? "#7c3aed" : "#a855f7"
                       }}
                     >
                       TODAY'S FOCUS
@@ -915,7 +917,7 @@ export default function AICoachPage() {
                   </div>
 
                   {todaysFocus?.isSolved && (
-                    <span style={{ fontSize: "0.68rem", color: "#34d399", background: "rgba(52, 211, 153, 0.15)", padding: "1px 6px", borderRadius: "4px", fontWeight: "700" }}>
+                    <span style={{ fontSize: "0.68rem", color: isLight ? "#059669" : "#34d399", background: isLight ? "rgba(16, 185, 129, 0.12)" : "rgba(52, 211, 153, 0.15)", padding: "1px 6px", borderRadius: "4px", fontWeight: "700" }}>
                       SOLVED ✓
                     </span>
                   )}
@@ -923,8 +925,8 @@ export default function AICoachPage() {
 
                 {profileLoading ? (
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "6px 0" }}>
-                    <div style={{ width: "80%", height: "18px", background: "rgba(255,255,255,0.06)", borderRadius: "4px" }} />
-                    <div style={{ width: "40%", height: "14px", background: "rgba(255,255,255,0.04)", borderRadius: "4px" }} />
+                    <div style={{ width: "80%", height: "18px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.06)", borderRadius: "4px" }} />
+                    <div style={{ width: "40%", height: "14px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)", borderRadius: "4px" }} />
                   </div>
                 ) : (
                   <div>
@@ -932,7 +934,7 @@ export default function AICoachPage() {
                       style={{
                         fontSize: "1.02rem",
                         fontWeight: "700",
-                        color: "#f8fafc",
+                        color: isLight ? "#0f172a" : "#f8fafc",
                         margin: "0 0 4px 0",
                         lineHeight: "1.3"
                       }}
@@ -941,13 +943,13 @@ export default function AICoachPage() {
                     </h3>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.78rem" }}>
                       <span style={{
-                        color: todaysFocus?.problem?.difficulty === "Easy" ? "#34d399" : todaysFocus?.problem?.difficulty === "Hard" ? "#ef4444" : "#fbbf24",
+                        color: todaysFocus?.problem?.difficulty === "Easy" ? (isLight ? "#059669" : "#34d399") : todaysFocus?.problem?.difficulty === "Hard" ? "#ef4444" : "#fbbf24",
                         fontWeight: "700"
                       }}>
                         {todaysFocus?.problem?.difficulty || "Medium"}
                       </span>
-                      <span style={{ color: "#64748b" }}>•</span>
-                      <span style={{ color: "#94a3b8" }}>{todaysFocus?.problem?.topic || "Sliding Window"}</span>
+                      <span style={{ color: isLight ? "#94a3b8" : "#64748b" }}>•</span>
+                      <span style={{ color: isLight ? "#475569" : "#94a3b8" }}>{todaysFocus?.problem?.topic || "Sliding Window"}</span>
                     </div>
                   </div>
                 )}
@@ -955,14 +957,14 @@ export default function AICoachPage() {
                 {/* Real Dynamic Progress Bar */}
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "2px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem" }}>
-                    <span style={{ color: "#94a3b8" }}>{todaysFocus?.progressText || "Not started"}</span>
-                    <span style={{ color: "#c084fc", fontWeight: "700" }}>{todaysFocus?.progressPercent ?? 0}%</span>
+                    <span style={{ color: isLight ? "#64748b" : "#94a3b8" }}>{todaysFocus?.progressText || "Not started"}</span>
+                    <span style={{ color: isLight ? "#7c3aed" : "#c084fc", fontWeight: "700" }}>{todaysFocus?.progressPercent ?? 0}%</span>
                   </div>
                   <div
                     style={{
                       width: "100%",
                       height: "6px",
-                      background: "rgba(255, 255, 255, 0.06)",
+                      background: isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)",
                       borderRadius: "999px",
                       overflow: "hidden"
                     }}
@@ -986,9 +988,9 @@ export default function AICoachPage() {
                     alignItems: "center",
                     justifyContent: "center",
                     gap: "6px",
-                    background: "rgba(124, 58, 237, 0.15)",
-                    border: "1px solid rgba(124, 58, 237, 0.3)",
-                    color: "#c084fc",
+                    background: isLight ? "rgba(124, 58, 237, 0.1)" : "rgba(124, 58, 237, 0.15)",
+                    border: isLight ? "1px solid rgba(124, 58, 237, 0.25)" : "1px solid rgba(124, 58, 237, 0.3)",
+                    color: isLight ? "#6d28d9" : "#c084fc",
                     borderRadius: "8px",
                     padding: "8px 14px",
                     fontSize: "0.82rem",
@@ -1006,15 +1008,15 @@ export default function AICoachPage() {
               {/* CARD 2: WEAK TOPICS */}
               <div
                 style={{
-                  background: "#0d111a",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  background: isLight ? "#ffffff" : "#0d111a",
+                  border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
+                  boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "0 2px 10px rgba(0,0,0,0.2)",
                   borderRadius: "12px",
                   padding: "18px 20px",
                   display: "flex",
                   flexDirection: "column",
                   gap: "12px",
-                  flex: 1,
-                  boxShadow: "0 2px 10px rgba(0,0,0,0.2)"
+                  flex: 1
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1025,7 +1027,7 @@ export default function AICoachPage() {
                       fontWeight: "700",
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
-                      color: "#a855f7"
+                      color: isLight ? "#7c3aed" : "#a855f7"
                     }}
                   >
                     PRIORITY WEAK TOPICS
@@ -1036,23 +1038,23 @@ export default function AICoachPage() {
                   {profileLoading ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                       {[1, 2, 3].map((i) => (
-                        <div key={i} style={{ width: "100%", height: "24px", background: "rgba(255,255,255,0.04)", borderRadius: "4px" }} />
+                        <div key={i} style={{ width: "100%", height: "24px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)", borderRadius: "4px" }} />
                       ))}
                     </div>
                   ) : weakTopics.length === 0 ? (
-                    <div style={{ fontSize: "0.8rem", color: "#94a3b8", padding: "8px 0" }}>
+                    <div style={{ fontSize: "0.8rem", color: isLight ? "#64748b" : "#94a3b8", padding: "8px 0" }}>
                       Start solving problems to unlock your personalized topic analytics!
                     </div>
                   ) : (
                     weakTopics.slice(0, 3).map((t) => (
                       <div key={t.topic} style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem" }}>
-                          <span style={{ color: "#f8fafc", fontWeight: "500" }}>{t.topic}</span>
-                          <span style={{ color: t.accuracy < 50 ? "#f87171" : t.accuracy < 70 ? "#fbbf24" : "#34d399", fontWeight: "700" }}>
+                          <span style={{ color: isLight ? "#0f172a" : "#f8fafc", fontWeight: "500" }}>{t.topic}</span>
+                          <span style={{ color: t.accuracy < 50 ? "#dc2626" : t.accuracy < 70 ? "#d97706" : "#059669", fontWeight: "700" }}>
                             {t.accuracy}%
                           </span>
                         </div>
-                        <div style={{ width: "100%", height: "6px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
+                        <div style={{ width: "100%", height: "6px", background: isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
                           <div
                             style={{
                               height: "100%",
@@ -1063,7 +1065,7 @@ export default function AICoachPage() {
                             }}
                           />
                         </div>
-                        <span style={{ fontSize: "0.68rem", color: "#64748b" }}>
+                        <span style={{ fontSize: "0.68rem", color: isLight ? "#64748b" : "#64748b" }}>
                           {t.solvedCount} of {t.attemptedCount} solved ({t.totalSubmissions} submissions)
                         </span>
                       </div>
@@ -1078,7 +1080,7 @@ export default function AICoachPage() {
                     style={{
                       background: "transparent",
                       border: "none",
-                      color: "#818cf8",
+                      color: isLight ? "#4f46e5" : "#818cf8",
                       fontSize: "0.8rem",
                       fontWeight: "600",
                       cursor: "pointer",
@@ -1098,13 +1100,13 @@ export default function AICoachPage() {
             {/* RIGHT COLUMN: AI MENTOR CHAT */}
             <div
               style={{
-                background: "#0d111a",
-                border: "1px solid rgba(255, 255, 255, 0.08)",
+                background: isLight ? "#ffffff" : "#0d111a",
+                border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
                 borderRadius: "12px",
                 display: "flex",
                 flexDirection: "column",
                 height: "100%",
-                boxShadow: "0 4px 20px rgba(0, 0, 0, 0.25)",
+                boxShadow: isLight ? "0 1px 3px rgba(0, 0, 0, 0.04)" : "0 4px 20px rgba(0, 0, 0, 0.25)",
                 overflow: "hidden"
               }}
             >
@@ -1115,16 +1117,16 @@ export default function AICoachPage() {
                   justifyContent: "space-between",
                   alignItems: "center",
                   padding: "12px 18px",
-                  borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
-                  background: "#090d16"
+                  borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
+                  background: isLight ? "#f8fafc" : "#090d16"
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <Sparkles size={16} style={{ color: "#a855f7" }} />
-                  <span style={{ fontSize: "0.92rem", fontWeight: "700", color: "#f8fafc" }}>
+                  <span style={{ fontSize: "0.92rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc" }}>
                     Judgo AI Mentor
                   </span>
-                  <span style={{ fontSize: "0.68rem", color: "#94a3b8" }}>· Session active</span>
+                  <span style={{ fontSize: "0.68rem", color: isLight ? "#64748b" : "#94a3b8" }}>· Session active</span>
                 </div>
 
                 <button
@@ -1137,7 +1139,7 @@ export default function AICoachPage() {
                     gap: "5px",
                     background: "transparent",
                     border: "none",
-                    color: "#94a3b8",
+                    color: isLight ? "#64748b" : "#94a3b8",
                     fontSize: "0.78rem",
                     fontWeight: "500",
                     cursor: "pointer",
@@ -1146,7 +1148,7 @@ export default function AICoachPage() {
                     transition: "color 0.15s ease"
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = "#94a3b8")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = isLight ? "#64748b" : "#94a3b8")}
                 >
                   <Trash2 size={13} />
                   <span>Clear Chat</span>
@@ -1183,12 +1185,12 @@ export default function AICoachPage() {
                             width: "28px",
                             height: "28px",
                             borderRadius: "8px",
-                            background: "rgba(124, 58, 237, 0.15)",
+                            background: isLight ? "rgba(124, 58, 237, 0.1)" : "rgba(124, 58, 237, 0.15)",
                             border: "1px solid rgba(124, 58, 237, 0.3)",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            color: "#c084fc",
+                            color: isLight ? "#7c3aed" : "#c084fc",
                             flexShrink: 0,
                             marginTop: "2px"
                           }}
@@ -1200,11 +1202,11 @@ export default function AICoachPage() {
                       <div style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%" }}>
                         <div
                           style={{
-                            background: isAi ? "#131b2e" : "linear-gradient(135deg, #4338ca 0%, #3730a3 100%)",
-                            border: isAi ? "1px solid rgba(255, 255, 255, 0.08)" : "1px solid rgba(99, 102, 241, 0.3)",
+                            background: isAi ? (isLight ? "#f8fafc" : "#131b2e") : "linear-gradient(135deg, #4338ca 0%, #3730a3 100%)",
+                            border: isAi ? (isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)") : "1px solid rgba(99, 102, 241, 0.3)",
                             borderRadius: isAi ? "4px 12px 12px 12px" : "12px 12px 4px 12px",
                             padding: "12px 16px",
-                            color: "#f8fafc",
+                            color: isAi ? (isLight ? "#0f172a" : "#f8fafc") : "#ffffff",
                             fontSize: "0.88rem",
                             lineHeight: "1.5"
                           }}
@@ -1218,7 +1220,7 @@ export default function AICoachPage() {
                             alignItems: "center",
                             gap: "4px",
                             fontSize: "0.68rem",
-                            color: "#64748b",
+                            color: isLight ? "#64748b" : "#64748b",
                             alignSelf: isAi ? "flex-start" : "flex-end"
                           }}
                         >
@@ -1251,25 +1253,25 @@ export default function AICoachPage() {
                           display: "inline-flex",
                           alignItems: "center",
                           gap: "6px",
-                          background: "#080c14",
-                          border: "1px solid rgba(255, 255, 255, 0.08)",
+                          background: isLight ? "#f8fafc" : "#080c14",
+                          border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
                           borderRadius: "6px",
                           padding: "6px 12px",
-                          color: "#cbd5e1",
+                          color: isLight ? "#334155" : "#cbd5e1",
                           fontSize: "0.78rem",
                           fontWeight: "500",
                           cursor: "pointer",
                           transition: "all 0.15s ease"
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.background = "rgba(124, 58, 237, 0.15)";
+                          e.currentTarget.style.background = isLight ? "rgba(124, 58, 237, 0.1)" : "rgba(124, 58, 237, 0.15)";
                           e.currentTarget.style.borderColor = "rgba(124, 58, 237, 0.35)";
-                          e.currentTarget.style.color = "#ffffff";
+                          e.currentTarget.style.color = isLight ? "#6d28d9" : "#ffffff";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.background = "#080c14";
-                          e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
-                          e.currentTarget.style.color = "#cbd5e1";
+                          e.currentTarget.style.background = isLight ? "#f8fafc" : "#080c14";
+                          e.currentTarget.style.borderColor = isLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.08)";
+                          e.currentTarget.style.color = isLight ? "#334155" : "#cbd5e1";
                         }}
                       >
                         <span>{action.label}</span>
@@ -1286,12 +1288,12 @@ export default function AICoachPage() {
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "6px",
-                        background: "#131b2e",
-                        border: "1px solid rgba(255, 255, 255, 0.08)",
+                        background: isLight ? "#f1f5f9" : "#131b2e",
+                        border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
                         borderRadius: "8px",
                         padding: "6px 12px",
                         fontSize: "0.76rem",
-                        color: "#94a3b8"
+                        color: isLight ? "#475569" : "#94a3b8"
                       }}
                     >
                       <Bot size={13} style={{ color: "#c084fc" }} />
@@ -1315,8 +1317,8 @@ export default function AICoachPage() {
                   alignItems: "center",
                   gap: "10px",
                   padding: "12px 16px",
-                  borderTop: "1px solid rgba(255, 255, 255, 0.06)",
-                  background: "#090d16"
+                  borderTop: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
+                  background: isLight ? "#f8fafc" : "#090d16"
                 }}
               >
                 <input
@@ -1326,24 +1328,24 @@ export default function AICoachPage() {
                   placeholder="Ask your AI Mentor for hints, code reviews, or concept breakdowns..."
                   style={{
                     flex: 1,
-                    background: "rgba(255, 255, 255, 0.04)",
-                    border: "1px solid rgba(255, 255, 255, 0.08)",
+                    background: isLight ? "#ffffff" : "rgba(255, 255, 255, 0.04)",
+                    border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "8px",
                     padding: "9px 14px",
-                    color: "#f8fafc",
+                    color: isLight ? "#0f172a" : "#f8fafc",
                     fontSize: "0.85rem",
                     outline: "none",
                     transition: "border-color 0.15s ease"
                   }}
                   onFocus={(e) => (e.target.style.borderColor = "rgba(124, 58, 237, 0.45)")}
-                  onBlur={(e) => (e.target.style.borderColor = "rgba(255, 255, 255, 0.08)")}
+                  onBlur={(e) => (e.target.style.borderColor = isLight ? "#cbd5e1" : "rgba(255, 255, 255, 0.08)")}
                 />
 
                 <button
                   type="submit"
                   disabled={!inputVal.trim() || isTyping}
                   style={{
-                    background: inputVal.trim() && !isTyping ? "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)" : "rgba(255, 255, 255, 0.06)",
+                    background: inputVal.trim() && !isTyping ? "linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)" : (isLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.06)"),
                     border: "none",
                     color: "#ffffff",
                     cursor: inputVal.trim() && !isTyping ? "pointer" : "default",
@@ -1370,8 +1372,8 @@ export default function AICoachPage() {
         {activeTab === "weak" && (
           <div
             style={{
-              background: "#0d111a",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
+              background: isLight ? "#ffffff" : "#0d111a",
+              border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
               borderRadius: "12px",
               padding: "24px",
               display: "flex",
@@ -1383,8 +1385,8 @@ export default function AICoachPage() {
             }}
           >
             <div>
-              <h2 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#f8fafc", margin: 0 }}>Comprehensive Topic Mastery Profile</h2>
-              <p style={{ fontSize: "0.82rem", color: "#94a3b8", margin: "4px 0 0 0" }}>Live analytics computed from your actual accepted and attempted submissions across all algorithmic tracks.</p>
+              <h2 style={{ fontSize: "1.1rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc", margin: 0 }}>Comprehensive Topic Mastery Profile</h2>
+              <p style={{ fontSize: "0.82rem", color: isLight ? "#475569" : "#94a3b8", margin: "4px 0 0 0" }}>Live analytics computed from your actual accepted and attempted submissions across all algorithmic tracks.</p>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px" }}>
@@ -1396,17 +1398,17 @@ export default function AICoachPage() {
                 { topic: "Sliding Window", accuracy: 0, solvedCount: 0, totalInTopic: 3 },
                 { topic: "Arrays & Hash Tables", accuracy: 0, solvedCount: 0, totalInTopic: 4 }
               ]).map((t) => (
-                <div key={t.topic} style={{ background: "#080c14", border: "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div key={t.topic} style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <strong style={{ fontSize: "0.92rem", fontWeight: "700", color: "#f8fafc" }}>{t.topic}</strong>
-                    <span style={{ fontSize: "0.84rem", fontWeight: "800", color: t.accuracy < 50 ? "#f87171" : t.accuracy < 75 ? "#fbbf24" : "#34d399" }}>
+                    <strong style={{ fontSize: "0.92rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc" }}>{t.topic}</strong>
+                    <span style={{ fontSize: "0.84rem", fontWeight: "800", color: t.accuracy < 50 ? "#dc2626" : t.accuracy < 75 ? "#d97706" : "#059669" }}>
                       {t.accuracy}%
                     </span>
                   </div>
-                  <span style={{ fontSize: "0.74rem", color: "#64748b" }}>
+                  <span style={{ fontSize: "0.74rem", color: isLight ? "#64748b" : "#64748b" }}>
                     {t.solvedCount || 0} / {t.totalInTopic || 3} challenges solved
                   </span>
-                  <div style={{ width: "100%", height: "6px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
+                  <div style={{ width: "100%", height: "6px", background: isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
                     <div
                       style={{
                         height: "100%",
@@ -1420,19 +1422,20 @@ export default function AICoachPage() {
                     to={`/problems?topic=${encodeURIComponent(t.topic.split(" ")[0])}`}
                     style={{
                       marginTop: "auto",
-                      background: "rgba(124, 58, 237, 0.12)",
-                      color: "#c084fc",
-                      border: "1px solid rgba(124, 58, 237, 0.25)",
+                      background: isLight ? "rgba(124, 58, 237, 0.1)" : "rgba(124, 58, 237, 0.12)",
+                      color: isLight ? "#6d28d9" : "#c084fc",
                       borderRadius: "6px",
-                      padding: "7px 12px",
-                      fontSize: "0.78rem",
-                      fontWeight: "700",
-                      textAlign: "center",
+                      padding: "6px 12px",
+                      fontSize: "0.76rem",
+                      fontWeight: "600",
                       textDecoration: "none",
-                      transition: "all 0.15s ease"
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between"
                     }}
                   >
-                    Practice {t.topic.split(" ")[0]} →
+                    <span>Practice {t.topic}</span>
+                    <ChevronRight size={13} />
                   </Link>
                 </div>
               ))}

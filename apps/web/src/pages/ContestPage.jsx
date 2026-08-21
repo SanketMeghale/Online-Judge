@@ -27,6 +27,7 @@ import {
 import { api } from "../api/apiClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
+import { useTheme } from "../context/ThemeContext.jsx";
 
 const BADGE_META = {
   Grandmaster: { color: "#ef4444", bg: "rgba(239,68,68,0.12)", icon: "👑" },
@@ -169,6 +170,7 @@ export default function ContestPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const { getUserById } = useAppData();
+  const { isLight } = useTheme();
 
   const [contests, setContests] = useState(() => getClientDefaultContests());
   const [loading, setLoading] = useState(false);
@@ -339,7 +341,7 @@ export default function ContestPage() {
               Contest Arena
             </span>
           </div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: "800", color: "#f8fafc", margin: 0, letterSpacing: "-0.02em" }}>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc", margin: 0, letterSpacing: "-0.02em" }}>
             Contests &amp; Challenges
           </h1>
         </div>
@@ -347,9 +349,10 @@ export default function ContestPage() {
         {/* Rating Card Widget */}
         <div style={{
           display: "flex", alignItems: "center", gap: "10px",
-          background: "#0d111a", border: `1px solid ${badgeMeta.color}30`,
+          background: isLight ? "#ffffff" : "#0d111a",
+          border: isLight ? `1px solid ${badgeMeta.color}50` : `1px solid ${badgeMeta.color}30`,
           borderRadius: "10px", padding: "8px 14px",
-          boxShadow: `0 0 20px ${badgeMeta.color}15`
+          boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.05)" : `0 0 20px ${badgeMeta.color}15`
         }}>
           <div style={{
             width: "32px", height: "32px", borderRadius: "8px",
@@ -360,22 +363,22 @@ export default function ContestPage() {
           </div>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <span style={{ fontSize: "0.67rem", color: "#475569", fontWeight: "700", textTransform: "uppercase" }}>RATING</span>
+              <span style={{ fontSize: "0.67rem", color: isLight ? "#64748b" : "#475569", fontWeight: "700", textTransform: "uppercase" }}>RATING</span>
               <span style={{ fontSize: "0.65rem", background: badgeMeta.bg, color: badgeMeta.color, padding: "1px 6px", borderRadius: "4px", fontWeight: "700" }}>
                 {myBadge}
               </span>
             </div>
-            <div style={{ fontSize: "1.1rem", fontWeight: "800", color: "#f8fafc", lineHeight: 1.1 }}>
+            <div style={{ fontSize: "1.1rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc", lineHeight: 1.1 }}>
               {contestRating}
               {myLbEntry && (
-                <small style={{ fontSize: "0.7rem", color: "#34d399", fontWeight: "600", marginLeft: "5px" }}>
+                <small style={{ fontSize: "0.7rem", color: isLight ? "#059669" : "#34d399", fontWeight: "600", marginLeft: "5px" }}>
                   #{myLbEntry.rank}
                 </small>
               )}
             </div>
           </div>
-          <div style={{ width: "1px", height: "28px", background: "rgba(255,255,255,0.07)" }} />
-          <div style={{ fontSize: "0.72rem", color: "#475569", lineHeight: 1.5 }}>
+          <div style={{ width: "1px", height: "28px", background: isLight ? "#e2e8f0" : "rgba(255,255,255,0.07)" }} />
+          <div style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#475569", lineHeight: 1.5 }}>
             <div><span style={{ color: "#ef4444", fontWeight: "700" }}>●</span> {liveCount} Live</div>
             <div><span style={{ color: "#fbbf24", fontWeight: "700" }}>●</span> {upcomingCount} Upcoming</div>
           </div>
@@ -389,9 +392,10 @@ export default function ContestPage() {
           animate={{ opacity: 1, scale: 1 }}
           style={{
             position: "relative", overflow: "hidden",
-            background: "linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(124,58,237,0.1) 60%, rgba(239,68,68,0.05) 100%)",
+            background: isLight ? "linear-gradient(135deg, rgba(239,68,68,0.08) 0%, rgba(124,58,237,0.06) 60%, rgba(239,68,68,0.04) 100%)" : "linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(124,58,237,0.1) 60%, rgba(239,68,68,0.05) 100%)",
             border: "1px solid rgba(239,68,68,0.35)",
             borderRadius: "11px", padding: "12px 16px",
+            boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none",
             display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px"
           }}
         >
@@ -405,20 +409,20 @@ export default function ContestPage() {
             }}>
               <Radio size={11} /> LIVE NOW
             </span>
-            <strong style={{ fontSize: "0.9rem", color: "#f8fafc" }}>{liveContest.title}</strong>
-            <span style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+            <strong style={{ fontSize: "0.9rem", color: isLight ? "#0f172a" : "#f8fafc" }}>{liveContest.title}</strong>
+            <span style={{ fontSize: "0.75rem", color: isLight ? "#475569" : "#94a3b8" }}>
               Ends in:{" "}
-              <span style={{ fontFamily: "ui-monospace,monospace", color: "#fbbf24", fontWeight: "800", fontSize: "0.85rem" }}>
+              <span style={{ fontFamily: "ui-monospace,monospace", color: isLight ? "#d97706" : "#fbbf24", fontWeight: "800", fontSize: "0.85rem" }}>
                 {formatTime(liveSeconds)}
               </span>
             </span>
-            <span style={{ fontSize: "0.73rem", color: "#475569" }}>
+            <span style={{ fontSize: "0.73rem", color: isLight ? "#64748b" : "#475569" }}>
               · {liveContest.participantCount.toLocaleString()} competing
             </span>
           </div>
 
           <div style={{ display: "flex", gap: "7px" }}>
-            <button onClick={() => setSelectedContest(liveContest)} style={ghostBtn}>
+            <button onClick={() => setSelectedContest(liveContest)} style={getGhostBtn(isLight)}>
               Problems &amp; Rules
             </button>
             <Link
@@ -433,7 +437,13 @@ export default function ContestPage() {
 
       {/* ── TABS & SEARCH BAR ────────────────────────────────────────── */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-        <div style={{ display: "flex", gap: "2px", background: "#080c14", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", padding: "3px" }}>
+        <div style={{
+          display: "flex", gap: "2px",
+          background: isLight ? "#ffffff" : "#080c14",
+          border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)",
+          boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.04)" : "none",
+          borderRadius: "8px", padding: "3px"
+        }}>
           {[
             { id: "all", label: "All Contests" },
             { id: "live", label: `🔴 Live (${liveCount})` },
@@ -447,9 +457,9 @@ export default function ContestPage() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 style={{
-                  background: active ? "rgba(99,102,241,0.18)" : "transparent",
-                  border: active ? "1px solid rgba(99,102,241,0.35)" : "1px solid transparent",
-                  color: active ? "#a5b4fc" : "#64748b",
+                  background: active ? (isLight ? "rgba(99,102,241,0.16)" : "rgba(99,102,241,0.18)") : "transparent",
+                  border: active ? (isLight ? "1px solid rgba(99,102,241,0.3)" : "1px solid rgba(99,102,241,0.35)") : "1px solid transparent",
+                  color: active ? (isLight ? "#4338ca" : "#a5b4fc") : (isLight ? "#64748b" : "#64748b"),
                   padding: "4px 12px", borderRadius: "6px",
                   fontSize: "0.78rem", fontWeight: active ? "700" : "500",
                   cursor: "pointer", transition: "all 0.12s ease"
@@ -462,16 +472,22 @@ export default function ContestPage() {
         </div>
 
         {/* Search */}
-        <div style={{ display: "flex", alignItems: "center", gap: "7px", background: "#080c14", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "7px", padding: "5px 11px", minWidth: "220px" }}>
-          <Search size={14} style={{ color: "#475569" }} />
+        <div style={{
+          display: "flex", alignItems: "center", gap: "7px",
+          background: isLight ? "#ffffff" : "#080c14",
+          border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.08)",
+          boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.03)" : "none",
+          borderRadius: "7px", padding: "5px 11px", minWidth: "220px"
+        }}>
+          <Search size={14} style={{ color: isLight ? "#64748b" : "#475569" }} />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search contests..."
-            style={{ background: "transparent", border: "none", outline: "none", color: "#f8fafc", fontSize: "0.82rem", width: "100%" }}
+            style={{ background: "transparent", border: "none", outline: "none", color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.82rem", width: "100%" }}
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#475569", padding: 0, display: "flex" }}>
+            <button onClick={() => setSearchQuery("")} style={{ background: "none", border: "none", cursor: "pointer", color: isLight ? "#64748b" : "#475569", padding: 0, display: "flex" }}>
               <X size={13} />
             </button>
           )}
@@ -484,7 +500,7 @@ export default function ContestPage() {
         {/* LEFT: CONTEST CARDS LIST */}
         <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>
           {loading ? (
-            <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>
+            <div style={{ padding: "40px", textAlign: "center", color: isLight ? "#64748b" : "#64748b" }}>
               <Sparkles size={24} className="animate-spin" style={{ color: "#818cf8", marginBottom: "8px" }} />
               <div style={{ fontSize: "0.84rem" }}>Loading contests...</div>
             </div>
@@ -504,8 +520,9 @@ export default function ContestPage() {
                     exit={{ opacity: 0, scale: 0.97 }}
                     transition={{ duration: 0.18, delay: i * 0.03 }}
                     style={{
-                      background: "#0d111a",
-                      border: isLive ? "1px solid rgba(239,68,68,0.4)" : "1px solid rgba(255,255,255,0.07)",
+                      background: isLight ? "#ffffff" : "#0d111a",
+                      border: isLive ? "1px solid rgba(239,68,68,0.4)" : (isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)"),
+                      boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none",
                       borderRadius: "11px", padding: "13px 16px",
                       display: "flex", justifyContent: "space-between", alignItems: "center",
                       flexWrap: "wrap", gap: "10px",
@@ -524,24 +541,24 @@ export default function ContestPage() {
                             LIVE
                           </span>
                         )}
-                        <span style={{ fontSize: "0.72rem", color: "#334155" }}>by</span>
-                        <span style={{ fontSize: "0.72rem", color: "#94a3b8", fontWeight: "600" }}>{c.organizer}</span>
+                        <span style={{ fontSize: "0.72rem", color: isLight ? "#94a3b8" : "#334155" }}>by</span>
+                        <span style={{ fontSize: "0.72rem", color: isLight ? "#475569" : "#94a3b8", fontWeight: "600" }}>{c.organizer}</span>
                       </div>
 
                       <h3
                         onClick={() => setSelectedContest(c)}
-                        style={{ fontSize: "0.94rem", fontWeight: "700", color: "#e2e8f0", margin: 0, cursor: "pointer", lineHeight: 1.3 }}
+                        style={{ fontSize: "0.94rem", fontWeight: "700", color: isLight ? "#0f172a" : "#e2e8f0", margin: 0, cursor: "pointer", lineHeight: 1.3 }}
                       >
                         {c.title}
                       </h3>
 
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.72rem", color: "#475569", flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.72rem", color: isLight ? "#64748b" : "#475569", flexWrap: "wrap" }}>
                         {isUpcoming && <span><Clock size={11} style={{ display: "inline", marginRight: "3px" }} /> Starts: {new Date(c.startTime).toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</span>}
                         {isEnded && <span><Calendar size={11} style={{ display: "inline", marginRight: "3px" }} /> Ended</span>}
                         <span><Timer size={11} style={{ display: "inline", marginRight: "3px" }} /> {c.duration}</span>
                         <span><Users size={11} style={{ display: "inline", marginRight: "3px" }} /> {c.participantCount.toLocaleString()}</span>
                         {c.prize && (
-                          <span style={{ color: "#b45309", display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                          <span style={{ color: isLight ? "#b45309" : "#b45309", display: "inline-flex", alignItems: "center", gap: "3px" }}>
                             <Trophy size={11} style={{ color: "#fbbf24" }} /> {c.prize}
                           </span>
                         )}
@@ -550,7 +567,7 @@ export default function ContestPage() {
 
                     {/* Action Buttons */}
                     <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
-                      <button onClick={() => setSelectedContest(c)} style={ghostBtn}>
+                      <button onClick={() => setSelectedContest(c)} style={getGhostBtn(isLight)}>
                         Details
                       </button>
 
@@ -560,7 +577,7 @@ export default function ContestPage() {
                           disabled={registeringId === c.id}
                           style={{
                             background: c.isRegistered ? "rgba(52,211,153,0.1)" : "linear-gradient(135deg,#7c3aed,#4f46e5)",
-                            color: c.isRegistered ? "#34d399" : "#fff",
+                            color: c.isRegistered ? (isLight ? "#059669" : "#34d399") : "#fff",
                             border: c.isRegistered ? "1px solid rgba(52,211,153,0.3)" : "none",
                             borderRadius: "7px", padding: "6px 13px",
                             fontSize: "0.75rem", fontWeight: "700", cursor: "pointer",
@@ -583,7 +600,7 @@ export default function ContestPage() {
                       {isEnded && (
                         <Link
                           to={`/contests/${c.id}/results`}
-                          style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.25)", color: "#818cf8", borderRadius: "7px", padding: "6px 12px", fontSize: "0.75rem", fontWeight: "600", textDecoration: "none" }}
+                          style={{ background: isLight ? "rgba(99,102,241,0.08)" : "rgba(99,102,241,0.1)", border: isLight ? "1px solid rgba(99,102,241,0.2)" : "1px solid rgba(99,102,241,0.25)", color: isLight ? "#4f46e5" : "#818cf8", borderRadius: "7px", padding: "6px 12px", fontSize: "0.75rem", fontWeight: "600", textDecoration: "none" }}
                         >
                           View Results
                         </Link>
@@ -596,10 +613,10 @@ export default function ContestPage() {
           )}
 
           {!loading && !filteredContests.length && (
-            <div style={{ textAlign: "center", padding: "48px 24px", background: "#0d111a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "11px" }}>
+            <div style={{ textAlign: "center", padding: "48px 24px", background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", borderRadius: "11px" }}>
               <div style={{ fontSize: "2rem", marginBottom: "8px" }}>🏆</div>
-              <p style={{ fontWeight: "600", color: "#e2e8f0", margin: "0 0 4px" }}>No contests found</p>
-              <span style={{ fontSize: "0.8rem", color: "#475569" }}>Try another search query or category filter.</span>
+              <p style={{ fontWeight: "600", color: isLight ? "#0f172a" : "#e2e8f0", margin: "0 0 4px" }}>No contests found</p>
+              <span style={{ fontSize: "0.8rem", color: isLight ? "#64748b" : "#475569" }}>Try another search query or category filter.</span>
             </div>
           )}
         </div>
@@ -607,17 +624,17 @@ export default function ContestPage() {
         {/* RIGHT SIDEBAR: LEADERBOARD & BADGES */}
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {/* Top Rated Card */}
-          <div style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "12px", overflow: "hidden" }}>
+          <div style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)", boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none", borderRadius: "12px", overflow: "hidden" }}>
             <div style={{
-              background: "linear-gradient(135deg,rgba(99,102,241,0.12),rgba(168,85,247,0.08))",
-              borderBottom: "1px solid rgba(255,255,255,0.07)", padding: "11px 14px",
+              background: isLight ? "linear-gradient(135deg,rgba(99,102,241,0.08),rgba(168,85,247,0.05))" : "linear-gradient(135deg,rgba(99,102,241,0.12),rgba(168,85,247,0.08))",
+              borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)", padding: "11px 14px",
               display: "flex", alignItems: "center", justifyContent: "space-between"
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <Trophy size={14} style={{ color: "#fbbf24" }} />
-                <span style={{ fontSize: "0.82rem", fontWeight: "800", color: "#f8fafc" }}>Top Rated</span>
+                <span style={{ fontSize: "0.82rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc" }}>Top Rated</span>
               </div>
-              <Link to="/leaderboard" style={{ fontSize: "0.7rem", color: "#818cf8", textDecoration: "none", fontWeight: "600", display: "flex", alignItems: "center", gap: "2px" }}>
+              <Link to="/leaderboard" style={{ fontSize: "0.7rem", color: isLight ? "#4f46e5" : "#818cf8", textDecoration: "none", fontWeight: "600", display: "flex", alignItems: "center", gap: "2px" }}>
                 View all →
               </Link>
             </div>
@@ -633,20 +650,20 @@ export default function ContestPage() {
                     style={{
                       display: "flex", alignItems: "center", gap: "8px",
                       padding: "6px 8px", borderRadius: "7px",
-                      background: isMe ? "rgba(99,102,241,0.15)" : "#080c14",
-                      border: isMe ? "1px solid rgba(99,102,241,0.3)" : "1px solid rgba(255,255,255,0.04)"
+                      background: isMe ? (isLight ? "rgba(99,102,241,0.1)" : "rgba(99,102,241,0.15)") : (isLight ? "#f8fafc" : "#080c14"),
+                      border: isMe ? (isLight ? "1px solid rgba(99,102,241,0.25)" : "1px solid rgba(99,102,241,0.3)") : (isLight ? "1px solid #f1f5f9" : "1px solid rgba(255,255,255,0.04)")
                     }}
                   >
-                    <span style={{ fontSize: "0.7rem", fontWeight: "700", color: item.rank === 1 ? "#fbbf24" : item.rank === 2 ? "#cbd5e1" : item.rank === 3 ? "#f97316" : "#64748b", width: "16px" }}>
+                    <span style={{ fontSize: "0.7rem", fontWeight: "700", color: item.rank === 1 ? "#fbbf24" : item.rank === 2 ? (isLight ? "#64748b" : "#cbd5e1") : item.rank === 3 ? "#f97316" : (isLight ? "#64748b" : "#64748b"), width: "16px" }}>
                       #{item.rank}
                     </span>
                     <span style={{ fontSize: "0.85rem" }}>{bm.icon}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <strong style={{ display: "block", fontSize: "0.78rem", color: isMe ? "#c084fc" : "#f8fafc", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <strong style={{ display: "block", fontSize: "0.78rem", color: isMe ? (isLight ? "#7c3aed" : "#c084fc") : (isLight ? "#0f172a" : "#f8fafc"), overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {item.username || item.name}
                       </strong>
                     </div>
-                    <span style={{ fontSize: "0.76rem", fontWeight: "700", color: "#34d399", fontFamily: "monospace" }}>
+                    <span style={{ fontSize: "0.76rem", fontWeight: "700", color: isLight ? "#059669" : "#34d399", fontFamily: "monospace" }}>
                       {item.rating}
                     </span>
                   </div>
@@ -656,10 +673,10 @@ export default function ContestPage() {
           </div>
 
           {/* Badges & Rank Tiers Card */}
-          <div style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "12px", padding: "12px 14px" }}>
+          <div style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)", boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none", borderRadius: "12px", padding: "12px 14px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
               <Medal size={14} style={{ color: "#a855f7" }} />
-              <span style={{ fontSize: "0.82rem", fontWeight: "700", color: "#f8fafc" }}>Badges &amp; Rank Tiers</span>
+              <span style={{ fontSize: "0.82rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc" }}>Badges &amp; Rank Tiers</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
               {Object.entries(BADGE_META).map(([name, meta]) => (
@@ -673,7 +690,7 @@ export default function ContestPage() {
                     <span>{meta.icon}</span>
                     <span style={{ color: meta.color, fontWeight: "700" }}>{name}</span>
                   </span>
-                  <span style={{ fontSize: "0.67rem", color: "#64748b" }}>
+                  <span style={{ fontSize: "0.67rem", color: isLight ? "#64748b" : "#64748b" }}>
                     {name === "Grandmaster" ? "≥ 2400" : name === "Master" ? "≥ 2000" : name === "Expert" ? "≥ 1600" : name === "Knight" ? "≥ 1200" : "< 1200"}
                   </span>
                 </div>
@@ -696,17 +713,17 @@ export default function ContestPage() {
               initial={{ opacity: 0, scale: 0.94, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 16 }}
-              style={{ background: "#0d111a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", width: "100%", maxWidth: "520px", overflow: "hidden", boxShadow: "0 24px 60px rgba(0,0,0,0.7)" }}
+              style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.1)", borderRadius: "14px", width: "100%", maxWidth: "520px", overflow: "hidden", boxShadow: isLight ? "0 20px 40px rgba(0,0,0,0.15)" : "0 24px 60px rgba(0,0,0,0.7)" }}
             >
-              <div style={{ background: "linear-gradient(135deg,rgba(99,102,241,0.12),rgba(168,85,247,0.08))", borderBottom: "1px solid rgba(255,255,255,0.08)", padding: "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div style={{ background: isLight ? "linear-gradient(135deg,rgba(99,102,241,0.08),rgba(168,85,247,0.05))" : "linear-gradient(135deg,rgba(99,102,241,0.12),rgba(168,85,247,0.08))", borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", padding: "16px 18px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
                   <span style={{ fontSize: "0.67rem", background: (TYPE_META[selectedContest.contestType] || TYPE_META.Weekly).bg, color: (TYPE_META[selectedContest.contestType] || TYPE_META.Weekly).color, padding: "1px 7px", borderRadius: "4px", fontWeight: "800" }}>
                     {selectedContest.contestType.toUpperCase()}
                   </span>
-                  <h2 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#f8fafc", margin: "5px 0 0" }}>{selectedContest.title}</h2>
-                  <p style={{ fontSize: "0.75rem", color: "#475569", margin: "2px 0 0" }}>by {selectedContest.organizer}</p>
+                  <h2 style={{ fontSize: "1.1rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc", margin: "5px 0 0" }}>{selectedContest.title}</h2>
+                  <p style={{ fontSize: "0.75rem", color: isLight ? "#64748b" : "#475569", margin: "2px 0 0" }}>by {selectedContest.organizer}</p>
                 </div>
-                <button onClick={() => setSelectedContest(null)} style={{ background: "rgba(255,255,255,0.05)", border: "none", color: "#64748b", cursor: "pointer", padding: "4px", display: "flex" }}>
+                <button onClick={() => setSelectedContest(null)} style={{ background: isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.05)", border: "none", color: isLight ? "#64748b" : "#64748b", cursor: "pointer", padding: "4px", display: "flex", borderRadius: "6px" }}>
                   <X size={16} />
                 </button>
               </div>
@@ -719,23 +736,23 @@ export default function ContestPage() {
                     { icon: "👥", label: "Participants", val: selectedContest.participantCount?.toLocaleString() },
                     { icon: "📜", label: "Rules", val: selectedContest.rules }
                   ].map((item) => (
-                    <div key={item.label} style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.05)", borderRadius: "7px", padding: "8px 10px" }}>
-                      <div style={{ fontSize: "0.67rem", color: "#475569", fontWeight: "600", textTransform: "uppercase" }}>{item.icon} {item.label}</div>
-                      <div style={{ fontSize: "0.78rem", color: "#cbd5e1", fontWeight: "500", marginTop: "2px" }}>{item.val}</div>
+                    <div key={item.label} style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.05)", borderRadius: "7px", padding: "8px 10px" }}>
+                      <div style={{ fontSize: "0.67rem", color: isLight ? "#64748b" : "#475569", fontWeight: "600", textTransform: "uppercase" }}>{item.icon} {item.label}</div>
+                      <div style={{ fontSize: "0.78rem", color: isLight ? "#334155" : "#cbd5e1", fontWeight: "500", marginTop: "2px" }}>{item.val}</div>
                     </div>
                   ))}
                 </div>
 
                 {selectedContest.problems?.length > 0 && (
                   <div>
-                    <div style={{ fontSize: "0.75rem", fontWeight: "700", color: "#64748b", textTransform: "uppercase", marginBottom: "7px" }}>
+                    <div style={{ fontSize: "0.75rem", fontWeight: "700", color: isLight ? "#64748b" : "#64748b", textTransform: "uppercase", marginBottom: "7px" }}>
                       Problem Set — {selectedContest.problems.length} problems
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
                       {selectedContest.problems.map((p) => (
-                        <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#080c14", border: "1px solid rgba(255,255,255,0.04)", padding: "7px 10px", borderRadius: "7px" }}>
-                          <span style={{ fontSize: "0.8rem", color: "#e2e8f0", fontWeight: "500" }}>{p.name}</span>
-                          <span style={{ fontSize: "0.7rem", color: "#818cf8", fontWeight: "700" }}>{p.points} pts</span>
+                        <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.04)", padding: "7px 10px", borderRadius: "7px" }}>
+                          <span style={{ fontSize: "0.8rem", color: isLight ? "#0f172a" : "#e2e8f0", fontWeight: "500" }}>{p.name}</span>
+                          <span style={{ fontSize: "0.7rem", color: isLight ? "#4f46e5" : "#818cf8", fontWeight: "700" }}>{p.points} pts</span>
                         </div>
                       ))}
                     </div>
@@ -743,7 +760,7 @@ export default function ContestPage() {
                 )}
 
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
-                  <button onClick={() => setSelectedContest(null)} style={ghostBtn}>Close</button>
+                  <button onClick={() => setSelectedContest(null)} style={getGhostBtn(isLight)}>Close</button>
 
                   {selectedContest.status === "UPCOMING" && (
                     <button
@@ -783,11 +800,18 @@ export default function ContestPage() {
   );
 }
 
-const ghostBtn = {
-  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)",
-  borderRadius: "7px", color: "#94a3b8", padding: "6px 11px",
-  fontSize: "0.75rem", fontWeight: "600", cursor: "pointer"
-};
+function getGhostBtn(isLight) {
+  return {
+    background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)",
+    border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.09)",
+    borderRadius: "7px",
+    color: isLight ? "#475569" : "#94a3b8",
+    padding: "6px 11px",
+    fontSize: "0.75rem",
+    fontWeight: "600",
+    cursor: "pointer"
+  };
+}
 
 const gradBtn = {
   background: "linear-gradient(135deg,#7c3aed,#4f46e5)",

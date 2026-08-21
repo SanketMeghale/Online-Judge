@@ -80,9 +80,11 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
       <header
         className={`navbar navbar-modern ${isScrolled ? "navbar-scrolled" : ""}`}
         style={{
-          background: isScrolled ? "rgba(8, 12, 20, 0.94)" : "rgba(8, 12, 20, 0.82)",
+          background: isLight
+            ? (isScrolled ? "rgba(255, 255, 255, 0.96)" : "rgba(255, 255, 255, 0.90)")
+            : (isScrolled ? "rgba(8, 12, 20, 0.94)" : "rgba(8, 12, 20, 0.82)"),
           backdropFilter: "blur(12px)",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.07)",
+          borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.07)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -104,14 +106,14 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
             aria-label="Toggle navigation menu"
             style={{
               background: "transparent",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
+              border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
               borderRadius: "8px",
               width: "36px",
               height: "36px",
               display: "none",
               alignItems: "center",
               justifyContent: "center",
-              color: "#94a3b8",
+              color: isLight ? "#475569" : "#94a3b8",
               cursor: "pointer"
             }}
           >
@@ -151,7 +153,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                 style={{ width: "38px", height: "38px", objectFit: "contain", display: "block", background: "transparent" }}
               />
             </motion.div>
-            <span style={{ fontSize: "1.22rem", fontWeight: "800", letterSpacing: "-0.02em", color: "#ffffff" }}>
+            <span style={{ fontSize: "1.22rem", fontWeight: "800", letterSpacing: "-0.02em", color: isLight ? "#0f172a" : "#ffffff" }}>
               Judgo
             </span>
           </Link>
@@ -165,28 +167,29 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
             display: "flex",
             alignItems: "center",
             gap: "10px",
-            background: "#0d111a",
-            border: "1px solid rgba(255, 255, 255, 0.08)",
+            background: isLight ? "#f1f5f9" : "#0d111a",
+            border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
             borderRadius: "10px",
             padding: "8px 16px",
             width: "340px",
             maxWidth: "100%",
-            color: "#64748b",
+            color: isLight ? "#64748b" : "#64748b",
             fontSize: "0.85rem",
             cursor: "pointer",
             transition: "all 0.15s ease"
           }}
         >
-          <Search size={15} style={{ color: "#64748b" }} />
-          <span style={{ flex: 1 }}>Search problems, tags, topics...</span>
+          <Search size={15} style={{ color: isLight ? "#64748b" : "#64748b" }} />
+          <span style={{ flex: 1, color: isLight ? "#475569" : "#94a3b8" }}>Search problems, tags, topics...</span>
           <kbd
             style={{
-              background: "rgba(255, 255, 255, 0.06)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              background: isLight ? "#ffffff" : "rgba(255, 255, 255, 0.06)",
+              border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255, 255, 255, 0.1)",
               borderRadius: "4px",
               padding: "2px 6px",
               fontSize: "0.72rem",
-              color: "#94a3b8"
+              color: isLight ? "#475569" : "#94a3b8",
+              boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.05)" : "none"
             }}
           >
             ⌘ K
@@ -434,10 +437,10 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                           {avatarLetter}
                         </span>
                         <div style={{ overflow: "hidden" }}>
-                          <strong style={{ color: "#f8fafc", fontSize: "0.88rem", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <strong style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.88rem", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {fullName}
                           </strong>
-                          <p style={{ margin: 0, fontSize: "0.75rem", color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <p style={{ margin: 0, fontSize: "0.75rem", color: isLight ? "#64748b" : "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {username ? `@${username}` : email}
                           </p>
                         </div>
@@ -452,13 +455,13 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                           alignItems: "center",
                           gap: "10px",
                           padding: "8px 12px",
-                          color: "#cbd5e1",
+                          color: isLight ? "#334155" : "#cbd5e1",
                           textDecoration: "none",
                           fontSize: "0.84rem",
                           borderRadius: "6px",
                           transition: "background 0.12s ease"
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.05)")}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
                         <UserIcon size={15} style={{ color: "#818cf8" }} />
@@ -473,13 +476,13 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                           alignItems: "center",
                           gap: "10px",
                           padding: "8px 12px",
-                          color: "#cbd5e1",
+                          color: isLight ? "#334155" : "#cbd5e1",
                           textDecoration: "none",
                           fontSize: "0.84rem",
                           borderRadius: "6px",
                           transition: "background 0.12s ease"
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.05)")}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
                         <History size={15} style={{ color: "#818cf8" }} />
@@ -494,13 +497,13 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                           alignItems: "center",
                           gap: "10px",
                           padding: "8px 12px",
-                          color: "#cbd5e1",
+                          color: isLight ? "#334155" : "#cbd5e1",
                           textDecoration: "none",
                           fontSize: "0.84rem",
                           borderRadius: "6px",
                           transition: "background 0.12s ease"
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.05)")}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.05)")}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
                         <Settings size={15} style={{ color: "#818cf8" }} />

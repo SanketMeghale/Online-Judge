@@ -19,6 +19,18 @@
   --lp-glow-cyan: 0 0 35px rgba(0, 195, 255, 0.25);
 }
 
+[data-theme="light"] {
+  --lp-bg-dark: #f8fafc;
+  --lp-bg-card: rgba(255, 255, 255, 0.85);
+  --lp-bg-card-hover: #ffffff;
+  --lp-border: rgba(0, 0, 0, 0.08);
+  --lp-border-hover: rgba(120, 80, 255, 0.4);
+  --lp-text-main: #0f172a;
+  --lp-text-muted: #64748b;
+  --lp-glow: 0 4px 20px rgba(120, 80, 255, 0.08);
+  --lp-glow-cyan: 0 4px 20px rgba(0, 195, 255, 0.08);
+}
+
 .landing-container {
   min-height: 100vh;
   background-color: var(--lp-bg-dark);

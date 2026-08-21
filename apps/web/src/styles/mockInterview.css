@@ -799,3 +799,84 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   LIGHT THEME OVERRIDES
+   ========================================================================== */
+[data-theme="light"] .mock-studio-root {
+  color: #0f172a;
+}
+
+[data-theme="light"] .mock-launcher-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .mock-launcher-title-group h2 {
+  color: #0f172a;
+}
+
+[data-theme="light"] .mock-launcher-title-group p {
+  color: #475569;
+}
+
+[data-theme="light"] .mock-track-option-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .mock-track-option-card:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .mock-track-title {
+  color: #0f172a;
+}
+
+[data-theme="light"] .mock-track-desc {
+  color: #64748b;
+}
+
+[data-theme="light"] .mock-company-pill {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+}
+
+[data-theme="light"] .mock-company-pill:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+[data-theme="light"] .mock-studio-left-panel,
+[data-theme="light"] .mock-studio-right-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .mock-chat-header,
+[data-theme="light"] .mock-chat-footer {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .mock-chat-input {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+}
+
+[data-theme="light"] .mock-eval-report-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .mock-eval-report-card h3 {
+  color: #0f172a;
+}
+
