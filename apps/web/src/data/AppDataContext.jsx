@@ -17,6 +17,7 @@ import {
 } from "./appData";
 
 const AppDataContext = createContext(null);
+const ACTIVE_SUBMISSION_STATES = new Set(["PENDING", "QUEUED", "COMPILING", "RUNNING", "JUDGING", "ANALYZING", "FINALIZING", "processing"]);
 
 // Normalize a raw submission object (from API) into a consistent, crash-proof shape
 function normalizeSubmission(raw, problem) {
@@ -37,8 +38,6 @@ function normalizeSubmission(raw, problem) {
       ? sub.passCount
       : typeof sub.passed_count === "number"
       ? sub.passed_count
-      : isAc
-      ? problem?.examples?.length || 2
       : 0;
 
   const totalCases =
@@ -48,7 +47,7 @@ function normalizeSubmission(raw, problem) {
       ? sub.totalCount
       : typeof sub.total_cases === "number"
       ? sub.total_cases
-      : problem?.examples?.length || 2;
+      : 0;
 
   const testResults = Array.isArray(sub.testResults)
     ? sub.testResults
@@ -76,7 +75,7 @@ function normalizeSubmission(raw, problem) {
     : 0;
   const runtimeStr = typeof sub.runtime === "string" && sub.runtime
     ? sub.runtime
-    : `${runtimeNum} ms`;
+    : (runtimeNum > 0 ? `${runtimeNum} ms` : "");
 
   const memoryKb = typeof sub.memory_kb === "number" ? sub.memory_kb : 0;
   const memoryMb = typeof sub.memoryMb === "number"
@@ -113,22 +112,29 @@ function normalizeSubmission(raw, problem) {
       firstTc.expectedOutput || sub.expectedOutput || problem?.examples?.[0]?.output || "",
     testResults,
     testcases: testResults,
+    compiler: sub.compiler || null,
+    execution: sub.execution || null,
+    complexity: sub.complexity || null,
+    peakMemoryBytes: typeof sub.peakMemoryBytes === "number" ? sub.peakMemoryBytes : 0,
+    statusHistory: Array.isArray(sub.statusHistory) ? sub.statusHistory : [],
     message: isAc ? "Accepted! Your solution passed all test cases." : String(statusText)
   };
 }
 
-// Poll the backend until a submission is no longer PENDING/QUEUED
+// Poll the backend while forwarding each persisted lifecycle state to the caller.
 // Returns the final normalized submission or null on timeout
-async function pollUntilComplete(subId, problem, maxAttempts = 24, intervalMs = 500) {
+async function pollUntilComplete(subId, problem, onUpdate, maxAttempts = 120, intervalMs = 500) {
   for (let i = 0; i < maxAttempts; i++) {
     await new Promise((r) => setTimeout(r, intervalMs));
     try {
       const fetched = await api.getSubmission(subId);
       const raw = fetched?.submission || fetched;
       const v = raw?.verdict || raw?.status || "";
-      const isDone = v && v !== "PENDING" && v !== "QUEUED" && v !== "processing";
+      const normalized = normalizeSubmission(raw, problem);
+      onUpdate?.(normalized);
+      const isDone = v && !ACTIVE_SUBMISSION_STATES.has(v) && !ACTIVE_SUBMISSION_STATES.has(raw?.status);
       if (isDone) {
-        return normalizeSubmission(raw, problem);
+        return normalized;
       }
     } catch (_) {
       // Network error during polling — keep trying
@@ -211,10 +217,16 @@ export function AppDataProvider({ children }) {
           language: payload.language || "python",
           verdict: updatedVerdict,
           statusText: payload.statusText || (updatedVerdict === "AC" ? "Accepted" : "Evaluated"),
-          runtime: payload.runtime || (payload.runtimeMs ? `${payload.runtimeMs} ms` : "25 ms"),
-          runtimeMs: payload.runtimeMs || 25,
-          memory: payload.memory || (payload.memoryMb ? `${payload.memoryMb} MB` : "14.2 MB"),
-          memoryMb: payload.memoryMb || 14.2,
+          status: payload.status || "QUEUED",
+          runtime: typeof payload.execution?.timeMs === "number" ? `${payload.execution.timeMs} ms` : "",
+          runtimeMs: payload.execution?.timeMs ?? 0,
+          memory: typeof payload.execution?.peakMemoryBytes === "number" && payload.execution.peakMemoryBytes > 0
+            ? `${(payload.execution.peakMemoryBytes / 1024 / 1024).toFixed(2)} MB`
+            : "",
+          memoryMb: payload.execution?.peakMemoryBytes ? Number((payload.execution.peakMemoryBytes / 1024 / 1024).toFixed(2)) : 0,
+          compiler: payload.compiler || null,
+          execution: payload.execution || null,
+          complexity: payload.complexity || null,
           passedCount: payload.passCount ?? payload.passedCount ?? 0,
           totalCases: payload.totalCount ?? payload.totalCases ?? 0,
           stdout: payload.stdout || "",
@@ -275,60 +287,12 @@ export function AppDataProvider({ children }) {
       stdin
     });
 
-    const isAc = response.verdict === "AC" || (response.ok && response.verdict !== "WA");
-    const runtimeNum = typeof response.execution_time_ms === "number"
-      ? response.execution_time_ms
-      : typeof response.runtimeMs === "number"
-      ? response.runtimeMs
-      : 0;
-    const runtimeStr = response.runtime || `${runtimeNum} ms`;
+    return normalizeSubmission(response.submission || response, problem);
+  }
 
-    const memoryKb = typeof response.memory_kb === "number" ? response.memory_kb : 0;
-    const memoryMb = typeof response.memoryMb === "number"
-      ? response.memoryMb
-      : (memoryKb > 0 ? Number((memoryKb / 1024).toFixed(2)) : 0);
-    const memoryStr = response.memory || (memoryMb > 0 ? `${memoryMb} MB` : "");
-
-    const testResults = Array.isArray(response.testcases)
-      ? response.testcases
-      : Array.isArray(response.testResults)
-      ? response.testResults
-      : [];
-
-    return {
-      ok: Boolean(response.ok),
-      verdict: response.verdict || (isAc ? "AC" : "RE"),
-      status: response.status || (isAc ? "ACCEPTED" : "FAILED"),
-      statusText:
-        response.statusText ||
-        (isAc ? "Accepted" : "Execution failed"),
-      runtime: runtimeStr,
-      runtimeMs: runtimeNum,
-      execution_time_ms: runtimeNum,
-      compilation_time_ms: response.compilation_time_ms || 0,
-      memory: memoryStr,
-      memory_kb: memoryKb,
-      memoryMb,
-      output: response.output || response.stdout || response.stderr || "",
-      stdout: response.stdout || "",
-      stderr: response.stderr || "",
-      compileOutput: response.compileOutput || "",
-      expectedOutput: testResults[0]?.expectedOutput || problem?.examples?.[0]?.output || "",
-      passedCount:
-        typeof response.passed === "number"
-          ? response.passed
-          : typeof response.passedCount === "number"
-          ? response.passedCount
-          : isAc ? testResults.length || 1 : 0,
-      totalCases:
-        typeof response.total === "number"
-          ? response.total
-          : typeof response.totalCases === "number"
-          ? response.totalCases
-          : testResults.length || problem?.examples?.length || 1,
-      testResults,
-      testcases: testResults
-    };
+  async function waitForSubmission(submissionId, problemId, onUpdate) {
+    const problem = getProblemById(database, problemId);
+    return pollUntilComplete(submissionId, problem, onUpdate);
   }
 
   // ── Submit Solution ───────────────────────────────────────────────────────────
@@ -375,13 +339,7 @@ export function AppDataProvider({ children }) {
       currentVerdict === "QUEUED" ||
       currentVerdict === "processing";
 
-    let result;
-    if (isPending && subId) {
-      const polled = await pollUntilComplete(subId, problem);
-      result = polled || normalizeSubmission(rawSub, problem);
-    } else {
-      result = normalizeSubmission(rawSub, problem);
-    }
+    const result = normalizeSubmission(rawSub, problem);
 
     // 3. Persist submission locally (localStorage) for immediate UI display
     try {
@@ -455,6 +413,7 @@ export function AppDataProvider({ children }) {
         getSavedCode(savedCode, problemId, language, starterCode),
       saveCode,
       runSolution,
+      waitForSubmission,
       submitSolution,
       leaderboard: computeLeaderboard(database)
     }),

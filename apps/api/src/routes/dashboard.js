@@ -295,8 +295,8 @@ router.get("/", optionalAuth, async (req, res) => {
         verdict: s.verdict,
         statusText: s.statusText || (s.verdict === "AC" ? "Accepted" : "Wrong Answer"),
         language: s.language || "python",
-        runtimeMs: s.runtimeMs || 25,
-        memoryMb: s.memoryMb || 14.2,
+        runtimeMs: Number(s.executionTimeMs ?? s.runtimeMs ?? 0),
+        memoryMb: Number(s.memoryMb ?? 0),
         submittedAt: s.submittedAt || s.createdAt || new Date().toISOString()
       };
     });

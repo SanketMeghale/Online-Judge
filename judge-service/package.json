@@ -14,19 +14,20 @@
     "online-judge",
     "compiler",
     "docker-sandbox",
-    "rabbitmq",
+    "bullmq",
     "code-evaluator"
   ],
   "author": "Senior Software Architect",
   "license": "MIT",
   "dependencies": {
     "@online-judge/shared": "*",
-    "amqplib": "^0.10.4",
+    "bullmq": "^5.58.5",
     "cors": "^2.8.6",
     "dockerode": "^5.0.1",
     "dotenv": "^16.4.7",
     "express": "^5.2.1",
-    "mongoose": "^9.9.1",
+    "ioredis": "^5.7.0",
+    "mongoose": "^8.12.0",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0"
   },

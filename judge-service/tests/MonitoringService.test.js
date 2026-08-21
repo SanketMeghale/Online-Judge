@@ -47,6 +47,18 @@ describe("MonitoringService Unit Tests", () => {
   });
 
   test("5. Generates full GET /health report containing all required tracking metrics", async () => {
+    jest.spyOn(monitoringService, "getQueueStatus").mockResolvedValue({
+      queueName: "judgo-execution",
+      length: 2,
+      active: 1,
+      failed: 0,
+      consumers: 1,
+      isOnline: true
+    });
+    jest.spyOn(monitoringService, "getContainerStatus").mockResolvedValue({
+      dockerAvailable: true,
+      runningContainersCount: 1
+    });
     monitoringService.recordExecution(45);
     const report = await monitoringService.getHealthReport();
 

@@ -21,8 +21,6 @@ const SNIPPETS = [
     id: "cpp",
     label: "C++20",
     filename: "judgo_engine.cpp",
-    runtime: "< 1ms",
-    memory: "14.2 MB",
     complexity: "O(1) Space",
     testcases: ["TC #1", "TC #2", "TC #3", "TC #4", "TC #5"],
     lines: [
@@ -39,8 +37,6 @@ const SNIPPETS = [
     id: "python",
     label: "Python 3",
     filename: "two_sum.py",
-    runtime: "12ms",
-    memory: "15.1 MB",
     complexity: "O(N) Hash",
     testcases: ["TC #1", "TC #2", "TC #3", "TC #4", "TC #5"],
     lines: [
@@ -57,8 +53,6 @@ const SNIPPETS = [
     id: "ts",
     label: "TypeScript",
     filename: "binary_search.ts",
-    runtime: "4ms",
-    memory: "14.8 MB",
     complexity: "O(log N)",
     testcases: ["TC #1", "TC #2", "TC #3", "TC #4", "TC #5"],
     lines: [
@@ -162,7 +156,7 @@ function CyberMatrixTerminal({ prefersReducedMotion }) {
         className="dash-floating-chip chip-top-right"
       >
         <Zap size={13} style={{ color: "#38bdf8" }} />
-        <span>Runtime {snippet.runtime} (Top 99.8%)</span>
+        <span>Runtime measured in the sandbox</span>
       </motion.div>
 
       {/* Floating Bottom-Left Badge: Memory & Complexity */}
@@ -176,7 +170,7 @@ function CyberMatrixTerminal({ prefersReducedMotion }) {
         className="dash-floating-chip chip-bottom-left"
       >
         <ShieldCheck size={13} style={{ color: "#34d399" }} />
-        <span>{snippet.complexity} • 45/45 Passed</span>
+        <span>Complexity derived from submitted source</span>
       </motion.div>
 
       {/* 3D Code Window Frame */}
@@ -300,7 +294,7 @@ function CyberMatrixTerminal({ prefersReducedMotion }) {
 
           <div className="dash-latency-badge">
             <Activity size={10} />
-            <span>{evalPhase === "accepted" ? snippet.runtime : "evaluating"}</span>
+            <span>{evalPhase === "accepted" ? "complete" : "evaluating"}</span>
           </div>
         </div>
       </motion.div>

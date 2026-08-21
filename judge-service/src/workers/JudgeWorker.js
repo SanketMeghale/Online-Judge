@@ -1,352 +1,445 @@
-import { executorFactory } from "../executors/ExecutorFactory.js";
-import { languageRegistry } from "../config/languages.js";
-import { tempFileService } from "../services/TempFileService.js";
-import { outputComparator } from "../services/OutputComparator.js";
-import { verdictService } from "../services/VerdictService.js";
-import { loggerService } from "../services/LoggerService.js";
-import { monitoringService } from "../services/MonitoringService.js";
+import mongoose from "mongoose";
 import { Submission } from "../../../apps/api/src/models/Submission.js";
 import { Problem } from "../../../apps/api/src/models/Problem.js";
 import { User } from "../../../apps/api/src/models/User.js";
-import mongoose from "mongoose";
 import { wrapCodeWithHarness } from "../../../apps/api/src/lib/codeHarness.js";
+import { analyzeCodeComplexity } from "../../../apps/api/src/lib/complexityEngine.js";
+import { problems as seedProblems } from "../../../apps/api/src/data/problems.js";
+import { languageRegistry } from "../config/languages.js";
+import { tempFileService } from "../services/TempFileService.js";
+import { dockerService } from "../services/DockerService.js";
+import { outputComparator } from "../services/OutputComparator.js";
+import { monitoringService } from "../services/MonitoringService.js";
+import { adaptTestcaseInput } from "../testcase/InputAdapter.js";
 
-/**
- * JudgeWorker - Asynchronous Code Evaluation Worker Engine
- */
+const VERDICT_STATUS = Object.freeze({
+  AC: "ACCEPTED",
+  WA: "WRONG_ANSWER",
+  CE: "COMPILATION_ERROR",
+  RE: "RUNTIME_ERROR",
+  TLE: "TIME_LIMIT_EXCEEDED",
+  MLE: "MEMORY_LIMIT_EXCEEDED",
+  SYSTEM_ERROR: "SYSTEM_ERROR"
+});
+
+const VERDICT_TEXT = Object.freeze({
+  AC: "Accepted",
+  WA: "Wrong Answer",
+  CE: "Compilation Error",
+  RE: "Runtime Error",
+  TLE: "Time Limit Exceeded",
+  MLE: "Memory Limit Exceeded",
+  SYSTEM_ERROR: "System Error"
+});
+
+function resultPriority(verdict) {
+  return { CE: 100, SYSTEM_ERROR: 90, MLE: 80, TLE: 70, RE: 60, WA: 50, AC: 0 }[verdict] ?? 90;
+}
+
+function publicRealtimeTest(result) {
+  const safe = {
+    id: result.id,
+    number: result.number,
+    status: result.status,
+    passed: result.passed,
+    verdict: result.verdict,
+    executionTimeMs: result.executionTimeMs,
+    peakMemoryBytes: result.peakMemoryBytes,
+    visibility: result.visibility
+  };
+  if (result.visibility !== "HIDDEN") {
+    safe.input = result.input;
+    safe.expectedOutput = result.expectedOutput;
+    safe.actualOutput = result.actualOutput;
+    safe.stdout = result.stdout;
+    safe.stderr = result.stderr;
+    safe.difference = result.difference;
+  }
+  return safe;
+}
+
 export class JudgeWorker {
-  async loadTestCases(problemId) {
-    if (!problemId) throw new Error("A problem ID is required for judging.");
-    const dbProblem = await Problem.findOne({
+  constructor({ sandbox = dockerService } = {}) {
+    this.sandbox = sandbox;
+    this.workerId = process.env.WORKER_ID || `${process.env.HOSTNAME || "worker"}-${process.pid}`;
+  }
+
+  log(event, context = {}) {
+    console.log(JSON.stringify({
+      event,
+      workerId: this.workerId,
+      timestamp: new Date().toISOString(),
+      ...context
+    }));
+  }
+
+  async loadSubmission(submissionId) {
+    if (!submissionId || !mongoose.Types.ObjectId.isValid(String(submissionId))) {
+      throw new Error("A valid persisted submission ID is required.");
+    }
+    const submission = await Submission.findById(submissionId).lean();
+    if (!submission) throw new Error("The queued submission no longer exists.");
+    return submission;
+  }
+
+  async loadProblem(problemId) {
+    const problem = await Problem.findOne({
       id: String(problemId),
       isDeleted: { $ne: true },
       status: "published"
     }).lean();
-    if (!dbProblem) throw new Error("The submitted problem does not exist or is not published.");
-    const testcases = [...(dbProblem.examples || []), ...(dbProblem.hiddenTestCases || [])];
-    if (testcases.length === 0) throw new Error("No server-managed test cases were found for this problem.");
-    return testcases;
+    const localProblem = seedProblems.find((item) => String(item.id) === String(problemId));
+    if (!problem && !localProblem) throw new Error("The submitted problem does not exist or is not published.");
+    return problem || localProblem;
   }
 
-  async processJob(jobData) {
-    const startTime = Date.now();
-    const { submissionId, problemId, userId, language, code } = jobData;
+  buildTestcases(problem, submission) {
+    if (submission.mode === "RUN" && submission.customInput) {
+      return [{ input: submission.customInput, output: null, visibility: "PUBLIC", custom: true }];
+    }
+    const publicCases = (problem.examples || []).map((testcase) => ({
+      ...testcase,
+      visibility: "PUBLIC"
+    }));
+    if (submission.mode === "RUN") return publicCases;
+    const hiddenCases = (problem.hiddenTestCases || []).map((testcase) => ({
+      ...testcase,
+      visibility: "HIDDEN"
+    }));
+    return [...publicCases, ...hiddenCases];
+  }
 
-    // Log 1: Submission Received
-    loggerService.logSubmissionReceived({
-      submissionId: submissionId || "demo",
-      problemId: problemId || "unknown",
-      userId: userId || "guest",
-      language
+  async transition(submissionId, status, statusText = status) {
+    const updated = await Submission.findByIdAndUpdate(submissionId, {
+      $set: { status, statusText },
+      $push: { statusHistory: { status, at: new Date() } }
+    }, { new: true }).lean();
+    await this.broadcastRealtimeUpdate({
+      submissionId,
+      problemId: updated?.problemId,
+      userId: updated?.userId ? String(updated.userId) : undefined,
+      language: updated?.language,
+      status,
+      statusText,
+      verdict: "PENDING"
+    });
+  }
+
+  async queueForRetry(submissionId) {
+    await Submission.findByIdAndUpdate(submissionId, {
+      $set: { status: "QUEUED", statusText: "Queued for infrastructure retry..." },
+      $push: { statusHistory: { status: "QUEUED", at: new Date() } }
+    });
+  }
+
+  async processJob(jobData, jobContext = {}) {
+    const startedAt = new Date();
+    const submission = await this.loadSubmission(jobData?.submissionId);
+    const submissionId = String(submission._id);
+    const { problemId, userId, language } = submission;
+    const code = submission.sourceCode || submission.code;
+    const langConfig = languageRegistry.get(language);
+    if (!langConfig) throw new Error(`Unsupported programming language: '${language}'`);
+
+    this.log("execution_started", {
+      submissionId,
+      jobId: jobContext.jobId,
+      attempt: jobContext.attempt,
+      userId: String(userId),
+      language: langConfig.id,
+      startTime: startedAt.toISOString()
     });
 
+    let tempDir;
     try {
-      // Step 2: Get Language Config & Resolve Executor via ExecutorFactory
-      const langConfig = languageRegistry.get(language);
-      if (!langConfig) {
-        throw new Error(`Unsupported programming language: '${language}'`);
-      }
+      const problem = await this.loadProblem(problemId);
+      const testcases = this.buildTestcases(problem, submission);
+      if (!testcases.length) throw new Error("No server-managed testcases were found for this problem.");
 
-      const executor = executorFactory.getExecutor(language);
+      const executionTimeLimitMs = Math.max(
+        100,
+        Math.min(
+          Number(problem.timeLimitMs || langConfig.timeLimitMs),
+          Number(process.env.MAX_EXECUTION_TIME_MS || 10_000)
+        )
+      );
+      const memoryLimitMb = Math.max(
+        32,
+        Math.min(
+          Number(problem.memoryLimitMb || langConfig.memoryLimitMb),
+          Number(process.env.MAX_MEMORY_MB || 256)
+        )
+      );
+      const compileTimeoutMs = Math.max(1000, Number(process.env.MAX_COMPILATION_TIME_MS || 15_000));
 
-      // Log 2: Execution Started
-      loggerService.logExecutionStarted({
-        submissionId: submissionId || "demo",
-        language: langConfig.id
-      });
-
-      // Step 3: Resolve Testcases
-      const testcases = await this.loadTestCases(problemId);
-
-      const testcaseResults = [];
-
-      // Step 4 & 5: Execute code & Compare output for each testcase
-      for (let i = 0; i < testcases.length; i++) {
-        const tc = testcases[i];
-        const inputData = tc.input || tc.stdin || "";
-        const expectedData = tc.output || tc.expectedOutput || "";
-
-        let tempDir = null;
-        let execResult = null;
-        let compResult = null;
-
-        try {
-          tempDir = await tempFileService.createTempDirectory();
-
-          const executableCode = wrapCodeWithHarness({
-            code,
-            language: langConfig.id,
-            problemId,
-            stdin: inputData
-          });
-          await tempFileService.writeSourceCode(tempDir, langConfig.sourceFileName, executableCode);
-          await tempFileService.writeInput(tempDir, inputData);
-
-          execResult = await executor.execute({
-            code,
-            stdin: inputData,
-            expectedOutput: expectedData,
-            timeoutMs: langConfig.timeLimitMs,
-            workingDir: tempDir
-          });
-
-          // Log 3: Compilation Finished (if applicable)
-          if (execResult.verdict === "CE") {
-            loggerService.logCompilationFinished({
-              submissionId: submissionId || "demo",
-              language: langConfig.id,
-              success: false,
-              durationMs: execResult.runtimeMs,
-              error: execResult.stderr
-            });
-          } else {
-            loggerService.logCompilationFinished({
-              submissionId: submissionId || "demo",
-              language: langConfig.id,
-              success: true,
-              durationMs: execResult.runtimeMs
-            });
-          }
-
-          if (execResult.ok) {
-            compResult = outputComparator.compare(execResult.stdout, expectedData);
-          }
-        } catch (tcErr) {
-          execResult = {
-            ok: false,
-            verdict: "RE",
-            statusText: "Runtime Error",
-            runtimeMs: Date.now() - startTime,
-            memoryMb: 0,
-            stdout: "",
-            stderr: tcErr.message || "Testcase execution exception"
-          };
-        } finally {
-          if (tempDir) {
-            await tempFileService.cleanup(tempDir);
-          }
-        }
-
-        testcaseResults.push({
-          id: tc._id || tc.id || i + 1,
-          testcaseIndex: i + 1,
-          executionResult: execResult,
-          comparatorResult: compResult
-        });
-
-        if (execResult && execResult.verdict === "CE") {
-          break;
-        }
-      }
-
-      // Step 6: Generate Final Verdict via VerdictService
-      const aggregatedVerdict = verdictService.aggregateTestcaseVerdicts(testcaseResults);
-
-      const firstTc = aggregatedVerdict.testcases?.[0] || {};
-      const finalResult = {
-        submissionId,
-        problemId,
-        userId,
+      tempDir = await tempFileService.createTempDirectory();
+      const executableCode = wrapCodeWithHarness({
+        code,
         language: langConfig.id,
-        status: "COMPLETED",
-        verdict: aggregatedVerdict.verdict,
-        statusText: aggregatedVerdict.statusText,
-        description: aggregatedVerdict.description,
-        badgeColor: aggregatedVerdict.badgeColor,
-        passCount: aggregatedVerdict.passCount,
-        totalCount: aggregatedVerdict.totalCount,
-        runtimeMs: aggregatedVerdict.runtimeMs,
-        memoryMb: aggregatedVerdict.memoryMb,
-        stdout: firstTc.stdout || "",
-        stderr: firstTc.stderr || "",
-        output: firstTc.stdout || firstTc.stderr || "",
-        expectedOutput: firstTc.expectedOutput || "",
-        testcases: aggregatedVerdict.testcases,
-        completedAt: new Date()
-      };
-
-      console.log(`[JudgeWorker] [VERDICT] submissionId: ${submissionId} -> ${finalResult.verdict} (${finalResult.statusText})`);
-      console.log(`[JudgeWorker] [METRICS] runtime: ${finalResult.runtimeMs}ms, memory: ${finalResult.memoryMb}MB, passed: ${finalResult.passCount}/${finalResult.totalCount}`);
-
-      // Record Execution Metrics in MonitoringService
-      monitoringService.recordExecution(finalResult.runtimeMs);
-
-      // Log Verdict & Execution Metrics
-      loggerService.logVerdict({
-        submissionId: submissionId || "demo",
-        verdict: finalResult.verdict,
-        statusText: finalResult.statusText,
-        passCount: finalResult.passCount,
-        totalCount: finalResult.totalCount
-      });
-
-      loggerService.logExecutionMetrics({
-        submissionId: submissionId || "demo",
-        executionTimeMs: finalResult.runtimeMs,
-        memoryMb: finalResult.memoryMb
-      });
-
-      // Step 7: Update MongoDB Submission & User Stats
-      await this.updateDatabase(finalResult);
-
-      // Step 8: Emit Completion Event via RabbitMQ & Realtime Socket.IO
-      await this.broadcastRealtimeUpdate(finalResult);
-
-      return finalResult;
-    } catch (err) {
-      if (err?.code === "JUDGE_PERSISTENCE_ERROR") throw err;
-      // Log Errors & Exceptions
-      loggerService.logError({
-        submissionId: submissionId || "demo",
-        context: "JudgeWorker",
-        error: err
-      });
-
-      const errorVerdict = {
-        submissionId,
         problemId,
-        userId,
+        stdin: ""
+      });
+      await tempFileService.writeSourceCode(tempDir, langConfig.sourceFileName, executableCode);
+
+      await this.transition(submissionId, "COMPILING", "Compiling...");
+      const compileResult = await this.sandbox.compileInSandbox({
+        hostTempDir: tempDir,
+        language: langConfig.id,
+        image: langConfig.dockerImage,
+        memoryLimitMb,
+        timeoutMs: compileTimeoutMs
+      });
+      if (compileResult.infrastructureError || compileResult.verdict === "SYSTEM_ERROR") {
+        const error = new Error("Sandbox compilation service failed.");
+        error.infrastructureFailure = true;
+        throw error;
+      }
+      if (!compileResult.ok) {
+        return this.finalizeResult({
+          submission,
+          problem,
+          compiler: compileResult.compilation,
+          verdict: "CE",
+          testResults: [],
+          complexity: analyzeCodeComplexity({ code, language: langConfig.id, problemTitle: problem.title }),
+          totalTestcases: testcases.length,
+          startedAt,
+          jobContext
+        });
+      }
+
+      await this.transition(submissionId, "RUNNING", "Running...");
+      const rawResults = [];
+      for (let index = 0; index < testcases.length; index++) {
+        const testcase = testcases[index];
+        const input = adaptTestcaseInput(problemId, langConfig.id, testcase.input || testcase.stdin || "");
+        await tempFileService.writeInput(tempDir, input);
+        const execution = await this.sandbox.executeCompiledInSandbox({
+          hostTempDir: tempDir,
+          language: langConfig.id,
+          image: langConfig.dockerImage,
+          memoryLimitMb,
+          timeoutMs: executionTimeLimitMs
+        });
+        if (execution.infrastructureError || execution.verdict === "SYSTEM_ERROR") {
+          const error = new Error("Sandbox execution service failed.");
+          error.infrastructureFailure = true;
+          throw error;
+        }
+        rawResults.push({ testcase, execution, index });
+      }
+
+      await this.transition(submissionId, "JUDGING", "Checking testcases...");
+      const testResults = rawResults.map(({ testcase, execution, index }) => {
+        const comparison = execution.ok && testcase.output !== null
+          ? outputComparator.compare(execution.stdout, testcase.output || testcase.expectedOutput || "")
+          : null;
+        const verdict = !execution.ok
+          ? execution.verdict
+          : comparison && !comparison.isMatch
+          ? "WA"
+          : "AC";
+        const result = {
+          id: testcase._id || testcase.id || index + 1,
+          number: index + 1,
+          status: VERDICT_STATUS[verdict] || "SYSTEM_ERROR",
+          verdict,
+          passed: verdict === "AC",
+          visibility: testcase.visibility,
+          executionTimeMs: Number(execution.runtimeMs || 0),
+          peakMemoryBytes: Number(execution.peakMemoryBytes || 0)
+        };
+        if (testcase.visibility !== "HIDDEN") {
+          result.input = testcase.input || testcase.stdin || "";
+          result.expectedOutput = testcase.output ?? testcase.expectedOutput ?? "";
+          result.actualOutput = execution.stdout || "";
+          result.difference = comparison?.difference || "";
+          result.stdout = execution.stdout || "";
+          result.stderr = execution.stderr || "";
+        }
+        return result;
+      });
+
+      let verdict = "AC";
+      for (const result of testResults) {
+        if (resultPriority(result.verdict) > resultPriority(verdict)) verdict = result.verdict;
+      }
+
+      await this.transition(submissionId, "ANALYZING", "Analyzing complexity...");
+      const complexity = analyzeCodeComplexity({ code, language: langConfig.id, problemTitle: problem.title });
+      await this.transition(submissionId, "FINALIZING", "Finalizing...");
+      return this.finalizeResult({
+        submission,
+        problem,
+        compiler: compileResult.compilation,
+        verdict,
+        testResults,
+        complexity,
+        totalTestcases: testcases.length,
+        startedAt,
+        jobContext
+      });
+    } catch (error) {
+      await this.queueForRetry(submissionId).catch(() => {});
+      this.log("execution_infrastructure_failure", {
+        submissionId,
+        jobId: jobContext.jobId,
+        userId: String(userId),
         language,
-        status: "COMPLETED",
-        verdict: "SYSTEM_ERROR",
-        statusText: "System Error",
-        description: err.message || "Internal Judge Worker Failure",
-        badgeColor: "red",
-        passCount: 0,
-        totalCount: 0,
-        runtimeMs: Date.now() - startTime,
-        memoryMb: 0,
-        stdout: "",
-        stderr: err.message || "System error",
-        testcases: [],
-        completedAt: new Date()
-      };
-
-      await this.updateDatabase(errorVerdict);
-      await this.broadcastRealtimeUpdate(errorVerdict);
-
-      return errorVerdict;
+        error: error.message
+      });
+      throw error;
+    } finally {
+      if (tempDir) await tempFileService.cleanup(tempDir);
     }
   }
 
-  /**
-   * Broadcasts Socket.IO submission:update event to Realtime Service
-   * @param {Object} resPayload
-   */
-  async broadcastRealtimeUpdate(resPayload) {
-    if (!resPayload || !resPayload.submissionId) return;
+  async finalizeResult({ submission, compiler, verdict, testResults, totalTestcases, complexity, startedAt, jobContext }) {
+    const submissionId = String(submission._id);
+    const endedAt = new Date();
+    const passed = testResults.filter((result) => result.passed).length;
+    const executionTimeMs = testResults.reduce((max, result) => Math.max(max, result.executionTimeMs || 0), 0);
+    const totalExecutionTimeMs = testResults.reduce((total, result) => total + (result.executionTimeMs || 0), 0);
+    const peakMemoryBytes = testResults.reduce((max, result) => Math.max(max, result.peakMemoryBytes || 0), 0);
+    const terminalStatus = VERDICT_STATUS[verdict] || "SYSTEM_ERROR";
+    const statusText = VERDICT_TEXT[verdict] || "System Error";
+    const firstResult = testResults[0];
+    const execution = verdict === "CE" ? null : {
+      status: terminalStatus,
+      timeMs: executionTimeMs,
+      totalTimeMs: Number(totalExecutionTimeMs.toFixed(3)),
+      peakMemoryBytes,
+      peakMemoryMb: Number((peakMemoryBytes / 1024 / 1024).toFixed(2)),
+      exitCode: verdict === "AC" || verdict === "WA" ? 0 : 1
+    };
 
+    const recordedTotal = Number(totalTestcases || testResults.length);
+    const update = {
+      $set: {
+        status: terminalStatus,
+        verdict,
+        statusText,
+        compiler,
+        execution,
+        complexity,
+        passCount: passed,
+        passedCount: passed,
+        totalCount: recordedTotal,
+        totalCases: recordedTotal,
+        runtimeMs: executionTimeMs,
+        executionTimeMs,
+        compilationTimeMs: Number(compiler?.timeMs || 0),
+        memoryMb: execution?.peakMemoryMb || 0,
+        peakMemoryBytes,
+        stdout: firstResult?.visibility === "PUBLIC" ? firstResult.stdout : "",
+        stderr: verdict === "CE" ? compiler?.stderr || "" : firstResult?.visibility === "PUBLIC" ? firstResult?.stderr || "" : "",
+        compileOutput: verdict === "CE" ? compiler?.stderr || "" : "",
+        testcases: testResults,
+        completedAt: endedAt
+      },
+      $push: { statusHistory: { status: terminalStatus, at: endedAt } }
+    };
+    await Submission.findByIdAndUpdate(submissionId, update);
+    await this.updateUserStats(submission, verdict).catch((error) => {
+      this.log("user_stats_update_failed", { submissionId, error: error.message });
+    });
+
+    const finalResult = {
+      submissionId,
+      problemId: submission.problemId,
+      userId: String(submission.userId),
+      language: submission.language,
+      status: terminalStatus,
+      verdict,
+      statusText,
+      passed,
+      total: recordedTotal,
+      compiler,
+      execution,
+      complexity,
+      testResults: testResults.map(publicRealtimeTest),
+      startTime: startedAt.toISOString(),
+      endTime: endedAt.toISOString(),
+      duration: endedAt.getTime() - startedAt.getTime()
+    };
+    monitoringService.recordExecution(executionTimeMs);
+    this.log("execution_completed", {
+      submissionId,
+      jobId: jobContext.jobId,
+      userId: String(submission.userId),
+      language: submission.language,
+      status: terminalStatus,
+      verdict,
+      startTime: startedAt.toISOString(),
+      endTime: endedAt.toISOString(),
+      duration: endedAt.getTime() - startedAt.getTime(),
+      executionTimeMs,
+      peakMemoryBytes,
+      passed,
+      total: recordedTotal
+    });
+    await this.broadcastRealtimeUpdate(finalResult);
+    return finalResult;
+  }
+
+  async markSystemError(jobData, error) {
+    if (!jobData?.submissionId) return;
+    const completedAt = new Date();
+    const updated = await Submission.findByIdAndUpdate(jobData.submissionId, {
+      $set: {
+        status: "SYSTEM_ERROR",
+        verdict: "SYSTEM_ERROR",
+        statusText: "System Error",
+        errorMessage: String(error?.message || "Execution infrastructure failed after retries.").slice(0, 2000),
+        completedAt
+      },
+      $push: { statusHistory: { status: "SYSTEM_ERROR", at: completedAt } }
+    }, { new: true }).lean();
+    await this.broadcastRealtimeUpdate({
+      submissionId: String(jobData.submissionId),
+      problemId: updated?.problemId,
+      userId: updated?.userId ? String(updated.userId) : undefined,
+      language: updated?.language,
+      status: "SYSTEM_ERROR",
+      verdict: "SYSTEM_ERROR",
+      statusText: "System Error"
+    });
+  }
+
+  async updateUserStats(submission, verdict) {
+    if (submission.mode === "RUN" || !submission.userId) return;
+    const userQuery = mongoose.Types.ObjectId.isValid(String(submission.userId))
+      ? { $or: [{ _id: submission.userId }, { id: String(submission.userId) }] }
+      : { id: String(submission.userId) };
+    const update = verdict === "AC"
+      ? {
+          $addToSet: { solvedProblemIds: submission.problemId, attemptedProblemIds: submission.problemId },
+          $inc: { xp: 50, "stats.totalSubmissions": 1, "stats.acceptedSubmissions": 1 }
+        }
+      : {
+          $addToSet: { attemptedProblemIds: submission.problemId },
+          $inc: { "stats.totalSubmissions": 1 }
+        };
+    await User.findOneAndUpdate(userQuery, update);
+  }
+
+  async broadcastRealtimeUpdate(payload) {
+    if (!process.env.REALTIME_SERVICE_URL || !process.env.REALTIME_INTERNAL_SECRET) return;
     try {
-      const REALTIME_URL = process.env.REALTIME_SERVICE_URL || "http://localhost:4001";
-      const response = await fetch(`${REALTIME_URL}/api/realtime/broadcast`, {
+      const response = await fetch(`${process.env.REALTIME_SERVICE_URL}/api/realtime/broadcast`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.REALTIME_INTERNAL_SECRET || ""}`
+          Authorization: `Bearer ${process.env.REALTIME_INTERNAL_SECRET}`
         },
-        body: JSON.stringify({
-          event: "submission:update",
-          payload: {
-            submissionId: resPayload.submissionId,
-            problemId: resPayload.problemId,
-            userId: resPayload.userId,
-            status: "COMPLETED",
-            verdict: resPayload.verdict,
-            statusText: resPayload.statusText,
-            runtime: typeof resPayload.runtimeMs === "number" ? `${resPayload.runtimeMs} ms` : (resPayload.runtime || "-"),
-            runtimeMs: resPayload.runtimeMs,
-            memory: typeof resPayload.memoryMb === "number" ? `${resPayload.memoryMb} MB` : (resPayload.memory || "-"),
-            memoryMb: resPayload.memoryMb,
-            passCount: resPayload.passCount,
-            totalCount: resPayload.totalCount,
-            passedCount: resPayload.passCount,
-            totalCases: resPayload.totalCount,
-            diagnostic: resPayload.verdict === "CE" ? String(resPayload.stderr || "").slice(0, 16000) : "",
-            testResults: (resPayload.testcases || []).map((item) => ({
-              id: item.id,
-              testCase: item.testCase ?? item.testcaseIndex,
-              status: item.status,
-              passed: Boolean(item.passed),
-              verdict: item.verdict,
-              execution_time_ms: item.execution_time_ms ?? item.runtimeMs ?? 0,
-              memory_kb: item.memory_kb ?? 0
-            }))
-          }
-        })
+        body: JSON.stringify({ event: "submission:update", payload })
       });
-      if (!response.ok) {
-        throw new Error(`Realtime service returned HTTP ${response.status}`);
-      }
-      console.log(`[JudgeWorker] [REALTIME_BROADCAST] Emitted submission:update for ${resPayload.submissionId}`);
-    } catch (err) {
-      console.warn(`[JudgeWorker] Realtime update unavailable: ${err.message}`);
-    }
-  }
-
-  /**
-   * Step 7: Updates Submission and User records in MongoDB database
-   * @param {Object} finalResult
-   */
-  async updateDatabase(finalResult) {
-    if (!finalResult.submissionId) return;
-
-    try {
-      console.log(`[JudgeWorker] [MONGODB_UPDATE] Updating submission ${finalResult.submissionId} -> verdict: ${finalResult.verdict}`);
-      // 1. Update Submission Document with stdout, stderr, status, and metrics
-      await Submission.findByIdAndUpdate(
-        finalResult.submissionId,
-        {
-          status: "COMPLETED",
-          verdict: finalResult.verdict,
-          statusText: finalResult.statusText,
-          passCount: finalResult.passCount,
-          totalCount: finalResult.totalCount,
-          runtimeMs: finalResult.runtimeMs,
-          memoryMb: finalResult.memoryMb,
-          stdout: finalResult.stdout || "",
-          stderr: finalResult.stderr || "",
-          testcases: finalResult.testcases || [],
-          completedAt: finalResult.completedAt || new Date()
-        },
-        { new: true }
-      );
-
-      // 2. If Verdict is Accepted (AC) and User ID exists, update User solved stats & XP
-      if (finalResult.verdict === "AC" && finalResult.userId) {
-        const userQuery = mongoose.Types.ObjectId.isValid(String(finalResult.userId))
-          ? { $or: [{ _id: finalResult.userId }, { id: String(finalResult.userId) }] }
-          : { id: String(finalResult.userId) };
-        await User.findOneAndUpdate(
-          userQuery,
-          {
-            $addToSet: { solvedProblemIds: finalResult.problemId, attemptedProblemIds: finalResult.problemId },
-            $inc: { xp: 50, "stats.totalSubmissions": 1, "stats.acceptedSubmissions": 1 }
-          }
-        );
-      } else if (finalResult.userId) {
-        const userQuery = mongoose.Types.ObjectId.isValid(String(finalResult.userId))
-          ? { $or: [{ _id: finalResult.userId }, { id: String(finalResult.userId) }] }
-          : { id: String(finalResult.userId) };
-        await User.findOneAndUpdate(
-          userQuery,
-          {
-            $addToSet: { attemptedProblemIds: finalResult.problemId },
-            $inc: { "stats.totalSubmissions": 1 }
-          }
-        );
-      }
-      console.log(`[JudgeWorker] [MONGODB_UPDATE_SUCCESS] Submission ${finalResult.submissionId} updated in MongoDB.`);
-    } catch (dbErr) {
-      console.warn(`[JudgeWorker] MongoDB record update notice: ${dbErr.message}`);
-      const persistenceError = new Error("Failed to persist judge result.", { cause: dbErr });
-      persistenceError.code = "JUDGE_PERSISTENCE_ERROR";
-      throw persistenceError;
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    } catch (error) {
+      this.log("realtime_delivery_failed", { submissionId: payload.submissionId, error: error.message });
     }
   }
 }
 
-// Export singleton instance
 export const judgeWorker = new JudgeWorker();
-
-// Default export for import flexibility
 export default judgeWorker;

@@ -10,6 +10,41 @@ export const VERDICTS = {
   RUNNING: "RUNNING"
 };
 
+export const SUBMISSION_STATUS = Object.freeze({
+  QUEUED: "QUEUED",
+  COMPILING: "COMPILING",
+  RUNNING: "RUNNING",
+  JUDGING: "JUDGING",
+  ANALYZING: "ANALYZING",
+  FINALIZING: "FINALIZING",
+  ACCEPTED: "ACCEPTED",
+  WRONG_ANSWER: "WRONG_ANSWER",
+  RUNTIME_ERROR: "RUNTIME_ERROR",
+  TIME_LIMIT_EXCEEDED: "TIME_LIMIT_EXCEEDED",
+  MEMORY_LIMIT_EXCEEDED: "MEMORY_LIMIT_EXCEEDED",
+  COMPILATION_ERROR: "COMPILATION_ERROR",
+  SYSTEM_ERROR: "SYSTEM_ERROR"
+});
+
+export const ACTIVE_SUBMISSION_STATUSES = Object.freeze([
+  SUBMISSION_STATUS.QUEUED,
+  SUBMISSION_STATUS.COMPILING,
+  SUBMISSION_STATUS.RUNNING,
+  SUBMISSION_STATUS.JUDGING,
+  SUBMISSION_STATUS.ANALYZING,
+  SUBMISSION_STATUS.FINALIZING
+]);
+
+export const TERMINAL_SUBMISSION_STATUSES = Object.freeze([
+  SUBMISSION_STATUS.ACCEPTED,
+  SUBMISSION_STATUS.WRONG_ANSWER,
+  SUBMISSION_STATUS.RUNTIME_ERROR,
+  SUBMISSION_STATUS.TIME_LIMIT_EXCEEDED,
+  SUBMISSION_STATUS.MEMORY_LIMIT_EXCEEDED,
+  SUBMISSION_STATUS.COMPILATION_ERROR,
+  SUBMISSION_STATUS.SYSTEM_ERROR
+]);
+
 export const SUPPORTED_LANGUAGES = [
   { id: "javascript", label: "JavaScript", extension: "js" },
   { id: "python", label: "Python 3", extension: "py" },
@@ -20,12 +55,8 @@ export const SUPPORTED_LANGUAGES = [
 
 export const PROBLEM_DIFFICULTIES = ["Easy", "Medium", "Hard"];
 export const JUDGE_QUEUE = Object.freeze({
-  exchange: "judge_exchange",
-  deadLetterExchange: "judge_dlx_exchange",
-  queue: "judge_queue",
-  deadLetterQueue: "submission_dlq",
-  submissionRoutingKey: "submission.job",
-  deadLetterRoutingKey: "submission.dead"
+  queue: "judgo-execution",
+  jobName: "judge-submission"
 });
 export const LANGUAGE_ALIASES = Object.freeze({
   js: "javascript",

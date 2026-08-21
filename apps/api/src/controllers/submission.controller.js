@@ -29,6 +29,8 @@ export class SubmissionController {
       return res.status(202).json({
         success: true,
         message: "Submission queued for evaluation successfully.",
+        submissionId: queuedSubmission.submissionId,
+        status: queuedSubmission.status,
         submission: queuedSubmission
       });
     } catch (err) {

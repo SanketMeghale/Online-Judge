@@ -20,7 +20,7 @@ export class DockerService {
    * Maximum allowed standard output / standard error buffer size (512 KB)
    * Protects against Large Output Attacks
    */
-  static MAX_OUTPUT_BYTES = 512 * 1024;
+  static MAX_OUTPUT_BYTES = Math.max(1024, Number(process.env.MAX_OUTPUT_BYTES || 512 * 1024));
 
   /**
    * Initializes Dockerode client instance
@@ -337,10 +337,20 @@ export class DockerService {
       const cleanStderr = stderr
         .replace(/__OJ_VERDICT__:(CE|RE|TLE|MLE)\s*/g, "")
         .replace(/__OJ_RUNTIME_MS__:\d+\s*/g, "")
+        .replace(/__OJ_RUNTIME_US__:\d+\s*/g, "")
+        .replace(/__OJ_EXEC_SECONDS__:[\d.]+\s*/g, "")
         .replace(/__OJ_MEMORY_KB__:\d+\s*/g, "")
         .trim();
       const reportedRuntime = Number(markerSource.match(/__OJ_RUNTIME_MS__:(\d+)/)?.[1]);
-      const runtimeMs = Number.isFinite(reportedRuntime) ? reportedRuntime : durationMs;
+      const reportedRuntimeUs = Number(markerSource.match(/__OJ_RUNTIME_US__:(\d+)/)?.[1]);
+      const reportedSeconds = Number(markerSource.match(/__OJ_EXEC_SECONDS__:([\d.]+)/)?.[1]);
+      const runtimeMs = Number.isFinite(reportedSeconds)
+        ? Number((reportedSeconds * 1000).toFixed(3))
+        : Number.isFinite(reportedRuntimeUs)
+        ? Number((reportedRuntimeUs / 1000).toFixed(3))
+        : Number.isFinite(reportedRuntime)
+        ? reportedRuntime
+        : durationMs;
 
       if (timedOut) {
         return {
@@ -349,6 +359,7 @@ export class DockerService {
           statusText: "Time Limit Exceeded",
           runtimeMs,
           memoryMb,
+          peakMemoryBytes: Math.round(memoryMb * 1024 * 1024),
           stdout,
           stderr: cleanStderr || `Execution timed out after ${timeoutMs}ms.`
         };
@@ -361,6 +372,7 @@ export class DockerService {
           statusText: "Memory Limit Exceeded",
           runtimeMs,
           memoryMb,
+          peakMemoryBytes: Math.round(memoryMb * 1024 * 1024),
           stdout,
           stderr: cleanStderr || `Execution exceeded the ${memoryLimitMb} MB memory limit.`
         };
@@ -373,6 +385,7 @@ export class DockerService {
           statusText: marker === "CE" ? "Compilation Error" : marker === "TLE" ? "Time Limit Exceeded" : marker === "MLE" ? "Memory Limit Exceeded" : "Runtime Error",
           runtimeMs,
           memoryMb,
+          peakMemoryBytes: Math.round(memoryMb * 1024 * 1024),
           stdout,
           stderr: cleanStderr
         };
@@ -385,6 +398,7 @@ export class DockerService {
           statusText: "Time Limit Exceeded",
           runtimeMs,
           memoryMb,
+          peakMemoryBytes: Math.round(memoryMb * 1024 * 1024),
           stdout,
           stderr: cleanStderr || "Execution timed out."
         };
@@ -397,6 +411,7 @@ export class DockerService {
           statusText: "Runtime Error",
           runtimeMs,
           memoryMb,
+          peakMemoryBytes: Math.round(memoryMb * 1024 * 1024),
           stdout,
           stderr: cleanStderr || `Process exited with code ${statusCode}`
         };
@@ -408,6 +423,7 @@ export class DockerService {
         statusText: outputTruncated ? "Accepted (Output Truncated)" : "Accepted",
         runtimeMs,
         memoryMb,
+        peakMemoryBytes: Math.round(memoryMb * 1024 * 1024),
         stdout,
         stderr: cleanStderr
       };
@@ -419,7 +435,8 @@ export class DockerService {
         runtimeMs: Date.now() - startTime,
         memoryMb: 0,
         stdout: "",
-        stderr: err.message || "Docker Error"
+        stderr: err.message || "Docker Error",
+        infrastructureError: true
       };
     } finally {
       // 5. Delete Container Instance (Cleanup Guarantee)
@@ -427,6 +444,59 @@ export class DockerService {
         await this.deleteContainer(container);
       }
     }
+  }
+
+  async compileInSandbox({ hostTempDir, language, image, memoryLimitMb, timeoutMs }) {
+    const result = await this.runInSandbox({
+      hostTempDir,
+      image,
+      command: ["/opt/judge/scripts/compile.sh", language],
+      timeoutMs,
+      memoryLimitMb,
+      cpuLimit: 1
+    });
+    const diagnostic = String(result.stderr || "");
+    const compiler = diagnostic.match(/__OJ_COMPILER__:(.*)/)?.[1]?.trim() || language;
+    const version = diagnostic.match(/__OJ_COMPILER_VERSION__:(.*)/)?.[1]?.trim() || "";
+    const compileSeconds = Number(diagnostic.match(/__OJ_COMPILE_SECONDS__:([\d.]+)/)?.[1]);
+    const timeMs = Number.isFinite(compileSeconds)
+      ? Number((compileSeconds * 1000).toFixed(3))
+      : Number(diagnostic.match(/__OJ_COMPILE_TIME_MS__:(\d+)/)?.[1] || result.runtimeMs || 0);
+    const stderr = diagnostic
+      .replace(/__OJ_COMPILER__:.*\n?/g, "")
+      .replace(/__OJ_COMPILER_VERSION__:.*\n?/g, "")
+      .replace(/__OJ_COMPILE_SECONDS__:[\d.]+\s*/g, "")
+      .replace(/__OJ_COMPILE_TIME_MS__:\d+\s*/g, "")
+      .trim();
+    return {
+      ok: result.ok,
+      verdict: result.verdict,
+      infrastructureError: result.infrastructureError,
+      compilation: {
+        status: result.ok ? "SUCCESS" : "FAILED",
+        compiler,
+        name: compiler,
+        version,
+        timeMs,
+        stdout: result.stdout || "",
+        stderr
+      }
+    };
+  }
+
+  async executeCompiledInSandbox({ hostTempDir, language, image, memoryLimitMb, timeoutMs }) {
+    return this.runInSandbox({
+      hostTempDir,
+      image,
+      command: [
+        "/opt/judge/scripts/execute.sh",
+        language,
+        `${Math.max(0.1, timeoutMs / 1000).toFixed(3)}s`
+      ],
+      timeoutMs: timeoutMs + 2_000,
+      memoryLimitMb,
+      cpuLimit: 1
+    });
   }
 }
 

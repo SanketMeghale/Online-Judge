@@ -1,7 +1,7 @@
 /**
  * codeHarness.js
  * Wraps LeetCode-style solution code with a full program harness so it can be
- * executed end-to-end by Judge0 (or the local fallback engine).
+ * executed end-to-end by the isolated execution worker.
  *
  * Strategy:
  * 1. If the user's code already has a main() / __main__ / process.stdin entry
@@ -61,6 +61,9 @@ function hasOwnEntryPoint(code) {
     code.includes("if __name__=='__main__':") ||
     code.includes("process.stdin") ||
     code.includes("sys.stdin") ||
+    /\binput\s*\(/.test(code) ||
+    code.includes("readFileSync(0") ||
+    code.includes("readline") ||
     code.includes("Scanner") ||         // Java stdin
     code.includes("BufferedReader") ||
     code.includes("int main()") ||
@@ -110,7 +113,7 @@ function twoSumHarness(code, lang, stdin) {
 import json, sys
 
 def _harness():
-    raw = '${safe}'.strip()
+    raw = (__import__('sys').stdin.read() or '${safe}').strip()
     nums = [2, 7, 11, 15]
     target = 9
     if raw:
@@ -146,7 +149,7 @@ if __name__ == '__main__':
 
 (function() {
   let nums = [2,7,11,15], target = 9;
-  const raw = "${safeJs}".trim();
+  const raw = (require("fs").readFileSync(0, "utf8") || "${safeJs}").trim();
   if (raw) {
     try {
       const lines = raw.split("\\n").map(l => l.trim()).filter(Boolean);
@@ -243,7 +246,7 @@ function validParenthesesHarness(code, lang, stdin) {
 import json
 
 def _harness():
-    raw = '${safe}'.strip()
+    raw = (__import__('sys').stdin.read() or '${safe}').strip()
     s = '()[]{}'
     if raw:
         try:
@@ -264,7 +267,7 @@ if __name__ == '__main__':
 
 (function() {
   let s = "()[]{}";
-  const raw = "${safeJs}".trim();
+  const raw = (require("fs").readFileSync(0, "utf8") || "${safeJs}").trim();
   if (raw) {
     try {
       let v = raw.replace('s = ', '').trim();
@@ -324,7 +327,7 @@ function palindromeNumberHarness(code, lang, stdin) {
     return `${code}
 
 def _harness():
-    raw = '${safe}'.strip()
+    raw = (__import__('sys').stdin.read() or '${safe}').strip()
     x = 121
     if raw:
         try: x = int(raw.replace('x = ', '').strip())
@@ -342,7 +345,7 @@ if __name__ == '__main__':
 
 (function() {
   let x = 121;
-  const raw = "${safeJs}".trim();
+  const raw = (require("fs").readFileSync(0, "utf8") || "${safeJs}").trim();
   if (raw) { try { x = parseInt(raw.replace('x = ', '').trim(), 10); } catch(e) {} }
   const sol = typeof Solution !== "undefined" ? new Solution() : null;
   const res = sol ? sol.isPalindrome(x) : (typeof isPalindrome === "function" ? isPalindrome(x) : false);
@@ -398,7 +401,7 @@ function reverseStringHarness(code, lang, stdin) {
 import json
 
 def _harness():
-    raw = '${safe}'.strip()
+    raw = (__import__('sys').stdin.read() or '${safe}').strip()
     s = ["h","e","l","l","o"]
     if raw:
         try: s = json.loads(raw.replace('s = ', '').strip())
@@ -417,7 +420,7 @@ if __name__ == '__main__':
 
 (function() {
   let s = ["h","e","l","l","o"];
-  const raw = "${safeJs}".trim();
+  const raw = (require("fs").readFileSync(0, "utf8") || "${safeJs}").trim();
   if (raw) { try { s = JSON.parse(raw.replace('s = ', '').trim()); } catch(e) {} }
   const sol = typeof Solution !== "undefined" ? new Solution() : null;
   if (sol) { sol.reverseString(s); } else if (typeof reverseString === "function") { reverseString(s); }
@@ -482,7 +485,7 @@ function bestTimeHarness(code, lang, stdin) {
 import json
 
 def _harness():
-    raw = '${safe}'.strip()
+    raw = (__import__('sys').stdin.read() or '${safe}').strip()
     prices = [7,1,5,3,6,4]
     if raw:
         try: prices = json.loads(raw.replace('prices = ', '').strip())
@@ -500,7 +503,7 @@ if __name__ == '__main__':
 
 (function() {
   let prices = [7,1,5,3,6,4];
-  const raw = "${safeJs}".trim();
+  const raw = (require("fs").readFileSync(0, "utf8") || "${safeJs}").trim();
   if (raw) { try { prices = JSON.parse(raw.replace('prices = ', '').trim()); } catch(e) {} }
   const sol = typeof Solution !== "undefined" ? new Solution() : null;
   const res = sol ? sol.maxProfit(prices) : (typeof maxProfit === "function" ? maxProfit(prices) : 0);
@@ -558,7 +561,7 @@ function singleNumberHarness(code, lang, stdin) {
 import json
 
 def _harness():
-    raw = '${safe}'.strip()
+    raw = (__import__('sys').stdin.read() or '${safe}').strip()
     nums = [2,2,1]
     if raw:
         try: nums = json.loads(raw.replace('nums = ', '').strip())
@@ -576,7 +579,7 @@ if __name__ == '__main__':
 
 (function() {
   let nums = [2,2,1];
-  const raw = "${safeJs}".trim();
+  const raw = (require("fs").readFileSync(0, "utf8") || "${safeJs}").trim();
   if (raw) { try { nums = JSON.parse(raw.replace('nums = ', '').trim()); } catch(e) {} }
   const sol = typeof Solution !== "undefined" ? new Solution() : null;
   const res = sol ? sol.singleNumber(nums) : (typeof singleNumber === "function" ? singleNumber(nums) : 0);
@@ -632,7 +635,7 @@ function climbingStairsHarness(code, lang, stdin) {
     return `${code}
 
 def _harness():
-    raw = '${safe}'.strip()
+    raw = (__import__('sys').stdin.read() or '${safe}').strip()
     n = 2
     if raw:
         try: n = int(raw.replace('n = ', '').strip())
@@ -650,7 +653,7 @@ if __name__ == '__main__':
 
 (function() {
   let n = 2;
-  const raw = "${safeJs}".trim();
+  const raw = (require("fs").readFileSync(0, "utf8") || "${safeJs}").trim();
   if (raw) { try { n = parseInt(raw.replace('n = ', '').trim(), 10); } catch(e) {} }
   const sol = typeof Solution !== "undefined" ? new Solution() : null;
   const res = sol ? sol.climbStairs(n) : (typeof climbStairs === "function" ? climbStairs(n) : 0);
@@ -702,7 +705,7 @@ function cacheStampedeHarness(code, lang, stdin) {
     return `${code}
 
 def _harness():
-    raw = '${safe}'.strip()
+    raw = (__import__('sys').stdin.read() or '${safe}').strip()
     keys = ["a", "b", "a", "c"]
     if raw and "keys = " in raw:
         try:
@@ -731,7 +734,7 @@ if __name__ == '__main__':
 
 (async function() {
   let keys = ["a","b","a","c"];
-  const raw = "${safeJs}".trim();
+  const raw = (require("fs").readFileSync(0, "utf8") || "${safeJs}").trim();
   if (raw && raw.includes("keys = ")) {
     try { keys = JSON.parse(raw.replace("keys = ", "").trim()); } catch(e) {}
   }
@@ -763,7 +766,7 @@ function mergeIslandsHarness(code, lang, stdin) {
 import json
 
 def _harness():
-    raw = '${safe}'.strip()
+    raw = (__import__('sys').stdin.read() or '${safe}').strip()
     m, n = 3, 3
     positions = [[0,0],[0,1],[1,2]]
     if raw:
@@ -788,7 +791,7 @@ if __name__ == '__main__':
 
 (function() {
   let m = 3, n = 3, positions = [[0,0],[0,1],[1,2]];
-  const raw = "${safeJs}".trim();
+  const raw = (require("fs").readFileSync(0, "utf8") || "${safeJs}").trim();
   if (raw) {
     try {
       if (raw.includes("m = ")) m = parseInt(raw.split("m = ")[1].split(",")[0].trim(), 10);
@@ -818,7 +821,7 @@ function binaryLiftHarness(code, lang, stdin) {
 import json
 
 def _harness():
-    raw = '${safe}'.strip()
+    raw = (__import__('sys').stdin.read() or '${safe}').strip()
     parent = [-1,0,0,1,1]
     node, k = 4, 2
     if raw:
@@ -843,7 +846,7 @@ if __name__ == '__main__':
 
 (function() {
   let parent = [-1,0,0,1,1], node = 4, k = 2;
-  const raw = "${safeJs}".trim();
+  const raw = (require("fs").readFileSync(0, "utf8") || "${safeJs}").trim();
   if (raw) {
     try {
       if (raw.includes("parent = ")) parent = JSON.parse(raw.split("parent = ")[1].split(", query")[0].trim());

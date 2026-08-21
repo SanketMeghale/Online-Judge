@@ -94,7 +94,9 @@ export class TempFileService {
    */
   async createTempDirectory() {
     const uuid = crypto.randomUUID();
-    const tempDirPath = path.join(os.tmpdir(), `oj-sandbox-${uuid}`);
+    const tempRoot = process.env.JUDGE_TEMP_ROOT ? path.resolve(process.env.JUDGE_TEMP_ROOT) : os.tmpdir();
+    await fs.mkdir(tempRoot, { recursive: true, mode: 0o700 });
+    const tempDirPath = path.join(tempRoot, `oj-sandbox-${uuid}`);
 
     await fs.mkdir(tempDirPath, { recursive: true, mode: 0o700 });
     if (process.platform !== "win32" && typeof process.getuid === "function" && process.getuid() === 0) {
@@ -184,7 +186,7 @@ export class TempFileService {
    */
   async sweepOrphanDirectories(maxAgeMs = 300000) {
     let sweptCount = 0;
-    const sysTmp = os.tmpdir();
+    const sysTmp = process.env.JUDGE_TEMP_ROOT ? path.resolve(process.env.JUDGE_TEMP_ROOT) : os.tmpdir();
     const now = Date.now();
 
     try {

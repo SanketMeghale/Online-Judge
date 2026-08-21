@@ -1,6 +1,6 @@
 # Online Judge
 
-A monorepo for a coding-practice and contest application. The API records submissions and publishes RabbitMQ jobs; a dedicated judge worker runs them in locked-down Docker containers, stores verdicts, and sends authenticated realtime updates.
+A monorepo for a coding-practice and contest application. The API records submissions and publishes BullMQ jobs to Redis; a dedicated execution worker runs them in locked-down Docker containers, stores verdicts, and sends authenticated realtime updates.
 
 ## Architecture
 
@@ -11,7 +11,7 @@ React/Vite web app
         v
 Express API  ---> MongoDB
         |
-        | confirmed RabbitMQ message
+        | durable BullMQ job (submissionId only)
         v
 Judge worker ---> isolated Docker sandbox
         |
@@ -28,7 +28,7 @@ The workspace contains:
 - `services/realtime`: authenticated Socket.IO delivery for per-user submission updates.
 - `packages/shared`: language, verdict, and queue contracts shared across services.
 
-MongoDB is required in production. Development can use in-memory application data, but queued judging still needs MongoDB so the API and worker share records. RabbitMQ is mandatory for production judging. The optional inline Judge0 path is intended only for explicitly enabled development use.
+MongoDB and Redis are required for queued execution. Run and Submit never execute source inside the API process and there is no inline fallback.
 
 ## Security model
 
@@ -36,7 +36,7 @@ MongoDB is required in production. Development can use in-memory application dat
 - Firebase identity tokens are verified against Google's public keys and the configured Firebase project.
 - Hidden tests, reference solutions, judge output, and internal problem data are removed from public responses.
 - Submission ownership comes from the authenticated user and is enforced on reads.
-- Production judging fails closed if RabbitMQ or MongoDB is unavailable.
+- Production judging fails closed if Redis or MongoDB is unavailable.
 - Containers have no network or Linux capabilities, use a read-only root filesystem and non-root user, and enforce CPU, memory, process, file, timeout, and output limits.
 - Realtime clients use a separate five-minute signing secret. Judge-to-realtime calls use a distinct internal service secret.
 
@@ -44,7 +44,7 @@ Docker is a security boundary here, but the host still needs normal hardening: k
 
 ## Local setup
 
-Requirements: Node.js 20+, MongoDB, RabbitMQ, and Docker.
+Requirements: Node.js 20+, MongoDB, Redis, and Docker.
 
 ```bash
 npm install
@@ -59,7 +59,7 @@ REALTIME_JWT_SECRET
 REALTIME_INTERNAL_SECRET
 REALTIME_SERVICE_URL
 MONGODB_URI
-RABBITMQ_URL
+REDIS_URL
 CLIENT_ORIGIN
 ```
 
@@ -92,6 +92,6 @@ npm --workspace judge-service test -- DockerIntegration.test.js --runInBand
 
 ## Deployment notes
 
-The Vercel configuration can host the SPA and API, but Vercel cannot run the Docker judge worker, RabbitMQ, or persistent realtime service. Deploy those separately and configure their URLs and secrets. Prefer routing the browser to the API on the same site so the `SameSite=Lax` HttpOnly cookie works predictably.
+The Vercel configuration can host the SPA and API, but Vercel cannot run Docker execution workers, Redis, or the persistent realtime service. Deploy those separately and configure their URLs and secrets. Prefer routing the browser to the API on the same site so the `SameSite=Lax` HttpOnly cookie works predictably.
 
-Do not enable `ENABLE_DEMO_USERS` or `ALLOW_INLINE_JUDGE` in production. Bootstrap the first administrator with `apps/api/src/scripts/bootstrapAdmin.js` and environment-provided credentials; the project contains no default production administrator password.
+Do not enable `ENABLE_DEMO_USERS` in production. Bootstrap the first administrator with `apps/api/src/scripts/bootstrapAdmin.js` and environment-provided credentials; the project contains no default production administrator password. See `docs/execution-architecture.md` for the complete flow, deployment model, and limitations.

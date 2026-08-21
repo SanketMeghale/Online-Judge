@@ -6,7 +6,7 @@ import rateLimit from "express-rate-limit";
 const router = Router();
 const submissionLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 15,
+  max: Number(process.env.SUBMISSION_RATE_LIMIT_PER_MINUTE || 15),
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, error: "Too many submissions. Please retry shortly." }

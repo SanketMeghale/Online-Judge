@@ -138,8 +138,8 @@ export default function AuthLayout() {
                 <Zap size={18} />
               </div>
               <div className="float-card-details">
-                <h5>Runtime: 42 ms</h5>
-                <p>Memory: 14.2 MB • O(N) Space</p>
+                <h5>Measured execution</h5>
+                <p>Runtime and peak memory from the sandbox</p>
               </div>
             </motion.div>
 

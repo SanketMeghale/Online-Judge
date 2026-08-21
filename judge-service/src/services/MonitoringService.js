@@ -7,7 +7,7 @@ import { queueConsumer } from "../queue/consumer.js";
  * MonitoringService - Real-time System Metrics & Health Monitoring Service
  * 
  * Tracks:
- * 1. Queue length & RabbitMQ connection status
+ * 1. Queue length & Redis/BullMQ connection status
  * 2. Average execution time (sliding window)
  * 3. Running Docker sandbox containers
  * 4. Worker health & listener state
@@ -53,22 +53,24 @@ export class MonitoringService {
    */
   async getQueueStatus() {
     try {
-      const channel = await queueProducer.connect();
-      if (channel) {
-        const queueInfo = await channel.checkQueue("judge_queue");
+      const queue = await queueProducer.connect();
+      if (queue) {
+        const counts = await queueProducer.getCounts();
         return {
-          queueName: "judge_queue",
-          length: queueInfo.messageCount || 0,
-          consumers: queueInfo.consumerCount || 0,
+          queueName: queue.name,
+          length: (counts.wait || 0) + (counts.delayed || 0),
+          active: counts.active || 0,
+          failed: counts.failed || 0,
+          consumers: queueConsumer.isListening ? 1 : 0,
           isOnline: true
         };
       }
     } catch (err) {
-      // Fallback mode if RabbitMQ offline
+      // Degraded mode if Redis is offline
     }
 
     return {
-      queueName: "judge_queue",
+      queueName: "judgo-execution",
       length: 0,
       consumers: queueConsumer.isListening ? 1 : 0,
       isOnline: false
@@ -182,6 +184,8 @@ export class MonitoringService {
       queue: {
         name: queue.queueName,
         length: queue.length,
+        active: queue.active || 0,
+        failed: queue.failed || 0,
         consumers: queue.consumers,
         isOnline: queue.isOnline
       },

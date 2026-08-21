@@ -1,679 +1,238 @@
 import mongoose from "mongoose";
+import { ACTIVE_SUBMISSION_STATUSES, isValidLanguage, normalizeLanguage } from "@online-judge/shared";
 import { Submission } from "../models/Submission.js";
 import { Problem } from "../models/Problem.js";
-import { isDatabaseConnected } from "../lib/db.js";
-import { createSubmissionRecord, updateSubmissionRecord, listSubmissionRecords } from "../lib/submissionStore.js";
-import { calculateRealPercentile } from "../lib/benchmarkEngine.js";
-import { wrapCodeWithHarness } from "../lib/codeHarness.js";
-import { executeCode } from "../lib/executeCode.js";
-import { analyzeCodeComplexity } from "../lib/complexityEngine.js";
+import { connectDatabase, isDatabaseConnected } from "../lib/db.js";
+import {
+  createSubmissionRecord,
+  updateSubmissionRecord,
+  listSubmissionRecords
+} from "../lib/submissionStore.js";
 import { problems as defaultProblems } from "../data/problems.js";
-import { recordUserSubmission } from "../lib/userStore.js";
-import { compareOutputs } from "../lib/outputChecker.js";
-import { isValidLanguage, normalizeLanguage } from "@online-judge/shared";
 import { publishSubmissionJob } from "../lib/submissionQueue.js";
 
-function sanitizeTestResult(result = {}) {
-  return {
+const TERMINAL_VERDICTS = new Set(["AC", "WA", "RE", "TLE", "MLE", "CE", "SYSTEM_ERROR"]);
+
+function publicTestResult(result = {}, allowDetails = false) {
+  const safe = {
     id: result.id,
-    testCase: result.testCase ?? result.testcaseIndex,
+    number: result.number ?? result.testCase ?? result.testcaseIndex,
     status: result.status,
     passed: Boolean(result.passed),
     verdict: result.verdict,
-    execution_time_ms: result.execution_time_ms ?? result.runtimeMs ?? 0,
-    memory_kb: result.memory_kb ?? 0
+    executionTimeMs: result.executionTimeMs ?? result.execution_time_ms ?? result.runtimeMs ?? 0,
+    peakMemoryBytes: result.peakMemoryBytes ?? 0,
+    visibility: result.visibility === "PUBLIC" ? "PUBLIC" : "HIDDEN"
   };
+
+  if (allowDetails && safe.visibility !== "HIDDEN") {
+    safe.input = result.input ?? "";
+    safe.expectedOutput = result.expectedOutput ?? "";
+    safe.actualOutput = result.actualOutput ?? result.stdout ?? "";
+    safe.stdout = result.stdout ?? result.actualOutput ?? "";
+    safe.stderr = result.stderr ?? "";
+    safe.difference = result.difference ?? "";
+  }
+  return safe;
 }
 
-function sanitizeSubmissionForUser(submission) {
+export function sanitizeSubmissionForUser(submission) {
   if (!submission) return null;
   const value = typeof submission.toObject === "function" ? submission.toObject() : submission;
-  const { expectedOutput, stdin, stdout, stderr, output, compileOutput, testcases, testResults, __v, ...safe } = value;
-  const rawResults = Array.isArray(testResults) && testResults.length > 0 ? testResults : testcases;
+  const {
+    stdin,
+    customInput,
+    expectedOutput,
+    stdout,
+    stderr,
+    output,
+    compileOutput,
+    errorMessage,
+    testcases,
+    testResults,
+    __v,
+    ...safe
+  } = value;
+  const rawResults = Array.isArray(testResults) && testResults.length ? testResults : testcases;
+  const mode = value.mode || "SUBMIT";
+  const isCompilationError = value.verdict === "CE" || value.status === "COMPILATION_ERROR";
+  const peakMemoryBytes = Number(value.peakMemoryBytes || value.execution?.peakMemoryBytes || 0);
+  const executionTimeMs = Number(value.executionTimeMs ?? value.runtimeMs ?? value.execution?.timeMs ?? 0);
+
   return {
     ...safe,
     id: String(value.id || value._id || value.submissionId),
     submissionId: String(value.submissionId || value.id || value._id),
-    compiler: value.compiler || {
-      name: value.language || "",
-      version: "",
-      status: value.verdict === "CE" ? "FAILED" : "SUCCESS",
-      timeMs: value.compilation_time_ms || value.compilationTimeMs || 0,
-      stderr: value.verdict === "CE" ? (compileOutput || stderr || "") : ""
-    },
-    execution: value.execution || (value.verdict === "CE" ? null : {
-      status: value.status || value.verdict,
-      timeMs: value.runtimeMs || value.execution_time_ms || 0,
-      peakMemoryBytes: value.peakMemoryBytes || (value.memoryMb ? value.memoryMb * 1024 * 1024 : 0),
-      peakMemoryMb: value.memoryMb || 0,
-      exitCode: value.verdict === "AC" ? 0 : 1,
-      stdout: stdout || "",
-      stderr: stderr || ""
-    }),
+    mode,
+    compiler: value.compiler || null,
+    execution: isCompilationError ? null : value.execution || null,
+    executionTimeMs,
+    runtimeMs: executionTimeMs,
+    execution_time_ms: executionTimeMs,
+    peakMemoryBytes,
+    memoryMb: peakMemoryBytes > 0 ? Number((peakMemoryBytes / 1024 / 1024).toFixed(2)) : 0,
     complexity: value.complexity || {
-      time: "O(n)",
-      space: "O(1)",
-      confidence: "High",
-      explanation: ""
+      time: "Unable to determine reliably",
+      space: "Unable to determine reliably",
+      confidence: "Low",
+      explanation: "Static analysis has not completed yet."
     },
-    diagnostic: value.verdict === "CE" ? String(compileOutput || stderr || "").slice(0, 16_000) : "",
-    testResults: Array.isArray(rawResults) ? rawResults.map(sanitizeTestResult) : []
+    diagnostic: isCompilationError
+      ? String(value.compiler?.stderr || compileOutput || stderr || "").slice(0, 16_000)
+      : "",
+    testResults: Array.isArray(rawResults)
+      ? rawResults.map((result) => publicTestResult(result, mode === "RUN" || result.visibility !== "HIDDEN"))
+      : []
   };
 }
 
 async function loadProblem(problemId) {
   let problem = null;
   if (isDatabaseConnected()) {
-    problem = await Problem.findOne({ id: String(problemId), isDeleted: { $ne: true }, status: "published" }).lean();
+    problem = await Problem.findOne({
+      id: String(problemId),
+      isDeleted: { $ne: true },
+      status: "published"
+    }).lean();
   }
-  return problem || defaultProblems.find((item) => item.id === problemId) || null;
+  return problem || defaultProblems.find((item) => item.id === String(problemId)) || null;
 }
 
-function cleanErrorMessage(stderr = "") {
-  return stderr
-    .replace(/C:\\Users\\[^\\]+\\AppData\\Local\\Temp\\/gi, "")
-    .replace(/\/tmp\//g, "")
-    .replace(/solution_[a-z0-9_]+\.(py|cpp|java|js|c)/gi, "Solution")
-    .replace(/judgo_sandbox_[a-zA-Z0-9_\\]+/gi, "sandbox");
+function sourceLimitBytes() {
+  return Math.max(1024, Number(process.env.MAX_SOURCE_SIZE_BYTES || 100_000));
 }
 
-function buildCppJavaStdin(problemId, lcInput) {
-  if (!lcInput || !lcInput.trim()) return "";
-  const raw = lcInput.trim();
-  const pid = (problemId || "").toLowerCase();
+async function assertUserCapacity(userId) {
+  const maxConcurrent = Math.max(1, Number(process.env.MAX_CONCURRENT_JOBS_PER_USER || 3));
+  if (!isDatabaseConnected()) return;
+  const active = await Submission.countDocuments({
+    userId: String(userId),
+    status: { $in: ACTIVE_SUBMISSION_STATUSES }
+  });
+  if (active >= maxConcurrent) {
+    const error = new Error(`You already have ${active} active execution jobs. Please wait for one to finish.`);
+    error.statusCode = 429;
+    throw error;
+  }
+}
+
+function validateSource({ problemId, language, code }) {
+  if (!problemId || !language || typeof code !== "string" || !code.trim()) {
+    const error = new Error("problemId, language, and non-empty code are required.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const normalizedLanguage = normalizeLanguage(language);
+  if (!isValidLanguage(normalizedLanguage)) {
+    const error = new Error("Unsupported programming language.");
+    error.statusCode = 400;
+    throw error;
+  }
+  if (Buffer.byteLength(code, "utf8") > sourceLimitBytes()) {
+    const error = new Error(`Source code exceeds the ${sourceLimitBytes()} byte limit.`);
+    error.statusCode = 413;
+    throw error;
+  }
+  return normalizedLanguage;
+}
+
+async function enqueueExecution({ userId, problemId, language, code, mode, customInput = "" }) {
+  const cleanLanguage = validateSource({ problemId, language, code });
+  const databaseAvailable = await connectDatabase();
+  if (!databaseAvailable && (process.env.NODE_ENV === "production" || process.env.VERCEL_ENV)) {
+    const error = new Error("Submission storage is temporarily unavailable.");
+    error.statusCode = 503;
+    throw error;
+  }
+  const maxInputBytes = Math.max(1024, Number(process.env.MAX_CUSTOM_INPUT_SIZE_BYTES || 64_000));
+  if (Buffer.byteLength(String(customInput), "utf8") > maxInputBytes) {
+    const error = new Error(`Custom input exceeds the ${maxInputBytes} byte limit.`);
+    error.statusCode = 413;
+    throw error;
+  }
+
+  const problem = await loadProblem(problemId);
+  if (!problem) {
+    const error = new Error("Problem not found or unavailable for execution.");
+    error.statusCode = 404;
+    throw error;
+  }
+  await assertUserCapacity(userId);
+
+  const now = new Date();
+  const record = await createSubmissionRecord({
+    userId: String(userId),
+    problemId: String(problemId),
+    problemTitle: problem.title || "",
+    language: cleanLanguage,
+    code,
+    sourceCode: code,
+    mode,
+    customInput: String(customInput || ""),
+    status: "QUEUED",
+    verdict: "PENDING",
+    statusText: "Queued...",
+    statusHistory: [{ status: "QUEUED", at: now }],
+    passCount: 0,
+    totalCount: 0,
+    submittedAt: now
+  });
+  const submissionId = String(record._id || record.id || record.submissionId);
 
   try {
-    if (pid === "two-sum") {
-      const numsMatch = raw.match(/nums\s*=\s*(\[.*?\])/);
-      const targetMatch = raw.match(/target\s*=\s*(-?\d+)/);
-      if (numsMatch && targetMatch) {
-        const nums = JSON.parse(numsMatch[1]);
-        return `${nums.length}\n${nums.join(" ")}\n${targetMatch[1]}`;
-      }
-    }
-
-    if (pid === "valid-parentheses") {
-      const sMatch = raw.match(/s\s*=\s*"([^"]*)"/) || raw.match(/s\s*=\s*'([^']*)'/);
-      if (sMatch) return sMatch[1];
-    }
-
-    if (pid === "palindrome-number") {
-      const xMatch = raw.match(/x\s*=\s*(-?\d+)/);
-      if (xMatch) return xMatch[1];
-    }
-
-    if (pid === "best-time-to-buy-and-sell-stock") {
-      const pricesMatch = raw.match(/prices\s*=\s*(\[.*?\])/);
-      if (pricesMatch) {
-        const prices = JSON.parse(pricesMatch[1]);
-        return `${prices.length}\n${prices.join(" ")}`;
-      }
-    }
-
-    if (pid === "single-number") {
-      const numsMatch = raw.match(/nums\s*=\s*(\[.*?\])/);
-      if (numsMatch) {
-        const nums = JSON.parse(numsMatch[1]);
-        return `${nums.length}\n${nums.join(" ")}`;
-      }
-    }
-
-    if (pid === "climbing-stairs") {
-      const nMatch = raw.match(/n\s*=\s*(\d+)/);
-      if (nMatch) return nMatch[1];
-    }
-
-    if (pid === "reverse-string") {
-      const sMatch = raw.match(/s\s*=\s*(\[.*?\])/);
-      if (sMatch) {
-        const s = JSON.parse(sMatch[1]);
-        return `${s.length}\n${s.join(" ")}`;
-      }
-    }
-  } catch {}
-
-  return raw;
+    const job = await publishSubmissionJob({ submissionId });
+    await updateSubmissionRecord(submissionId, { jobId: job.id });
+    return sanitizeSubmissionForUser({ ...record, id: submissionId, submissionId, jobId: job.id });
+  } catch (cause) {
+    await updateSubmissionRecord(submissionId, {
+      status: "SYSTEM_ERROR",
+      verdict: "SYSTEM_ERROR",
+      statusText: "Execution queue unavailable",
+      errorMessage: "The execution queue could not accept this job.",
+      statusHistory: [
+        { status: "QUEUED", at: now },
+        { status: "SYSTEM_ERROR", at: new Date() }
+      ],
+      completedAt: new Date()
+    });
+    const error = new Error("The execution queue is currently unavailable. Please retry shortly.", { cause });
+    error.statusCode = 503;
+    throw error;
+  }
 }
 
-export async function evaluateSubmissionInline({ submission, problem }) {
-  const { code, language } = submission;
-  const sampleCases = problem?.examples || [];
-  const hiddenCases = problem?.hiddenTestCases || [];
-  const testCases = [...sampleCases, ...hiddenCases];
-  const normLang = (language || "").toLowerCase().trim();
-  const needsConvertedStdin = ["cpp", "c++", "java", "c"].includes(normLang);
-
-  // 1. Compute deterministic Static Complexity from user's actual source code AST
-  const complexity = analyzeCodeComplexity({
-    code,
-    language: normLang,
-    problemTitle: problem?.title || problem?.id
-  });
-
-  if (!testCases.length) {
-    const result = await executeCode({ language: normLang, code });
-    const cleanErr = cleanErrorMessage(result.stderr || result.compileOutput || "");
-    const runtimeMs = result.execution_time_ms ?? result.runtimeMs ?? 0;
-    const memoryKb = result.memory_kb ?? 0;
-    const memoryMb = result.memoryMb ?? (memoryKb > 0 ? Number((memoryKb / 1024).toFixed(2)) : 0);
-
-    const verdict = result.ok ? "AC" : (result.verdict === "CE" ? "CE" : result.verdict === "TLE" ? "TLE" : "RE");
-    const percentiles = await calculateRealPercentile({
-      problemId: problem?.id,
-      language: normLang,
-      runtimeMs,
-      memoryMb
-    });
-
-    const compiler = result.compiler || {
-      name: normLang,
-      version: "",
-      status: verdict === "CE" ? "FAILED" : "SUCCESS",
-      timeMs: result.compilation_time_ms ?? 0,
-      stderr: verdict === "CE" ? cleanErr : ""
-    };
-
-    const execution = verdict === "CE" ? null : {
-      status: verdict === "AC" ? "ACCEPTED" : verdict === "TLE" ? "TIME_LIMIT_EXCEEDED" : "RUNTIME_ERROR",
-      timeMs: runtimeMs,
-      peakMemoryBytes: (result.execution?.peakMemoryBytes) || (memoryKb * 1024),
-      peakMemoryMb: memoryMb,
-      exitCode: result.ok ? 0 : 1,
-      stdout: result.stdout || "",
-      stderr: cleanErr
-    };
-
-    return {
-      status: "COMPLETED",
-      verdict,
-      statusText: result.ok ? "Accepted" : verdict === "CE" ? "Compilation Error" : verdict === "TLE" ? "Time Limit Exceeded" : "Execution failed",
-      runtimeMs,
-      execution_time_ms: runtimeMs,
-      compilation_time_ms: result.compilation_time_ms ?? 0,
-      memory_kb: memoryKb,
-      memoryMb,
-      memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
-      peakMemoryBytes: execution?.peakMemoryBytes || 0,
-      runtimePercentile: percentiles.runtimePercentile,
-      memoryPercentile: percentiles.memoryPercentile,
-      compiler,
-      execution,
-      complexity,
-      stdout: result.stdout || "",
-      stderr: cleanErr,
-      compileOutput: result.compileOutput || "",
-      output: result.stdout || cleanErr,
-      testResults: []
-    };
-  }
-
-  const testResults = [];
-  let totalRuntimeMs = 0;
-  let maxMemoryKb = 0;
-  let maxMemoryBytes = 0;
-  let compilationTimeMs = 0;
-  let finalCompiler = null;
-
-  for (let i = 0; i < testCases.length; i++) {
-    const testcase = testCases[i];
-    const tcStdin = needsConvertedStdin
-      ? buildCppJavaStdin(problem?.id, testcase.input)
-      : testcase.input;
-    const wrappedCode = wrapCodeWithHarness({ code, language: normLang, problemId: problem?.id, stdin: tcStdin });
-    const result = await executeCode({ language: normLang, code: wrappedCode, stdin: tcStdin });
-
-    const execMs = result.execution_time_ms ?? result.runtimeMs ?? 0;
-    totalRuntimeMs += execMs;
-    compilationTimeMs = Math.max(compilationTimeMs, result.compilation_time_ms ?? 0);
-    maxMemoryKb = Math.max(maxMemoryKb, result.memory_kb ?? 0);
-    maxMemoryBytes = Math.max(maxMemoryBytes, result.execution?.peakMemoryBytes || (result.memory_kb ? result.memory_kb * 1024 : 0));
-    finalCompiler = result.compiler || finalCompiler;
-
-    const cleanErr = cleanErrorMessage(result.stderr || result.compileOutput || "");
-
-    // Compilation error on compiled languages
-    if (result.verdict === "CE") {
-      testResults.push({
-        id: i + 1,
-        testCase: i + 1,
-        status: "COMPILATION_ERROR",
-        passed: false,
-        input: testcase.input,
-        expectedOutput: testcase.output,
-        actualOutput: cleanErr || "Compilation Error",
-        difference: "Compilation failed.",
-        verdict: "CE",
-        execution_time_ms: 0,
-        memory_kb: 0,
-        stdout: "",
-        stderr: cleanErr
-      });
-
-      const compiler = finalCompiler || {
-        name: normLang,
-        version: "",
-        status: "FAILED",
-        timeMs: compilationTimeMs,
-        stderr: cleanErr
-      };
-
-      return {
-        status: "COMPLETED",
-        verdict: "CE",
-        statusText: "Compilation Error",
-        passedCount: 0,
-        totalCases: testCases.length,
-        runtimeMs: 0,
-        execution_time_ms: 0,
-        compilation_time_ms: compilationTimeMs,
-        memory_kb: 0,
-        memoryMb: 0,
-        peakMemoryBytes: 0,
-        runtimePercentile: null,
-        memoryPercentile: null,
-        compiler,
-        execution: null,
-        complexity,
-        stdout: "",
-        stderr: cleanErr,
-        compileOutput: cleanErr,
-        output: cleanErr || "Compilation Error",
-        expectedOutput: testcase.output,
-        testResults
-      };
-    }
-
-    if (!result.ok) {
-      const verdict = result.verdict || "RE";
-      const avgRuntimeMs = Number((totalRuntimeMs / (i + 1)).toFixed(2));
-      const memoryMb = maxMemoryKb > 0 ? Number((maxMemoryKb / 1024).toFixed(2)) : 0;
-
-      testResults.push({
-        id: i + 1,
-        testCase: i + 1,
-        status: verdict === "TLE" ? "TIME_LIMIT_EXCEEDED" : "RUNTIME_ERROR",
-        passed: false,
-        input: testcase.input,
-        expectedOutput: testcase.output,
-        actualOutput: result.stdout || cleanErr || "(No output)",
-        difference: cleanErr || (verdict === "TLE" ? "Time Limit Exceeded" : "Runtime Error"),
-        verdict,
-        execution_time_ms: execMs,
-        memory_kb: result.memory_kb ?? 0,
-        stdout: result.stdout || "",
-        stderr: cleanErr
-      });
-
-      const compiler = finalCompiler || {
-        name: normLang,
-        version: "",
-        status: "SUCCESS",
-        timeMs: compilationTimeMs,
-        stderr: ""
-      };
-
-      const execution = {
-        status: verdict === "TLE" ? "TIME_LIMIT_EXCEEDED" : "RUNTIME_ERROR",
-        timeMs: avgRuntimeMs,
-        peakMemoryBytes: maxMemoryBytes,
-        peakMemoryMb: memoryMb,
-        exitCode: result.execution?.exitCode || 1,
-        stdout: result.stdout || "",
-        stderr: cleanErr
-      };
-
-      return {
-        status: "COMPLETED",
-        verdict,
-        statusText: verdict === "TLE" ? "Time Limit Exceeded" : `Runtime Error on testcase ${i + 1}`,
-        passedCount: i,
-        totalCases: testCases.length,
-        runtimeMs: avgRuntimeMs,
-        execution_time_ms: avgRuntimeMs,
-        compilation_time_ms: compilationTimeMs,
-        memory_kb: maxMemoryKb,
-        memoryMb,
-        memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
-        peakMemoryBytes: maxMemoryBytes,
-        runtimePercentile: null,
-        memoryPercentile: null,
-        compiler,
-        execution,
-        complexity,
-        stdout: result.stdout || "",
-        stderr: cleanErr,
-        output: result.stdout || cleanErr || "Execution failed",
-        expectedOutput: testcase.output,
-        testResults
-      };
-    }
-
-    const comparison = compareOutputs(result.stdout, testcase.output);
-    testResults.push({
-      id: i + 1,
-      testCase: i + 1,
-      status: comparison.passed ? "PASSED" : "WRONG_ANSWER",
-      passed: comparison.passed,
-      input: testcase.input,
-      expectedOutput: testcase.output,
-      actualOutput: result.stdout.trim() || "(No output)",
-      difference: comparison.difference,
-      verdict: comparison.passed ? "AC" : "WA",
-      execution_time_ms: execMs,
-      memory_kb: result.memory_kb ?? 0,
-      stdout: result.stdout || "",
-      stderr: cleanErrorMessage(result.stderr)
-    });
-
-    if (!comparison.passed) {
-      const avgRuntimeMs = Number((totalRuntimeMs / (i + 1)).toFixed(2));
-      const memoryMb = maxMemoryKb > 0 ? Number((maxMemoryKb / 1024).toFixed(2)) : 0;
-
-      const compiler = finalCompiler || {
-        name: normLang,
-        version: "",
-        status: "SUCCESS",
-        timeMs: compilationTimeMs,
-        stderr: ""
-      };
-
-      const execution = {
-        status: "WRONG_ANSWER",
-        timeMs: avgRuntimeMs,
-        peakMemoryBytes: maxMemoryBytes,
-        peakMemoryMb: memoryMb,
-        exitCode: 0,
-        stdout: result.stdout || "",
-        stderr: cleanErrorMessage(result.stderr)
-      };
-
-      return {
-        status: "COMPLETED",
-        verdict: "WA",
-        statusText: `Wrong Answer on testcase ${i + 1} / ${testCases.length}`,
-        passedCount: i,
-        totalCases: testCases.length,
-        runtimeMs: avgRuntimeMs,
-        execution_time_ms: avgRuntimeMs,
-        compilation_time_ms: compilationTimeMs,
-        memory_kb: maxMemoryKb,
-        memoryMb,
-        memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
-        peakMemoryBytes: maxMemoryBytes,
-        runtimePercentile: null,
-        memoryPercentile: null,
-        compiler,
-        execution,
-        complexity,
-        stdout: result.stdout || "",
-        stderr: cleanErrorMessage(result.stderr),
-        output: result.stdout.trim() || "Incorrect output",
-        expectedOutput: testcase.output,
-        testResults
-      };
-    }
-  }
-
-  const avgRuntimeMs = Number((totalRuntimeMs / testCases.length).toFixed(2));
-  const memoryMb = maxMemoryKb > 0 ? Number((maxMemoryKb / 1024).toFixed(2)) : 0;
-
-  const percentiles = await calculateRealPercentile({
-    problemId: problem?.id,
-    language: normLang,
-    runtimeMs: avgRuntimeMs,
-    memoryMb
-  });
-
-  const compiler = finalCompiler || {
-    name: normLang,
-    version: "",
-    status: "SUCCESS",
-    timeMs: compilationTimeMs,
-    stderr: ""
-  };
-
-  const execution = {
-    status: "ACCEPTED",
-    timeMs: avgRuntimeMs,
-    peakMemoryBytes: maxMemoryBytes,
-    peakMemoryMb: memoryMb,
-    exitCode: 0,
-    stdout: testResults[0]?.actualOutput || "",
-    stderr: ""
-  };
-
-  return {
-    status: "COMPLETED",
-    verdict: "AC",
-    statusText: "Accepted",
-    passedCount: testCases.length,
-    totalCases: testCases.length,
-    runtimeMs: avgRuntimeMs,
-    execution_time_ms: avgRuntimeMs,
-    compilation_time_ms: compilationTimeMs,
-    memory_kb: maxMemoryKb,
-    memoryMb,
-    memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
-    peakMemoryBytes: maxMemoryBytes,
-    runtimePercentile: percentiles.runtimePercentile,
-    memoryPercentile: percentiles.memoryPercentile,
-    compiler,
-    execution,
-    complexity,
-    stdout: testResults[0]?.actualOutput || "",
-    stderr: "",
-    output: testResults[0]?.actualOutput || testCases[0]?.output || "Success",
-    expectedOutput: testCases[0]?.output ?? "",
-    testResults
-  };
-}
-
-/**
- * SubmissionService - Coordinates Submission Queuing and Lifecycle
- */
 export class SubmissionService {
   async submitCode({ userId, problemId, language, code }) {
-    if (!problemId || !language || !code) {
-      throw new Error("Missing required parameters for submission.");
-    }
+    return enqueueExecution({ userId, problemId, language, code, mode: "SUBMIT" });
+  }
 
-    const cleanLanguage = normalizeLanguage(language);
-    if (!isValidLanguage(cleanLanguage)) {
-      const error = new Error("Unsupported programming language.");
-      error.statusCode = 400;
-      throw error;
-    }
-    if (String(code).length > 100_000) {
-      const error = new Error("Source code exceeds the 100 KB submission limit.");
-      error.statusCode = 413;
-      throw error;
-    }
-
-    const problem = await loadProblem(problemId);
-    if (!problem) {
-      const error = new Error("Problem not found or unavailable for submissions.");
-      error.statusCode = 404;
-      throw error;
-    }
-
-    // 1. Initial Static Complexity Analysis
-    const initialComplexity = analyzeCodeComplexity({
+  async runCode({ userId, problemId, language, code, stdin = "" }) {
+    return enqueueExecution({
+      userId,
+      problemId,
+      language,
       code,
-      language: cleanLanguage,
-      problemTitle: problem?.title || problem?.id
-    });
-
-    // 2. Save Initial Submission Record
-    const submissionData = {
-      userId,
-      problemId,
-      problemTitle: problem?.title || "",
-      language: cleanLanguage,
-      code,
-      status: "QUEUED",
-      verdict: "PENDING",
-      statusText: "Queued for evaluation",
-      passCount: 0,
-      totalCount: 0,
-      runtimeMs: 0,
-      memoryMb: 0,
-      complexity: initialComplexity,
-      createdAt: new Date()
-    };
-
-    const newSubmission = await createSubmissionRecord(submissionData);
-    const submissionId = String(newSubmission._id || newSubmission.id || newSubmission.submissionId);
-    console.log(`[SubmissionService] [STAGE 2: CODE_SAVED] Saved submission ID: ${submissionId}`);
-
-    // 3. Attempt publishing job to RabbitMQ queue
-    const jobPayload = {
-      submissionId,
-      problemId,
-      userId,
-      language: cleanLanguage,
-      code
-    };
-
-    let published = false;
-    try {
-      published = await publishSubmissionJob(jobPayload);
-    } catch (e) {
-      published = false;
-    }
-
-    if (published) {
-      console.log(`[SubmissionService] [STAGE 3: JOB_QUEUED] Published job ${submissionId} to RabbitMQ.`);
-      return sanitizeSubmissionForUser({
-        id: submissionId,
-        submissionId,
-        problemId,
-        userId,
-        language: cleanLanguage,
-        status: "QUEUED",
-        verdict: "PENDING",
-        statusText: "Queued for evaluation",
-        complexity: initialComplexity,
-        createdAt: newSubmission.createdAt || new Date()
-      });
-    }
-
-    const inlineJudgeAllowed = process.env.ALLOW_INLINE_JUDGE === "true" && process.env.NODE_ENV !== "production";
-    if (!inlineJudgeAllowed) {
-      await updateSubmissionRecord(submissionId, {
-        status: "SYSTEM_ERROR",
-        verdict: "SYSTEM_ERROR",
-        statusText: "Judge queue unavailable",
-        completedAt: new Date()
-      });
-      const error = new Error("The judge queue is currently unavailable. Please retry shortly.");
-      error.statusCode = 503;
-      throw error;
-    }
-
-    console.warn(`[SubmissionService] RabbitMQ offline. Using development inline judge for ${submissionId}.`);
-
-    const evaluation = await evaluateSubmissionInline({
-      submission: { id: submissionId, language: cleanLanguage, code },
-      problem
-    });
-
-    const updatedRecord = {
-      status: "COMPLETED",
-      verdict: evaluation.verdict,
-      statusText: evaluation.statusText,
-      passCount: evaluation.passedCount ?? evaluation.passCount ?? 0,
-      totalCount: evaluation.totalCases ?? evaluation.totalCount ?? 0,
-      passedCount: evaluation.passedCount ?? evaluation.passCount ?? 0,
-      totalCases: evaluation.totalCases ?? evaluation.totalCount ?? 0,
-      runtimeMs: evaluation.runtimeMs || 0,
-      execution_time_ms: evaluation.execution_time_ms || 0,
-      compilation_time_ms: evaluation.compilation_time_ms || 0,
-      compilationTimeMs: evaluation.compilation_time_ms || 0,
-      memory_kb: evaluation.memory_kb || 0,
-      memoryMb: evaluation.memoryMb || 0,
-      peakMemoryBytes: evaluation.peakMemoryBytes || 0,
-      runtimePercentile: evaluation.runtimePercentile,
-      memoryPercentile: evaluation.memoryPercentile,
-      compiler: evaluation.compiler,
-      execution: evaluation.execution,
-      complexity: evaluation.complexity || initialComplexity,
-      stdout: evaluation.stdout || "",
-      stderr: evaluation.stderr || "",
-      output: evaluation.output || evaluation.stdout || "",
-      testcases: evaluation.testResults || evaluation.testcases || [],
-      completedAt: new Date()
-    };
-
-    await updateSubmissionRecord(submissionId, updatedRecord);
-
-    // Update user stats in DB
-    try {
-      await recordUserSubmission(userId, problemId, evaluation.verdict, problem?.points || 10);
-    } catch (userErr) {
-      console.warn("[SubmissionService] Notice: could not update user stats:", userErr.message);
-    }
-
-    console.log(`[SubmissionService] [STAGE 9: DATABASE_UPDATED] Submission ${submissionId} evaluation complete: ${evaluation.verdict} (${evaluation.statusText})`);
-
-    return sanitizeSubmissionForUser({
-      id: submissionId,
-      submissionId,
-      problemId,
-      userId,
-      language: cleanLanguage,
-      status: "COMPLETED",
-      verdict: evaluation.verdict,
-      statusText: evaluation.statusText,
-      passCount: updatedRecord.passCount,
-      passedCount: updatedRecord.passCount,
-      totalCount: updatedRecord.totalCount,
-      totalCases: updatedRecord.totalCount,
-      runtimeMs: updatedRecord.runtimeMs,
-      execution_time_ms: updatedRecord.execution_time_ms,
-      compilation_time_ms: updatedRecord.compilation_time_ms,
-      runtime: `${updatedRecord.runtimeMs} ms`,
-      memory_kb: updatedRecord.memory_kb,
-      memoryMb: updatedRecord.memoryMb,
-      memory: updatedRecord.memoryMb > 0 ? `${updatedRecord.memoryMb} MB` : undefined,
-      peakMemoryBytes: updatedRecord.peakMemoryBytes,
-      runtimePercentile: evaluation.runtimePercentile,
-      memoryPercentile: evaluation.memoryPercentile,
-      compiler: updatedRecord.compiler,
-      execution: updatedRecord.execution,
-      complexity: updatedRecord.complexity,
-      stdout: updatedRecord.stdout,
-      stderr: updatedRecord.stderr,
-      output: updatedRecord.output,
-      testResults: updatedRecord.testcases,
-      createdAt: newSubmission.createdAt || new Date(),
-      completedAt: updatedRecord.completedAt
+      mode: "RUN",
+      customInput: stdin
     });
   }
 
   async getSubmissionById(id, requestingUser) {
     let submission = null;
     if (isDatabaseConnected()) {
-      try {
-        if (mongoose.Types.ObjectId.isValid(id)) {
-          const doc = await Submission.findById(id).lean();
-          if (doc) submission = doc;
-        }
-        if (!submission) {
-          submission = await Submission.findOne({
-            $or: [{ submissionId: id }, { id }]
-          }).lean();
-        }
-      } catch (err) {
-        console.warn(`[SubmissionService] MongoDB find error for ${id}:`, err.message);
-      }
+      const idString = String(id);
+      const identityQueries = [{ id: idString }, { submissionId: idString }];
+      if (mongoose.Types.ObjectId.isValid(idString)) identityQueries.unshift({ _id: idString });
+      submission = await Submission.findOne({ $or: identityQueries }).lean();
     }
-
     if (!submission) {
       const records = await listSubmissionRecords({});
-      submission = records.find((r) => String(r._id || r.id || r.submissionId) === String(id)) || null;
+      submission = records.find((item) =>
+        [item._id, item.id, item.submissionId].some((candidate) => String(candidate) === String(id))
+      ) || null;
     }
-
     if (!submission) return null;
+
     const requesterIds = [requestingUser?.id, requestingUser?._id].filter(Boolean).map(String);
     const isAdmin = requestingUser?.role === "admin" || requestingUser?.role === "super_admin";
     if (!isAdmin && !requesterIds.includes(String(submission.userId))) return null;
@@ -684,10 +243,10 @@ export class SubmissionService {
     const userIds = (Array.isArray(userId) ? userId : [userId]).filter(Boolean).map(String);
     const safeLimit = Math.max(1, Math.min(Number(limit) || 50, 100));
     const safePage = Math.max(1, Number(page) || 1);
-    const filter = { userId: { $in: userIds } };
+    const filter = { userId: { $in: userIds }, mode: { $ne: "RUN" } };
     if (problemId) filter.problemId = String(problemId);
     if (verdict) filter.verdict = String(verdict).toUpperCase();
-    if (language) filter.language = String(language).toLowerCase();
+    if (language) filter.language = normalizeLanguage(language);
 
     let records;
     let total;
@@ -697,16 +256,16 @@ export class SubmissionService {
         Submission.countDocuments(filter)
       ]);
     } else {
-      const all = (await listSubmissionRecords({})).filter((item) => {
-        return userIds.includes(String(item.userId)) &&
-          (!problemId || String(item.problemId) === String(problemId)) &&
-          (!verdict || String(item.verdict).toUpperCase() === String(verdict).toUpperCase()) &&
-          (!language || String(item.language).toLowerCase() === String(language).toLowerCase());
-      });
+      const all = (await listSubmissionRecords({})).filter((item) =>
+        userIds.includes(String(item.userId)) &&
+        (item.mode || "SUBMIT") !== "RUN" &&
+        (!problemId || String(item.problemId) === String(problemId)) &&
+        (!verdict || String(item.verdict).toUpperCase() === String(verdict).toUpperCase()) &&
+        (!language || normalizeLanguage(item.language) === normalizeLanguage(language))
+      );
       total = all.length;
       records = all.slice((safePage - 1) * safeLimit, safePage * safeLimit);
     }
-
     return {
       submissions: records.map(sanitizeSubmissionForUser),
       pagination: { page: safePage, limit: safeLimit, total, pages: Math.ceil(total / safeLimit) }
@@ -714,25 +273,12 @@ export class SubmissionService {
   }
 
   async getSubmissions(query = {}) {
-    if (isDatabaseConnected()) {
-      try {
-        const filter = {};
-        if (query.userId) filter.userId = query.userId;
-        if (query.problemId) filter.problemId = query.problemId;
-        if (query.language) filter.language = query.language.toLowerCase();
-        if (query.verdict) filter.verdict = query.verdict;
+    const records = await listSubmissionRecords(query);
+    return records.map(sanitizeSubmissionForUser);
+  }
 
-        const docs = await Submission.find(filter)
-          .sort({ createdAt: -1 })
-          .limit(Number(query.limit) || 50)
-          .lean();
-        if (docs && docs.length > 0) return docs;
-      } catch (err) {
-        console.warn("[SubmissionService] MongoDB getSubmissions error:", err.message);
-      }
-    }
-
-    return listSubmissionRecords(query);
+  isTerminal(submission) {
+    return TERMINAL_VERDICTS.has(submission?.verdict);
   }
 }
 

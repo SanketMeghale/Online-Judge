@@ -92,16 +92,10 @@ export default function AdminTestCases() {
   async function handleRunDryTest() {
     setIsRunning(true);
     setRunResult(null);
-    setTimeout(() => {
-      setIsRunning(false);
-      setRunResult({
-        success: true,
-        passed: examples.length + hiddenTests.length,
-        total: examples.length + hiddenTests.length,
-        runtimeMs: 42,
-        memoryMb: 14.2
-      });
-    }, 800);
+    const cases = [...examples, ...hiddenTests];
+    const valid = cases.filter((testcase) => testcase.input && testcase.output).length;
+    setRunResult({ success: valid === cases.length, passed: valid, total: cases.length });
+    setIsRunning(false);
   }
 
   return (
@@ -161,7 +155,7 @@ export default function AdminTestCases() {
             </span>
           </div>
           <span style={{ fontSize: "0.78rem", color: "#94a3b8" }}>
-            {runResult.runtimeMs}ms • {runResult.memoryMb}MB
+            Structural validation only; no program was executed.
           </span>
         </div>
       )}

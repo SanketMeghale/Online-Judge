@@ -185,7 +185,7 @@ const testimonials = [
   },
   {
     quote:
-      "The sub-second compilation and real-time Judge0 sandbox is incredible. No waiting around—you get instant feedback with accurate runtime and memory analytics.",
+      "The isolated execution sandbox gives clear compiler feedback with measured runtime and memory analytics.",
     name: "Priya Sharma",
     role: "Fullstack Engineer @ Microsoft",
     avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80"
@@ -519,8 +519,8 @@ export default function LandingPage() {
                 </div>
 
                 <div className="ide-metrics">
-                  <span>⚡ 24 ms</span>
-                  <span>💾 14.2 MB</span>
+                  <span>⚡ Measured runtime</span>
+                  <span>💾 Measured peak memory</span>
                 </div>
               </div>
             </div>

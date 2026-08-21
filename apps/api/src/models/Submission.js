@@ -10,6 +10,8 @@ const submissionSchema = new mongoose.Schema(
     problemId: { type: String, required: true, index: true },
     problemTitle: { type: String, default: "" },
     contestId: { type: String, default: null, index: true },
+    mode: { type: String, enum: ["SUBMIT", "RUN"], default: "SUBMIT", index: true },
+    jobId: { type: String, default: "", index: true },
     language: { type: String, required: true, index: true },
     code: { type: String, default: "" },
     sourceCode: { type: String, default: "" },
@@ -31,6 +33,11 @@ const submissionSchema = new mongoose.Schema(
         "RUNTIME_ERROR",
         "COMPILATION_ERROR",
         "PROCESSING",
+        "COMPILING",
+        "RUNNING",
+        "JUDGING",
+        "ANALYZING",
+        "FINALIZING",
         "COMPLETED",
         "SYSTEM_ERROR"
       ],
@@ -39,12 +46,17 @@ const submissionSchema = new mongoose.Schema(
     },
     verdict: { type: String, default: "PENDING" },
     statusText: { type: String, default: "Queued for evaluation" },
+    statusHistory: {
+      type: [{ status: String, at: Date }],
+      default: () => [{ status: "QUEUED", at: new Date() }]
+    },
+    customInput: { type: String, default: "" },
     
     // Compilation metrics
     compiler: {
       name: { type: String, default: "" },
       version: { type: String, default: "" },
-      status: { type: String, default: "SUCCESS" },
+      status: { type: String, default: "PENDING" },
       timeMs: { type: Number, default: 0 },
       stdout: { type: String, default: "" },
       stderr: { type: String, default: "" }
@@ -63,9 +75,9 @@ const submissionSchema = new mongoose.Schema(
 
     // Algorithm Big-O Complexity Analysis (Derived from actual code AST)
     complexity: {
-      time: { type: String, default: "O(n)" },
-      space: { type: String, default: "O(1)" },
-      confidence: { type: String, default: "High" },
+      time: { type: String, default: "Unable to determine reliably" },
+      space: { type: String, default: "Unable to determine reliably" },
+      confidence: { type: String, default: "Low" },
       explanation: { type: String, default: "" }
     },
 

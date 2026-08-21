@@ -19,7 +19,12 @@ app.use(express.json());
  * GET /health Endpoint
  * Returns real-time metrics for queue length, execution times, running containers, worker health, memory, and CPU usage.
  */
-app.get("/health", async (_req, res) => {
+app.get("/health", async (req, res) => {
+  const healthToken = process.env.EXECUTION_SERVICE_TOKEN;
+  if (healthToken && req.headers.authorization !== `Bearer ${healthToken}`) {
+    res.status(401).json({ status: "UNAUTHORIZED" });
+    return;
+  }
   const healthReport = await monitoringService.getHealthReport();
   const httpStatus = healthReport.status === "HEALTHY" ? 200 : 503;
   res.status(httpStatus).json(healthReport);
@@ -31,8 +36,8 @@ console.log("===================================================================
 
 async function startJudgeService() {
   const isProduction = process.env.NODE_ENV === "production";
-  if (isProduction && (!process.env.MONGODB_URI || !/^amqps?:\/\//.test(process.env.RABBITMQ_URL || "") || !process.env.REALTIME_INTERNAL_SECRET || !process.env.REALTIME_SERVICE_URL)) {
-    throw new Error("MONGODB_URI, a valid RABBITMQ_URL, REALTIME_INTERNAL_SECRET, and REALTIME_SERVICE_URL are required in production.");
+  if (isProduction && (!process.env.MONGODB_URI || !/^rediss?:\/\//.test(process.env.REDIS_URL || ""))) {
+    throw new Error("MONGODB_URI and a valid REDIS_URL are required in production.");
   }
 
   // 1. Connect to MongoDB Database
@@ -44,13 +49,12 @@ async function startJudgeService() {
     console.warn(`⚠️ [MongoDB] Connection offline: ${dbErr.message}. Operating in hybrid mode.`);
   }
 
-  // 2. Connect to RabbitMQ Producer Topology
-  const channel = await queueProducer.connect();
-  if (channel) {
-    console.log("✓ [RabbitMQ] Connected to message broker exchange & queues.");
+  // 2. Connect to Redis/BullMQ
+  const queue = await queueProducer.connect();
+  if (queue) {
+    console.log("✓ [BullMQ] Connected to Redis execution queue.");
   } else {
-    if (isProduction) throw new Error("RabbitMQ is unavailable; refusing to start a production judge worker.");
-    console.warn("⚠️ [RabbitMQ] Server offline. Operating in fallback mode.");
+    throw new Error("Redis is unavailable; refusing to start the execution worker.");
   }
 
   // 3. Start Judge Worker Listener on 'judge_queue'
@@ -58,7 +62,10 @@ async function startJudgeService() {
     async (jobData) => {
       return await judgeWorker.processJob(jobData);
     },
-    { concurrency: WORKER_CONCURRENCY }
+    {
+      concurrency: WORKER_CONCURRENCY,
+      onExhausted: (jobData, error) => judgeWorker.markSystemError(jobData, error)
+    }
   );
 
   // 4. Start HTTP Health Monitoring Server

@@ -1,0 +1,84 @@
+services:
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mongo:
+    image: mongo:8.0
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    env_file: .env
+    environment:
+      PORT: 4000
+      MONGODB_URI: mongodb://mongo:27017/online-judge
+      REDIS_URL: redis://redis:6379
+      REALTIME_SERVICE_URL: http://realtime:4001
+      JUDGE_MONITORING_URL: http://worker:4002/health
+    ports:
+      - "4000:4000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+
+  realtime:
+    build:
+      context: .
+      dockerfile: services/realtime/Dockerfile
+    env_file: .env
+    environment:
+      PORT: 4001
+    ports:
+      - "4001:4001"
+
+  worker:
+    build:
+      context: .
+      dockerfile: judge-service/Dockerfile
+    env_file: .env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/online-judge
+      REDIS_URL: redis://redis:6379
+      REALTIME_SERVICE_URL: http://realtime:4001
+      JUDGE_TEMP_ROOT: /tmp/judgo
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/judgo:/tmp/judgo
+    depends_on:
+      redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      VITE_API_PROXY_TARGET: http://app:4000
+    ports:
+      - "8080:8080"
+    depends_on:
+      - app
+
+volumes:
+  redis-data:
+  mongo-data:

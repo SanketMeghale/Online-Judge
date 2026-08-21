@@ -169,7 +169,7 @@ export default function AdminSubmissions() {
                       <span style={{ fontSize: "0.8rem", color: "#cbd5e1" }}>{s.runtimeMs || 0} ms</span>
                     </td>
                     <td>
-                      <span style={{ fontSize: "0.8rem", color: "#cbd5e1" }}>{s.memoryMb || 14.0} MB</span>
+                      <span style={{ fontSize: "0.8rem", color: "#cbd5e1" }}>{s.memoryMb > 0 ? `${s.memoryMb} MB` : "—"}</span>
                     </td>
                     <td>
                       <span style={{ fontSize: "0.74rem", color: "#64748b" }}>

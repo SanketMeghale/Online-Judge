@@ -1,7 +1,8 @@
 import { Router } from "express";
 
 const router = Router();
-const JUDGE_MONITORING_URL = process.env.JUDGE_MONITORING_URL || "http://localhost:4002/health";
+const JUDGE_MONITORING_URL = process.env.JUDGE_MONITORING_URL ||
+  `${(process.env.EXECUTION_SERVICE_URL || "http://localhost:4002").replace(/\/$/, "")}/health`;
 
 /**
  * GET /health
@@ -11,7 +12,12 @@ router.get("/", async (_request, response) => {
   let judgeMonitoring = null;
 
   try {
-    const res = await fetch(JUDGE_MONITORING_URL);
+    const res = await fetch(JUDGE_MONITORING_URL, {
+      headers: process.env.EXECUTION_SERVICE_TOKEN
+        ? { Authorization: `Bearer ${process.env.EXECUTION_SERVICE_TOKEN}` }
+        : {},
+      signal: AbortSignal.timeout(2000)
+    });
     judgeMonitoring = await res.json();
   } catch (err) {
     judgeMonitoring = {

@@ -163,10 +163,10 @@ export const problems = [
 ];
 
 export const submissions = [
-  { id: "S-1042", problem: "Two Sum Revisited", language: "Python", verdict: "AC", runtime: "42 ms", submitted: "Today" },
-  { id: "S-1041", problem: "Prevent Cache Stampede", language: "C++", verdict: "WA", runtime: "118 ms", submitted: "Yesterday" },
-  { id: "S-1038", problem: "Binary Lift Ancestors", language: "Java", verdict: "TLE", runtime: "2.0 s", submitted: "2 days ago" },
-  { id: "S-1032", problem: "Two Sum Revisited", language: "C", verdict: "CE", runtime: "-", submitted: "4 days ago" }
+  { id: "S-1042", problem: "Two Sum Revisited", language: "Python", verdict: "AC", runtime: "", submitted: "Today" },
+  { id: "S-1041", problem: "Prevent Cache Stampede", language: "C++", verdict: "WA", runtime: "", submitted: "Yesterday" },
+  { id: "S-1038", problem: "Binary Lift Ancestors", language: "Java", verdict: "TLE", runtime: "", submitted: "2 days ago" },
+  { id: "S-1032", problem: "Two Sum Revisited", language: "C", verdict: "CE", runtime: "", submitted: "4 days ago" }
 ];
 
 export const leaderboard = [

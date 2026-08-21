@@ -516,9 +516,13 @@ export function createSubmission(database, userId, problem, language, result) {
       userId,
       problemId: problem?.id || "problem",
       language,
-      verdict: result?.verdict || "AC",
-      runtime: result?.runtime || "25 ms",
-      memory: result?.memory || "14 MB",
+      verdict: result?.verdict || "PENDING",
+      status: result?.status || "QUEUED",
+      runtime: result?.runtime || "",
+      memory: result?.memory || "",
+      compiler: result?.compiler || null,
+      execution: result?.execution || null,
+      complexity: result?.complexity || null,
       submittedAt: nowIso()
     },
     nextSubmissionId: nextSubId + 1

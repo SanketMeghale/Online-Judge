@@ -169,7 +169,7 @@ export class JavaConfig extends LanguageConfig {
       id: "java",
       name: "Java (OpenJDK 21)",
       extension: ".java",
-      sourceFileName: "Solution.java",
+      sourceFileName: "Main.java",
       compiledBinaryName: "Solution.class",
       dockerImage: "online-judge-sandbox:latest",
       memoryLimitMb: 256,

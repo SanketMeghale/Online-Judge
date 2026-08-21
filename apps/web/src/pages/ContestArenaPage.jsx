@@ -26,11 +26,13 @@ import CodeEditor from "../components/editor/CodeEditor.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
 
+const ACTIVE_SUBMISSION_STATES = new Set(["PENDING", "QUEUED", "COMPILING", "RUNNING", "JUDGING", "ANALYZING", "FINALIZING", "processing"]);
+
 export default function ContestArenaPage() {
   const { contestId, problemId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { runSolution, submitSolution } = useAppData();
+  const { runSolution, waitForSubmission, submitSolution } = useAppData();
   const { isLight } = useTheme();
 
   const [contest, setContest] = useState(null);
@@ -164,23 +166,21 @@ export default function ContestArenaPage() {
     setConsoleTab("result");
 
     try {
-      const res = await runSolution(currentProblem.id, code, language, "");
-      setTestResult({
-        verdict: res.verdict || "OK",
-        statusText: res.verdict === "AC" || res.verdict === "OK" ? "Run Completed" : res.statusText || "Execution Error",
-        runtime: res.runtime || "18 ms",
-        memory: res.memory || "12.4 MB",
-        output: res.output || res.stdout || "Execution finished cleanly.",
-        passedCount: res.passedCount || 1,
-        totalCases: res.totalCases || 1
+      const queued = await runSolution({
+        problemId: currentProblem.id,
+        code,
+        language,
+        stdin: ""
       });
+      setTestResult(queued);
+      const result = await waitForSubmission(queued.submissionId, currentProblem.id, setTestResult);
+      if (!result) throw new Error("Execution is still processing. Check submission history for the final result.");
     } catch (err) {
       setTestResult({
-        verdict: "RE",
-        statusText: "Execution Failed",
-        runtime: "0 ms",
-        memory: "0 MB",
-        output: err.message || "Runtime error occurred during execution."
+        verdict: "SYSTEM_ERROR",
+        status: "SYSTEM_ERROR",
+        statusText: "Execution unavailable",
+        output: err.message || "Execution service is temporarily unavailable."
       });
     } finally {
       setIsRunning(false);
@@ -194,18 +194,18 @@ export default function ContestArenaPage() {
     setConsoleTab("result");
 
     try {
-      const res = await submitSolution(currentProblem.id, code, language);
+      const queued = await submitSolution({
+        userId: user?.id || user?._id,
+        problemId: currentProblem.id,
+        code,
+        language
+      });
+      setTestResult(queued);
+      const res = await waitForSubmission(queued.submissionId, currentProblem.id, setTestResult);
+      if (!res) throw new Error("Submission is still processing. Check submission history for the final result.");
       const isAc = res.verdict === "AC";
 
-      setTestResult({
-        verdict: res.verdict,
-        statusText: res.statusText || (isAc ? "Accepted" : "Wrong Answer"),
-        runtime: res.runtime || "24 ms",
-        memory: res.memory || "14.1 MB",
-        output: res.output || res.message || (isAc ? "Accepted! Passed all contest testcases." : "Wrong Answer on testcase 1."),
-        passedCount: res.passedCount || (isAc ? 4 : 0),
-        totalCases: res.totalCases || 4
-      });
+      setTestResult(res);
 
       if (isAc && !solvedProblemIds.has(currentProblem.id)) {
         setSolvedProblemIds((prev) => new Set([...prev, currentProblem.id]));
@@ -213,8 +213,9 @@ export default function ContestArenaPage() {
       }
     } catch (err) {
       setTestResult({
-        verdict: "WA",
-        statusText: "Submission Failed",
+        verdict: "SYSTEM_ERROR",
+        status: "SYSTEM_ERROR",
+        statusText: "Submission unavailable",
         output: err.message || "Failed to process submission."
       });
     } finally {
@@ -411,22 +412,24 @@ export default function ContestArenaPage() {
             <div style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "8px", padding: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  {testResult.verdict === "AC" || testResult.verdict === "OK" ? (
+                  {ACTIVE_SUBMISSION_STATES.has(testResult.status) || ACTIVE_SUBMISSION_STATES.has(testResult.verdict) ? (
+                    <Clock size={18} style={{ color: "#38bdf8" }} />
+                  ) : testResult.verdict === "AC" || testResult.verdict === "OK" ? (
                     <CheckCircle2 size={18} style={{ color: "#34d399" }} />
                   ) : testResult.verdict === "CE" ? (
                     <AlertTriangle size={18} style={{ color: "#ef4444" }} />
                   ) : (
                     <XCircle size={18} style={{ color: "#ef4444" }} />
                   )}
-                  <strong style={{ fontSize: "0.88rem", color: testResult.verdict === "AC" || testResult.verdict === "OK" ? (isLight ? "#059669" : "#34d399") : "#ef4444" }}>
+                  <strong style={{ fontSize: "0.88rem", color: ACTIVE_SUBMISSION_STATES.has(testResult.status) ? "#38bdf8" : testResult.verdict === "AC" || testResult.verdict === "OK" ? (isLight ? "#059669" : "#34d399") : "#ef4444" }}>
                     {testResult.verdict === "CE" ? "Compilation Error" : testResult.statusText || testResult.verdict}
                   </strong>
                 </div>
 
                 {testResult.verdict !== "CE" && (
                   <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.74rem", color: isLight ? "#64748b" : "#94a3b8" }}>
-                    <span>Runtime: <strong style={{ color: isLight ? "#0f172a" : "#f8fafc" }}>{testResult.runtime || (testResult.runtimeMs ? `${testResult.runtimeMs} ms` : "0 ms")}</strong></span>
-                    <span>Memory: <strong style={{ color: isLight ? "#0f172a" : "#f8fafc" }}>{testResult.memory || (testResult.memoryMb ? `${testResult.memoryMb} MB` : "0 MB")}</strong></span>
+                    <span>Runtime: <strong style={{ color: isLight ? "#0f172a" : "#f8fafc" }}>{testResult.runtime || (testResult.runtimeMs ? `${testResult.runtimeMs} ms` : "—")}</strong></span>
+                    <span>Memory: <strong style={{ color: isLight ? "#0f172a" : "#f8fafc" }}>{testResult.memory || (testResult.memoryMb ? `${testResult.memoryMb} MB` : "—")}</strong></span>
                     {testResult.complexity?.time && (
                       <span style={{ color: "#818cf8", fontWeight: "700" }}>Complexity: {testResult.complexity.time}</span>
                     )}

@@ -35,6 +35,9 @@ describe("DockerService Hardened Security & Execution Unit Tests", () => {
     expect(createdConfig.HostConfig.SecurityOpt).toEqual(["no-new-privileges:true"]);
     expect(createdConfig.HostConfig.CapDrop).toEqual(["ALL"]);
     expect(createdConfig.HostConfig.Tmpfs["/tmp"]).toBe("rw,noexec,nosuid,nodev,size=64m");
+    expect(createdConfig.HostConfig.Privileged).not.toBe(true);
+    expect(createdConfig.HostConfig.Binds.join(" ")).not.toContain("docker.sock");
+    expect(createdConfig.Env).toBeUndefined();
   });
 
   test("2. Captures stdout and stderr correctly from container modem demuxStream", async () => {

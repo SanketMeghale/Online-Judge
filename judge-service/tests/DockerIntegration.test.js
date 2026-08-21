@@ -15,13 +15,22 @@ describeDocker("Docker sandbox integration", () => {
     try {
       await tempFileService.writeSourceCode(tempDir, config.sourceFileName, source);
       await tempFileService.writeInput(tempDir, "");
-      return await dockerService.runInSandbox({
+      const compilation = await dockerService.compileInSandbox({
         hostTempDir: tempDir,
-        command: ["/opt/judge/scripts/run.sh", config.id, String(Math.max(1, Math.ceil(timeoutMs / 1_000)))],
-        timeoutMs: timeoutMs + 10_000,
-        memoryLimitMb,
-        cpuLimit: 1
+        language: config.id,
+        image: config.dockerImage,
+        timeoutMs: 15_000,
+        memoryLimitMb
       });
+      if (!compilation.ok) return { ...compilation, stderr: compilation.compilation.stderr };
+      const execution = await dockerService.executeCompiledInSandbox({
+        hostTempDir: tempDir,
+        language: config.id,
+        image: config.dockerImage,
+        timeoutMs,
+        memoryLimitMb
+      });
+      return { ...execution, compilation: compilation.compilation };
     } finally {
       await tempFileService.cleanup(tempDir);
     }
@@ -32,11 +41,13 @@ describeDocker("Docker sandbox integration", () => {
     ["javascript", 'console.log("JAVASCRIPT_OK")', "JAVASCRIPT_OK"],
     ["c", '#include <stdio.h>\nint main(void) { puts("C_OK"); return 0; }', "C_OK"],
     ["cpp", '#include <iostream>\nint main() { std::cout << "CPP_OK\\n"; }', "CPP_OK"],
-    ["java", 'public class Solution { public static void main(String[] args) { System.out.println("JAVA_OK"); } }', "JAVA_OK"]
+    ["java", 'public class Main { public static void main(String[] args) { System.out.println("JAVA_OK"); } }', "JAVA_OK"]
   ])("executes %s inside the sandbox", async (language, source, output) => {
     const result = await execute(language, source);
     expect(result).toMatchObject({ ok: true, verdict: "AC" });
     expect(result.stdout).toBe(output);
+    expect(result.compilation.status).toBe("SUCCESS");
+    expect(result.compilation.timeMs).toBeGreaterThanOrEqual(0);
   });
 
   test("reports compilation errors", async () => {

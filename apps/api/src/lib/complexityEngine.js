@@ -1,12 +1,12 @@
 /**
  * Judgo Dedicated Static Complexity Analysis Engine
  * 
- * Performs deterministic static AST and structural code analysis on submitted
+ * Performs deterministic, language-aware structural analysis on submitted
  * source code (Java, C++, Python, JavaScript, C) to derive Big-O Time Complexity
  * and Space Complexity (Auxiliary + Stack Space).
  * 
  * Flow:
- * Source Code -> AST / Structural Lexing -> Loop Depth & Stride Analyzer ->
+ * Source Code -> Structural Lexing -> Loop Depth & Stride Analyzer ->
  * Recursion Tree Analyzer -> Data Structure Scanner -> Standard Library Operation Matcher ->
  * Complexity Aggregator & Confidence Estimator -> Detailed Structural Explanation
  */
@@ -55,19 +55,28 @@ function cleanCodeForAnalysis(rawCode = "") {
 function analyzeLoops(code, language = "python") {
   const lines = code.split("\n");
   let maxNestingDepth = 0;
-  let currentDepth = 0;
   let hasLogarithmicLoop = false;
   let hasLinearLoop = false;
   let loopCount = 0;
   const loopDetails = [];
+  const loopStack = [];
+  let braceDepth = 0;
+  const isPython = ["python", "python3", "py"].includes(language);
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+    const sourceLine = lines[i];
+    const line = sourceLine.trim();
     if (!line) continue;
-
-    // Detect opening and closing braces
-    const openBraces = (line.match(/\{/g) || []).length;
     const closeBraces = (line.match(/\}/g) || []).length;
+    const openBraces = (line.match(/\{/g) || []).length;
+    const indentation = sourceLine.match(/^\s*/)?.[0].replace(/\t/g, "    ").length || 0;
+
+    if (isPython) {
+      while (loopStack.length && indentation <= loopStack[loopStack.length - 1].indentation) loopStack.pop();
+    } else {
+      braceDepth = Math.max(0, braceDepth - closeBraces);
+      while (loopStack.length && braceDepth < loopStack[loopStack.length - 1].bodyDepth) loopStack.pop();
+    }
 
     let isLogarithmic = false;
 
@@ -95,22 +104,20 @@ function analyzeLoops(code, language = "python") {
       }
 
       loopCount++;
-      currentDepth++;
-      if (currentDepth > maxNestingDepth) {
-        maxNestingDepth = currentDepth;
-      }
+      const depth = loopStack.length + 1;
+      maxNestingDepth = Math.max(maxNestingDepth, depth);
 
       loopDetails.push({
         lineIndex: i + 1,
         type: isLogarithmic ? "logarithmic" : "linear",
-        depth: currentDepth,
+        depth,
         snippet: line.slice(0, 60)
       });
+      loopStack.push(isPython
+        ? { indentation }
+        : { bodyDepth: braceDepth + Math.max(openBraces, 1) });
     }
-
-    if (closeBraces > 0 && currentDepth > 0) {
-      currentDepth = Math.max(0, currentDepth - closeBraces);
-    }
+    if (!isPython) braceDepth += openBraces;
   }
 
   return {
@@ -236,7 +243,7 @@ export function analyzeCodeComplexity({ code = "", language = "python", problemT
 
   let timeComplexity = "O(1)";
   let spaceComplexity = "O(1)";
-  let confidence = "High";
+  let confidence = "Medium";
   const explanationPoints = [];
 
   // ─────────────────────────────────────────────────────────────
@@ -328,8 +335,14 @@ export function analyzeCodeComplexity({ code = "", language = "python", problemT
   // ─────────────────────────────────────────────────────────────
   // 4. CONFIDENCE ESTIMATION
   // ─────────────────────────────────────────────────────────────
-  if (loopAnalysis.loopCount === 0 && !recursionAnalysis.hasRecursion && cleanCode.length > 800) {
-    confidence = "Medium";
+  const hasUnboundedWhile = /\bwhile\b/.test(cleanCode) && !loopAnalysis.hasLogarithmicLoop;
+  const hasIndirectBehavior = /\b(eval|exec|reflect|invoke|function\s*\*|async\s+function)\b/i.test(cleanCode);
+  if (hasUnboundedWhile || hasIndirectBehavior || cleanCode.length > 2500 || loopAnalysis.maxNestingDepth > 3) {
+    confidence = "Low";
+  }
+  if (hasUnboundedWhile || hasIndirectBehavior) {
+    timeComplexity = "Unable to determine reliably";
+    explanationPoints.push("The source contains a loop or indirect call whose input-dependent bound cannot be proven by the structural analyzer.");
   }
 
   const finalExplanation = explanationPoints.length > 0

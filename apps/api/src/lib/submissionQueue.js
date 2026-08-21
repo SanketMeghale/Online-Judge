@@ -1,61 +1,62 @@
-import amqp from "amqplib";
+import { Queue } from "bullmq";
+import IORedis from "ioredis";
 import { JUDGE_QUEUE } from "@online-judge/shared";
 
-let connection = null;
-let channel = null;
-let connecting = null;
+let redis;
+let queue;
 
-async function connect() {
-  if (channel) return channel;
-  if (connecting) return connecting;
-
-  connecting = (async () => {
-    const rabbitmqUrl = process.env.RABBITMQ_URL || "amqp://guest:guest@127.0.0.1:5672";
-    connection = await amqp.connect(rabbitmqUrl);
-    connection.once("error", () => {
-      channel = null;
-      connection = null;
+function getRedis() {
+  if (!redis) {
+    const url = process.env.REDIS_URL || "redis://127.0.0.1:6379";
+    redis = new IORedis(url, {
+      connectTimeout: Number(process.env.REDIS_CONNECT_TIMEOUT_MS || 3000),
+      enableReadyCheck: true,
+      maxRetriesPerRequest: 1,
+      lazyConnect: true
     });
-    connection.once("close", () => {
-      channel = null;
-      connection = null;
+    redis.on("error", (error) => {
+      console.warn(`[SubmissionQueue] Redis error: ${error.message}`);
     });
-
-    channel = await connection.createConfirmChannel();
-    await channel.assertExchange(JUDGE_QUEUE.exchange, "direct", { durable: true });
-    await channel.assertExchange(JUDGE_QUEUE.deadLetterExchange, "direct", { durable: true });
-    await channel.assertQueue(JUDGE_QUEUE.queue, {
-      durable: true,
-      deadLetterExchange: JUDGE_QUEUE.deadLetterExchange,
-      deadLetterRoutingKey: JUDGE_QUEUE.deadLetterRoutingKey
-    });
-    await channel.assertQueue(JUDGE_QUEUE.deadLetterQueue, { durable: true });
-    await channel.bindQueue(JUDGE_QUEUE.queue, JUDGE_QUEUE.exchange, JUDGE_QUEUE.submissionRoutingKey);
-    await channel.bindQueue(JUDGE_QUEUE.deadLetterQueue, JUDGE_QUEUE.deadLetterExchange, JUDGE_QUEUE.deadLetterRoutingKey);
-    return channel;
-  })();
-
-  try {
-    return await connecting;
-  } finally {
-    connecting = null;
   }
+  return redis;
 }
 
-export async function publishSubmissionJob(job) {
-  try {
-    const confirmChannel = await connect();
-    confirmChannel.publish(
-      JUDGE_QUEUE.exchange,
-      JUDGE_QUEUE.submissionRoutingKey,
-      Buffer.from(JSON.stringify({ ...job, timestamp: Date.now(), retryCount: job.retryCount || 0 })),
-      { persistent: true, contentType: "application/json", headers: { "x-retry-count": job.retryCount || 0 } }
-    );
-    await confirmChannel.waitForConfirms();
-    return true;
-  } catch (error) {
-    channel = null;
-    console.warn(`[SubmissionQueue] Publish failed: ${error.message}`);
-    return false;
+function getQueue() {
+  if (!queue) {
+    queue = new Queue(JUDGE_QUEUE.queue, {
+      connection: getRedis(),
+      defaultJobOptions: {
+        attempts: Number(process.env.JOB_MAX_ATTEMPTS || 3),
+        backoff: {
+          type: "exponential",
+          delay: Number(process.env.JOB_RETRY_DELAY_MS || 1000)
+        },
+        removeOnComplete: Number(process.env.JOB_HISTORY_LIMIT || 1000),
+        removeOnFail: Number(process.env.JOB_FAILURE_HISTORY_LIMIT || 5000)
+      }
+    });
   }
+  return queue;
+}
+
+export async function publishSubmissionJob({ submissionId }) {
+  if (!submissionId) throw new Error("submissionId is required to enqueue a judge job");
+  const job = await getQueue().add(
+    JUDGE_QUEUE.jobName,
+    { submissionId: String(submissionId) },
+    { jobId: String(submissionId) }
+  );
+  return { id: String(job.id) };
+}
+
+export async function getSubmissionQueueHealth() {
+  const counts = await getQueue().getJobCounts("wait", "active", "delayed", "failed");
+  return { ok: true, counts };
+}
+
+export async function closeSubmissionQueue() {
+  if (queue) await queue.close();
+  if (redis) await redis.quit();
+  queue = null;
+  redis = null;
 }

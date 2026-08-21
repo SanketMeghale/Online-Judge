@@ -173,9 +173,10 @@ function ProblemDetailsInner() {
     return () => clearTimeout(timer);
   }, [scrollTrigger, result]);
 
-  // Polling fallback to update PENDING / QUEUED submission result in real time
+  // Poll persisted lifecycle states; percentages are intentionally not fabricated.
   useEffect(() => {
-    if (!result || (result.verdict !== "PENDING" && result.status !== "QUEUED")) return;
+    const activeStatuses = new Set(["QUEUED", "COMPILING", "RUNNING", "JUDGING", "ANALYZING", "FINALIZING"]);
+    if (!result || (!activeStatuses.has(result.status) && result.verdict !== "PENDING")) return;
 
     const subId = String(result.submissionId || result.id || "");
     if (!subId) return;
@@ -185,27 +186,29 @@ function ProblemDetailsInner() {
       try {
         const res = await api.getSubmission(subId);
         const sub = res?.submission || res;
-        if (sub && sub.verdict && sub.verdict !== "PENDING" && sub.status !== "QUEUED" && isMounted) {
-          const firstTc = (sub.testcases || sub.testResults || [])[0] || {};
-          setResult((prev) => ({
-            ...prev,
-            verdict: sub.verdict,
-            statusText: sub.statusText || (sub.verdict === "AC" ? "Accepted" : "Submission evaluated"),
-            runtime: sub.runtime || `${sub.runtimeMs || 25} ms`,
-            runtimeMs: sub.runtimeMs || 25,
-            memory: sub.memory || `${sub.memoryMb || 14.2} MB`,
-            memoryMb: sub.memoryMb || 14.2,
+        if (sub && isMounted) {
+          const nextTests = sub.testResults || sub.testcases || [];
+          const firstTc = nextTests[0] || {};
+          setResult((previous) => ({
+            ...previous,
+            ...sub,
+            type: previous?.type,
             passedCount: sub.passCount ?? sub.passedCount ?? 0,
-            totalCases: sub.totalCount ?? sub.totalCases ?? problemWithStatus?.examples?.length ?? 2,
-            output: firstTc.stdout || sub.stdout || sub.output || "",
-            stdout: firstTc.stdout || sub.stdout || "",
-            stderr: firstTc.stderr || sub.stderr || "",
-            expectedOutput:
-              firstTc.expectedOutput || sub.expectedOutput || problemWithStatus?.examples?.[0]?.output || "",
-            testResults: sub.testcases || sub.testResults || []
+            totalCases: sub.totalCount ?? sub.totalCases ?? 0,
+            runtime: typeof sub.executionTimeMs === "number" && sub.executionTimeMs > 0 ? `${sub.executionTimeMs} ms` : "",
+            memory: typeof sub.peakMemoryBytes === "number" && sub.peakMemoryBytes > 0
+              ? `${(sub.peakMemoryBytes / 1024 / 1024).toFixed(2)} MB`
+              : "",
+            output: firstTc.actualOutput || firstTc.stdout || "",
+            stdout: firstTc.actualOutput || firstTc.stdout || "",
+            stderr: firstTc.stderr || sub.diagnostic || "",
+            expectedOutput: firstTc.expectedOutput || "",
+            testResults: nextTests
           }));
-          setScrollTrigger((prev) => prev + 1);
-          clearInterval(interval);
+          if (!activeStatuses.has(sub.status) && sub.verdict !== "PENDING") {
+            setScrollTrigger((prev) => prev + 1);
+            clearInterval(interval);
+          }
         }
       } catch (e) {
         console.warn("[ProblemDetails polling notice]:", e);
@@ -345,10 +348,12 @@ function ProblemDetailsInner() {
 
   const displayVerdict = result?.verdict || "";
   const displayStatusText = result?.statusText || (displayVerdict === "AC" ? "Accepted" : displayVerdict || "Evaluated");
-  const displayRuntime = result?.runtime || (typeof result?.execution_time_ms === "number" ? `${result.execution_time_ms} ms` : typeof result?.runtimeMs === "number" ? `${result.runtimeMs} ms` : "0 ms");
-  const displayMemory = result?.memory || (typeof result?.memoryMb === "number" && result.memoryMb > 0 ? `${result.memoryMb} MB` : typeof result?.memory_kb === "number" && result.memory_kb > 0 ? `${(result.memory_kb / 1024).toFixed(2)} MB` : "0 MB");
+  const displayRuntime = result?.runtime || (typeof result?.executionTimeMs === "number" && result.executionTimeMs > 0 ? `${result.executionTimeMs} ms` : "—");
+  const displayMemory = result?.memory || (typeof result?.peakMemoryBytes === "number" && result.peakMemoryBytes > 0 ? `${(result.peakMemoryBytes / 1024 / 1024).toFixed(2)} MB` : "—");
   const passedCountNum = typeof result?.passedCount === "number" ? result.passedCount : typeof result?.passed === "number" ? result.passed : (displayVerdict === "AC" ? (testResults.length || problemWithStatus.examples.length) : 0);
   const totalCasesNum = typeof result?.totalCases === "number" ? result.totalCases : typeof result?.total === "number" ? result.total : (testResults.length || problemWithStatus.examples.length);
+  const processingStatuses = new Set(["QUEUED", "COMPILING", "RUNNING", "JUDGING", "ANALYZING", "FINALIZING"]);
+  const isProcessingResult = Boolean(result && (processingStatuses.has(result.status) || result.verdict === "PENDING"));
 
   if (result) {
     console.log("[4] RESULT STATE RENDER", { result, displayVerdict, displayStatusText, testResults });
@@ -754,17 +759,16 @@ function ProblemDetailsInner() {
 
             {/* Console Body Area */}
             <div style={{ padding: "14px" }}>
-              {isRunning || isSubmitting ? (
+              {isRunning || isSubmitting || isProcessingResult ? (
                 <div style={{ padding: "2.5rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1rem", color: "#8b9bb4" }}>
                   <div className="spinner" style={{ width: 32, height: 32, border: "3px solid #333", borderTopColor: "#7850ff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                   <div style={{ textAlign: "center" }}>
                     <strong style={{ fontSize: "1rem", color: "#f8fafc", display: "block" }}>
-                      {isSubmitting ? "Evaluating submission against full testsuite..." : "Running code on sample testcases..."}
+                      {result?.statusText || (isSubmitting ? "Queued..." : "Preparing execution...")}
                     </strong>
                     <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.8rem", color: "#94a3b8" }}>
-                      <span>● Compiling and validating syntax</span>
-                      <span>● Executing in isolated runtime sandbox</span>
-                      <span>● Comparing actual stdout with expected outputs</span>
+                      <span>Actual worker state: {result?.status || "ENQUEUEING"}</span>
+                      <span>Execution runs in a disposable, networkless sandbox.</span>
                     </div>
                   </div>
                 </div>
@@ -796,8 +800,8 @@ function ProblemDetailsInner() {
                             {formatDisplayValue(sub?.verdict, "AC")}
                           </td>
                           <td style={{ padding: "6px", color: "#cbd5e1" }}>{formatDisplayValue(sub?.language, "python")}</td>
-                          <td style={{ padding: "6px", color: "#cbd5e1" }}>{formatDisplayValue(sub?.runtime, "25 ms")}</td>
-                          <td style={{ padding: "6px", color: "#cbd5e1" }}>{formatDisplayValue(sub?.memory, "14 MB")}</td>
+                          <td style={{ padding: "6px", color: "#cbd5e1" }}>{formatDisplayValue(sub?.runtime, "—")}</td>
+                          <td style={{ padding: "6px", color: "#cbd5e1" }}>{formatDisplayValue(sub?.memory, "—")}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -958,19 +962,19 @@ function ProblemDetailsInner() {
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                           <Brain size={15} style={{ color: "#c084fc" }} />
-                          <span style={{ fontSize: "0.74rem", fontWeight: "700", textTransform: "uppercase", color: isLight ? "#64748b" : "#94a3b8" }}>Algorithm AST</span>
+                          <span style={{ fontSize: "0.74rem", fontWeight: "700", textTransform: "uppercase", color: isLight ? "#64748b" : "#94a3b8" }}>Algorithm Analysis</span>
                         </div>
                         <span style={{ fontSize: "0.7rem", fontWeight: "600", color: "#818cf8" }}>
-                          {result.complexity?.confidence || "High"} Confidence
+                          {result.complexity?.confidence || "Unavailable"} Confidence
                         </span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                         <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#94a3b8" }}>Time Complexity:</span>
-                        <strong style={{ fontSize: "0.92rem", color: "#6366f1" }}>{result.complexity?.time || "O(n)"}</strong>
+                        <strong style={{ fontSize: "0.92rem", color: "#6366f1" }}>{result.complexity?.time || "Unable to determine reliably"}</strong>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                         <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#94a3b8" }}>Space Complexity:</span>
-                        <strong style={{ fontSize: "0.92rem", color: "#8b5cf6" }}>{result.complexity?.space || "O(1)"}</strong>
+                        <strong style={{ fontSize: "0.92rem", color: "#8b5cf6" }}>{result.complexity?.space || "Unable to determine reliably"}</strong>
                       </div>
                     </div>
                   </div>

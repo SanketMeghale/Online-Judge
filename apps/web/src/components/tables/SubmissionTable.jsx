@@ -236,15 +236,15 @@ export default function SubmissionTable({ rows = [] }) {
                 <div style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "10px 12px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
                     <Brain size={14} color="#c084fc" />
-                    <span style={{ fontSize: "0.72rem", color: "#94a3b8", fontWeight: "bold", textTransform: "uppercase" }}>Algorithm AST</span>
+                    <span style={{ fontSize: "0.72rem", color: "#94a3b8", fontWeight: "bold", textTransform: "uppercase" }}>Algorithm Analysis</span>
                   </div>
                   <strong style={{ display: "block", fontSize: "0.88rem", color: "#c084fc" }}>
-                    Time: {selectedSubmission.complexity?.time || "O(n)"}
+                    Time: {selectedSubmission.complexity?.time || "Unable to determine reliably"}
                   </strong>
                   <span style={{ fontSize: "0.74rem", color: "#cbd5e1", display: "block", marginTop: "2px" }}>
-                    Space: {selectedSubmission.complexity?.space || "O(1)"}
+                    Space: {selectedSubmission.complexity?.space || "Unable to determine reliably"}
                   </span>
-                  <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>Confidence: {selectedSubmission.complexity?.confidence || "High"}</span>
+                  <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>Confidence: {selectedSubmission.complexity?.confidence || "Unavailable"}</span>
                 </div>
               </div>
 
