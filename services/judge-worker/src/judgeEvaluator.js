@@ -1,10 +1,10 @@
 import { executeCode } from "../../../apps/api/src/lib/executeCode.js";
-import { calculatePercentile } from "../../../apps/api/src/lib/benchmarkEngine.js";
+import { calculateRealPercentile } from "../../../apps/api/src/lib/benchmarkEngine.js";
 import { wrapCodeWithHarness } from "../../../apps/api/src/lib/codeHarness.js";
+import { compareOutputs } from "../../../apps/api/src/lib/outputChecker.js";
 
 /**
  * Convert LeetCode-style problem input to programmatic stdin for C++ / Java harnesses.
- * e.g. "nums = [2, 7, 11, 15], target = 9" → "4\n2 7 11 15\n9"
  */
 function buildCppJavaStdin(problemId, lcInput) {
   if (!lcInput || !lcInput.trim()) return "";
@@ -56,82 +56,6 @@ function buildCppJavaStdin(problemId, lcInput) {
   return raw;
 }
 
-function normalize(str) {
-  if (typeof str !== "string") return "";
-  return str
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
-    .split("\n")
-    .map((line) => line.trimEnd())
-    .join("\n")
-    .trim();
-}
-
-function parseTokens(str) {
-  const matches = str.match(/("[^"]*"|'[^']*'|-?\d+(?:\.\d+)?|true|false)/gi);
-  if (!matches) return null;
-  return matches.map((m) => {
-    const s = m.toLowerCase().replace(/^["']|["']$/g, "");
-    if (s === "true") return true;
-    if (s === "false") return false;
-    const num = Number(s);
-    return isNaN(num) ? s : num;
-  });
-}
-
-function compareOutputs(actual, expected) {
-  const normActual = normalize(actual);
-  const normExpected = normalize(expected);
-
-  if (!normActual && !normExpected) return true;
-  if (!normActual) return false;
-  if (normActual === normExpected) return true;
-
-  // Case-insensitive / boolean equivalence (e.g. True vs true)
-  if (normActual.toLowerCase() === normExpected.toLowerCase()) return true;
-
-  // Direct whitespace-stripped comparison
-  const stripActual = normActual.replace(/\s+/g, "");
-  const stripExpected = normExpected.replace(/\s+/g, "");
-  if (stripActual === stripExpected) return true;
-
-  // Try candidate strings (entire output and last non-empty line)
-  const lines = normActual.split("\n").map((l) => l.trim()).filter(Boolean);
-  const candidates = [normActual, lines[lines.length - 1] || normActual];
-
-  for (const candidate of candidates) {
-    try {
-      const jsonActual = JSON.parse(candidate);
-      const jsonExpected = JSON.parse(normExpected);
-      if (JSON.stringify(jsonActual) === JSON.stringify(jsonExpected)) return true;
-    } catch {}
-
-    const cStrip = candidate.replace(/\s+/g, "");
-    if (cStrip === stripExpected) return true;
-
-    // Handle key-value formatted array outputs e.g. [0: 0, 1: 1]
-    const kvMatch = candidate.match(/\d+:\s*(-?\d+|"[^"]*"|'[^']*'|true|false)/g);
-    if (kvMatch) {
-      const extractedVals = kvMatch.map((kv) => kv.split(":")[1].trim());
-      const extractedStr = `[${extractedVals.join(", ")}]`;
-      if (extractedStr.replace(/\s+/g, "") === stripExpected) return true;
-      try {
-        if (JSON.stringify(JSON.parse(extractedStr)) === JSON.stringify(JSON.parse(normExpected))) return true;
-      } catch {}
-    }
-
-    // Token array comparison (e.g. comparing [0, 1] with "0, 1" or "[0, 1]")
-    const actTokens = parseTokens(candidate);
-    const expTokens = parseTokens(normExpected);
-    if (actTokens && expTokens && actTokens.length === expTokens.length) {
-      const matchesAll = actTokens.every((val, idx) => val === expTokens[idx]);
-      if (matchesAll) return true;
-    }
-  }
-
-  return false;
-}
-
 function cleanErrorMessage(stderr = "") {
   if (!stderr) return "";
   return stderr
@@ -148,27 +72,37 @@ export async function evaluateSubmission({ submission, problem }) {
 
   const sampleCases = problem?.examples || [];
   const hiddenCases = problem?.hiddenTestCases || [];
-
-  // Combine sample cases and hidden testcases for full testsuite evaluation
   const testCases = [...sampleCases, ...hiddenCases];
+  const normLang = (language || "").toLowerCase().trim();
 
   if (!testCases.length) {
     console.log(`[JudgeWorker] [STAGE 5: CONTAINER_STARTED] Running single testcase execution`);
-    const execResult = await executeCode({ language, code });
-    const cleanErr = cleanErrorMessage(execResult.stderr);
-    const runtimeMs = execResult.runtimeMs || 15;
-    const memoryMb = Number((12 + (runtimeMs % 8)).toFixed(1));
-    const percentiles = calculatePercentile(language, runtimeMs, memoryMb);
+    const execResult = await executeCode({ language: normLang, code });
+    const cleanErr = cleanErrorMessage(execResult.stderr || execResult.compileOutput || "");
+    const runtimeMs = execResult.execution_time_ms ?? execResult.runtimeMs ?? 0;
+    const memoryKb = execResult.memory_kb ?? 0;
+    const memoryMb = execResult.memoryMb ?? (memoryKb > 0 ? Number((memoryKb / 1024).toFixed(2)) : 0);
 
-    console.log(`[JudgeWorker] [STAGE 7: OUTPUT_CAPTURED] stdout: "${execResult.stdout.trim()}"`);
+    const verdict = execResult.ok ? "AC" : (execResult.verdict === "CE" ? "CE" : execResult.verdict === "TLE" ? "TLE" : "RE");
+    const percentiles = await calculateRealPercentile({
+      problemId: problem?.id,
+      language: normLang,
+      runtimeMs,
+      memoryMb
+    });
 
     return {
       status: "COMPLETED",
-      verdict: execResult.ok ? "AC" : execResult.verdict || "RE",
-      statusText: execResult.ok ? "Accepted" : "Execution failed",
+      verdict,
+      statusText: execResult.ok ? "Accepted" : verdict === "CE" ? "Compilation Error" : verdict === "TLE" ? "Time Limit Exceeded" : "Execution failed",
+      passedCount: execResult.ok ? 1 : 0,
+      totalCases: 1,
       runtimeMs,
+      execution_time_ms: runtimeMs,
+      compilation_time_ms: execResult.compilation_time_ms ?? 0,
+      memory_kb: memoryKb,
       memoryMb,
-      memory: `${memoryMb} MB`,
+      memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
       runtimePercentile: percentiles.runtimePercentile,
       memoryPercentile: percentiles.memoryPercentile,
       output: execResult.stdout || cleanErr,
@@ -179,8 +113,10 @@ export async function evaluateSubmission({ submission, problem }) {
   }
 
   let totalRuntimeMs = 0;
+  let maxMemoryKb = 0;
+  let compilationTimeMs = 0;
   const testResults = [];
-  const needsConvertedStdin = ["cpp", "c++", "java", "c"].includes((language || "").toLowerCase());
+  const needsConvertedStdin = ["cpp", "c++", "java", "c"].includes(normLang);
 
   for (let i = 0; i < testCases.length; i++) {
     const testcase = testCases[i];
@@ -190,34 +126,82 @@ export async function evaluateSubmission({ submission, problem }) {
       ? buildCppJavaStdin(problem?.id, testcase.input)
       : testcase.input;
 
-    const wrappedCode = wrapCodeWithHarness({ code, language, problemId: problem?.id, stdin: tcStdin });
+    const wrappedCode = wrapCodeWithHarness({ code, language: normLang, problemId: problem?.id, stdin: tcStdin });
     console.log(`[JudgeWorker] [STAGE 6: INPUT_PASSED] Input: "${testcase.input}" -> stdin: "${tcStdin}"`);
 
     const execResult = await executeCode({
-      language,
+      language: normLang,
       code: wrappedCode,
       stdin: tcStdin
     });
 
-    const runtime = execResult.runtimeMs || 10;
-    totalRuntimeMs += runtime;
+    const execMs = execResult.execution_time_ms ?? execResult.runtimeMs ?? 0;
+    totalRuntimeMs += execMs;
+    compilationTimeMs = Math.max(compilationTimeMs, execResult.compilation_time_ms ?? 0);
+    maxMemoryKb = Math.max(maxMemoryKb, execResult.memory_kb ?? 0);
 
-    const cleanErr = cleanErrorMessage(execResult.stderr);
+    const cleanErr = cleanErrorMessage(execResult.stderr || execResult.compileOutput || "");
     console.log(`[JudgeWorker] [STAGE 7: OUTPUT_CAPTURED] stdout: "${execResult.stdout.trim()}", stderr: "${cleanErr}"`);
+
+    // Compilation error on compiled languages
+    if (execResult.verdict === "CE") {
+      testResults.push({
+        id: i + 1,
+        testCase: i + 1,
+        status: "COMPILATION_ERROR",
+        passed: false,
+        input: testcase.input,
+        expectedOutput: testcase.output,
+        actualOutput: cleanErr || "Compilation Error",
+        difference: "Program failed to compile.",
+        verdict: "CE",
+        execution_time_ms: 0,
+        memory_kb: 0,
+        stdout: "",
+        stderr: cleanErr
+      });
+
+      return {
+        status: "COMPLETED",
+        verdict: "CE",
+        statusText: "Compilation Error",
+        failedTestCase: i + 1,
+        passedCount: 0,
+        totalCases: testCases.length,
+        runtimeMs: 0,
+        execution_time_ms: 0,
+        compilation_time_ms: compilationTimeMs,
+        memory_kb: 0,
+        memoryMb: 0,
+        runtimePercentile: null,
+        memoryPercentile: null,
+        output: cleanErr || "Compilation Error",
+        stdout: "",
+        stderr: cleanErr,
+        testcases: testResults,
+        testResults
+      };
+    }
 
     if (!execResult.ok) {
       const verdict = execResult.verdict || "RE";
-      const avgRuntimeMs = Math.max(1, Math.round(totalRuntimeMs / (i + 1)));
-      const memoryMb = Number((14 + (totalRuntimeMs % 6)).toFixed(1));
-      const percentiles = calculatePercentile(language, avgRuntimeMs, memoryMb);
+      const avgRuntimeMs = Number((totalRuntimeMs / (i + 1)).toFixed(2));
+      const memoryMb = maxMemoryKb > 0 ? Number((maxMemoryKb / 1024).toFixed(2)) : 0;
 
       testResults.push({
+        id: i + 1,
         testCase: i + 1,
+        status: verdict === "TLE" ? "TIME_LIMIT_EXCEEDED" : "RUNTIME_ERROR",
         passed: false,
         input: testcase.input,
         expectedOutput: testcase.output,
         actualOutput: execResult.stdout || cleanErr || "(No output)",
-        verdict
+        difference: cleanErr || (verdict === "TLE" ? "Time Limit Exceeded" : "Runtime Error"),
+        verdict,
+        execution_time_ms: execMs,
+        memory_kb: execResult.memory_kb ?? 0,
+        stdout: execResult.stdout || "",
+        stderr: cleanErr
       });
 
       console.log(`[JudgeWorker] [STAGE 8: COMPARISON_RESULT] Testcase ${i + 1} failed with verdict ${verdict}`);
@@ -225,39 +209,48 @@ export async function evaluateSubmission({ submission, problem }) {
       return {
         status: "COMPLETED",
         verdict,
-        statusText: verdict === "CE" ? "Compilation Error" : verdict === "TLE" ? "Time Limit Exceeded" : `Runtime Error on testcase ${i + 1}`,
+        statusText: verdict === "TLE" ? "Time Limit Exceeded" : `Runtime Error on testcase ${i + 1}`,
         failedTestCase: i + 1,
         passedCount: i,
         totalCases: testCases.length,
         runtimeMs: avgRuntimeMs,
+        execution_time_ms: avgRuntimeMs,
+        compilation_time_ms: compilationTimeMs,
+        memory_kb: maxMemoryKb,
         memoryMb,
-        memory: `${memoryMb} MB`,
-        runtimePercentile: percentiles.runtimePercentile,
-        memoryPercentile: percentiles.memoryPercentile,
+        memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
+        runtimePercentile: null,
+        memoryPercentile: null,
+        output: execResult.stdout || cleanErr,
         stdout: execResult.stdout || "",
         stderr: cleanErr,
-        output: execResult.stdout || cleanErr || "Execution failed",
-        expectedOutput: testcase.output,
+        testcases: testResults,
         testResults
       };
     }
 
-    const isMatch = compareOutputs(execResult.stdout, testcase.output);
-    console.log(`[JudgeWorker] [STAGE 8: COMPARISON_RESULT] Testcase ${i + 1}/${testCases.length}: ${isMatch ? "PASSED" : "FAILED"}`);
-
+    const comparison = compareOutputs(execResult.stdout, testcase.output);
     testResults.push({
+      id: i + 1,
       testCase: i + 1,
-      passed: isMatch,
+      status: comparison.passed ? "PASSED" : "WRONG_ANSWER",
+      passed: comparison.passed,
       input: testcase.input,
       expectedOutput: testcase.output,
       actualOutput: execResult.stdout.trim() || "(No output)",
-      verdict: isMatch ? "AC" : "WA"
+      difference: comparison.difference,
+      verdict: comparison.passed ? "AC" : "WA",
+      execution_time_ms: execMs,
+      memory_kb: execResult.memory_kb ?? 0,
+      stdout: execResult.stdout || "",
+      stderr: cleanErr
     });
 
-    if (!isMatch) {
-      const avgRuntimeMs = Math.max(1, Math.round(totalRuntimeMs / (i + 1)));
-      const memoryMb = Number((13 + (totalRuntimeMs % 5)).toFixed(1));
-      const percentiles = calculatePercentile(language, avgRuntimeMs, memoryMb);
+    if (!comparison.passed) {
+      const avgRuntimeMs = Number((totalRuntimeMs / (i + 1)).toFixed(2));
+      const memoryMb = maxMemoryKb > 0 ? Number((maxMemoryKb / 1024).toFixed(2)) : 0;
+
+      console.log(`[JudgeWorker] [STAGE 8: COMPARISON_RESULT] Testcase ${i + 1} WA: Expected "${testcase.output}", Got "${execResult.stdout.trim()}"`);
 
       return {
         status: "COMPLETED",
@@ -267,22 +260,33 @@ export async function evaluateSubmission({ submission, problem }) {
         passedCount: i,
         totalCases: testCases.length,
         runtimeMs: avgRuntimeMs,
+        execution_time_ms: avgRuntimeMs,
+        compilation_time_ms: compilationTimeMs,
+        memory_kb: maxMemoryKb,
         memoryMb,
-        memory: `${memoryMb} MB`,
-        runtimePercentile: percentiles.runtimePercentile,
-        memoryPercentile: percentiles.memoryPercentile,
+        memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
+        runtimePercentile: null,
+        memoryPercentile: null,
+        output: execResult.stdout || "Wrong Answer",
         stdout: execResult.stdout || "",
         stderr: cleanErr,
-        output: execResult.stdout.trim() || "Incorrect output",
-        expectedOutput: testcase.output,
+        testcases: testResults,
         testResults
       };
     }
   }
 
-  const avgRuntimeMs = Math.max(1, Math.round(totalRuntimeMs / testCases.length));
-  const memoryMb = Number((11 + (avgRuntimeMs % 4)).toFixed(1));
-  const percentiles = calculatePercentile(language, avgRuntimeMs, memoryMb);
+  const avgRuntimeMs = Number((totalRuntimeMs / testCases.length).toFixed(2));
+  const memoryMb = maxMemoryKb > 0 ? Number((maxMemoryKb / 1024).toFixed(2)) : 0;
+
+  const percentiles = await calculateRealPercentile({
+    problemId: problem?.id,
+    language: normLang,
+    runtimeMs: avgRuntimeMs,
+    memoryMb
+  });
+
+  console.log(`[JudgeWorker] [STAGE 8: COMPARISON_RESULT] All ${testCases.length} testcases AC! Runtime: ${avgRuntimeMs}ms, Memory: ${memoryMb}MB`);
 
   return {
     status: "COMPLETED",
@@ -291,13 +295,17 @@ export async function evaluateSubmission({ submission, problem }) {
     passedCount: testCases.length,
     totalCases: testCases.length,
     runtimeMs: avgRuntimeMs,
+    execution_time_ms: avgRuntimeMs,
+    compilation_time_ms: compilationTimeMs,
+    memory_kb: maxMemoryKb,
     memoryMb,
-    memory: `${memoryMb} MB`,
+    memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
     runtimePercentile: percentiles.runtimePercentile,
     memoryPercentile: percentiles.memoryPercentile,
-    stdout: testResults[0]?.actualOutput || "",
-    output: testResults[0]?.actualOutput || testCases[0]?.output || "Success",
-    expectedOutput: testCases[0]?.output ?? "",
+    output: testResults[0]?.actualOutput || "All test cases passed.",
+    stdout: testResults[0]?.stdout || "",
+    stderr: "",
+    testcases: testResults,
     testResults
   };
 }

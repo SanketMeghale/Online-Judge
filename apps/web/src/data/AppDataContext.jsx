@@ -11,7 +11,6 @@ import {
   getSubmissionsForUser,
   getUserById,
   readSavedCode,
-  simulateRun,
   updateUserAfterSubmission,
   writeDatabase,
   writeSavedCode
@@ -70,28 +69,50 @@ function normalizeSubmission(raw, problem) {
   }
 
   const subId = String(sub._id || sub.id || sub.submissionId || raw.submissionId || raw.id || "");
-  const runtimeStr = typeof sub.runtime === "string" ? sub.runtime : `${sub.runtimeMs || 25} ms`;
-  const memoryStr = typeof sub.memory === "string" ? sub.memory : `${sub.memoryMb || 14.2} MB`;
+  const runtimeNum = typeof sub.execution_time_ms === "number"
+    ? sub.execution_time_ms
+    : typeof sub.runtimeMs === "number"
+    ? sub.runtimeMs
+    : 0;
+  const runtimeStr = typeof sub.runtime === "string" && sub.runtime
+    ? sub.runtime
+    : `${runtimeNum} ms`;
+
+  const memoryKb = typeof sub.memory_kb === "number" ? sub.memory_kb : 0;
+  const memoryMb = typeof sub.memoryMb === "number"
+    ? sub.memoryMb
+    : (memoryKb > 0 ? Number((memoryKb / 1024).toFixed(2)) : 0);
+  const memoryStr = typeof sub.memory === "string" && sub.memory
+    ? sub.memory
+    : (memoryMb > 0 ? `${memoryMb} MB` : "");
 
   return {
     id: subId || `sub_${Date.now()}`,
     submissionId: subId || `sub_${Date.now()}`,
     verdict: String(verdict),
+    status: sub.status || (isAc ? "ACCEPTED" : "FAILED"),
     statusText: String(statusText),
     runtime: String(runtimeStr),
-    runtimeMs: typeof sub.runtimeMs === "number" ? sub.runtimeMs : 25,
+    runtimeMs: runtimeNum,
+    execution_time_ms: runtimeNum,
+    compilation_time_ms: typeof sub.compilation_time_ms === "number" ? sub.compilation_time_ms : 0,
     memory: String(memoryStr),
-    memoryMb: typeof sub.memoryMb === "number" ? sub.memoryMb : 14.2,
-    runtimePercentile: typeof sub.runtimePercentile === "number" ? sub.runtimePercentile : 84.6,
-    memoryPercentile: typeof sub.memoryPercentile === "number" ? sub.memoryPercentile : 76.2,
+    memory_kb: memoryKb,
+    memoryMb,
+    runtimePercentile: typeof sub.runtimePercentile === "number" ? sub.runtimePercentile : null,
+    memoryPercentile: typeof sub.memoryPercentile === "number" ? sub.memoryPercentile : null,
     passedCount,
+    passed: passedCount,
     totalCases,
+    total: totalCases,
     output: firstTc.actualOutput || firstTc.stdout || sub.stdout || sub.output || "",
     stdout: firstTc.actualOutput || firstTc.stdout || sub.stdout || "",
     stderr: firstTc.stderr || sub.stderr || "",
+    compileOutput: sub.compileOutput || "",
     expectedOutput:
       firstTc.expectedOutput || sub.expectedOutput || problem?.examples?.[0]?.output || "",
     testResults,
+    testcases: testResults,
     message: isAc ? "Accepted! Your solution passed all test cases." : String(statusText)
   };
 }
@@ -247,37 +268,67 @@ export function AppDataProvider({ children }) {
   async function runSolution({ problemId, language, code, stdin = "" }) {
     const problem = getProblemById(database, problemId);
 
-    try {
-      const response = await api.runCode({
-        problemId,
-        language: language.toLowerCase(),
-        code,
-        stdin
-      });
+    const response = await api.runCode({
+      problemId,
+      language: language.toLowerCase(),
+      code,
+      stdin
+    });
 
-      return {
-        verdict: response.verdict || (response.ok ? "AC" : "RE"),
-        statusText:
-          response.statusText ||
-          (response.ok ? "Code executed successfully" : "Execution failed"),
-        runtime: response.runtime || `${response.runtimeMs || 15} ms`,
-        runtimeMs: response.runtimeMs || 15,
-        memory: response.memory || "14.2 MB",
-        output: response.output || response.stdout || response.stderr || "Execution completed.",
-        stdout: response.stdout || "",
-        stderr: response.stderr || "",
-        expectedOutput: problem?.examples?.[0]?.output ?? "",
-        passedCount:
-          response.passedCount ??
-          (response.verdict === "AC" ? problem?.examples?.length || 1 : 0),
-        totalCases: response.totalCases ?? problem?.examples?.length ?? 1,
-        testResults: response.testResults || []
-      };
-    } catch (err) {
-      if (!problem) throw new Error("Problem not found.");
-      console.warn("[AppDataContext] run API unavailable, using simulator:", err.message);
-      return simulateRun(problem, language, code);
-    }
+    const isAc = response.verdict === "AC" || (response.ok && response.verdict !== "WA");
+    const runtimeNum = typeof response.execution_time_ms === "number"
+      ? response.execution_time_ms
+      : typeof response.runtimeMs === "number"
+      ? response.runtimeMs
+      : 0;
+    const runtimeStr = response.runtime || `${runtimeNum} ms`;
+
+    const memoryKb = typeof response.memory_kb === "number" ? response.memory_kb : 0;
+    const memoryMb = typeof response.memoryMb === "number"
+      ? response.memoryMb
+      : (memoryKb > 0 ? Number((memoryKb / 1024).toFixed(2)) : 0);
+    const memoryStr = response.memory || (memoryMb > 0 ? `${memoryMb} MB` : "");
+
+    const testResults = Array.isArray(response.testcases)
+      ? response.testcases
+      : Array.isArray(response.testResults)
+      ? response.testResults
+      : [];
+
+    return {
+      ok: Boolean(response.ok),
+      verdict: response.verdict || (isAc ? "AC" : "RE"),
+      status: response.status || (isAc ? "ACCEPTED" : "FAILED"),
+      statusText:
+        response.statusText ||
+        (isAc ? "Accepted" : "Execution failed"),
+      runtime: runtimeStr,
+      runtimeMs: runtimeNum,
+      execution_time_ms: runtimeNum,
+      compilation_time_ms: response.compilation_time_ms || 0,
+      memory: memoryStr,
+      memory_kb: memoryKb,
+      memoryMb,
+      output: response.output || response.stdout || response.stderr || "",
+      stdout: response.stdout || "",
+      stderr: response.stderr || "",
+      compileOutput: response.compileOutput || "",
+      expectedOutput: testResults[0]?.expectedOutput || problem?.examples?.[0]?.output || "",
+      passedCount:
+        typeof response.passed === "number"
+          ? response.passed
+          : typeof response.passedCount === "number"
+          ? response.passedCount
+          : isAc ? testResults.length || 1 : 0,
+      totalCases:
+        typeof response.total === "number"
+          ? response.total
+          : typeof response.totalCases === "number"
+          ? response.totalCases
+          : testResults.length || problem?.examples?.length || 1,
+      testResults,
+      testcases: testResults
+    };
   }
 
   // ── Submit Solution ───────────────────────────────────────────────────────────
@@ -297,66 +348,44 @@ export function AppDataProvider({ children }) {
       xp: 0
     };
 
+    // 1. POST to backend — may return QUEUED or already-evaluated result
+    const response = await api.submitCode({
+      userId,
+      problemId,
+      language: language.toLowerCase(),
+      code,
+      stdin
+    });
+
+    if (!response) {
+      throw new Error("Empty submission response from API.");
+    }
+
+    // 2. Unwrap the submission object
+    const rawSub = response.submission || response;
+    if (!rawSub) {
+      throw new Error("Invalid submission payload structure.");
+    }
+
+    const subId = String(
+      rawSub._id || rawSub.id || rawSub.submissionId || response.submissionId || ""
+    );
+    const currentVerdict = rawSub.verdict || rawSub.status || "";
+    const isPending =
+      !currentVerdict ||
+      currentVerdict === "PENDING" ||
+      currentVerdict === "QUEUED" ||
+      currentVerdict === "processing";
+
     let result;
-
-    try {
-      // 1. POST to backend — may return QUEUED or already-evaluated result
-      const response = await api.submitCode({
-        userId,
-        problemId,
-        language: language.toLowerCase(),
-        code,
-        stdin
-      });
-
-      console.log("[1] API RESPONSE", response);
-
-      if (!response) {
-        throw new Error("Empty submission response from API.");
-      }
-
-      // 2. Unwrap the submission object
-      const rawSub = response.submission || response;
-      if (!rawSub) {
-        throw new Error("Invalid submission payload structure.");
-      }
-
-      const subId = String(
-        rawSub._id || rawSub.id || rawSub.submissionId || response.submissionId || ""
-      );
-      const currentVerdict = rawSub.verdict || rawSub.status || "";
-      const isPending =
-        !currentVerdict ||
-        currentVerdict === "PENDING" ||
-        currentVerdict === "QUEUED" ||
-        currentVerdict === "processing";
-
-      if (isPending && subId) {
-        // 3a. Result not ready yet — poll until complete
-        console.log(`[Submit] Submission ${subId} is ${currentVerdict}, polling...`);
-        const polled = await pollUntilComplete(subId, problem);
-        if (polled) {
-          result = polled;
-        } else {
-          // Polling timed out — return best-effort normalized from initial response
-          console.warn("[Submit] Polling timed out, using initial response");
-          result = normalizeSubmission(rawSub, problem);
-        }
-      } else {
-        // 3b. Already evaluated inline (RabbitMQ offline path)
-        result = normalizeSubmission(rawSub, problem);
-      }
-    } catch (err) {
-      // API completely unreachable or failed — run local simulation (offline mode)
-      console.warn("[Submit] API call failed, running local simulation fallback:", err.message);
-      result = simulateRun(problem, language, code);
+    if (isPending && subId) {
+      const polled = await pollUntilComplete(subId, problem);
+      result = polled || normalizeSubmission(rawSub, problem);
+    } else {
+      result = normalizeSubmission(rawSub, problem);
     }
 
-    if (!result) {
-      result = simulateRun(problem, language, code);
-    }
-
-    // 4. Persist submission locally (localStorage) for immediate UI display
+    // 3. Persist submission locally (localStorage) for immediate UI display
     try {
       const { submission, nextSubmissionId } = createSubmission(
         database,
@@ -397,12 +426,11 @@ export function AppDataProvider({ children }) {
         return {
           ...current,
           nextSubmissionId,
-          problems: updatedProblems,
           submissions: [submission, ...(current.submissions || [])],
-          users: updatedUsers
+          users: updatedUsers,
+          problems: updatedProblems
         };
       });
-
       // Background re-sync with server
       setTimeout(() => {
         syncBackendData();

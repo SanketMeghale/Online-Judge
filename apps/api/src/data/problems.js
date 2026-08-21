@@ -18,9 +18,9 @@ export const problems = [
     ],
     hiddenTestCases: [
       { input: "nums = [3, 3], target = 6", output: "[0, 1]" },
-      { input: "nums = [-1, -8, 14, 7], target = 6", output: "[0, 3]" },
+      { input: "nums = [-1, -5, 14, 7], target = 6", output: "[0, 3]" },
       { input: "nums = [0, 4, 3, 0], target = 0", output: "[0, 3]" },
-      { input: "nums = [1, 5, 8, 11, 14], target = 19", output: "[1, 4]" },
+      { input: "nums = [1, 5, 7, 11, 14], target = 19", output: "[1, 4]" },
       { input: "nums = [-3, 4, 3, 90], target = 0", output: "[0, 2]" }
     ],
     constraints: ["2 <= nums.length <= 10^4", "-10^9 <= nums[i] <= 10^9", "-10^9 <= target <= 10^9"],

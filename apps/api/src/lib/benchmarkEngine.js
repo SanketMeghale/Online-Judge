@@ -1,37 +1,92 @@
-// LeetCode-grade Percentile Benchmarking Engine
+import { Submission } from "../models/Submission.js";
+import { isDatabaseConnected } from "./db.js";
+import { listSubmissionRecords } from "./submissionStore.js";
 
-const LANGUAGE_BENCHMARKS = {
-  javascript: { meanRuntimeMs: 35, stdDevRuntime: 12, meanMemoryMb: 14.5, stdDevMemory: 1.8 },
-  python: { meanRuntimeMs: 45, stdDevRuntime: 15, meanMemoryMb: 15.2, stdDevMemory: 2.1 },
-  cpp: { meanRuntimeMs: 8, stdDevRuntime: 4, meanMemoryMb: 8.4, stdDevMemory: 1.2 },
-  java: { meanRuntimeMs: 25, stdDevRuntime: 8, meanMemoryMb: 42.1, stdDevMemory: 5.0 }
-};
+const MIN_BENCHMARK_SAMPLE_SIZE = 5;
 
-function cumulativeNormalDistribution(x, mean, stdDev) {
-  if (stdDev <= 0) return 0.5;
-  const z = (x - mean) / stdDev;
-  // Approximation of error function erf for cumulative normal distribution
-  const t = 1 / (1 + 0.2316419 * Math.abs(z));
-  const d = 0.3989423 * Math.exp((-z * z) / 2);
-  let prob = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
-  if (z > 0) prob = 1 - prob;
-  return prob;
-}
+/**
+ * Calculate percentile against real historical accepted submissions.
+ * If insufficient real benchmark data exists (< 5 submissions), returns null.
+ * Never invents, estimates, or randomly generates percentiles.
+ *
+ * @param {string} problemId - Problem ID
+ * @param {string} language - Programming language
+ * @param {number} runtimeMs - Measured runtime in milliseconds
+ * @param {number} memoryMb - Measured memory in megabytes
+ * @returns {Promise<{ runtimePercentile: number | null, memoryPercentile: number | null, sampleSize: number }>}
+ */
+export async function calculateRealPercentile({ problemId, language, runtimeMs, memoryMb }) {
+  const normLang = (language || "").toLowerCase().trim();
+  const pid = (problemId || "").toLowerCase().trim();
 
-export function calculatePercentile(language, runtimeMs, memoryMb = 14.0) {
-  const normLang = (language || "javascript").toLowerCase();
-  const benchmark = LANGUAGE_BENCHMARKS[normLang] || LANGUAGE_BENCHMARKS.javascript;
+  let historicalRecords = [];
 
-  // Faster runtime (smaller ms) = higher percentile beaten
-  // If runtimeMs < meanRuntimeMs, percentile is high (>50%)
-  const runtimeZ = (benchmark.meanRuntimeMs - runtimeMs) / benchmark.stdDevRuntime;
-  const runtimePercentile = Math.min(99.9, Math.max(5.0, (cumulativeNormalDistribution(-runtimeZ, 0, 1) * 100)));
+  // 1. Fetch real historical submissions from MongoDB if connected
+  if (isDatabaseConnected()) {
+    try {
+      const dbRecords = await Submission.find({
+        problemId: pid,
+        language: normLang,
+        verdict: "AC",
+        runtimeMs: { $gt: 0 }
+      })
+        .select("runtimeMs memoryMb")
+        .lean();
+      historicalRecords = dbRecords || [];
+    } catch (err) {
+      console.warn("[BenchmarkEngine] Failed to query MongoDB submissions:", err.message);
+    }
+  }
 
-  const memoryZ = (benchmark.meanMemoryMb - memoryMb) / benchmark.stdDevMemory;
-  const memoryPercentile = Math.min(99.9, Math.max(5.0, (cumulativeNormalDistribution(-memoryZ, 0, 1) * 100)));
+  // 2. Combine with in-memory submission records if any
+  try {
+    const memRecords = listSubmissionRecords({ problemId: pid, language: normLang, verdict: "AC" }) || [];
+    for (const rec of memRecords) {
+      if (rec && rec.runtimeMs > 0 && !historicalRecords.some((h) => String(h._id || h.id) === String(rec.id || rec._id))) {
+        historicalRecords.push(rec);
+      }
+    }
+  } catch {}
+
+  const sampleSize = historicalRecords.length;
+
+  // 3. If fewer than MIN_BENCHMARK_SAMPLE_SIZE accepted submissions exist, return null
+  if (sampleSize < MIN_BENCHMARK_SAMPLE_SIZE) {
+    return {
+      runtimePercentile: null,
+      memoryPercentile: null,
+      sampleSize
+    };
+  }
+
+  // 4. Calculate actual percentile against real historical dataset
+  // Percentile = % of submissions that this solution was faster than (larger runtimeMs)
+  const slowerCount = historicalRecords.filter((s) => s.runtimeMs > runtimeMs).length;
+  const equalCount = historicalRecords.filter((s) => s.runtimeMs === runtimeMs).length;
+  const runtimePercentile = Number((((slowerCount + equalCount * 0.5) / sampleSize) * 100).toFixed(1));
+
+  // Memory percentile
+  let memoryPercentile = null;
+  if (typeof memoryMb === "number" && memoryMb > 0) {
+    const higherMemCount = historicalRecords.filter((s) => s.memoryMb > memoryMb).length;
+    const equalMemCount = historicalRecords.filter((s) => s.memoryMb === memoryMb).length;
+    memoryPercentile = Number((((higherMemCount + equalMemCount * 0.5) / sampleSize) * 100).toFixed(1));
+  }
 
   return {
-    runtimePercentile: Number(runtimePercentile.toFixed(1)),
-    memoryPercentile: Number(memoryPercentile.toFixed(1))
+    runtimePercentile: Math.min(100, Math.max(0, runtimePercentile)),
+    memoryPercentile: memoryPercentile !== null ? Math.min(100, Math.max(0, memoryPercentile)) : null,
+    sampleSize
+  };
+}
+
+/**
+ * Synchronous fallback wrapper for inline usage where async is not possible
+ */
+export function calculatePercentile(language, runtimeMs, memoryMb) {
+  // Return null percentiles by default unless populated from real database
+  return {
+    runtimePercentile: null,
+    memoryPercentile: null
   };
 }

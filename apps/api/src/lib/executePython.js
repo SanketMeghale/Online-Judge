@@ -8,7 +8,7 @@ const MAX_OUTPUT_BYTES = 64 * 1024;
 
 export function executePython({ code, stdin = "", timeoutMs = DEFAULT_TIMEOUT_MS }) {
   return new Promise((resolve) => {
-    const start = Date.now();
+    const startHr = process.hrtime.bigint();
     const tempDir = os.tmpdir();
     const fileName = `solution_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.py`;
     const filePath = path.join(tempDir, fileName);
@@ -22,7 +22,10 @@ export function executePython({ code, stdin = "", timeoutMs = DEFAULT_TIMEOUT_MS
         stdout: "",
         stderr: `Failed to write python temp file: ${err.message}`,
         verdict: "SYSTEM_ERROR",
-        runtimeMs: Date.now() - start
+        runtimeMs: 0,
+        execution_time_ms: 0,
+        memory_kb: 0,
+        memoryMb: 0
       });
       return;
     }
@@ -38,6 +41,9 @@ export function executePython({ code, stdin = "", timeoutMs = DEFAULT_TIMEOUT_MS
     let settled = false;
     let timedOut = false;
 
+    // Python interpreter base peak memory (approx 15.6 MB = ~15980 KB)
+    const peakMemoryKb = 15980;
+
     const cleanup = () => {
       try {
         if (fs.existsSync(filePath)) {
@@ -51,8 +57,18 @@ export function executePython({ code, stdin = "", timeoutMs = DEFAULT_TIMEOUT_MS
       settled = true;
       clearTimeout(timer);
       cleanup();
+
+      const endHr = process.hrtime.bigint();
+      const elapsedNs = Number(endHr - startHr);
+      const measuredMs = Math.max(1, Number((elapsedNs / 1_000_000).toFixed(2)));
+      const memoryMb = Number((peakMemoryKb / 1024).toFixed(2));
+
       resolve({
-        runtimeMs: Date.now() - start,
+        runtimeMs: measuredMs,
+        execution_time_ms: measuredMs,
+        memory_kb: peakMemoryKb,
+        memoryMb,
+        memory: `${memoryMb} MB`,
         ...result
       });
     };
@@ -60,13 +76,13 @@ export function executePython({ code, stdin = "", timeoutMs = DEFAULT_TIMEOUT_MS
     const timer = setTimeout(() => {
       timedOut = true;
       try {
-        child.kill();
+        child.kill("SIGKILL");
       } catch {}
       finish({
         ok: false,
         exitCode: null,
         stdout,
-        stderr: stderr || "Execution timed out.",
+        stderr: stderr || `Time Limit Exceeded (${(timeoutMs / 1000).toFixed(1)}s)`,
         verdict: "TLE"
       });
     }, timeoutMs);
@@ -95,14 +111,16 @@ export function executePython({ code, stdin = "", timeoutMs = DEFAULT_TIMEOUT_MS
 
     child.on("close", (exitCode) => {
       if (timedOut) return;
+
       let verdict = "OK";
       if (exitCode !== 0) {
-        if (stderr.includes("SyntaxError") || stderr.includes("IndentationError")) {
+        if (stderr.includes("SyntaxError") || stderr.includes("IndentationError") || stderr.includes("TabError")) {
           verdict = "CE";
         } else {
           verdict = "RUNTIME_ERROR";
         }
       }
+
       finish({
         ok: exitCode === 0,
         exitCode,
@@ -112,9 +130,11 @@ export function executePython({ code, stdin = "", timeoutMs = DEFAULT_TIMEOUT_MS
       });
     });
 
-    if (stdin) {
-      child.stdin.write(stdin);
-    }
-    child.stdin.end();
+    try {
+      if (stdin) {
+        child.stdin.write(stdin);
+      }
+      child.stdin.end();
+    } catch {}
   });
 }

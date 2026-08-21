@@ -627,58 +627,6 @@ export function computeLeaderboard(database) {
   }));
 }
 
-export function simulateRun(problem, language, code) {
-  const normalizedCode = (code || "").toLowerCase();
-  const tokens = problem?.judge?.acceptedTokens || ["solution", "return"];
-  const hits = tokens.filter((token) => normalizedCode.includes(token)).length;
-
-  if (!code || !code.trim()) {
-    return {
-      verdict: "CE",
-      statusText: "No code to run",
-      runtime: "-",
-      memory: "-",
-      output: "No code provided.",
-      expectedOutput: problem?.examples?.[0]?.output ?? "",
-      message: "Add code before running."
-    };
-  }
-
-  if (language === "Java" && !normalizedCode.includes("class")) {
-    return {
-      verdict: "CE",
-      statusText: "Compilation error",
-      runtime: "-",
-      memory: "-",
-      output: "Compilation failed: expected class declaration.",
-      expectedOutput: problem?.examples?.[0]?.output ?? "",
-      message: "Java submissions need a class declaration."
-    };
-  }
-
-  if (hits >= 1) {
-    return {
-      verdict: "AC",
-      statusText: "All test cases passed",
-      runtime: `${20 + (problem?.points || 10)} ms`,
-      memory: `${12 + Math.floor((problem?.points || 10) / 4)} MB`,
-      output: problem?.judge?.output || "true",
-      expectedOutput: problem?.examples?.[0]?.output ?? "",
-      message: "Accepted. Your solution passed all visible test cases."
-    };
-  }
-
-  return {
-    verdict: "WA",
-    statusText: "Test case 1 failed",
-    runtime: `${35 + (problem?.points || 10)} ms`,
-    memory: `${14 + Math.floor((problem?.points || 10) / 4)} MB`,
-    output: "Incorrect output",
-    expectedOutput: problem?.examples?.[0]?.output ?? "",
-    message: "Wrong answer. Your output did not match the expected result."
-  };
-}
-
 export function createSubmission(database, userId, problem, language, result) {
   const nextSubId = database?.nextSubmissionId || 1001;
   const id = `S-${nextSubId}`;

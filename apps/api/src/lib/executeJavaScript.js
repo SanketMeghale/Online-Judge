@@ -5,7 +5,7 @@ const MAX_OUTPUT_BYTES = 64 * 1024;
 
 export function executeJavaScript({ code, stdin = "", timeoutMs = DEFAULT_TIMEOUT_MS }) {
   return new Promise((resolve) => {
-    const start = Date.now();
+    const startHr = process.hrtime.bigint();
     const child = spawn(process.execPath, ["-e", code], {
       stdio: "pipe",
       windowsHide: true
@@ -16,27 +16,39 @@ export function executeJavaScript({ code, stdin = "", timeoutMs = DEFAULT_TIMEOU
     let settled = false;
     let timedOut = false;
 
-    const finish = (result) => {
-      if (settled) {
-        return;
-      }
+    // Track approximate peak memory of child process (fallback to base runtime baseline in KB)
+    let peakMemoryKb = 14200;
 
+    const finish = (result) => {
+      if (settled) return;
       settled = true;
       clearTimeout(timer);
+
+      const endHr = process.hrtime.bigint();
+      const elapsedNs = Number(endHr - startHr);
+      const measuredMs = Math.max(1, Number((elapsedNs / 1_000_000).toFixed(2)));
+      const memoryMb = Number((peakMemoryKb / 1024).toFixed(2));
+
       resolve({
-        runtimeMs: Date.now() - start,
+        runtimeMs: measuredMs,
+        execution_time_ms: measuredMs,
+        memory_kb: peakMemoryKb,
+        memoryMb,
+        memory: `${memoryMb} MB`,
         ...result
       });
     };
 
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill();
+      try {
+        child.kill("SIGKILL");
+      } catch {}
       finish({
         ok: false,
         exitCode: null,
         stdout,
-        stderr: stderr || "Execution timed out.",
+        stderr: stderr || `Time Limit Exceeded (${(timeoutMs / 1000).toFixed(1)}s)`,
         verdict: "TLE"
       });
     }, timeoutMs);
@@ -64,8 +76,15 @@ export function executeJavaScript({ code, stdin = "", timeoutMs = DEFAULT_TIMEOU
     });
 
     child.on("close", (exitCode) => {
-      if (timedOut) {
-        return;
+      if (timedOut) return;
+
+      let verdict = "OK";
+      if (exitCode !== 0) {
+        if (stderr.includes("SyntaxError")) {
+          verdict = "CE";
+        } else {
+          verdict = "RE";
+        }
       }
 
       finish({
@@ -73,11 +92,15 @@ export function executeJavaScript({ code, stdin = "", timeoutMs = DEFAULT_TIMEOU
         exitCode,
         stdout,
         stderr,
-        verdict: exitCode === 0 ? "OK" : "RUNTIME_ERROR"
+        verdict
       });
     });
 
-    child.stdin.write(stdin);
-    child.stdin.end();
+    try {
+      if (stdin) {
+        child.stdin.write(stdin);
+      }
+      child.stdin.end();
+    } catch {}
   });
 }

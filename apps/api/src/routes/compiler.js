@@ -4,6 +4,7 @@ import { executeCode } from "../lib/executeCode.js";
 import { isDatabaseConnected } from "../lib/db.js";
 import { Problem } from "../models/Problem.js";
 import { problems as seedProblems } from "../data/problems.js";
+import { compareOutputs } from "../lib/outputChecker.js";
 
 const router = Router();
 
@@ -14,90 +15,6 @@ function cleanStderr(stderr = "") {
     .replace(/solution_[a-z0-9_]+\.(py|cpp|java|js|c)/gi, "Solution");
 }
 
-function normalize(str) {
-  if (typeof str !== "string") return "";
-  return str
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
-    .split("\n")
-    .map((line) => line.trimEnd())
-    .join("\n")
-    .trim();
-}
-
-function parseTokens(str) {
-  const matches = str.match(/("[^"]*"|'[^']*'|-?\d+(?:\.\d+)?|true|false)/gi);
-  if (!matches) return null;
-  return matches.map((m) => {
-    const s = m.toLowerCase().replace(/^["']|["']$/g, "");
-    if (s === "true") return true;
-    if (s === "false") return false;
-    const num = Number(s);
-    return isNaN(num) ? s : num;
-  });
-}
-
-function compareOutputs(actual, expected) {
-  const normActual = normalize(actual);
-  const normExpected = normalize(expected);
-
-  if (!normActual && !normExpected) return true;
-  if (!normActual) return false;
-  if (normActual === normExpected) return true;
-
-  // Case-insensitive / boolean equivalence (e.g. True vs true)
-  if (normActual.toLowerCase() === normExpected.toLowerCase()) return true;
-
-  // Direct whitespace-stripped comparison
-  const stripActual = normActual.replace(/\s+/g, "");
-  const stripExpected = normExpected.replace(/\s+/g, "");
-  if (stripActual === stripExpected) return true;
-
-  // Try candidate strings (entire output and last non-empty line)
-  const lines = normActual.split("\n").map((l) => l.trim()).filter(Boolean);
-  const candidates = [normActual, lines[lines.length - 1] || normActual];
-
-  for (const candidate of candidates) {
-    try {
-      const jsonActual = JSON.parse(candidate);
-      const jsonExpected = JSON.parse(normExpected);
-      if (JSON.stringify(jsonActual) === JSON.stringify(jsonExpected)) return true;
-    } catch {}
-
-    const cStrip = candidate.replace(/\s+/g, "");
-    if (cStrip === stripExpected) return true;
-
-    // Handle key-value formatted array outputs e.g. [0: 0, 1: 1]
-    const kvMatch = candidate.match(/\d+:\s*(-?\d+|"[^"]*"|'[^']*'|true|false)/g);
-    if (kvMatch) {
-      const extractedVals = kvMatch.map((kv) => kv.split(":")[1].trim());
-      const extractedStr = `[${extractedVals.join(", ")}]`;
-      if (extractedStr.replace(/\s+/g, "") === stripExpected) return true;
-      try {
-        if (JSON.stringify(JSON.parse(extractedStr)) === JSON.stringify(JSON.parse(normExpected))) return true;
-      } catch {}
-    }
-
-    // Token array comparison (e.g. comparing [0, 1] with "0, 1" or "[0, 1]")
-    const actTokens = parseTokens(candidate);
-    const expTokens = parseTokens(normExpected);
-    if (actTokens && expTokens && actTokens.length === expTokens.length) {
-      const matchesAll = actTokens.every((val, idx) => val === expTokens[idx]);
-      if (matchesAll) return true;
-    }
-  }
-
-  return false;
-}
-
-/**
- * Convert a LeetCode-style problem input string to a programmatic stdin
- * for C++ / Java harnesses (which use cin / Scanner).
- *
- * E.g. "nums = [2, 7, 11, 15], target = 9"  ->  "4\n2 7 11 15\n9"
- *      "x = 121"                             ->  "121"
- *      "n = 5"                               ->  "5"
- */
 function buildCppJavaStdin(problemId, lcInput) {
   if (!lcInput || !lcInput.trim()) return "";
   const raw = lcInput.trim();
@@ -105,7 +22,6 @@ function buildCppJavaStdin(problemId, lcInput) {
 
   try {
     if (pid === "two-sum") {
-      // nums = [...], target = N
       const numsMatch = raw.match(/nums\s*=\s*(\[.*?\])/);
       const targetMatch = raw.match(/target\s*=\s*(-?\d+)/);
       if (numsMatch && targetMatch) {
@@ -116,11 +32,8 @@ function buildCppJavaStdin(problemId, lcInput) {
     }
 
     if (pid === "valid-parentheses") {
-      // s = "..."
-      const sMatch = raw.match(/s\s*=\s*"([^"]*)"/);
+      const sMatch = raw.match(/s\s*=\s*"([^"]*)"/) || raw.match(/s\s*=\s*'([^']*)'/);
       if (sMatch) return sMatch[1];
-      const sMatch2 = raw.match(/s\s*=\s*'([^']*)'/);
-      if (sMatch2) return sMatch2[1];
     }
 
     if (pid === "palindrome-number") {
@@ -158,7 +71,6 @@ function buildCppJavaStdin(problemId, lcInput) {
     }
   } catch (e) {}
 
-  // For unsupported problems or C/Java, return the raw string
   return raw;
 }
 
@@ -185,7 +97,7 @@ router.post("/run", async (request, response) => {
     return;
   }
 
-  // 2. Fetch Problem
+  // 2. Fetch Problem definition
   let problem = null;
   if (isDatabaseConnected()) {
     try {
@@ -196,10 +108,9 @@ router.post("/run", async (request, response) => {
     problem = seedProblems.find((p) => p.id === problemId);
   }
 
-  // Determine if C++/Java (need programmatic stdin, not LeetCode format)
   const needsConvertedStdin = normLang === "cpp" || normLang === "c++" || normLang === "java" || normLang === "c";
 
-  // If custom STDIN is provided or problem has no examples, run single execution
+  // 3. Custom STDIN Execution Mode
   if (stdin || !problem || !problem.examples || problem.examples.length === 0) {
     const resolvedStdin = needsConvertedStdin
       ? buildCppJavaStdin(problemId, stdin || problem?.examples?.[0]?.input || "")
@@ -207,43 +118,53 @@ router.post("/run", async (request, response) => {
 
     const wrappedCode = wrapCodeWithHarness({ code, language: normLang, problemId, stdin: resolvedStdin });
     const result = await executeCode({ language: normLang, code: wrappedCode, stdin: resolvedStdin, timeoutMs });
-    const cleanErr = cleanStderr(result.stderr);
-    const runtimeMs = result.runtimeMs || 10;
-    const memory = `${(12 + (runtimeMs % 7)).toFixed(1)} MB`;
+    const cleanErr = cleanStderr(result.stderr || result.compileOutput || "");
+    const runtimeMs = result.execution_time_ms ?? result.runtimeMs ?? 0;
+    const memoryKb = result.memory_kb ?? 0;
+    const memoryMb = result.memoryMb ?? (memoryKb > 0 ? Number((memoryKb / 1024).toFixed(2)) : 0);
+
+    const verdict = result.ok ? "AC" : (result.verdict === "CE" ? "CE" : result.verdict === "TLE" ? "TLE" : "RE");
+    const status = verdict === "AC" ? "ACCEPTED" : verdict === "CE" ? "COMPILATION_ERROR" : verdict === "TLE" ? "TIME_LIMIT_EXCEEDED" : "RUNTIME_ERROR";
 
     response.json({
       language: normLang,
       ok: result.ok,
-      verdict: result.ok ? "AC" : result.verdict || "RE",
+      verdict,
+      status,
       statusText: result.ok
         ? "Code executed successfully"
-        : result.verdict === "CE"
+        : verdict === "CE"
         ? "Compilation Error"
-        : result.verdict === "TLE"
+        : verdict === "TLE"
         ? "Time Limit Exceeded"
         : "Runtime Error",
-      runtime: `${runtimeMs} ms`,
+      execution_time_ms: runtimeMs,
       runtimeMs,
-      memory,
+      runtime: `${runtimeMs} ms`,
+      compilation_time_ms: result.compilation_time_ms ?? 0,
+      memory_kb: memoryKb,
+      memoryMb,
+      memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
       stdout: result.stdout || "",
       stderr: cleanErr,
+      compileOutput: result.compileOutput || "",
       output: result.stdout.trim() || cleanErr || "Code executed successfully.",
       testResults: []
     });
     return;
   }
 
-  // 3. Evaluate against all sample testcases
+  // 4. Multi-Sample Testcase Evaluation Mode
   const sampleCases = problem.examples;
   const testResults = [];
   let passedCount = 0;
   let totalRuntimeMs = 0;
+  let maxMemoryKb = 0;
+  let compilationTimeMs = 0;
   let overallVerdict = "AC";
 
   for (let i = 0; i < sampleCases.length; i++) {
     const tc = sampleCases[i];
-
-    // Convert stdin format for C++ / Java
     const tcStdin = needsConvertedStdin
       ? buildCppJavaStdin(problemId, tc.input)
       : tc.input;
@@ -251,67 +172,129 @@ router.post("/run", async (request, response) => {
     const wrappedCode = wrapCodeWithHarness({ code, language: normLang, problemId, stdin: tcStdin });
     const res = await executeCode({ language: normLang, code: wrappedCode, stdin: tcStdin, timeoutMs });
 
-    totalRuntimeMs += res.runtimeMs || 10;
-    const cleanErr = cleanStderr(res.stderr);
+    const execMs = res.execution_time_ms ?? res.runtimeMs ?? 0;
+    totalRuntimeMs += execMs;
+    compilationTimeMs = Math.max(compilationTimeMs, res.compilation_time_ms ?? 0);
+    maxMemoryKb = Math.max(maxMemoryKb, res.memory_kb ?? 0);
+
+    const cleanErr = cleanStderr(res.stderr || res.compileOutput || "");
+
+    // If compilation error occurs, immediately stop further testcases
+    if (res.verdict === "CE") {
+      overallVerdict = "CE";
+      testResults.push({
+        id: i + 1,
+        testCase: i + 1,
+        status: "COMPILATION_ERROR",
+        passed: false,
+        input: tc.input,
+        expectedOutput: tc.output,
+        actualOutput: cleanErr || "Compilation Error",
+        difference: "Program failed to compile.",
+        verdict: "CE",
+        execution_time_ms: 0,
+        memory_kb: 0,
+        stdout: "",
+        stderr: cleanErr
+      });
+      break;
+    }
 
     if (!res.ok) {
       const v = res.verdict || "RE";
       if (overallVerdict === "AC") overallVerdict = v;
       testResults.push({
+        id: i + 1,
         testCase: i + 1,
+        status: v === "TLE" ? "TIME_LIMIT_EXCEEDED" : "RUNTIME_ERROR",
         passed: false,
         input: tc.input,
         expectedOutput: tc.output,
         actualOutput: res.stdout || cleanErr || "(No output)",
+        difference: cleanErr || (v === "TLE" ? "Time Limit Exceeded" : "Runtime Error"),
         verdict: v,
+        execution_time_ms: execMs,
+        memory_kb: res.memory_kb ?? 0,
         stdout: res.stdout || "",
         stderr: cleanErr
       });
       continue;
     }
 
-    const passed = compareOutputs(res.stdout, tc.output);
-    if (passed) {
+    // Output comparison
+    const comparison = compareOutputs(res.stdout, tc.output);
+    if (comparison.passed) {
       passedCount++;
     } else if (overallVerdict === "AC") {
       overallVerdict = "WA";
     }
 
     testResults.push({
+      id: i + 1,
       testCase: i + 1,
-      passed,
+      status: comparison.passed ? "PASSED" : "WRONG_ANSWER",
+      passed: comparison.passed,
       input: tc.input,
       expectedOutput: tc.output,
       actualOutput: res.stdout.trim() || "(No output)",
-      verdict: passed ? "AC" : "WA",
+      difference: comparison.difference,
+      verdict: comparison.passed ? "AC" : "WA",
+      execution_time_ms: execMs,
+      memory_kb: res.memory_kb ?? 0,
       stdout: res.stdout || "",
       stderr: cleanErr
     });
   }
 
-  const avgRuntime = Math.max(1, Math.round(totalRuntimeMs / sampleCases.length));
-  const memory = `${(12.5 + (avgRuntime % 5)).toFixed(1)} MB`;
+  const avgRuntime = testResults.length > 0
+    ? Number((totalRuntimeMs / testResults.length).toFixed(2))
+    : 0;
+  const memoryMb = maxMemoryKb > 0 ? Number((maxMemoryKb / 1024).toFixed(2)) : 0;
+
+  const status =
+    overallVerdict === "AC"
+      ? "ACCEPTED"
+      : overallVerdict === "WA"
+      ? "WRONG_ANSWER"
+      : overallVerdict === "CE"
+      ? "COMPILATION_ERROR"
+      : overallVerdict === "TLE"
+      ? "TIME_LIMIT_EXCEEDED"
+      : "RUNTIME_ERROR";
+
+  const statusText =
+    overallVerdict === "AC"
+      ? "Accepted"
+      : overallVerdict === "WA"
+      ? `Wrong Answer on sample case`
+      : overallVerdict === "CE"
+      ? "Compilation Error"
+      : overallVerdict === "TLE"
+      ? "Time Limit Exceeded"
+      : "Runtime Error";
 
   response.json({
     language: normLang,
     ok: overallVerdict === "AC",
     verdict: overallVerdict,
-    statusText:
-      overallVerdict === "AC"
-        ? "Accepted"
-        : overallVerdict === "WA"
-        ? "Wrong Answer on sample case"
-        : overallVerdict === "CE"
-        ? "Compilation Error"
-        : overallVerdict === "TLE"
-        ? "Time Limit Exceeded"
-        : "Runtime Error",
+    status,
+    statusText,
+    passed: passedCount,
     passedCount,
+    total: sampleCases.length,
     totalCases: sampleCases.length,
-    runtime: `${avgRuntime} ms`,
+    execution_time_ms: avgRuntime,
     runtimeMs: avgRuntime,
-    memory,
+    runtime: `${avgRuntime} ms`,
+    compilation_time_ms: compilationTimeMs,
+    memory_kb: maxMemoryKb,
+    memoryMb,
+    memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
     output: testResults[0]?.actualOutput || "",
+    stdout: testResults[0]?.stdout || "",
+    stderr: testResults[0]?.stderr || "",
+    compileOutput: overallVerdict === "CE" ? (testResults[0]?.stderr || "") : "",
+    testcases: testResults,
     testResults
   });
 });

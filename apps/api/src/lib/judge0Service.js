@@ -130,9 +130,9 @@ function mapJudge0Result(result) {
   const stdout = (result.stdout || "").trim();
   const stderr = (result.stderr || result.compile_output || "").trim();
   const timeSec = parseFloat(result.time || "0");
-  const runtimeMs = timeSec > 0 ? Math.max(1, Math.round(timeSec * 1000)) : 15;
-  const memoryKb = result.memory || 14000;
-  const memoryMb = Number((memoryKb / 1024).toFixed(1));
+  const runtimeMs = timeSec > 0 ? Number((timeSec * 1000).toFixed(2)) : 0;
+  const memoryKb = result.memory ? Number(result.memory) : 0;
+  const memoryMb = memoryKb > 0 ? Number((memoryKb / 1024).toFixed(2)) : 0;
 
   console.log(`[Judge0Service] Final status_id: ${statusId} | stdout: "${stdout.slice(0, 100)}" | stderr: "${stderr.slice(0, 100)}"`);
 
@@ -146,8 +146,8 @@ function mapJudge0Result(result) {
       ok = true;
       statusText = "Accepted";
       break;
-    case 4: // Wrong Answer (Judge0 WA — treated as RE here; WA is determined by output comparison)
-      verdict = "OK"; // output comparison done in compiler.js / judgeEvaluator.js
+    case 4: // Wrong Answer (Judge0 WA — treated as OK here; WA is determined by output comparison)
+      verdict = "OK";
       ok = true;
       statusText = "Executed";
       break;
@@ -182,7 +182,6 @@ function mapJudge0Result(result) {
       statusText = "Execution Format Error";
       break;
     default:
-      // statusId 0, 1, 2 means still pending — treat as execution error
       verdict = statusId === 0 ? "SYSTEM_ERROR" : "RE";
       ok = false;
       statusText = result.status?.description || "Execution failed";
@@ -195,8 +194,12 @@ function mapJudge0Result(result) {
     statusText,
     stdout,
     stderr,
+    compileOutput: result.compile_output || "",
     output: stdout || stderr || "Executed successfully.",
     runtimeMs,
-    memoryMb
+    execution_time_ms: runtimeMs,
+    memory_kb: memoryKb,
+    memoryMb,
+    memory: memoryMb > 0 ? `${memoryMb} MB` : undefined
   };
 }

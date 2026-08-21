@@ -330,18 +330,19 @@ function ProblemDetailsInner() {
   }
 
   const activeExample = problemWithStatus.examples[selectedCaseIndex] || problemWithStatus.examples[0] || { input: "", output: "" };
-  const testResults = Array.isArray(result?.testResults) ? result.testResults : [];
+  const testResults = Array.isArray(result?.testResults)
+    ? result.testResults
+    : Array.isArray(result?.testcases)
+    ? result.testcases
+    : [];
   const currentTestResult = testResults[selectedCaseIndex] || null;
 
-  const displayVerdict = formatDisplayValue(result?.verdict, "AC");
-  const displayStatusText = formatDisplayValue(
-    result?.statusText || (displayVerdict === "AC" ? "Accepted" : displayVerdict),
-    "Accepted"
-  );
-  const displayRuntime = formatDisplayValue(result?.runtime, "25 ms");
-  const displayMemory = formatDisplayValue(result?.memory, "14.2 MB");
-  const passedCountNum = typeof result?.passedCount === "number" ? result.passedCount : (displayVerdict === "AC" ? problemWithStatus.examples.length : 0);
-  const totalCasesNum = typeof result?.totalCases === "number" ? result.totalCases : problemWithStatus.examples.length;
+  const displayVerdict = result?.verdict || "";
+  const displayStatusText = result?.statusText || (displayVerdict === "AC" ? "Accepted" : displayVerdict || "Evaluated");
+  const displayRuntime = result?.runtime || (typeof result?.execution_time_ms === "number" ? `${result.execution_time_ms} ms` : typeof result?.runtimeMs === "number" ? `${result.runtimeMs} ms` : "0 ms");
+  const displayMemory = result?.memory || (typeof result?.memoryMb === "number" && result.memoryMb > 0 ? `${result.memoryMb} MB` : typeof result?.memory_kb === "number" && result.memory_kb > 0 ? `${(result.memory_kb / 1024).toFixed(2)} MB` : "0 MB");
+  const passedCountNum = typeof result?.passedCount === "number" ? result.passedCount : typeof result?.passed === "number" ? result.passed : (displayVerdict === "AC" ? (testResults.length || problemWithStatus.examples.length) : 0);
+  const totalCasesNum = typeof result?.totalCases === "number" ? result.totalCases : typeof result?.total === "number" ? result.total : (testResults.length || problemWithStatus.examples.length);
 
   if (result) {
     console.log("[4] RESULT STATE RENDER", { result, displayVerdict, displayStatusText, testResults });
@@ -742,9 +743,18 @@ function ProblemDetailsInner() {
             {/* Console Body Area */}
             <div style={{ padding: "14px" }}>
               {isRunning || isSubmitting ? (
-                <div style={{ padding: "2.5rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: "#8b9bb4" }}>
-                  <div className="spinner" style={{ width: 28, height: 28, border: "3px solid #333", borderTopColor: "#7850ff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                  <span style={{ fontWeight: "600" }}>{isRunning ? "Running code on testcase..." : "Judging submission against testsuite..."}</span>
+                <div style={{ padding: "2.5rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1rem", color: "#8b9bb4" }}>
+                  <div className="spinner" style={{ width: 32, height: 32, border: "3px solid #333", borderTopColor: "#7850ff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                  <div style={{ textAlign: "center" }}>
+                    <strong style={{ fontSize: "1rem", color: "#f8fafc", display: "block" }}>
+                      {isSubmitting ? "Evaluating submission against full testsuite..." : "Running code on sample testcases..."}
+                    </strong>
+                    <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.8rem", color: "#94a3b8" }}>
+                      <span>● Compiling and validating syntax</span>
+                      <span>● Executing in isolated runtime sandbox</span>
+                      <span>● Comparing actual stdout with expected outputs</span>
+                    </div>
+                  </div>
                 </div>
               ) : activeConsoleTab === "custom" ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -872,18 +882,44 @@ function ProblemDetailsInner() {
 
                     {/* Runtime & Memory Stat Cards */}
                     <div style={{ display: "flex", gap: "10px" }}>
-                      <div style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", padding: "4px 12px", borderRadius: "8px", textAlign: "center", minWidth: "90px" }}>
+                      <div style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", padding: "4px 12px", borderRadius: "8px", textAlign: "center", minWidth: "95px" }}>
                         <span style={{ fontSize: "0.68rem", color: "#64748b", textTransform: "uppercase", fontWeight: "bold" }}>Runtime</span>
                         <strong style={{ fontSize: "1rem", color: "#fff", display: "block" }}>{displayRuntime}</strong>
-                        <span style={{ fontSize: "0.7rem", color: "#4ade80" }}>Beats {formatDisplayValue(result.runtimePercentile, "99.9")}%</span>
+                        {typeof result.runtimePercentile === "number" && result.runtimePercentile !== null ? (
+                          <span style={{ fontSize: "0.7rem", color: "#4ade80" }}>Beats {result.runtimePercentile}%</span>
+                        ) : (
+                          <span style={{ fontSize: "0.68rem", color: "#64748b" }}>Measured duration</span>
+                        )}
                       </div>
-                      <div style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", padding: "4px 12px", borderRadius: "8px", textAlign: "center", minWidth: "90px" }}>
+                      <div style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", padding: "4px 12px", borderRadius: "8px", textAlign: "center", minWidth: "95px" }}>
                         <span style={{ fontSize: "0.68rem", color: "#64748b", textTransform: "uppercase", fontWeight: "bold" }}>Memory</span>
                         <strong style={{ fontSize: "1rem", color: "#fff", display: "block" }}>{displayMemory}</strong>
-                        <span style={{ fontSize: "0.7rem", color: "#4ade80" }}>Beats {formatDisplayValue(result.memoryPercentile, "28.4")}%</span>
+                        {typeof result.memoryPercentile === "number" && result.memoryPercentile !== null ? (
+                          <span style={{ fontSize: "0.7rem", color: "#4ade80" }}>Beats {result.memoryPercentile}%</span>
+                        ) : (
+                          <span style={{ fontSize: "0.68rem", color: "#64748b" }}>Measured peak</span>
+                        )}
                       </div>
                     </div>
                   </div>
+
+                  {/* Compilation Error Diagnostics if present */}
+                  {displayVerdict === "CE" && (result.compileOutput || result.stderr) && (
+                    <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: "8px", padding: "12px", color: "#fca5a5", fontSize: "0.82rem" }}>
+                      <strong style={{ color: "#ef4444" }}>Compilation Diagnostic Output:</strong>
+                      <pre style={{ margin: "6px 0 0 0", color: "#fca5a5", fontFamily: "monospace", fontSize: "0.8rem", whiteSpace: "pre-wrap" }}>
+                        {result.compileOutput || result.stderr}
+                      </pre>
+                    </div>
+                  )}
+
+                  {/* Failure Difference Box if present */}
+                  {currentTestResult?.difference && !currentTestResult?.passed && displayVerdict !== "CE" && (
+                    <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", borderRadius: "8px", padding: "10px 14px", color: "#fca5a5", fontSize: "0.82rem", display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                      <strong style={{ color: "#ef4444", whiteSpace: "nowrap" }}>Difference:</strong>
+                      <span style={{ fontFamily: "monospace" }}>{currentTestResult.difference}</span>
+                    </div>
+                  )}
 
                   {/* 3-Column Input / Expected Output / Your Output Grid */}
                   <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.9fr 0.9fr", gap: "10px" }}>

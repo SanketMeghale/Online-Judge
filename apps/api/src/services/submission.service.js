@@ -3,49 +3,12 @@ import { Submission } from "../models/Submission.js";
 import { Problem } from "../models/Problem.js";
 import { isDatabaseConnected } from "../lib/db.js";
 import { createSubmissionRecord, updateSubmissionRecord, listSubmissionRecords } from "../lib/submissionStore.js";
-import { calculatePercentile } from "../lib/benchmarkEngine.js";
+import { calculateRealPercentile } from "../lib/benchmarkEngine.js";
 import { wrapCodeWithHarness } from "../lib/codeHarness.js";
 import { executeCode } from "../lib/executeCode.js";
 import { problems as defaultProblems } from "../data/problems.js";
 import { recordUserSubmission } from "../lib/userStore.js";
-
-function normalizeOutput(str) {
-  if (typeof str !== "string") return "";
-  return str
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n")
-    .split("\n")
-    .map((line) => line.trimEnd())
-    .join("\n")
-    .trim();
-}
-
-function compareOutputs(actual, expected) {
-  const normActual = normalizeOutput(actual);
-  const normExpected = normalizeOutput(expected);
-
-  if (!normActual) return false;
-  if (normActual === normExpected) return true;
-
-  const lines = normActual.split("\n").map((line) => line.trim()).filter(Boolean);
-  const lastLine = lines[lines.length - 1] || normActual;
-
-  for (const candidate of [normActual, lastLine]) {
-    try {
-      const jsonActual = JSON.parse(candidate);
-      const jsonExpected = JSON.parse(normExpected);
-      if (JSON.stringify(jsonActual) === JSON.stringify(jsonExpected)) {
-        return true;
-      }
-    } catch {}
-
-    if (candidate.replace(/\s+/g, "") === normExpected.replace(/\s+/g, "")) {
-      return true;
-    }
-  }
-
-  return false;
-}
+import { compareOutputs } from "../lib/outputChecker.js";
 
 function cleanErrorMessage(stderr = "") {
   return stderr
@@ -130,25 +93,39 @@ async function evaluateSubmissionInline({ submission, problem }) {
   const sampleCases = problem?.examples || [];
   const hiddenCases = problem?.hiddenTestCases || [];
   const testCases = [...sampleCases, ...hiddenCases];
-  const needsConvertedStdin = ["cpp", "c++", "java", "c"].includes((language || "").toLowerCase());
+  const normLang = (language || "").toLowerCase().trim();
+  const needsConvertedStdin = ["cpp", "c++", "java", "c"].includes(normLang);
 
   if (!testCases.length) {
-    const result = await executeCode({ language, code });
-    const runtimeMs = result.runtimeMs || 15;
-    const memoryMb = Number((12 + (runtimeMs % 8)).toFixed(1));
-    const percentiles = calculatePercentile(language, runtimeMs, memoryMb);
-    const cleanErr = cleanErrorMessage(result.stderr);
+    const result = await executeCode({ language: normLang, code });
+    const cleanErr = cleanErrorMessage(result.stderr || result.compileOutput || "");
+    const runtimeMs = result.execution_time_ms ?? result.runtimeMs ?? 0;
+    const memoryKb = result.memory_kb ?? 0;
+    const memoryMb = result.memoryMb ?? (memoryKb > 0 ? Number((memoryKb / 1024).toFixed(2)) : 0);
+
+    const verdict = result.ok ? "AC" : (result.verdict === "CE" ? "CE" : result.verdict === "TLE" ? "TLE" : "RE");
+    const percentiles = await calculateRealPercentile({
+      problemId: problem?.id,
+      language: normLang,
+      runtimeMs,
+      memoryMb
+    });
 
     return {
       status: "COMPLETED",
-      verdict: result.ok ? "AC" : result.verdict || "RE",
-      statusText: result.ok ? "Accepted" : "Execution failed",
+      verdict,
+      statusText: result.ok ? "Accepted" : verdict === "CE" ? "Compilation Error" : verdict === "TLE" ? "Time Limit Exceeded" : "Execution failed",
       runtimeMs,
+      execution_time_ms: runtimeMs,
+      compilation_time_ms: result.compilation_time_ms ?? 0,
+      memory_kb: memoryKb,
       memoryMb,
+      memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
       runtimePercentile: percentiles.runtimePercentile,
       memoryPercentile: percentiles.memoryPercentile,
       stdout: result.stdout || "",
       stderr: cleanErr,
+      compileOutput: result.compileOutput || "",
       output: result.stdout || cleanErr,
       testResults: []
     };
@@ -156,31 +133,80 @@ async function evaluateSubmissionInline({ submission, problem }) {
 
   const testResults = [];
   let totalRuntimeMs = 0;
+  let maxMemoryKb = 0;
+  let compilationTimeMs = 0;
 
   for (let i = 0; i < testCases.length; i++) {
     const testcase = testCases[i];
     const tcStdin = needsConvertedStdin
       ? buildCppJavaStdin(problem?.id, testcase.input)
       : testcase.input;
-    const wrappedCode = wrapCodeWithHarness({ code, language, problemId: problem?.id, stdin: tcStdin });
-    const result = await executeCode({ language, code: wrappedCode, stdin: tcStdin });
+    const wrappedCode = wrapCodeWithHarness({ code, language: normLang, problemId: problem?.id, stdin: tcStdin });
+    const result = await executeCode({ language: normLang, code: wrappedCode, stdin: tcStdin });
 
-    totalRuntimeMs += result.runtimeMs || 10;
-    const cleanErr = cleanErrorMessage(result.stderr);
+    const execMs = result.execution_time_ms ?? result.runtimeMs ?? 0;
+    totalRuntimeMs += execMs;
+    compilationTimeMs = Math.max(compilationTimeMs, result.compilation_time_ms ?? 0);
+    maxMemoryKb = Math.max(maxMemoryKb, result.memory_kb ?? 0);
+    const cleanErr = cleanErrorMessage(result.stderr || result.compileOutput || "");
+
+    // Compilation error on compiled languages
+    if (result.verdict === "CE") {
+      testResults.push({
+        id: i + 1,
+        testCase: i + 1,
+        status: "COMPILATION_ERROR",
+        passed: false,
+        input: testcase.input,
+        expectedOutput: testcase.output,
+        actualOutput: cleanErr || "Compilation Error",
+        difference: "Compilation failed.",
+        verdict: "CE",
+        execution_time_ms: 0,
+        memory_kb: 0,
+        stdout: "",
+        stderr: cleanErr
+      });
+
+      return {
+        status: "COMPLETED",
+        verdict: "CE",
+        statusText: "Compilation Error",
+        passedCount: 0,
+        totalCases: testCases.length,
+        runtimeMs: 0,
+        execution_time_ms: 0,
+        compilation_time_ms: compilationTimeMs,
+        memory_kb: 0,
+        memoryMb: 0,
+        runtimePercentile: null,
+        memoryPercentile: null,
+        stdout: "",
+        stderr: cleanErr,
+        compileOutput: cleanErr,
+        output: cleanErr || "Compilation Error",
+        expectedOutput: testcase.output,
+        testResults
+      };
+    }
 
     if (!result.ok) {
       const verdict = result.verdict || "RE";
-      const runtimeMs = Math.max(1, Math.round(totalRuntimeMs / (i + 1)));
-      const memoryMb = Number((14 + (totalRuntimeMs % 6)).toFixed(1));
-      const percentiles = calculatePercentile(language, runtimeMs, memoryMb);
+      const avgRuntimeMs = Number((totalRuntimeMs / (i + 1)).toFixed(2));
+      const memoryMb = maxMemoryKb > 0 ? Number((maxMemoryKb / 1024).toFixed(2)) : 0;
 
       testResults.push({
+        id: i + 1,
         testCase: i + 1,
+        status: verdict === "TLE" ? "TIME_LIMIT_EXCEEDED" : "RUNTIME_ERROR",
         passed: false,
         input: testcase.input,
         expectedOutput: testcase.output,
         actualOutput: result.stdout || cleanErr || "(No output)",
+        difference: cleanErr || (verdict === "TLE" ? "Time Limit Exceeded" : "Runtime Error"),
         verdict,
+        execution_time_ms: execMs,
+        memory_kb: result.memory_kb ?? 0,
         stdout: result.stdout || "",
         stderr: cleanErr
       });
@@ -188,13 +214,17 @@ async function evaluateSubmissionInline({ submission, problem }) {
       return {
         status: "COMPLETED",
         verdict,
-        statusText: verdict === "CE" ? "Compilation Error" : verdict === "TLE" ? "Time Limit Exceeded" : `Runtime Error on testcase ${i + 1}`,
+        statusText: verdict === "TLE" ? "Time Limit Exceeded" : `Runtime Error on testcase ${i + 1}`,
         passedCount: i,
         totalCases: testCases.length,
-        runtimeMs,
+        runtimeMs: avgRuntimeMs,
+        execution_time_ms: avgRuntimeMs,
+        compilation_time_ms: compilationTimeMs,
+        memory_kb: maxMemoryKb,
         memoryMb,
-        runtimePercentile: percentiles.runtimePercentile,
-        memoryPercentile: percentiles.memoryPercentile,
+        memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
+        runtimePercentile: null,
+        memoryPercentile: null,
         stdout: result.stdout || "",
         stderr: cleanErr,
         output: result.stdout || cleanErr || "Execution failed",
@@ -203,22 +233,26 @@ async function evaluateSubmissionInline({ submission, problem }) {
       };
     }
 
-    const passed = compareOutputs(result.stdout, testcase.output);
+    const comparison = compareOutputs(result.stdout, testcase.output);
     testResults.push({
+      id: i + 1,
       testCase: i + 1,
-      passed,
+      status: comparison.passed ? "PASSED" : "WRONG_ANSWER",
+      passed: comparison.passed,
       input: testcase.input,
       expectedOutput: testcase.output,
       actualOutput: result.stdout.trim() || "(No output)",
-      verdict: passed ? "AC" : "WA",
+      difference: comparison.difference,
+      verdict: comparison.passed ? "AC" : "WA",
+      execution_time_ms: execMs,
+      memory_kb: result.memory_kb ?? 0,
       stdout: result.stdout || "",
       stderr: cleanErrorMessage(result.stderr)
     });
 
-    if (!passed) {
-      const runtimeMs = Math.max(1, Math.round(totalRuntimeMs / (i + 1)));
-      const memoryMb = Number((13 + (totalRuntimeMs % 5)).toFixed(1));
-      const percentiles = calculatePercentile(language, runtimeMs, memoryMb);
+    if (!comparison.passed) {
+      const avgRuntimeMs = Number((totalRuntimeMs / (i + 1)).toFixed(2));
+      const memoryMb = maxMemoryKb > 0 ? Number((maxMemoryKb / 1024).toFixed(2)) : 0;
 
       return {
         status: "COMPLETED",
@@ -226,10 +260,14 @@ async function evaluateSubmissionInline({ submission, problem }) {
         statusText: `Wrong Answer on testcase ${i + 1} / ${testCases.length}`,
         passedCount: i,
         totalCases: testCases.length,
-        runtimeMs,
+        runtimeMs: avgRuntimeMs,
+        execution_time_ms: avgRuntimeMs,
+        compilation_time_ms: compilationTimeMs,
+        memory_kb: maxMemoryKb,
         memoryMb,
-        runtimePercentile: percentiles.runtimePercentile,
-        memoryPercentile: percentiles.memoryPercentile,
+        memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
+        runtimePercentile: null,
+        memoryPercentile: null,
         stdout: result.stdout || "",
         stderr: cleanErrorMessage(result.stderr),
         output: result.stdout.trim() || "Incorrect output",
@@ -239,9 +277,15 @@ async function evaluateSubmissionInline({ submission, problem }) {
     }
   }
 
-  const runtimeMs = Math.max(1, Math.round(totalRuntimeMs / testCases.length));
-  const memoryMb = Number((11 + (runtimeMs % 4)).toFixed(1));
-  const percentiles = calculatePercentile(language, runtimeMs, memoryMb);
+  const avgRuntimeMs = Number((totalRuntimeMs / testCases.length).toFixed(2));
+  const memoryMb = maxMemoryKb > 0 ? Number((maxMemoryKb / 1024).toFixed(2)) : 0;
+
+  const percentiles = await calculateRealPercentile({
+    problemId: problem?.id,
+    language: normLang,
+    runtimeMs: avgRuntimeMs,
+    memoryMb
+  });
 
   return {
     status: "COMPLETED",
@@ -249,8 +293,12 @@ async function evaluateSubmissionInline({ submission, problem }) {
     statusText: "Accepted",
     passedCount: testCases.length,
     totalCases: testCases.length,
-    runtimeMs,
+    runtimeMs: avgRuntimeMs,
+    execution_time_ms: avgRuntimeMs,
+    compilation_time_ms: compilationTimeMs,
+    memory_kb: maxMemoryKb,
     memoryMb,
+    memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
     runtimePercentile: percentiles.runtimePercentile,
     memoryPercentile: percentiles.memoryPercentile,
     stdout: testResults[0]?.actualOutput || "",
@@ -355,7 +403,12 @@ export class SubmissionService {
       passedCount: evaluation.passedCount ?? evaluation.passCount ?? 0,
       totalCases: evaluation.totalCases ?? evaluation.totalCount ?? 0,
       runtimeMs: evaluation.runtimeMs || 0,
+      execution_time_ms: evaluation.execution_time_ms || 0,
+      compilation_time_ms: evaluation.compilation_time_ms || 0,
+      memory_kb: evaluation.memory_kb || 0,
       memoryMb: evaluation.memoryMb || 0,
+      runtimePercentile: evaluation.runtimePercentile,
+      memoryPercentile: evaluation.memoryPercentile,
       stdout: evaluation.stdout || "",
       stderr: evaluation.stderr || "",
       output: evaluation.output || evaluation.stdout || "",
@@ -365,7 +418,7 @@ export class SubmissionService {
 
     await updateSubmissionRecord(submissionId, updatedRecord);
 
-    // Update user solvedProblemIds, attemptedProblemIds, and submission stats permanently in DB/memory
+    // Update user stats in DB
     try {
       await recordUserSubmission(userId, problemId, evaluation.verdict, problem?.points || 10);
     } catch (userErr) {
@@ -380,104 +433,73 @@ export class SubmissionService {
       problemId,
       userId,
       language: cleanLanguage,
-      code,
+      status: "COMPLETED",
+      verdict: evaluation.verdict,
+      statusText: evaluation.statusText,
+      passCount: updatedRecord.passCount,
+      passedCount: updatedRecord.passCount,
+      totalCount: updatedRecord.totalCount,
+      totalCases: updatedRecord.totalCount,
+      runtimeMs: updatedRecord.runtimeMs,
+      execution_time_ms: updatedRecord.execution_time_ms,
+      compilation_time_ms: updatedRecord.compilation_time_ms,
+      runtime: `${updatedRecord.runtimeMs} ms`,
+      memory_kb: updatedRecord.memory_kb,
+      memoryMb: updatedRecord.memoryMb,
+      memory: updatedRecord.memoryMb > 0 ? `${updatedRecord.memoryMb} MB` : undefined,
+      runtimePercentile: evaluation.runtimePercentile,
+      memoryPercentile: evaluation.memoryPercentile,
+      stdout: updatedRecord.stdout,
+      stderr: updatedRecord.stderr,
+      output: updatedRecord.output,
+      testcases: updatedRecord.testcases,
+      testResults: updatedRecord.testcases,
       createdAt: newSubmission.createdAt || new Date(),
-      ...updatedRecord,
-      testResults: evaluation.testResults || []
+      completedAt: updatedRecord.completedAt
     };
   }
 
-  async getSubmissionById(submissionId) {
-    if (!submissionId) throw new Error("Submission ID is required.");
-
-    const cleanId = String(submissionId).trim();
-
-    if (isDatabaseConnected() && mongoose.Types.ObjectId.isValid(cleanId)) {
-      try {
-        const submission = await Submission.findById(cleanId).lean();
-        if (submission) {
-          return {
-            ...submission,
-            id: String(submission._id)
-          };
-        }
-      } catch (err) {}
-    }
-
-    const memoryList = await listSubmissionRecords();
-    const targetId = cleanId.toLowerCase();
-
-    const fallback = memoryList.find((s) => {
-      const sId = String(s._id || s.id || s.submissionId || "").trim().toLowerCase();
-      return sId === targetId;
-    });
-
-    if (!fallback) {
-      throw new Error(`Submission '${submissionId}' not found.`);
-    }
-    return fallback;
-  }
-
-  async getUserSubmissionHistory({ userId, problemId, verdict, language, limit = 50, page = 1 }) {
-    if (!userId) throw new Error("User ID is required.");
-
-    const idList = Array.isArray(userId) ? userId : [String(userId)];
-    const query = {
-      userId: { $in: idList }
-    };
-
-
-    if (problemId) query.problemId = problemId;
-    if (verdict && verdict !== "All") query.verdict = verdict;
-    if (language && language !== "All") query.language = language.toLowerCase();
-
-    const skip = (page - 1) * limit;
-
+  async getSubmissionById(id) {
     if (isDatabaseConnected()) {
       try {
-        const total = await Submission.countDocuments(query);
-        const dbSubmissions = await Submission.find(query)
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(limit)
-          .lean();
-
-        return {
-          submissions: dbSubmissions.map((s) => ({ ...s, id: String(s._id) })),
-          total,
-          page,
-          limit,
-          totalPages: Math.ceil(total / limit) || 1
-        };
-      } catch (dbErr) {}
+        if (mongoose.Types.ObjectId.isValid(id)) {
+          const doc = await Submission.findById(id).lean();
+          if (doc) return doc;
+        }
+        const docByCustomId = await Submission.findOne({
+          $or: [{ submissionId: id }, { id }]
+        }).lean();
+        if (docByCustomId) return docByCustomId;
+      } catch (err) {
+        console.warn(`[SubmissionService] MongoDB find error for ${id}:`, err.message);
+      }
     }
 
-
-    const memorySubmissions = await listSubmissionRecords();
-    let userSubs = memorySubmissions.filter(
-      (s) => String(s.userId || "") === String(userId) || !s.userId
-    );
-
-    if (problemId) {
-      userSubs = userSubs.filter((s) => s.problemId === problemId);
-    }
-    if (verdict && verdict !== "All") {
-      userSubs = userSubs.filter((s) => s.verdict === verdict);
-    }
-    if (language && language !== "All") {
-      userSubs = userSubs.filter((s) => (s.language || "").toLowerCase() === language.toLowerCase());
-    }
-
-    return {
-      submissions: userSubs,
-      total: userSubs.length,
-      page: 1,
-      limit,
-      totalPages: 1
-    };
+    const records = listSubmissionRecords({});
+    return records.find((r) => String(r._id || r.id || r.submissionId) === String(id)) || null;
   }
 
+  async getSubmissions(query = {}) {
+    if (isDatabaseConnected()) {
+      try {
+        const filter = {};
+        if (query.userId) filter.userId = query.userId;
+        if (query.problemId) filter.problemId = query.problemId;
+        if (query.language) filter.language = query.language.toLowerCase();
+        if (query.verdict) filter.verdict = query.verdict;
+
+        const docs = await Submission.find(filter)
+          .sort({ createdAt: -1 })
+          .limit(Number(query.limit) || 50)
+          .lean();
+        if (docs && docs.length > 0) return docs;
+      } catch (err) {
+        console.warn("[SubmissionService] MongoDB getSubmissions error:", err.message);
+      }
+    }
+
+    return listSubmissionRecords(query);
+  }
 }
 
 export const submissionService = new SubmissionService();
-export default submissionService;
