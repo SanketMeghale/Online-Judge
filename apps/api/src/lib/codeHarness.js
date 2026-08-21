@@ -125,8 +125,16 @@ def _harness():
                 target = int(parts[1].strip())
         except Exception:
             pass
-    sol = Solution()
-    print(json.dumps(sol.twoSum(nums, target)))
+    sol = Solution() if 'Solution' in globals() else None
+    if sol:
+        fn = getattr(sol, 'twoSum', None) or getattr(sol, 'two_sum', None)
+        print(json.dumps(fn(nums, target)))
+    elif 'twoSum' in globals():
+        print(json.dumps(twoSum(nums, target)))
+    elif 'two_sum' in globals():
+        print(json.dumps(two_sum(nums, target)))
+    else:
+        print("[]")
 
 if __name__ == '__main__':
     _harness()

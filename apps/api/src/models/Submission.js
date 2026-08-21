@@ -39,10 +39,42 @@ const submissionSchema = new mongoose.Schema(
     },
     verdict: { type: String, default: "PENDING" },
     statusText: { type: String, default: "Queued for evaluation" },
+    
+    // Compilation metrics
+    compiler: {
+      name: { type: String, default: "" },
+      version: { type: String, default: "" },
+      status: { type: String, default: "SUCCESS" },
+      timeMs: { type: Number, default: 0 },
+      stdout: { type: String, default: "" },
+      stderr: { type: String, default: "" }
+    },
+
+    // Execution metrics
+    execution: {
+      status: { type: String, default: "" },
+      timeMs: { type: Number, default: 0 },
+      peakMemoryBytes: { type: Number, default: 0 },
+      peakMemoryMb: { type: Number, default: 0 },
+      exitCode: { type: Number, default: 0 },
+      stdout: { type: String, default: "" },
+      stderr: { type: String, default: "" }
+    },
+
+    // Algorithm Big-O Complexity Analysis (Derived from actual code AST)
+    complexity: {
+      time: { type: String, default: "O(n)" },
+      space: { type: String, default: "O(1)" },
+      confidence: { type: String, default: "High" },
+      explanation: { type: String, default: "" }
+    },
+
     runtimeMs: { type: Number, default: 0 },
     executionTimeMs: { type: Number, default: 0 },
+    compilationTimeMs: { type: Number, default: 0 },
     memoryMb: { type: Number, default: 0 },
     memoryUsedMb: { type: Number, default: 0 },
+    peakMemoryBytes: { type: Number, default: 0 },
     runtimePercentile: { type: Number, default: 0 },
     memoryPercentile: { type: Number, default: 0 },
     passCount: { type: Number, default: 0 },
@@ -55,6 +87,7 @@ const submissionSchema = new mongoose.Schema(
     stdout: { type: String, default: "" },
     stderr: { type: String, default: "" },
     output: { type: String, default: "" },
+    compileOutput: { type: String, default: "" },
     errorMessage: { type: String, default: "" },
     testcases: { type: Array, default: [] },
     testResults: { type: Array, default: [] },

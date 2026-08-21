@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { wrapCodeWithHarness } from "../lib/codeHarness.js";
 import { executeCode } from "../lib/executeCode.js";
+import { analyzeCodeComplexity } from "../lib/complexityEngine.js";
 import { isDatabaseConnected } from "../lib/db.js";
 import { Problem } from "../models/Problem.js";
 import { problems as seedProblems } from "../data/problems.js";
@@ -12,7 +13,7 @@ import { isValidLanguage, normalizeLanguage } from "@online-judge/shared";
 const router = Router();
 const executionLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 20,
+  max: 30,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, error: "Too many execution requests. Please retry shortly." }
@@ -22,7 +23,8 @@ function cleanStderr(stderr = "") {
   return stderr
     .replace(/C:\\Users\\[^\\]+\\AppData\\Local\\Temp\\/gi, "")
     .replace(/\/tmp\//g, "")
-    .replace(/solution_[a-z0-9_]+\.(py|cpp|java|js|c)/gi, "Solution");
+    .replace(/solution_[a-z0-9_]+\.(py|cpp|java|js|c)/gi, "Solution")
+    .replace(/judgo_sandbox_[a-zA-Z0-9_\\]+/gi, "sandbox");
 }
 
 function buildCppJavaStdin(problemId, lcInput) {
@@ -106,7 +108,14 @@ router.post("/run", requireAuth, executionLimiter, async (request, response) => 
     return;
   }
 
-  // 2. Fetch Problem definition
+  // 2. Compute Static AST Big-O Complexity Analysis
+  const complexity = analyzeCodeComplexity({
+    code,
+    language: normLang,
+    problemTitle: problemId
+  });
+
+  // 3. Fetch Problem definition
   let problem = null;
   if (isDatabaseConnected()) {
     try {
@@ -119,7 +128,7 @@ router.post("/run", requireAuth, executionLimiter, async (request, response) => 
 
   const needsConvertedStdin = normLang === "cpp" || normLang === "c++" || normLang === "java" || normLang === "c";
 
-  // 3. Custom STDIN Execution Mode
+  // 4. Custom STDIN Execution Mode
   if (stdin || !problem || !problem.examples || problem.examples.length === 0) {
     const resolvedStdin = needsConvertedStdin
       ? buildCppJavaStdin(problemId, stdin || problem?.examples?.[0]?.input || "")
@@ -134,6 +143,24 @@ router.post("/run", requireAuth, executionLimiter, async (request, response) => 
 
     const verdict = result.ok ? "AC" : (result.verdict === "CE" ? "CE" : result.verdict === "TLE" ? "TLE" : "RE");
     const status = verdict === "AC" ? "ACCEPTED" : verdict === "CE" ? "COMPILATION_ERROR" : verdict === "TLE" ? "TIME_LIMIT_EXCEEDED" : "RUNTIME_ERROR";
+
+    const compiler = result.compiler || {
+      name: normLang,
+      version: "",
+      status: verdict === "CE" ? "FAILED" : "SUCCESS",
+      timeMs: result.compilation_time_ms ?? 0,
+      stderr: verdict === "CE" ? cleanErr : ""
+    };
+
+    const execution = verdict === "CE" ? null : {
+      status,
+      timeMs: runtimeMs,
+      peakMemoryBytes: result.execution?.peakMemoryBytes || (memoryKb * 1024),
+      peakMemoryMb: memoryMb,
+      exitCode: result.ok ? 0 : 1,
+      stdout: result.stdout || "",
+      stderr: cleanErr
+    };
 
     response.json({
       language: normLang,
@@ -154,23 +181,29 @@ router.post("/run", requireAuth, executionLimiter, async (request, response) => 
       memory_kb: memoryKb,
       memoryMb,
       memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
+      peakMemoryBytes: execution?.peakMemoryBytes || 0,
+      compiler,
+      execution,
+      complexity,
       stdout: result.stdout || "",
       stderr: cleanErr,
-      compileOutput: result.compileOutput || "",
+      compileOutput: result.compileOutput || (verdict === "CE" ? cleanErr : ""),
       output: result.stdout.trim() || cleanErr || "Code executed successfully.",
       testResults: []
     });
     return;
   }
 
-  // 4. Multi-Sample Testcase Evaluation Mode
+  // 5. Multi-Sample Testcase Evaluation Mode
   const sampleCases = problem.examples;
   const testResults = [];
   let passedCount = 0;
   let totalRuntimeMs = 0;
   let maxMemoryKb = 0;
+  let maxMemoryBytes = 0;
   let compilationTimeMs = 0;
   let overallVerdict = "AC";
+  let finalCompiler = null;
 
   for (let i = 0; i < sampleCases.length; i++) {
     const tc = sampleCases[i];
@@ -185,6 +218,8 @@ router.post("/run", requireAuth, executionLimiter, async (request, response) => 
     totalRuntimeMs += execMs;
     compilationTimeMs = Math.max(compilationTimeMs, res.compilation_time_ms ?? 0);
     maxMemoryKb = Math.max(maxMemoryKb, res.memory_kb ?? 0);
+    maxMemoryBytes = Math.max(maxMemoryBytes, res.execution?.peakMemoryBytes || (res.memory_kb ? res.memory_kb * 1024 : 0));
+    finalCompiler = res.compiler || finalCompiler;
 
     const cleanErr = cleanStderr(res.stderr || res.compileOutput || "");
 
@@ -255,10 +290,10 @@ router.post("/run", requireAuth, executionLimiter, async (request, response) => 
     });
   }
 
-  const avgRuntime = testResults.length > 0
+  const avgRuntime = overallVerdict === "CE" ? 0 : (testResults.length > 0
     ? Number((totalRuntimeMs / testResults.length).toFixed(2))
-    : 0;
-  const memoryMb = maxMemoryKb > 0 ? Number((maxMemoryKb / 1024).toFixed(2)) : 0;
+    : 0);
+  const memoryMb = overallVerdict === "CE" ? 0 : (maxMemoryKb > 0 ? Number((maxMemoryKb / 1024).toFixed(2)) : 0);
 
   const status =
     overallVerdict === "AC"
@@ -282,6 +317,24 @@ router.post("/run", requireAuth, executionLimiter, async (request, response) => 
       ? "Time Limit Exceeded"
       : "Runtime Error";
 
+  const compiler = finalCompiler || {
+    name: normLang,
+    version: "",
+    status: overallVerdict === "CE" ? "FAILED" : "SUCCESS",
+    timeMs: compilationTimeMs,
+    stderr: overallVerdict === "CE" ? (testResults[0]?.stderr || "") : ""
+  };
+
+  const execution = overallVerdict === "CE" ? null : {
+    status,
+    timeMs: avgRuntime,
+    peakMemoryBytes: maxMemoryBytes,
+    peakMemoryMb: memoryMb,
+    exitCode: overallVerdict === "AC" ? 0 : 1,
+    stdout: testResults[0]?.stdout || "",
+    stderr: testResults[0]?.stderr || ""
+  };
+
   response.json({
     language: normLang,
     ok: overallVerdict === "AC",
@@ -296,9 +349,13 @@ router.post("/run", requireAuth, executionLimiter, async (request, response) => 
     runtimeMs: avgRuntime,
     runtime: `${avgRuntime} ms`,
     compilation_time_ms: compilationTimeMs,
-    memory_kb: maxMemoryKb,
+    memory_kb: overallVerdict === "CE" ? 0 : maxMemoryKb,
     memoryMb,
     memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
+    peakMemoryBytes: overallVerdict === "CE" ? 0 : maxMemoryBytes,
+    compiler,
+    execution,
+    complexity,
     output: testResults[0]?.actualOutput || "",
     stdout: testResults[0]?.stdout || "",
     stderr: testResults[0]?.stderr || "",

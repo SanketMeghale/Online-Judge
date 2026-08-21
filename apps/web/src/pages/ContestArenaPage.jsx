@@ -2,10 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  AlertTriangle,
   ArrowLeft,
+  Brain,
   CheckCircle2,
   Clock,
   Code2,
+  Cpu,
   FileText,
   Lock,
   Play,
@@ -405,23 +408,48 @@ export default function ContestArenaPage() {
 
           {/* Console / Output Panel */}
           {testResult && (
-            <div style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "8px", padding: "12px" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                {testResult.verdict === "AC" || testResult.verdict === "OK" ? (
-                  <CheckCircle2 size={16} style={{ color: "#34d399" }} />
-                ) : (
-                  <XCircle size={16} style={{ color: "#ef4444" }} />
+            <div style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)", borderRadius: "8px", padding: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  {testResult.verdict === "AC" || testResult.verdict === "OK" ? (
+                    <CheckCircle2 size={18} style={{ color: "#34d399" }} />
+                  ) : testResult.verdict === "CE" ? (
+                    <AlertTriangle size={18} style={{ color: "#ef4444" }} />
+                  ) : (
+                    <XCircle size={18} style={{ color: "#ef4444" }} />
+                  )}
+                  <strong style={{ fontSize: "0.88rem", color: testResult.verdict === "AC" || testResult.verdict === "OK" ? (isLight ? "#059669" : "#34d399") : "#ef4444" }}>
+                    {testResult.verdict === "CE" ? "Compilation Error" : testResult.statusText || testResult.verdict}
+                  </strong>
+                </div>
+
+                {testResult.verdict !== "CE" && (
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.74rem", color: isLight ? "#64748b" : "#94a3b8" }}>
+                    <span>Runtime: <strong style={{ color: isLight ? "#0f172a" : "#f8fafc" }}>{testResult.runtime || (testResult.runtimeMs ? `${testResult.runtimeMs} ms` : "0 ms")}</strong></span>
+                    <span>Memory: <strong style={{ color: isLight ? "#0f172a" : "#f8fafc" }}>{testResult.memory || (testResult.memoryMb ? `${testResult.memoryMb} MB` : "0 MB")}</strong></span>
+                    {testResult.complexity?.time && (
+                      <span style={{ color: "#818cf8", fontWeight: "700" }}>Complexity: {testResult.complexity.time}</span>
+                    )}
+                  </div>
                 )}
-                <strong style={{ fontSize: "0.85rem", color: testResult.verdict === "AC" || testResult.verdict === "OK" ? (isLight ? "#059669" : "#34d399") : "#ef4444" }}>
-                  {testResult.statusText}
-                </strong>
-                <span style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#64748b", marginLeft: "auto" }}>
-                  Runtime: {testResult.runtime} | Memory: {testResult.memory}
-                </span>
               </div>
-              <pre style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.05)", borderRadius: "6px", padding: "8px 10px", fontSize: "0.78rem", color: isLight ? "#0f172a" : "#cbd5e1", margin: 0, fontFamily: "monospace" }}>
-                {testResult.output}
-              </pre>
+
+              {/* Compilation Diagnostic Error if present */}
+              {testResult.verdict === "CE" && (testResult.compileOutput || testResult.stderr || testResult.compiler?.stderr) && (
+                <div style={{ background: isLight ? "#fef2f2" : "rgba(239, 68, 68, 0.08)", border: isLight ? "1px solid #fecaca" : "1px solid rgba(239, 68, 68, 0.3)", borderRadius: "6px", padding: "8px 10px", color: isLight ? "#991b1b" : "#fca5a5", fontSize: "0.78rem" }}>
+                  <strong style={{ color: "#ef4444" }}>Compiler Diagnostic Error:</strong>
+                  <pre style={{ margin: "4px 0 0 0", fontFamily: "monospace", fontSize: "0.76rem", whiteSpace: "pre-wrap" }}>
+                    {testResult.compileOutput || testResult.stderr || testResult.compiler?.stderr}
+                  </pre>
+                </div>
+              )}
+
+              {/* Normal Execution Output */}
+              {testResult.verdict !== "CE" && (
+                <pre style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.05)", borderRadius: "6px", padding: "8px 10px", fontSize: "0.78rem", color: isLight ? "#0f172a" : "#cbd5e1", margin: 0, fontFamily: "monospace", whiteSpace: "pre-wrap" }}>
+                  {testResult.output || testResult.stdout || "(No output)"}
+                </pre>
+              )}
             </div>
           )}
 

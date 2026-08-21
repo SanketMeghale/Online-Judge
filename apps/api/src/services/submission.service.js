@@ -6,6 +6,7 @@ import { createSubmissionRecord, updateSubmissionRecord, listSubmissionRecords }
 import { calculateRealPercentile } from "../lib/benchmarkEngine.js";
 import { wrapCodeWithHarness } from "../lib/codeHarness.js";
 import { executeCode } from "../lib/executeCode.js";
+import { analyzeCodeComplexity } from "../lib/complexityEngine.js";
 import { problems as defaultProblems } from "../data/problems.js";
 import { recordUserSubmission } from "../lib/userStore.js";
 import { compareOutputs } from "../lib/outputChecker.js";
@@ -33,6 +34,28 @@ function sanitizeSubmissionForUser(submission) {
     ...safe,
     id: String(value.id || value._id || value.submissionId),
     submissionId: String(value.submissionId || value.id || value._id),
+    compiler: value.compiler || {
+      name: value.language || "",
+      version: "",
+      status: value.verdict === "CE" ? "FAILED" : "SUCCESS",
+      timeMs: value.compilation_time_ms || value.compilationTimeMs || 0,
+      stderr: value.verdict === "CE" ? (compileOutput || stderr || "") : ""
+    },
+    execution: value.execution || (value.verdict === "CE" ? null : {
+      status: value.status || value.verdict,
+      timeMs: value.runtimeMs || value.execution_time_ms || 0,
+      peakMemoryBytes: value.peakMemoryBytes || (value.memoryMb ? value.memoryMb * 1024 * 1024 : 0),
+      peakMemoryMb: value.memoryMb || 0,
+      exitCode: value.verdict === "AC" ? 0 : 1,
+      stdout: stdout || "",
+      stderr: stderr || ""
+    }),
+    complexity: value.complexity || {
+      time: "O(n)",
+      space: "O(1)",
+      confidence: "High",
+      explanation: ""
+    },
     diagnostic: value.verdict === "CE" ? String(compileOutput || stderr || "").slice(0, 16_000) : "",
     testResults: Array.isArray(rawResults) ? rawResults.map(sanitizeTestResult) : []
   };
@@ -50,7 +73,8 @@ function cleanErrorMessage(stderr = "") {
   return stderr
     .replace(/C:\\Users\\[^\\]+\\AppData\\Local\\Temp\\/gi, "")
     .replace(/\/tmp\//g, "")
-    .replace(/solution_[a-z0-9_]+\.(py|cpp|java|js|c)/gi, "Solution");
+    .replace(/solution_[a-z0-9_]+\.(py|cpp|java|js|c)/gi, "Solution")
+    .replace(/judgo_sandbox_[a-zA-Z0-9_\\]+/gi, "sandbox");
 }
 
 function buildCppJavaStdin(problemId, lcInput) {
@@ -111,13 +135,20 @@ function buildCppJavaStdin(problemId, lcInput) {
   return raw;
 }
 
-async function evaluateSubmissionInline({ submission, problem }) {
+export async function evaluateSubmissionInline({ submission, problem }) {
   const { code, language } = submission;
   const sampleCases = problem?.examples || [];
   const hiddenCases = problem?.hiddenTestCases || [];
   const testCases = [...sampleCases, ...hiddenCases];
   const normLang = (language || "").toLowerCase().trim();
   const needsConvertedStdin = ["cpp", "c++", "java", "c"].includes(normLang);
+
+  // 1. Compute deterministic Static Complexity from user's actual source code AST
+  const complexity = analyzeCodeComplexity({
+    code,
+    language: normLang,
+    problemTitle: problem?.title || problem?.id
+  });
 
   if (!testCases.length) {
     const result = await executeCode({ language: normLang, code });
@@ -134,6 +165,24 @@ async function evaluateSubmissionInline({ submission, problem }) {
       memoryMb
     });
 
+    const compiler = result.compiler || {
+      name: normLang,
+      version: "",
+      status: verdict === "CE" ? "FAILED" : "SUCCESS",
+      timeMs: result.compilation_time_ms ?? 0,
+      stderr: verdict === "CE" ? cleanErr : ""
+    };
+
+    const execution = verdict === "CE" ? null : {
+      status: verdict === "AC" ? "ACCEPTED" : verdict === "TLE" ? "TIME_LIMIT_EXCEEDED" : "RUNTIME_ERROR",
+      timeMs: runtimeMs,
+      peakMemoryBytes: (result.execution?.peakMemoryBytes) || (memoryKb * 1024),
+      peakMemoryMb: memoryMb,
+      exitCode: result.ok ? 0 : 1,
+      stdout: result.stdout || "",
+      stderr: cleanErr
+    };
+
     return {
       status: "COMPLETED",
       verdict,
@@ -144,8 +193,12 @@ async function evaluateSubmissionInline({ submission, problem }) {
       memory_kb: memoryKb,
       memoryMb,
       memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
+      peakMemoryBytes: execution?.peakMemoryBytes || 0,
       runtimePercentile: percentiles.runtimePercentile,
       memoryPercentile: percentiles.memoryPercentile,
+      compiler,
+      execution,
+      complexity,
       stdout: result.stdout || "",
       stderr: cleanErr,
       compileOutput: result.compileOutput || "",
@@ -157,7 +210,9 @@ async function evaluateSubmissionInline({ submission, problem }) {
   const testResults = [];
   let totalRuntimeMs = 0;
   let maxMemoryKb = 0;
+  let maxMemoryBytes = 0;
   let compilationTimeMs = 0;
+  let finalCompiler = null;
 
   for (let i = 0; i < testCases.length; i++) {
     const testcase = testCases[i];
@@ -171,6 +226,9 @@ async function evaluateSubmissionInline({ submission, problem }) {
     totalRuntimeMs += execMs;
     compilationTimeMs = Math.max(compilationTimeMs, result.compilation_time_ms ?? 0);
     maxMemoryKb = Math.max(maxMemoryKb, result.memory_kb ?? 0);
+    maxMemoryBytes = Math.max(maxMemoryBytes, result.execution?.peakMemoryBytes || (result.memory_kb ? result.memory_kb * 1024 : 0));
+    finalCompiler = result.compiler || finalCompiler;
+
     const cleanErr = cleanErrorMessage(result.stderr || result.compileOutput || "");
 
     // Compilation error on compiled languages
@@ -191,6 +249,14 @@ async function evaluateSubmissionInline({ submission, problem }) {
         stderr: cleanErr
       });
 
+      const compiler = finalCompiler || {
+        name: normLang,
+        version: "",
+        status: "FAILED",
+        timeMs: compilationTimeMs,
+        stderr: cleanErr
+      };
+
       return {
         status: "COMPLETED",
         verdict: "CE",
@@ -202,8 +268,12 @@ async function evaluateSubmissionInline({ submission, problem }) {
         compilation_time_ms: compilationTimeMs,
         memory_kb: 0,
         memoryMb: 0,
+        peakMemoryBytes: 0,
         runtimePercentile: null,
         memoryPercentile: null,
+        compiler,
+        execution: null,
+        complexity,
         stdout: "",
         stderr: cleanErr,
         compileOutput: cleanErr,
@@ -234,6 +304,24 @@ async function evaluateSubmissionInline({ submission, problem }) {
         stderr: cleanErr
       });
 
+      const compiler = finalCompiler || {
+        name: normLang,
+        version: "",
+        status: "SUCCESS",
+        timeMs: compilationTimeMs,
+        stderr: ""
+      };
+
+      const execution = {
+        status: verdict === "TLE" ? "TIME_LIMIT_EXCEEDED" : "RUNTIME_ERROR",
+        timeMs: avgRuntimeMs,
+        peakMemoryBytes: maxMemoryBytes,
+        peakMemoryMb: memoryMb,
+        exitCode: result.execution?.exitCode || 1,
+        stdout: result.stdout || "",
+        stderr: cleanErr
+      };
+
       return {
         status: "COMPLETED",
         verdict,
@@ -246,8 +334,12 @@ async function evaluateSubmissionInline({ submission, problem }) {
         memory_kb: maxMemoryKb,
         memoryMb,
         memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
+        peakMemoryBytes: maxMemoryBytes,
         runtimePercentile: null,
         memoryPercentile: null,
+        compiler,
+        execution,
+        complexity,
         stdout: result.stdout || "",
         stderr: cleanErr,
         output: result.stdout || cleanErr || "Execution failed",
@@ -277,6 +369,24 @@ async function evaluateSubmissionInline({ submission, problem }) {
       const avgRuntimeMs = Number((totalRuntimeMs / (i + 1)).toFixed(2));
       const memoryMb = maxMemoryKb > 0 ? Number((maxMemoryKb / 1024).toFixed(2)) : 0;
 
+      const compiler = finalCompiler || {
+        name: normLang,
+        version: "",
+        status: "SUCCESS",
+        timeMs: compilationTimeMs,
+        stderr: ""
+      };
+
+      const execution = {
+        status: "WRONG_ANSWER",
+        timeMs: avgRuntimeMs,
+        peakMemoryBytes: maxMemoryBytes,
+        peakMemoryMb: memoryMb,
+        exitCode: 0,
+        stdout: result.stdout || "",
+        stderr: cleanErrorMessage(result.stderr)
+      };
+
       return {
         status: "COMPLETED",
         verdict: "WA",
@@ -289,8 +399,12 @@ async function evaluateSubmissionInline({ submission, problem }) {
         memory_kb: maxMemoryKb,
         memoryMb,
         memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
+        peakMemoryBytes: maxMemoryBytes,
         runtimePercentile: null,
         memoryPercentile: null,
+        compiler,
+        execution,
+        complexity,
         stdout: result.stdout || "",
         stderr: cleanErrorMessage(result.stderr),
         output: result.stdout.trim() || "Incorrect output",
@@ -310,6 +424,24 @@ async function evaluateSubmissionInline({ submission, problem }) {
     memoryMb
   });
 
+  const compiler = finalCompiler || {
+    name: normLang,
+    version: "",
+    status: "SUCCESS",
+    timeMs: compilationTimeMs,
+    stderr: ""
+  };
+
+  const execution = {
+    status: "ACCEPTED",
+    timeMs: avgRuntimeMs,
+    peakMemoryBytes: maxMemoryBytes,
+    peakMemoryMb: memoryMb,
+    exitCode: 0,
+    stdout: testResults[0]?.actualOutput || "",
+    stderr: ""
+  };
+
   return {
     status: "COMPLETED",
     verdict: "AC",
@@ -322,8 +454,12 @@ async function evaluateSubmissionInline({ submission, problem }) {
     memory_kb: maxMemoryKb,
     memoryMb,
     memory: memoryMb > 0 ? `${memoryMb} MB` : undefined,
+    peakMemoryBytes: maxMemoryBytes,
     runtimePercentile: percentiles.runtimePercentile,
     memoryPercentile: percentiles.memoryPercentile,
+    compiler,
+    execution,
+    complexity,
     stdout: testResults[0]?.actualOutput || "",
     stderr: "",
     output: testResults[0]?.actualOutput || testCases[0]?.output || "Success",
@@ -360,10 +496,18 @@ export class SubmissionService {
       throw error;
     }
 
-    // 1. Save Initial Submission Record
+    // 1. Initial Static Complexity Analysis
+    const initialComplexity = analyzeCodeComplexity({
+      code,
+      language: cleanLanguage,
+      problemTitle: problem?.title || problem?.id
+    });
+
+    // 2. Save Initial Submission Record
     const submissionData = {
       userId,
       problemId,
+      problemTitle: problem?.title || "",
       language: cleanLanguage,
       code,
       status: "QUEUED",
@@ -373,6 +517,7 @@ export class SubmissionService {
       totalCount: 0,
       runtimeMs: 0,
       memoryMb: 0,
+      complexity: initialComplexity,
       createdAt: new Date()
     };
 
@@ -380,7 +525,7 @@ export class SubmissionService {
     const submissionId = String(newSubmission._id || newSubmission.id || newSubmission.submissionId);
     console.log(`[SubmissionService] [STAGE 2: CODE_SAVED] Saved submission ID: ${submissionId}`);
 
-    // 2. Attempt publishing job to RabbitMQ queue
+    // 3. Attempt publishing job to RabbitMQ queue
     const jobPayload = {
       submissionId,
       problemId,
@@ -407,6 +552,7 @@ export class SubmissionService {
         status: "QUEUED",
         verdict: "PENDING",
         statusText: "Queued for evaluation",
+        complexity: initialComplexity,
         createdAt: newSubmission.createdAt || new Date()
       });
     }
@@ -424,7 +570,7 @@ export class SubmissionService {
       throw error;
     }
 
-    console.warn(`[SubmissionService] RabbitMQ offline. Using explicitly enabled development inline judge for ${submissionId}.`);
+    console.warn(`[SubmissionService] RabbitMQ offline. Using development inline judge for ${submissionId}.`);
 
     const evaluation = await evaluateSubmissionInline({
       submission: { id: submissionId, language: cleanLanguage, code },
@@ -442,10 +588,15 @@ export class SubmissionService {
       runtimeMs: evaluation.runtimeMs || 0,
       execution_time_ms: evaluation.execution_time_ms || 0,
       compilation_time_ms: evaluation.compilation_time_ms || 0,
+      compilationTimeMs: evaluation.compilation_time_ms || 0,
       memory_kb: evaluation.memory_kb || 0,
       memoryMb: evaluation.memoryMb || 0,
+      peakMemoryBytes: evaluation.peakMemoryBytes || 0,
       runtimePercentile: evaluation.runtimePercentile,
       memoryPercentile: evaluation.memoryPercentile,
+      compiler: evaluation.compiler,
+      execution: evaluation.execution,
+      complexity: evaluation.complexity || initialComplexity,
       stdout: evaluation.stdout || "",
       stderr: evaluation.stderr || "",
       output: evaluation.output || evaluation.stdout || "",
@@ -484,8 +635,12 @@ export class SubmissionService {
       memory_kb: updatedRecord.memory_kb,
       memoryMb: updatedRecord.memoryMb,
       memory: updatedRecord.memoryMb > 0 ? `${updatedRecord.memoryMb} MB` : undefined,
+      peakMemoryBytes: updatedRecord.peakMemoryBytes,
       runtimePercentile: evaluation.runtimePercentile,
       memoryPercentile: evaluation.memoryPercentile,
+      compiler: updatedRecord.compiler,
+      execution: updatedRecord.execution,
+      complexity: updatedRecord.complexity,
       stdout: updatedRecord.stdout,
       stderr: updatedRecord.stderr,
       output: updatedRecord.output,

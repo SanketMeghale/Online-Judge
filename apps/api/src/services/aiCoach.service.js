@@ -5,6 +5,7 @@ import { calculateUserHiringEvaluation } from "./evaluation.service.js";
 import { getAIProvider } from "./aiProvider.service.js";
 import { getUserLearningProfile, getAllPlatformProblems } from "./userAnalytics.service.js";
 import { formatDateKey } from "../lib/streakEngine.js";
+import { analyzeCodeComplexity } from "../lib/complexityEngine.js";
 
 // In-memory conversation fallback
 const memoryConversations = new Map();
@@ -289,15 +290,27 @@ export async function reviewCode({ userId, code, language = "python", problemId 
   const allProblems = await getAllPlatformProblems();
   const problem = problemId ? allProblems.find((p) => p.id === problemId) : null;
 
+  // 1. Deterministic Static Complexity Analysis from source AST
+  const staticComplexity = analyzeCodeComplexity({
+    code,
+    language,
+    problemTitle: problem?.title || problem?.id
+  });
+
   const systemPrompt = `You are a Senior Principal Code Reviewer and Algorithms Expert for Judgo Online Judge.
 Analyze the provided ${language} source code with rigorous technical precision.
 
+VERIFIED STATIC ANALYSIS BASELINE:
+- Time Complexity: ${staticComplexity.timeComplexity}
+- Space Complexity: ${staticComplexity.spaceComplexity}
+- Structural Details: ${staticComplexity.explanation}
+
 STRUCTURE YOUR EVALUATION ACCORDING TO THESE SECTIONS:
 1. ⏱️ Time Complexity:
-   - State the worst-case, best-case, and average-case Big-O notation with mathematical rationale (e.g., $O(N)$ due to single pass hash map traversal).
+   - State the worst-case, best-case, and average-case Big-O notation with mathematical rationale (Verified: ${staticComplexity.timeComplexity}).
    - Account for any hidden costs in language built-ins (e.g., sorting $O(N \\log N)$, string concatenations $O(N)$, slicing).
 2. 💾 Space Complexity:
-   - Explicitly distinguish Auxiliary Memory vs. Total Memory in Big-O notation.
+   - Explicitly distinguish Auxiliary Memory vs. Total Memory in Big-O notation (Verified: ${staticComplexity.spaceComplexity}).
    - Include recursion stack frame depth if recursive.
 3. 🔍 Correctness & Invariants:
    - Identify any logical bugs, off-by-one errors, or incorrect state transitions.
@@ -335,6 +348,7 @@ ${code}
     success: true,
     score: `${score}/100`,
     language,
+    complexity: staticComplexity,
     review: reviewText,
     timestamp: new Date().toISOString()
   };

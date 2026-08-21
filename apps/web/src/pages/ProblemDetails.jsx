@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  AlertTriangle,
   Bookmark,
+  Brain,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
+  Cpu,
   History,
   Layers,
   Lightbulb,
   Sliders,
   Sparkles,
-  XCircle
+  XCircle,
+  Zap
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/apiClient.js";
@@ -862,13 +866,13 @@ function ProblemDetailsInner() {
                   )}
                 </div>
               ) : result ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                  {/* Result Banner Box */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+                  {/* Top Verdict Status Strip */}
                   <div
                     className={displayVerdict === "AC" ? "verdict-pop-ac" : displayVerdict === "WA" ? "verdict-shake-wa" : displayVerdict === "CE" ? "verdict-pulse-ce" : ""}
                     style={{
-                      background: displayVerdict === "AC" ? "rgba(34, 197, 94, 0.08)" : "rgba(248, 113, 113, 0.08)",
-                      border: `1px solid ${displayVerdict === "AC" ? "rgba(34, 197, 94, 0.4)" : "rgba(248, 113, 113, 0.4)"}`,
+                      background: displayVerdict === "AC" ? (isLight ? "rgba(22, 163, 74, 0.08)" : "rgba(34, 197, 94, 0.08)") : displayVerdict === "CE" ? (isLight ? "rgba(220, 38, 38, 0.08)" : "rgba(239, 68, 68, 0.08)") : (isLight ? "rgba(220, 38, 38, 0.08)" : "rgba(248, 113, 113, 0.08)"),
+                      border: `1px solid ${displayVerdict === "AC" ? (isLight ? "rgba(22, 163, 74, 0.4)" : "rgba(34, 197, 94, 0.4)") : (isLight ? "rgba(220, 38, 38, 0.4)" : "rgba(248, 113, 113, 0.4)")}`,
                       borderRadius: "10px",
                       padding: "12px 16px",
                       display: "flex",
@@ -876,99 +880,172 @@ function ProblemDetailsInner() {
                       alignItems: "center"
                     }}
                   >
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "1.2rem", fontWeight: "bold", color: displayVerdict === "AC" ? "#4ade80" : "#f87171" }}>
-                        {displayVerdict === "AC" ? <CheckCircle2 size={22} /> : <XCircle size={22} />}
-                        {displayVerdict === "AC" ? "Accepted" : displayVerdict === "WA" ? "Wrong Answer" : displayStatusText}
-                      </div>
-                      <span style={{ fontSize: "0.8rem", color: "#8b9bb4", marginTop: "2px", display: "block" }}>
-                        {displayVerdict === "AC"
-                          ? `Passed all ${totalCasesNum} testcases`
-                          : `Passed ${passedCountNum} / ${totalCasesNum} testcases`}
-                      </span>
-                    </div>
-
-                    {/* Runtime & Memory Stat Cards */}
-                    <div style={{ display: "flex", gap: "10px" }}>
-                      <div style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", padding: "4px 12px", borderRadius: "8px", textAlign: "center", minWidth: "95px" }}>
-                        <span style={{ fontSize: "0.68rem", color: "#64748b", textTransform: "uppercase", fontWeight: "bold" }}>Runtime</span>
-                        <strong style={{ fontSize: "1rem", color: "#fff", display: "block" }}>{displayRuntime}</strong>
-                        {typeof result.runtimePercentile === "number" && result.runtimePercentile !== null ? (
-                          <span style={{ fontSize: "0.7rem", color: "#4ade80" }}>Beats {result.runtimePercentile}%</span>
-                        ) : (
-                          <span style={{ fontSize: "0.68rem", color: "#64748b" }}>Measured duration</span>
-                        )}
-                      </div>
-                      <div style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", padding: "4px 12px", borderRadius: "8px", textAlign: "center", minWidth: "95px" }}>
-                        <span style={{ fontSize: "0.68rem", color: "#64748b", textTransform: "uppercase", fontWeight: "bold" }}>Memory</span>
-                        <strong style={{ fontSize: "1rem", color: "#fff", display: "block" }}>{displayMemory}</strong>
-                        {typeof result.memoryPercentile === "number" && result.memoryPercentile !== null ? (
-                          <span style={{ fontSize: "0.7rem", color: "#4ade80" }}>Beats {result.memoryPercentile}%</span>
-                        ) : (
-                          <span style={{ fontSize: "0.68rem", color: "#64748b" }}>Measured peak</span>
-                        )}
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      {displayVerdict === "AC" ? (
+                        <CheckCircle2 size={24} style={{ color: isLight ? "#16a34a" : "#4ade80" }} />
+                      ) : displayVerdict === "CE" ? (
+                        <AlertTriangle size={24} style={{ color: "#ef4444" }} />
+                      ) : (
+                        <XCircle size={24} style={{ color: "#ef4444" }} />
+                      )}
+                      <div>
+                        <strong style={{ fontSize: "1.15rem", color: displayVerdict === "AC" ? (isLight ? "#16a34a" : "#4ade80") : "#ef4444" }}>
+                          {displayVerdict === "AC" ? "Accepted" : displayVerdict === "CE" ? "Compilation Error" : displayVerdict === "WA" ? "Wrong Answer" : displayStatusText}
+                        </strong>
+                        <span style={{ fontSize: "0.78rem", color: isLight ? "#64748b" : "#94a3b8", display: "block", marginTop: "2px" }}>
+                          {displayVerdict === "CE"
+                            ? "Code failed to compile using official language compiler."
+                            : displayVerdict === "AC"
+                            ? `Passed all ${totalCasesNum} testcases successfully.`
+                            : `Passed ${passedCountNum} / ${totalCasesNum} testcases.`}
+                        </span>
                       </div>
                     </div>
                   </div>
 
+                  {/* ── 3 DISTINCT PANELS: COMPILATION, EXECUTION, ALGORITHM ANALYSIS ── */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+                    {/* PANEL 1: COMPILATION */}
+                    <div style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <Cpu size={15} style={{ color: "#818cf8" }} />
+                          <span style={{ fontSize: "0.74rem", fontWeight: "700", textTransform: "uppercase", color: isLight ? "#64748b" : "#94a3b8" }}>Compilation</span>
+                        </div>
+                        <span style={{ fontSize: "0.72rem", fontWeight: "700", padding: "2px 6px", borderRadius: "4px", background: displayVerdict === "CE" ? "rgba(239, 68, 68, 0.15)" : "rgba(16, 185, 129, 0.15)", color: displayVerdict === "CE" ? "#ef4444" : (isLight ? "#16a34a" : "#4ade80") }}>
+                          {displayVerdict === "CE" ? "✕ Failed" : "✓ Successful"}
+                        </span>
+                      </div>
+                      <strong style={{ fontSize: "0.92rem", color: isLight ? "#0f172a" : "#f8fafc" }}>
+                        {result.compiler?.name ? `${result.compiler.name} ${result.compiler.version || ""}` : language}
+                      </strong>
+                      <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#64748b" }}>
+                        Compilation Time: <strong style={{ color: isLight ? "#0f172a" : "#cbd5e1" }}>{result.compiler?.timeMs || result.compilation_time_ms || 0} ms</strong>
+                      </span>
+                    </div>
+
+                    {/* PANEL 2: EXECUTION METRICS */}
+                    <div style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <Zap size={15} style={{ color: "#38bdf8" }} />
+                          <span style={{ fontSize: "0.74rem", fontWeight: "700", textTransform: "uppercase", color: isLight ? "#64748b" : "#94a3b8" }}>Execution</span>
+                        </div>
+                        <span style={{ fontSize: "0.72rem", fontWeight: "700", padding: "2px 6px", borderRadius: "4px", background: displayVerdict === "CE" ? "rgba(100, 116, 139, 0.15)" : displayVerdict === "AC" ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)", color: displayVerdict === "CE" ? "#64748b" : displayVerdict === "AC" ? (isLight ? "#16a34a" : "#4ade80") : "#ef4444" }}>
+                          {displayVerdict === "CE" ? "Not Executed" : displayVerdict === "AC" ? "✓ Accepted" : displayVerdict}
+                        </span>
+                      </div>
+                      {displayVerdict === "CE" ? (
+                        <span style={{ fontSize: "0.82rem", color: isLight ? "#64748b" : "#64748b", fontStyle: "italic" }}>
+                          Execution aborted due to compile error.
+                        </span>
+                      ) : (
+                        <>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                            <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#94a3b8" }}>Runtime:</span>
+                            <strong style={{ fontSize: "0.92rem", color: isLight ? "#0f172a" : "#f8fafc" }}>{displayRuntime}</strong>
+                          </div>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                            <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#94a3b8" }}>Peak Memory:</span>
+                            <strong style={{ fontSize: "0.92rem", color: isLight ? "#0f172a" : "#f8fafc" }}>{displayMemory}</strong>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* PANEL 3: ALGORITHM COMPLEXITY ANALYSIS (AST) */}
+                    <div style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <Brain size={15} style={{ color: "#c084fc" }} />
+                          <span style={{ fontSize: "0.74rem", fontWeight: "700", textTransform: "uppercase", color: isLight ? "#64748b" : "#94a3b8" }}>Algorithm AST</span>
+                        </div>
+                        <span style={{ fontSize: "0.7rem", fontWeight: "600", color: "#818cf8" }}>
+                          {result.complexity?.confidence || "High"} Confidence
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                        <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#94a3b8" }}>Time Complexity:</span>
+                        <strong style={{ fontSize: "0.92rem", color: "#6366f1" }}>{result.complexity?.time || "O(n)"}</strong>
+                      </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                        <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#94a3b8" }}>Space Complexity:</span>
+                        <strong style={{ fontSize: "0.92rem", color: "#8b5cf6" }}>{result.complexity?.space || "O(1)"}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Structural Complexity Explanation Bar */}
+                  {result.complexity?.explanation && (
+                    <div style={{ background: isLight ? "rgba(99, 102, 241, 0.06)" : "rgba(120, 80, 255, 0.06)", border: isLight ? "1px solid rgba(99, 102, 241, 0.2)" : "1px solid rgba(120, 80, 255, 0.2)", borderRadius: "8px", padding: "10px 14px", fontSize: "0.82rem", color: isLight ? "#334155" : "#cbd5e1", display: "flex", alignItems: "flex-start", gap: "8px" }}>
+                      <Brain size={16} style={{ color: "#6366f1", flexShrink: 0, marginTop: "2px" }} />
+                      <div>
+                        <strong style={{ color: isLight ? "#4338ca" : "#a5b4fc" }}>Structural Code Analysis: </strong>
+                        <span>{result.complexity.explanation}</span>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Compilation Error Diagnostics if present */}
-                  {displayVerdict === "CE" && (result.compileOutput || result.stderr) && (
-                    <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: "8px", padding: "12px", color: "#fca5a5", fontSize: "0.82rem" }}>
-                      <strong style={{ color: "#ef4444" }}>Compilation Diagnostic Output:</strong>
-                      <pre style={{ margin: "6px 0 0 0", color: "#fca5a5", fontFamily: "monospace", fontSize: "0.8rem", whiteSpace: "pre-wrap" }}>
-                        {result.compileOutput || result.stderr}
+                  {displayVerdict === "CE" && (result.compileOutput || result.stderr || result.compiler?.stderr) && (
+                    <div style={{ background: isLight ? "#fef2f2" : "rgba(239, 68, 68, 0.08)", border: isLight ? "1px solid #fecaca" : "1px solid rgba(239, 68, 68, 0.3)", borderRadius: "8px", padding: "12px", color: isLight ? "#991b1b" : "#fca5a5", fontSize: "0.82rem" }}>
+                      <strong style={{ color: "#ef4444" }}>Compiler Diagnostic Error:</strong>
+                      <pre style={{ margin: "6px 0 0 0", color: isLight ? "#991b1b" : "#fca5a5", fontFamily: "monospace", fontSize: "0.8rem", whiteSpace: "pre-wrap" }}>
+                        {result.compileOutput || result.stderr || result.compiler?.stderr}
                       </pre>
                     </div>
                   )}
 
                   {/* Failure Difference Box if present */}
                   {currentTestResult?.difference && !currentTestResult?.passed && displayVerdict !== "CE" && (
-                    <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)", borderRadius: "8px", padding: "10px 14px", color: "#fca5a5", fontSize: "0.82rem", display: "flex", gap: "8px", alignItems: "flex-start" }}>
+                    <div style={{ background: isLight ? "#fef2f2" : "rgba(239, 68, 68, 0.08)", border: isLight ? "1px solid #fecaca" : "1px solid rgba(239, 68, 68, 0.25)", borderRadius: "8px", padding: "10px 14px", color: isLight ? "#991b1b" : "#fca5a5", fontSize: "0.82rem", display: "flex", gap: "8px", alignItems: "flex-start" }}>
                       <strong style={{ color: "#ef4444", whiteSpace: "nowrap" }}>Difference:</strong>
                       <span style={{ fontFamily: "monospace" }}>{currentTestResult.difference}</span>
                     </div>
                   )}
 
-                  {/* 3-Column Input / Expected Output / Your Output Grid */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.9fr 0.9fr", gap: "10px" }}>
-                    <div style={{ background: "#080c14", padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: "bold" }}>Input</span>
-                      <pre style={{ margin: "4px 0 0 0", color: "#cbd5e1", fontFamily: "monospace", fontSize: "0.82rem", whiteSpace: "pre-wrap" }}>
-                        {formatDisplayValue(currentTestResult?.input || activeExample?.input)}
-                      </pre>
-                    </div>
+                  {/* 3-Column Input / Expected Output / Your Output Grid (Only shown when not CE) */}
+                  {displayVerdict !== "CE" && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.9fr 0.9fr", gap: "10px" }}>
+                      <div style={{ background: isLight ? "#f8fafc" : "#080c14", padding: "10px", borderRadius: "8px", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)" }}>
+                        <span style={{ fontSize: "0.75rem", color: isLight ? "#64748b" : "#64748b", fontWeight: "bold" }}>Input</span>
+                        <pre style={{ margin: "4px 0 0 0", color: isLight ? "#334155" : "#cbd5e1", fontFamily: "monospace", fontSize: "0.82rem", whiteSpace: "pre-wrap" }}>
+                          {formatDisplayValue(currentTestResult?.input || activeExample?.input)}
+                        </pre>
+                      </div>
 
-                    <div style={{ background: "#080c14", padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: "bold" }}>Expected Output</span>
-                      <pre style={{ margin: "4px 0 0 0", color: "#4ade80", fontFamily: "monospace", fontSize: "0.82rem", whiteSpace: "pre-wrap" }}>
-                        {formatDisplayValue(currentTestResult?.expectedOutput || activeExample?.output)}
-                      </pre>
-                    </div>
+                      <div style={{ background: isLight ? "#f8fafc" : "#080c14", padding: "10px", borderRadius: "8px", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)" }}>
+                        <span style={{ fontSize: "0.75rem", color: isLight ? "#64748b" : "#64748b", fontWeight: "bold" }}>Expected Output</span>
+                        <pre style={{ margin: "4px 0 0 0", color: isLight ? "#16a34a" : "#4ade80", fontFamily: "monospace", fontSize: "0.82rem", whiteSpace: "pre-wrap" }}>
+                          {formatDisplayValue(currentTestResult?.expectedOutput || activeExample?.output)}
+                        </pre>
+                      </div>
 
-                    <div style={{ background: "#080c14", padding: "10px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: "bold" }}>Your Output</span>
-                      <pre style={{ margin: "4px 0 0 0", color: (currentTestResult?.passed || displayVerdict === "AC") ? "#4ade80" : "#f87171", fontFamily: "monospace", whiteSpace: "pre-wrap" }}>
-                        {formatDisplayValue(
-                          currentTestResult?.stdout ||
-                            currentTestResult?.actualOutput ||
-                            result?.stdout ||
-                            (result?.output && result?.output !== "Evaluation finished" ? result.output : "") ||
-                            "(No output)"
-                        )}
-                      </pre>
+                      <div style={{ background: isLight ? "#f8fafc" : "#080c14", padding: "10px", borderRadius: "8px", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)" }}>
+                        <span style={{ fontSize: "0.75rem", color: isLight ? "#64748b" : "#64748b", fontWeight: "bold" }}>Your Output</span>
+                        <pre style={{ margin: "4px 0 0 0", color: (currentTestResult?.passed || displayVerdict === "AC") ? (isLight ? "#16a34a" : "#4ade80") : "#f87171", fontFamily: "monospace", whiteSpace: "pre-wrap" }}>
+                          {formatDisplayValue(
+                            currentTestResult?.stdout ||
+                              currentTestResult?.actualOutput ||
+                              result?.stdout ||
+                              (result?.output && result?.output !== "Evaluation finished" ? result.output : "") ||
+                              "(No output)"
+                          )}
+                        </pre>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* AI Hint Footer Banner */}
-                  <div style={{ background: "rgba(120, 80, 255, 0.08)", border: "1px solid rgba(120, 80, 255, 0.2)", borderRadius: "8px", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ background: isLight ? "rgba(99, 102, 241, 0.08)" : "rgba(120, 80, 255, 0.08)", border: isLight ? "1px solid rgba(99, 102, 241, 0.2)" : "1px solid rgba(120, 80, 255, 0.2)", borderRadius: "8px", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <Sparkles size={16} style={{ color: "#c084fc" }} />
+                      <Sparkles size={16} style={{ color: "#a855f7" }} />
                       <div>
-                        <strong style={{ color: "#c084fc", fontSize: "0.82rem" }}>AI Hint</strong>
-                        <p style={{ margin: "2px 0 0 0", color: "#cbd5e1", fontSize: "0.78rem" }}>
+                        <strong style={{ color: isLight ? "#7c3aed" : "#c084fc", fontSize: "0.82rem" }}>AI Verification & Explanation</strong>
+                        <p style={{ margin: "2px 0 0 0", color: isLight ? "#475569" : "#cbd5e1", fontSize: "0.78rem" }}>
                           {displayVerdict === "AC"
-                            ? "Great solution! You can optimize memory by using in-place pointers."
-                            : "Looks like your solution returned mismatched values. Try iterating carefully and returning the first valid pair."}
+                            ? "Solution accepted! You can run AI Review to explore alternative paradigms."
+                            : "Inspect the compilation/execution diagnostics above or request instant AI assistance."}
                         </p>
                       </div>
                     </div>
