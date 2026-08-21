@@ -289,11 +289,20 @@ export default function LandingPage() {
 
   return (
     <div className="landing-container">
-      {/* Background Glowing Mesh Gradients */}
-      <div className="landing-mesh-bg">
-        <div className="mesh-orb mesh-orb-1" />
-        <div className="mesh-orb mesh-orb-2" />
-        <div className="mesh-orb mesh-orb-3" />
+      {/* Static Architectural Background Design */}
+      <div className="landing-bg-canvas" aria-hidden="true">
+        <div className="landing-bg-grid-layer" />
+        <div className="landing-bg-dots-layer" />
+        <div className="landing-static-spotlight spotlight-top-left" />
+        <div className="landing-static-spotlight spotlight-top-right" />
+        <div className="landing-static-spotlight spotlight-center-mid" />
+        <div className="landing-static-spotlight spotlight-bottom-right" />
+
+        {/* Static Watermark Glyphs */}
+        <span className="landing-watermark-glyph glyph-1">&lt;/&gt;</span>
+        <span className="landing-watermark-glyph glyph-2">&#123; &#125;</span>
+        <span className="landing-watermark-glyph glyph-3">[ ]</span>
+        <span className="landing-watermark-glyph glyph-4">λ</span>
       </div>
 
       <div className="landing-content">
