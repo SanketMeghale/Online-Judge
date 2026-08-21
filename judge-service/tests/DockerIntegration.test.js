@@ -22,7 +22,10 @@ describeDocker("Docker sandbox integration", () => {
         timeoutMs: 15_000,
         memoryLimitMb
       });
-      if (!compilation.ok) return { ...compilation, stderr: compilation.compilation.stderr };
+      if (!compilation.ok) {
+        console.error("[DockerIntegration] Compilation failed:", JSON.stringify(compilation));
+        return { ...compilation, stderr: compilation.compilation.stderr };
+      }
       const execution = await dockerService.executeCompiledInSandbox({
         hostTempDir: tempDir,
         language: config.id,
@@ -30,6 +33,9 @@ describeDocker("Docker sandbox integration", () => {
         timeoutMs,
         memoryLimitMb
       });
+      if (!execution.ok) {
+        console.error("[DockerIntegration] Execution failed:", JSON.stringify(execution));
+      }
       return { ...execution, compilation: compilation.compilation };
     } finally {
       await tempFileService.cleanup(tempDir);
