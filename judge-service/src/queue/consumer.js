@@ -9,6 +9,35 @@ export class QueueConsumer {
     this.connection = null;
     this.worker = null;
     this.isListening = false;
+    this.heartbeatTimer = null;
+  }
+
+  async publishHeartbeat() {
+    const workerId = process.env.WORKER_ID || `${process.env.HOSTNAME || "worker"}-${process.pid}`;
+    const ttlMs = Math.max(
+      10_000,
+      Number(process.env.WORKER_HEARTBEAT_TTL_MS || JUDGE_QUEUE.workerHeartbeatTtlMs)
+    );
+    await this.connection.set(
+      JUDGE_QUEUE.workerHeartbeatKey,
+      JSON.stringify({ workerId, timestamp: new Date().toISOString() }),
+      "PX",
+      ttlMs
+    );
+  }
+
+  async startHeartbeat() {
+    await this.publishHeartbeat();
+    const intervalMs = Math.max(
+      1_000,
+      Number(process.env.WORKER_HEARTBEAT_INTERVAL_MS || 10_000)
+    );
+    this.heartbeatTimer = setInterval(() => {
+      void this.publishHeartbeat().catch((error) => {
+        console.error(`[BullMQ Worker] Failed to publish heartbeat: ${error.message}`);
+      });
+    }, intervalMs);
+    this.heartbeatTimer.unref?.();
   }
 
   async startJudgeWorker(jobHandler, options = {}) {
@@ -66,10 +95,13 @@ export class QueueConsumer {
 
     await this.worker.waitUntilReady();
     this.isListening = true;
+    await this.startHeartbeat();
     return this.worker;
   }
 
   async disconnect() {
+    if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = null;
     if (this.worker) await this.worker.close();
     if (this.connection) await this.connection.quit();
     this.worker = null;

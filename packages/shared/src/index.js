@@ -56,7 +56,9 @@ export const SUPPORTED_LANGUAGES = [
 export const PROBLEM_DIFFICULTIES = ["Easy", "Medium", "Hard"];
 export const JUDGE_QUEUE = Object.freeze({
   queue: "judgo-execution",
-  jobName: "judge-submission"
+  jobName: "judge-submission",
+  workerHeartbeatKey: "judgo-execution:worker-heartbeat",
+  workerHeartbeatTtlMs: 30_000
 });
 export const LANGUAGE_ALIASES = Object.freeze({
   js: "javascript",

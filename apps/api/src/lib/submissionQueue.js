@@ -51,11 +51,11 @@ export async function publishSubmissionJob({ submissionId }) {
 
 export async function getSubmissionQueueHealth() {
   const executionQueue = getQueue();
-  const [counts, workers] = await Promise.all([
+  const [counts, heartbeat] = await Promise.all([
     executionQueue.getJobCounts("wait", "active", "delayed", "failed"),
-    executionQueue.getWorkers()
+    getRedis().get(JUDGE_QUEUE.workerHeartbeatKey)
   ]);
-  return { ok: true, counts, workerCount: workers.length };
+  return { ok: true, counts, workerCount: heartbeat ? 1 : 0 };
 }
 
 export async function closeSubmissionQueue() {

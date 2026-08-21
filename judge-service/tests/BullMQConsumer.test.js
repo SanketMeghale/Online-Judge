@@ -2,6 +2,9 @@ import { jest, describe, test, expect } from "@jest/globals";
 import { QueueConsumer } from "../src/queue/consumer.js";
 
 class FakeRedis {
+  constructor() {
+    this.set = jest.fn().mockResolvedValue("OK");
+  }
   async quit() {}
 }
 
@@ -27,6 +30,12 @@ describe("BullMQ Consumer", () => {
 
     expect(consumer.isListening).toBe(true);
     expect(consumer.worker.options.concurrency).toBe(5);
+    expect(consumer.connection.set).toHaveBeenCalledWith(
+      "judgo-execution:worker-heartbeat",
+      expect.stringContaining('"workerId"'),
+      "PX",
+      30_000
+    );
     await consumer.worker.processor({
       id: "job-1",
       data: { submissionId: "submission-1" },
