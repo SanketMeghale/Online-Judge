@@ -148,7 +148,11 @@ export async function upsertFirebaseUser({ firebaseUid, email, displayName, phot
   const cleanPhotoURL = String(photoURL || "").trim();
   const cleanProvider = String(provider || "google.com").trim();
   const fallbackName = cleanDisplayName || getEmailDerivedName(cleanEmail) || "User";
-  const baseUsername = cleanEmail.split("@")[0].replace(/[^a-zA-Z0-9_.-]/g, "").slice(0, 24) || `user${Date.now()}`;
+  let rawUsername = cleanEmail.split("@")[0].replace(/[^a-zA-Z0-9_.-]/g, "").slice(0, 24);
+  if (rawUsername.length < 3) {
+    rawUsername = `user_${rawUsername || "coder"}_${Date.now().toString().slice(-4)}`;
+  }
+  const baseUsername = rawUsername;
 
   if (isDatabaseConnected()) {
     try {
@@ -158,6 +162,9 @@ export async function upsertFirebaseUser({ firebaseUid, email, displayName, phot
 
       if (existing) {
         existing.firebaseUid = String(firebaseUid);
+        if (!existing.id) {
+          existing.id = String(existing._id || `u-${Date.now()}`);
+        }
         if (cleanDisplayName) {
           existing.displayName = cleanDisplayName;
         } else if (!existing.displayName) {
@@ -169,6 +176,10 @@ export async function upsertFirebaseUser({ firebaseUid, email, displayName, phot
           existing.photoURL = cleanPhotoURL;
         }
         existing.provider = cleanProvider;
+        if (existing.isDeleted) {
+          existing.isDeleted = false;
+          existing.deletedAt = null;
+        }
         existing.lastLoginAt = new Date();
         await existing.save();
         return sanitizeUser(existing.toObject());
@@ -217,12 +228,17 @@ export async function upsertFirebaseUser({ firebaseUid, email, displayName, phot
 
   let user = memoryUsers.find((item) => item.firebaseUid === String(firebaseUid) || item.email?.toLowerCase() === cleanEmail);
   if (!user) {
+    let username = baseUsername;
+    let counter = 1;
+    while (memoryUsers.some((u) => u.username?.toLowerCase() === username.toLowerCase())) {
+      username = `${baseUsername}${counter++}`;
+    }
     user = {
       id: `u-${Date.now()}`,
       firebaseUid: String(firebaseUid),
       name: fallbackName,
       displayName: cleanDisplayName || fallbackName,
-      username: baseUsername,
+      username,
       email: cleanEmail,
       photoURL: cleanPhotoURL,
       provider: cleanProvider,

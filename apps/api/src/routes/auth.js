@@ -158,17 +158,18 @@ router.post("/google", authLimiter, async (request, response) => {
     }
 
     const decodedToken = await verifyFirebaseIdToken(idToken);
-    if (!decodedToken?.uid || !decodedToken?.email) {
+    if (!decodedToken?.uid) {
       response.status(401).json({ success: false, error: "Invalid Firebase authentication token." });
       return;
     }
 
+    const email = decodedToken.email || `${decodedToken.uid}@users.judgo.dev`;
     const user = await upsertFirebaseUser({
       firebaseUid: decodedToken.uid,
-      email: decodedToken.email,
+      email,
       displayName: decodedToken.name || "",
       photoURL: decodedToken.picture || "",
-      provider: decodedToken.firebase?.sign_in_provider || "google.com"
+      provider: decodedToken.provider || "google.com"
     });
 
     if (!user) {

@@ -23,6 +23,10 @@ export const githubProvider = new GithubAuthProvider();
 githubProvider.addScope("user:email");
 githubProvider.addScope("read:user");
 
+// Request profile and email scope for Google users
+googleProvider.addScope("email");
+googleProvider.addScope("profile");
+
 // Custom parameters to ensure Google account picker is always prompt
 googleProvider.setCustomParameters({
   prompt: "select_account"

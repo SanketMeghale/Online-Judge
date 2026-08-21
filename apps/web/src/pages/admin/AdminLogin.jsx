@@ -65,6 +65,17 @@ export default function AdminLogin() {
       }
     } catch (err) {
       console.error("[Admin Google Login error]:", err);
+      if (err?.code === "auth/popup-closed-by-user" || err?.message?.includes("closed-by-user")) {
+        return;
+      }
+      if (err?.code === "auth/popup-blocked" || err?.message?.includes("popup-blocked")) {
+        setErrorMessage("Sign-in popup was blocked by your browser. Please allow popups for this site.");
+        return;
+      }
+      if (err?.code === "auth/unauthorized-domain" || err?.message?.includes("unauthorized-domain")) {
+        setErrorMessage("This domain is not authorized in Firebase Auth. Please verify Authorized Domains in Firebase Console.");
+        return;
+      }
       setErrorMessage(err.message || "Google administrator authentication failed.");
     } finally {
       setIsLoading(false);
@@ -84,6 +95,17 @@ export default function AdminLogin() {
       }
     } catch (err) {
       console.error("[Admin GitHub Login error]:", err);
+      if (err?.code === "auth/popup-closed-by-user" || err?.message?.includes("closed-by-user")) {
+        return;
+      }
+      if (err?.code === "auth/popup-blocked" || err?.message?.includes("popup-blocked")) {
+        setErrorMessage("Sign-in popup was blocked by your browser. Please allow popups for this site.");
+        return;
+      }
+      if (err?.code === "auth/unauthorized-domain" || err?.message?.includes("unauthorized-domain")) {
+        setErrorMessage("This domain is not authorized in Firebase Auth. Please verify Authorized Domains in Firebase Console.");
+        return;
+      }
       setErrorMessage(err.message || "GitHub administrator authentication failed.");
     } finally {
       setIsLoading(false);

@@ -151,6 +151,18 @@ export default function Register() {
       if (err?.code === "auth/popup-closed-by-user" || err?.message?.includes("closed-by-user")) {
         return;
       }
+      if (err?.code === "auth/popup-blocked" || err?.message?.includes("popup-blocked")) {
+        setError("Sign-up popup was blocked by your browser. Please allow popups for this site.");
+        return;
+      }
+      if (err?.code === "auth/unauthorized-domain" || err?.message?.includes("unauthorized-domain")) {
+        setError("This domain is not authorized in Firebase Auth. Please verify Authorized Domains in Firebase Console.");
+        return;
+      }
+      if (err?.code === "auth/network-request-failed" || err?.message?.includes("network-request-failed")) {
+        setError("Network error during authentication. Please check your internet connection.");
+        return;
+      }
       setError(err.message || `Failed to sign up with ${provider}.`);
     } finally {
       setIsSubmitting(false);
