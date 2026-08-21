@@ -424,14 +424,14 @@ export default function LandingPage() {
             {/* Top Floating Badge: Leaderboard Trophy */}
             <div className="floating-hero-card rank-trophy-card">
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ background: "rgba(120, 80, 255, 0.2)", padding: "6px", borderRadius: "8px" }}>
-                  <Trophy size={18} color="#a78bfa" />
+                <div style={{ background: "rgba(120, 80, 255, 0.15)", padding: "6px", borderRadius: "8px" }}>
+                  <Trophy size={18} color="#7c3aed" />
                 </div>
                 <div>
-                  <span style={{ fontSize: "0.8rem", color: "#c4b5fd", fontWeight: 700, display: "block" }}>
+                  <span className="rank-trophy-title">
                     Global Rank #14
                   </span>
-                  <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>Top 1% Algorithmic Master</span>
+                  <span className="rank-trophy-sub">Top 1% Algorithmic Master</span>
                 </div>
               </div>
             </div>
@@ -506,7 +506,7 @@ export default function LandingPage() {
                       Running Sandbox...
                     </span>
                   )}
-                  <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Testcases: 42/42 Passed</span>
+                  <span className="ide-testcases-count">Testcases: 42/42 Passed</span>
                 </div>
 
                 <div className="ide-metrics">
@@ -520,9 +520,9 @@ export default function LandingPage() {
             <div className="floating-hero-card ai-review-card">
               <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
                 <Sparkles size={16} color="#00c3ff" />
-                <strong style={{ fontSize: "0.82rem", color: "#38bdf8" }}>AI Code Review</strong>
+                <strong className="ai-review-title">AI Code Review</strong>
               </div>
-              <p style={{ fontSize: "0.75rem", color: "#cbd5e1", margin: 0, lineHeight: 1.4 }}>
+              <p className="ai-review-desc">
                 Optimal O(N) time with Hash Map lookup. Solution avoids redundant nested loops.
               </p>
             </div>
@@ -545,7 +545,7 @@ export default function LandingPage() {
                   transition={{ duration: 0.5, delay: idx * 0.1 }}
                   className="stat-box"
                 >
-                  <div style={{ display: "inline-flex", padding: "8px", borderRadius: "10px", background: "rgba(255,255,255,0.04)", marginBottom: "12px" }}>
+                  <div className="stat-icon-wrapper">
                     <Icon size={22} color={item.color} />
                   </div>
                   <div className="stat-box-number">{item.value}</div>
@@ -588,7 +588,7 @@ export default function LandingPage() {
                     <h3 className="feature-card-title">{feat.title}</h3>
                     <p className="feature-card-desc">{feat.desc}</p>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "20px", color: "#00c3ff", fontSize: "0.85rem", fontWeight: 600 }}>
+                  <div className="feature-card-footer">
                     <span>Learn more</span>
                     <ChevronRight size={14} />
                   </div>
@@ -647,10 +647,10 @@ export default function LandingPage() {
                 <Brain size={14} />
                 Intelligent Diagnostics
               </span>
-              <h3 style={{ fontSize: "1.4rem", fontWeight: 800, color: "#fff", marginBottom: "8px" }}>
+              <h3 className="ai-showcase-title">
                 Actionable Feedback, Not Spoilers
               </h3>
-              <p style={{ fontSize: "0.9rem", color: "#94a3b8", marginBottom: "16px", lineHeight: 1.5 }}>
+              <p className="ai-showcase-desc">
                 Click below to see how Judgo AI diagnoses solutions in real-time:
               </p>
 
@@ -668,25 +668,25 @@ export default function LandingPage() {
 
             {/* Right: AI Terminal Window */}
             <div className="ai-terminal-display">
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.08)", paddingBottom: "10px", marginBottom: "14px" }}>
-                <span style={{ fontSize: "0.8rem", color: "#7850ff", fontWeight: 700 }}>
+              <div className="ai-terminal-header">
+                <span className="ai-terminal-agent">
                   🤖 Judgo AI Assistant
                 </span>
-                <span style={{ fontSize: "0.75rem", color: "#10b981", background: "rgba(16, 185, 129, 0.1)", padding: "2px 8px", borderRadius: "4px" }}>
+                <span className="ai-complexity-pill">
                   {activeAiTab.complexity}
                 </span>
               </div>
 
               <div style={{ marginBottom: "14px" }}>
-                <span style={{ color: "#64748b", fontSize: "0.78rem" }}>&gt; User Query:</span>
-                <p style={{ color: "#f8fafc", margin: "4px 0 0", fontSize: "0.88rem" }}>
+                <span className="ai-query-label">&gt; User Query:</span>
+                <p className="ai-query-text">
                   "{activeAiTab.prompt}"
                 </p>
               </div>
 
-              <div style={{ background: "rgba(120, 80, 255, 0.06)", border: "1px solid rgba(120, 80, 255, 0.2)", borderRadius: "8px", padding: "14px" }}>
-                <span style={{ color: "#a78bfa", fontSize: "0.78rem", fontWeight: 700 }}>&gt; AI Feedback:</span>
-                <p style={{ color: "#e2e8f0", margin: "6px 0 0", fontSize: "0.85rem", lineHeight: 1.6 }}>
+              <div className="ai-feedback-box">
+                <span className="ai-feedback-label">&gt; AI Feedback:</span>
+                <p className="ai-feedback-text">
                   {activeAiTab.response}
                 </p>
               </div>
@@ -704,10 +704,10 @@ export default function LandingPage() {
                 <Flame size={14} />
                 Live Upcoming Contest
               </span>
-              <h3 style={{ fontSize: "1.8rem", fontWeight: 800, color: "#fff", margin: "8px 0" }}>
+              <h3 className="contest-live-title">
                 Judgo Weekly Grand Prix #42
               </h3>
-              <p style={{ color: "#94a3b8", fontSize: "0.95rem", lineHeight: 1.6, maxWidth: "520px" }}>
+              <p className="contest-live-desc">
                 Compete against 1,500+ top algorithmic engineers across 4 problems. Rated for all divisions with global Elo scoring.
               </p>
 
@@ -730,32 +730,32 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "24px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "16px", marginTop: "24px", flexWrap: "wrap" }}>
                 <Link to="/register" className="btn-hero-primary" style={{ padding: "10px 22px", fontSize: "0.95rem" }}>
                   <span>Register for Contest</span>
                   <ArrowRight size={16} />
                 </Link>
-                <span style={{ color: "#64748b", fontSize: "0.85rem" }}>Prize Pool: $5,000+</span>
+                <span className="contest-prize-label">Prize Pool: $5,000+</span>
               </div>
             </div>
 
-            <div style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "20px" }}>
-              <h4 style={{ fontSize: "0.95rem", color: "#fff", marginBottom: "14px" }}>Contest Breakdown</h4>
+            <div className="contest-breakdown-card">
+              <h4 className="contest-breakdown-title">Contest Breakdown</h4>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#94a3b8" }}>
-                  <span>Problem 1 (Easy)</span>
+                <div className="contest-breakdown-row">
+                  <span className="contest-breakdown-name">Problem 1 (Easy)</span>
                   <span style={{ color: "#10b981", fontWeight: 600 }}>100 Pts</span>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#94a3b8" }}>
-                  <span>Problem 2 (Medium)</span>
+                <div className="contest-breakdown-row">
+                  <span className="contest-breakdown-name">Problem 2 (Medium)</span>
                   <span style={{ color: "#ffa940", fontWeight: 600 }}>250 Pts</span>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#94a3b8" }}>
-                  <span>Problem 3 (Medium)</span>
+                <div className="contest-breakdown-row">
+                  <span className="contest-breakdown-name">Problem 3 (Medium)</span>
                   <span style={{ color: "#ffa940", fontWeight: 600 }}>300 Pts</span>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", color: "#94a3b8" }}>
-                  <span>Problem 4 (Hard)</span>
+                <div className="contest-breakdown-row">
+                  <span className="contest-breakdown-name">Problem 4 (Hard)</span>
                   <span style={{ color: "#ff4d4f", fontWeight: 600 }}>500 Pts</span>
                 </div>
               </div>
