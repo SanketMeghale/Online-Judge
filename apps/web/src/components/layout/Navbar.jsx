@@ -21,6 +21,7 @@ import {
 import { useAuth } from "../../auth/AuthContext.jsx";
 import { getUserDisplayName } from "../../auth/displayName.js";
 import { useAppData } from "../../data/AppDataContext.jsx";
+import { calculateStreak } from "../../data/appData.js";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import CommandPalette from "../dashboard/CommandPalette.jsx";
 
@@ -42,7 +43,10 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
   const username = String(liveUser?.username || "").trim();
   const email = String(liveUser?.email || "").trim();
   const avatarLetter = String(fullName || username || "D").slice(0, 1).toUpperCase();
-  const streakCount = typeof liveUser?.streak === "number" ? liveUser.streak : (liveUser?.solved > 0 ? 1 : 0);
+  const streakCount = calculateStreak(
+    [...(Array.isArray(liveUser?.activeDates) ? liveUser.activeDates : []), liveUser?.lastActiveDate].filter(Boolean),
+    new Date()
+  ).currentStreak;
 
   // Scroll listener for smooth glass transition
   useEffect(() => {

@@ -114,6 +114,68 @@ test("cookie authentication works without exposing JWTs to browser storage", asy
   assert.throws(() => jwt.verify(realtimeBody.token, process.env.JWT_SECRET));
 });
 
+test("email login restores the authenticated session and logout invalidates it", async () => {
+  const suffix = `${Date.now()}${Math.floor(Math.random() * 10000)}`;
+  const credentials = {
+    name: "Login Flow Test",
+    username: `login${suffix}`,
+    email: `login-${suffix}@example.com`,
+    password: "strong-password-123"
+  };
+
+  const registration = await fetch(`${baseUrl}/api/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(credentials)
+  });
+  assert.equal(registration.status, 201);
+  const registered = await registration.json();
+  assert.equal(registered.user.streak, 0);
+  assert.deepEqual(registered.user.activeDates, []);
+  const registrationCookie = registration.headers.get("set-cookie")?.split(";")[0];
+  assert.ok(registrationCookie?.startsWith("token="));
+
+  const initialSession = await fetch(`${baseUrl}/api/auth/me`, {
+    headers: { Cookie: registrationCookie }
+  });
+  assert.equal(initialSession.status, 200);
+  assert.equal((await initialSession.json()).user.id, registered.user.id);
+
+  const logout = await fetch(`${baseUrl}/api/auth/logout`, {
+    method: "POST",
+    headers: { Cookie: registrationCookie }
+  });
+  assert.equal(logout.status, 200);
+  assert.match(logout.headers.get("set-cookie") || "", /token=;/);
+
+  const loggedOutSession = await fetch(`${baseUrl}/api/auth/me`);
+  assert.equal(loggedOutSession.status, 401);
+
+  const login = await fetch(`${baseUrl}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: credentials.username, password: credentials.password })
+  });
+  assert.equal(login.status, 200);
+  const loggedIn = await login.json();
+  assert.equal(loggedIn.user.id, registered.user.id);
+  const loginCookie = login.headers.get("set-cookie")?.split(";")[0];
+  assert.ok(loginCookie?.startsWith("token="));
+
+  const restoredSession = await fetch(`${baseUrl}/api/auth/me`, {
+    headers: { Cookie: loginCookie }
+  });
+  assert.equal(restoredSession.status, 200);
+  assert.equal((await restoredSession.json()).user.username, credentials.username);
+
+  const rejectedLogin = await fetch(`${baseUrl}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: credentials.username, password: "incorrect-password" })
+  });
+  assert.equal(rejectedLogin.status, 401);
+});
+
 test("public problem responses do not disclose hidden judge data", async () => {
   const response = await fetch(`${baseUrl}/api/problems/two-sum`);
   assert.equal(response.status, 200);

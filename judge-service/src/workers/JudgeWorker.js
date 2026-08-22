@@ -4,6 +4,7 @@ import { Problem } from "../../../apps/api/src/models/Problem.js";
 import { User } from "../../../apps/api/src/models/User.js";
 import { wrapCodeWithHarness } from "../../../apps/api/src/lib/codeHarness.js";
 import { analyzeCodeComplexity } from "../../../apps/api/src/lib/complexityEngine.js";
+import { calculateUserStreak, formatDateKey } from "../../../apps/api/src/lib/streakEngine.js";
 import { problems as seedProblems } from "../../../apps/api/src/data/problems.js";
 import { languageRegistry } from "../config/languages.js";
 import { tempFileService } from "../services/TempFileService.js";
@@ -413,7 +414,7 @@ export class JudgeWorker {
       : { id: String(submission.userId) };
 
     const now = new Date();
-    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const todayKey = formatDateKey(now);
 
     const update = verdict === "AC"
       ? {
@@ -428,7 +429,18 @@ export class JudgeWorker {
           $addToSet: { attemptedProblemIds: submission.problemId },
           $inc: { "stats.totalSubmissions": 1 }
         };
-    await User.findOneAndUpdate(userQuery, update);
+    const updatedUser = await User.findOneAndUpdate(userQuery, update, { new: true }).lean();
+
+    if (verdict === "AC" && updatedUser) {
+      const streak = calculateUserStreak(updatedUser.activeDates || [todayKey], now);
+      await User.updateOne(userQuery, {
+        $set: {
+          streak: streak.currentStreak,
+          bestStreak: Math.max(updatedUser.bestStreak || 0, streak.bestStreak),
+          lastActiveDate: todayKey
+        }
+      });
+    }
   }
 
   async broadcastRealtimeUpdate(payload) {

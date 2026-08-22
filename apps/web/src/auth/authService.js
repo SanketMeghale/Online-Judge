@@ -31,35 +31,13 @@ export async function loginWithGoogle() {
   const result = await signInWithPopup(auth, googleProvider);
   const fbUser = result.user;
 
-  let res = null;
-  try {
-    const idToken = await fbUser.getIdToken();
-    res = await api.loginGoogle({ idToken });
-  } catch (backendErr) {
-    console.warn("[loginWithGoogle] Backend API sync notice:", backendErr.message);
+  const idToken = await fbUser.getIdToken();
+  const res = await api.loginGoogle({ idToken });
+  if (!res?.user) {
+    throw new Error("Google sign-in could not create a server session. Please try again.");
   }
 
-  const fallbackUsername = (fbUser.email?.split("@")[0] || `user_${fbUser.uid.slice(0, 6)}`)
-    .toLowerCase()
-    .replace(/[^a-z0-9_.-]/g, "")
-    .slice(0, 24);
-
-  const finalUser = res?.user || {
-    id: `u-fb-${fbUser.uid}`,
-    firebaseUid: fbUser.uid,
-    name: fbUser.displayName || fbUser.email?.split("@")[0] || "Developer",
-    displayName: fbUser.displayName || fbUser.email?.split("@")[0] || "Developer",
-    email: fbUser.email || "",
-    username: fallbackUsername.length >= 3 ? fallbackUsername : `coder_${fbUser.uid.slice(0, 6)}`,
-    photoURL: fbUser.photoURL || "",
-    provider: "google.com",
-    role: "user",
-    status: "active",
-    preferences: {
-      theme: "light",
-      accentColor: "indigo"
-    }
-  };
+  const finalUser = res.user;
 
   return {
     authenticated: true,
@@ -79,35 +57,13 @@ export async function loginWithGitHub() {
   const result = await signInWithPopup(auth, githubProvider);
   const fbUser = result.user;
 
-  let res = null;
-  try {
-    const idToken = await fbUser.getIdToken();
-    res = await api.loginGoogle({ idToken });
-  } catch (backendErr) {
-    console.warn("[loginWithGitHub] Backend API sync notice:", backendErr.message);
+  const idToken = await fbUser.getIdToken();
+  const res = await api.loginGoogle({ idToken });
+  if (!res?.user) {
+    throw new Error("GitHub sign-in could not create a server session. Please try again.");
   }
 
-  const fallbackUsername = (fbUser.email?.split("@")[0] || `user_${fbUser.uid.slice(0, 6)}`)
-    .toLowerCase()
-    .replace(/[^a-z0-9_.-]/g, "")
-    .slice(0, 24);
-
-  const finalUser = res?.user || {
-    id: `u-fb-${fbUser.uid}`,
-    firebaseUid: fbUser.uid,
-    name: fbUser.displayName || fbUser.email?.split("@")[0] || "Developer",
-    displayName: fbUser.displayName || fbUser.email?.split("@")[0] || "Developer",
-    email: fbUser.email || "",
-    username: fallbackUsername.length >= 3 ? fallbackUsername : `coder_${fbUser.uid.slice(0, 6)}`,
-    photoURL: fbUser.photoURL || "",
-    provider: "github.com",
-    role: "user",
-    status: "active",
-    preferences: {
-      theme: "light",
-      accentColor: "indigo"
-    }
-  };
+  const finalUser = res.user;
 
   return {
     authenticated: true,

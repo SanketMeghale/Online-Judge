@@ -36,6 +36,11 @@ const COOKIE_OPTIONS = {
   sameSite: "lax",
   maxAge: 24 * 60 * 60 * 1000
 };
+const COOKIE_CLEAR_OPTIONS = {
+  httpOnly: COOKIE_OPTIONS.httpOnly,
+  secure: COOKIE_OPTIONS.secure,
+  sameSite: COOKIE_OPTIONS.sameSite
+};
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERNAME_REGEX = /^[a-zA-Z0-9_.-]{3,30}$/;
@@ -197,7 +202,7 @@ router.post("/google", authLimiter, async (request, response) => {
 
 router.post("/logout", (request, response) => {
   try {
-    response.clearCookie("token", COOKIE_OPTIONS);
+    response.clearCookie("token", COOKIE_CLEAR_OPTIONS);
   } catch {}
   response.json({
     success: true,
@@ -372,7 +377,7 @@ router.delete("/account", requireAuth, async (request, response) => {
     }
 
     try {
-      response.clearCookie("token", COOKIE_OPTIONS);
+      response.clearCookie("token", COOKIE_CLEAR_OPTIONS);
     } catch {}
 
     response.json({
