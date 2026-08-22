@@ -614,273 +614,34 @@ export default function AICoachPage() {
 
       {/* 3. MAIN WORKSPACE */}
       <div style={{ flex: 1, minHeight: 0 }}>
-        {/* TAB 1: AI MENTOR */}
+        {/* TAB 1: AI MENTOR (FULL-WIDTH CHAT STUDIO) */}
         {activeTab === "mentor" && (
           <div
-            className="ai-mentor-grid"
+            className="ai-mentor-chat-column"
             style={{
-              display: "grid",
-              gridTemplateColumns: "260px 1fr",
-              gap: "14px",
+              background: isLight ? "#ffffff" : "#0d111a",
+              border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: "12px",
+              display: "flex",
+              flexDirection: "column",
               height: "calc(100vh - 165px)",
-              minHeight: "580px"
+              minHeight: "580px",
+              boxShadow: isLight ? "0 1px 3px rgba(0, 0, 0, 0.04)" : "0 4px 20px rgba(0, 0, 0, 0.25)",
+              overflow: "hidden",
+              width: "100%"
             }}
           >
-            {/* LEFT COLUMN: COMPACT TODAY'S FOCUS + WEAK TOPICS */}
+            {/* CHAT TOP BAR */}
             <div
-              className="ai-mentor-sidebar-column"
               style={{
                 display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-                height: "100%",
-                minHeight: 0,
-                overflowY: "auto"
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: "12px 18px",
+                borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
+                background: isLight ? "#f8fafc" : "#090d16"
               }}
             >
-              {/* CARD 1: TODAY'S FOCUS */}
-              <div
-                style={{
-                  background: isLight ? "#ffffff" : "#0d111a",
-                  border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-                  boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "0 2px 10px rgba(0,0,0,0.2)",
-                  borderRadius: "10px",
-                  padding: "12px 14px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                  flexShrink: 0
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                    <Target size={13} style={{ color: "#a855f7" }} />
-                    <span
-                      style={{
-                        fontSize: "0.68rem",
-                        fontWeight: "700",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
-                        color: isLight ? "#7c3aed" : "#a855f7"
-                      }}
-                    >
-                      TODAY'S FOCUS
-                    </span>
-                  </div>
-
-                  {todaysFocus?.isSolved && (
-                    <span style={{ fontSize: "0.65rem", color: isLight ? "#059669" : "#34d399", background: isLight ? "rgba(16, 185, 129, 0.12)" : "rgba(52, 211, 153, 0.15)", padding: "1px 5px", borderRadius: "4px", fontWeight: "700" }}>
-                      SOLVED ✓
-                    </span>
-                  )}
-                </div>
-
-                {profileLoading ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "4px 0" }}>
-                    <div style={{ width: "80%", height: "16px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.06)", borderRadius: "4px" }} />
-                    <div style={{ width: "40%", height: "12px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)", borderRadius: "4px" }} />
-                  </div>
-                ) : (
-                  <div>
-                    <h3
-                      style={{
-                        fontSize: "0.88rem",
-                        fontWeight: "700",
-                        color: isLight ? "#0f172a" : "#f8fafc",
-                        margin: "0 0 3px 0",
-                        lineHeight: "1.25",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        display: "-webkit-box",
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical"
-                      }}
-                    >
-                      {todaysFocus?.problem?.title || "Two Sum Array Target"}
-                    </h3>
-                    <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.72rem" }}>
-                      <span style={{
-                        color: todaysFocus?.problem?.difficulty === "Easy" ? (isLight ? "#059669" : "#34d399") : todaysFocus?.problem?.difficulty === "Hard" ? "#ef4444" : "#fbbf24",
-                        fontWeight: "700"
-                      }}>
-                        {todaysFocus?.problem?.difficulty || "Medium"}
-                      </span>
-                      <span style={{ color: isLight ? "#94a3b8" : "#64748b" }}>•</span>
-                      <span style={{ color: isLight ? "#475569" : "#94a3b8" }}>{todaysFocus?.problem?.topic || "Sliding Window"}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Dynamic Progress Bar */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.70rem" }}>
-                    <span style={{ color: isLight ? "#64748b" : "#94a3b8" }}>{todaysFocus?.progressText || "Not started"}</span>
-                    <span style={{ color: isLight ? "#7c3aed" : "#c084fc", fontWeight: "700" }}>{todaysFocus?.progressPercent ?? 0}%</span>
-                  </div>
-                  <div
-                    style={{
-                      width: "100%",
-                      height: "4px",
-                      background: isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)",
-                      borderRadius: "999px",
-                      overflow: "hidden"
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: "100%",
-                        width: `${todaysFocus?.progressPercent ?? 0}%`,
-                        background: "linear-gradient(90deg, #7c3aed 0%, #a855f7 100%)",
-                        borderRadius: "999px",
-                        transition: "width 0.5s ease"
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <Link
-                  to={todaysFocus?.problem?.id ? `/problems/${todaysFocus.problem.id}` : "/problems"}
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "5px",
-                    background: isLight ? "rgba(124, 58, 237, 0.1)" : "rgba(124, 58, 237, 0.15)",
-                    border: isLight ? "1px solid rgba(124, 58, 237, 0.25)" : "1px solid rgba(124, 58, 237, 0.3)",
-                    color: isLight ? "#6d28d9" : "#c084fc",
-                    borderRadius: "6px",
-                    padding: "6px 10px",
-                    fontSize: "0.76rem",
-                    fontWeight: "600",
-                    textDecoration: "none",
-                    marginTop: "2px",
-                    transition: "all 0.15s ease"
-                  }}
-                >
-                  <span>{todaysFocus?.isSolved ? "Practice Again" : "Solve Challenge"}</span>
-                  <ArrowRight size={12} />
-                </Link>
-              </div>
-
-              {/* CARD 2: PRIORITY WEAK TOPICS */}
-              <div
-                style={{
-                  background: isLight ? "#ffffff" : "#0d111a",
-                  border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-                  boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "0 2px 10px rgba(0,0,0,0.2)",
-                  borderRadius: "10px",
-                  padding: "12px 14px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                  flex: 1,
-                  minHeight: 0
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-                  <TrendingUp size={13} style={{ color: "#a855f7" }} />
-                  <span
-                    style={{
-                      fontSize: "0.68rem",
-                      fontWeight: "700",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
-                      color: isLight ? "#7c3aed" : "#a855f7"
-                    }}
-                  >
-                    PRIORITY WEAK TOPICS
-                  </span>
-                </div>
-
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", flex: 1 }}>
-                  {profileLoading ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                      {[1, 2, 3].map((i) => (
-                        <div key={i} style={{ width: "100%", height: "20px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)", borderRadius: "4px" }} />
-                      ))}
-                    </div>
-                  ) : weakTopics.length === 0 ? (
-                    <div style={{ fontSize: "0.74rem", color: isLight ? "#64748b" : "#94a3b8", padding: "6px 0" }}>
-                      Start solving problems to unlock personalized topic analytics!
-                    </div>
-                  ) : (
-                    weakTopics.slice(0, 3).map((t) => (
-                      <div key={t.topic} style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem" }}>
-                          <span style={{ color: isLight ? "#0f172a" : "#f8fafc", fontWeight: "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.topic}</span>
-                          <span style={{ color: t.accuracy < 50 ? "#dc2626" : t.accuracy < 70 ? "#d97706" : "#059669", fontWeight: "700" }}>
-                            {t.accuracy}%
-                          </span>
-                        </div>
-                        <div style={{ width: "100%", height: "4px", background: isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
-                          <div
-                            style={{
-                              height: "100%",
-                              width: `${Math.max(5, t.accuracy)}%`,
-                              background: t.accuracy < 50 ? "#ef4444" : t.accuracy < 70 ? "#f59e0b" : "#8b5cf6",
-                              borderRadius: "999px",
-                              transition: "width 0.4s ease"
-                            }}
-                          />
-                        </div>
-                        <span style={{ fontSize: "0.66rem", color: isLight ? "#64748b" : "#64748b" }}>
-                          {t.solvedCount}/{t.attemptedCount} solved ({t.totalSubmissions} subs)
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                <div style={{ marginTop: "auto", paddingTop: "4px" }}>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("weak")}
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      color: isLight ? "#4f46e5" : "#818cf8",
-                      fontSize: "0.74rem",
-                      fontWeight: "600",
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      padding: "2px 0"
-                    }}
-                  >
-                    <span>View all Topic Analytics</span>
-                    <ArrowRight size={12} />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT COLUMN: AI MENTOR CHAT */}
-            <div
-              className="ai-mentor-chat-column"
-              style={{
-                background: isLight ? "#ffffff" : "#0d111a",
-                border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: "12px",
-                display: "flex",
-                flexDirection: "column",
-                height: "100%",
-                minHeight: 0,
-                boxShadow: isLight ? "0 1px 3px rgba(0, 0, 0, 0.04)" : "0 4px 20px rgba(0, 0, 0, 0.25)",
-                overflow: "hidden"
-              }}
-            >
-              {/* CHAT TOP BAR */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "12px 18px",
-                  borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
-                  background: isLight ? "#f8fafc" : "#090d16"
-                }}
-              >
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                   <Sparkles size={16} style={{ color: "#a855f7" }} />
                   <span style={{ fontSize: "0.92rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc" }}>
@@ -1127,7 +888,6 @@ export default function AICoachPage() {
                 </button>
               </form>
             </div>
-          </div>
         )}
 
         {/* TAB 2: AI MOCK INTERVIEW STUDIO */}
