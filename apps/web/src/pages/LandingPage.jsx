@@ -277,6 +277,7 @@ export default function LandingPage() {
     <div className="landing-container">
       {/* Static Architectural Background Design */}
       <div className="landing-bg-canvas" aria-hidden="true">
+        <div className="landing-bg-pattern-layer" />
         <div className="landing-bg-grid-layer" />
         <div className="landing-bg-dots-layer" />
         <div className="landing-static-spotlight spotlight-top-left" />
