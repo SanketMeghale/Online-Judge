@@ -490,7 +490,7 @@ export default function AICoachPage() {
         width: "100%",
         maxWidth: "1360px",
         margin: "0 auto",
-        padding: "10px 16px 12px 16px",
+        padding: "clamp(6px, 1.5vw, 10px) clamp(8px, 2vw, 16px) 12px clamp(8px, 2vw, 16px)",
         height: "100%",
         maxHeight: "100%",
         minHeight: 0,
@@ -499,150 +499,162 @@ export default function AICoachPage() {
         flex: 1
       }}
     >
-      {/* 1. PRIMARY WORKSPACE NAVIGATION TABS (WITH ALWAYS-VIBRANT COLORFUL ICONS) */}
-      <nav
-        className="ai-mentor-tabs"
+      {/* 1. PRIMARY WORKSPACE NAVIGATION TABS (RESPONSIVE HORIZONTAL SCROLL ON MOBILE) */}
+      <div
         style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "4px",
-          background: isLight ? "rgba(241, 245, 249, 0.85)" : "rgba(15, 23, 42, 0.7)",
-          border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-          borderRadius: "12px",
-          padding: "4px 5px",
-          width: "fit-content",
-          boxShadow: isLight ? "0 1px 3px rgba(0, 0, 0, 0.03)" : "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
-          backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)",
+          width: "100%",
+          overflowX: "auto",
+          WebkitOverflowScrolling: "touch",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
           flexShrink: 0
         }}
       >
-        {[
-          {
-            id: "mentor",
-            label: "AI Mentor",
-            icon: Sparkles,
-            color: "#8b5cf6",
-            lightBg: "rgba(139, 92, 246, 0.12)",
-            darkBg: "rgba(139, 92, 246, 0.22)",
-            border: "rgba(139, 92, 246, 0.3)"
-          },
-          {
-            id: "interview",
-            label: "AI Mock Interview",
-            icon: Compass,
-            color: "#10b981",
-            lightBg: "rgba(16, 185, 129, 0.12)",
-            darkBg: "rgba(16, 185, 129, 0.22)",
-            border: "rgba(16, 185, 129, 0.3)",
-            badge: "Live"
-          },
-          {
-            id: "weak",
-            label: "Weak Topics",
-            icon: Flame,
-            color: "#f97316",
-            lightBg: "rgba(249, 115, 22, 0.12)",
-            darkBg: "rgba(249, 115, 22, 0.22)",
-            border: "rgba(249, 115, 22, 0.3)"
-          },
-          {
-            id: "companies",
-            label: "Company Sheets",
-            icon: Building2,
-            color: "#3b82f6",
-            lightBg: "rgba(59, 130, 246, 0.12)",
-            darkBg: "rgba(59, 130, 246, 0.22)",
-            border: "rgba(59, 130, 246, 0.3)"
-          }
-        ].map((tab) => {
-          const isActive = activeTab === tab.id;
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                position: "relative",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "7px 14px",
-                borderRadius: "8px",
-                border: "none",
-                background: "transparent",
-                color: isActive ? (isLight ? "#0f172a" : "#f8fafc") : (isLight ? "#64748b" : "#94a3b8"),
-                fontSize: "0.84rem",
-                fontWeight: isActive ? "700" : "500",
-                cursor: "pointer",
-                transition: "all 0.15s ease",
-                userSelect: "none"
-              }}
-            >
-              {/* Smooth Floating Pill Background for Active State */}
-              {isActive && (
-                <motion.div
-                  layoutId="activeTabSegment"
-                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                  style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: isLight ? "#ffffff" : "#1e293b",
-                    borderRadius: "8px",
-                    boxShadow: isLight
-                      ? "0 2px 8px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04)"
-                      : "0 2px 10px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08)",
-                    zIndex: 1
-                  }}
-                />
-              )}
-
-              {/* Colorful Icon Badge Chip (Always Vibrant in All States) */}
-              <div
+        <nav
+          className="ai-mentor-tabs"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "4px",
+            background: isLight ? "#f1f5f9" : "#0d111a",
+            border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "12px",
+            padding: "4px",
+            width: "max-content",
+            maxWidth: "100%",
+            boxShadow: isLight ? "0 1px 2px rgba(0, 0, 0, 0.04)" : "none"
+          }}
+        >
+          {[
+            {
+              id: "mentor",
+              label: "AI Mentor",
+              icon: Sparkles,
+              color: "#8b5cf6",
+              lightBg: "rgba(139, 92, 246, 0.12)",
+              darkBg: "rgba(139, 92, 246, 0.22)",
+              border: "rgba(139, 92, 246, 0.3)"
+            },
+            {
+              id: "interview",
+              label: "AI Mock Interview",
+              icon: Compass,
+              color: "#10b981",
+              lightBg: "rgba(16, 185, 129, 0.12)",
+              darkBg: "rgba(16, 185, 129, 0.22)",
+              border: "rgba(16, 185, 129, 0.3)",
+              badge: "Live"
+            },
+            {
+              id: "weak",
+              label: "Weak Topics",
+              icon: Flame,
+              color: "#f97316",
+              lightBg: "rgba(249, 115, 22, 0.12)",
+              darkBg: "rgba(249, 115, 22, 0.22)",
+              border: "rgba(249, 115, 22, 0.3)"
+            },
+            {
+              id: "companies",
+              label: "Company Sheets",
+              icon: Building2,
+              color: "#3b82f6",
+              lightBg: "rgba(59, 130, 246, 0.12)",
+              darkBg: "rgba(59, 130, 246, 0.22)",
+              border: "rgba(59, 130, 246, 0.3)"
+            }
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
                 style={{
                   position: "relative",
-                  zIndex: 2,
-                  width: "22px",
-                  height: "22px",
-                  borderRadius: "6px",
-                  display: "flex",
+                  display: "inline-flex",
                   alignItems: "center",
-                  justifyContent: "center",
-                  background: isLight ? tab.lightBg : tab.darkBg,
-                  border: `1px solid ${isActive ? tab.border : (isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)")}`,
-                  color: tab.color,
-                  transition: "all 0.15s ease"
+                  gap: "8px",
+                  padding: "8px 14px",
+                  minHeight: "40px",
+                  flexShrink: 0,
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "transparent",
+                  color: isActive ? (isLight ? "#0f172a" : "#f8fafc") : (isLight ? "#64748b" : "#94a3b8"),
+                  fontSize: "0.84rem",
+                  fontWeight: isActive ? "700" : "500",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  userSelect: "none",
+                  whiteSpace: "nowrap"
                 }}
               >
-                <Icon size={14} style={{ color: tab.color }} />
-              </div>
+                {/* Smooth Floating Pill Background for Active State */}
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTabSegment"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: isLight ? "#ffffff" : "#1e293b",
+                      borderRadius: "8px",
+                      boxShadow: isLight
+                        ? "0 1px 4px rgba(0, 0, 0, 0.06)"
+                        : "0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08)",
+                      zIndex: 1
+                    }}
+                  />
+                )}
 
-              {/* Tab Title */}
-              <span style={{ position: "relative", zIndex: 2 }}>{tab.label}</span>
-
-              {/* Optional Mini Status Badge */}
-              {tab.badge && (
-                <span
+                {/* Colorful Icon Badge Chip (Always Vibrant in All States) */}
+                <div
                   style={{
                     position: "relative",
                     zIndex: 2,
-                    fontSize: "0.62rem",
-                    fontWeight: "700",
-                    padding: "1px 6px",
-                    borderRadius: "999px",
-                    background: isLight ? "rgba(16, 185, 129, 0.15)" : "rgba(16, 185, 129, 0.25)",
-                    color: "#10b981",
-                    letterSpacing: "0.02em"
+                    width: "22px",
+                    height: "22px",
+                    borderRadius: "6px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: isLight ? tab.lightBg : tab.darkBg,
+                    border: `1px solid ${isActive ? tab.border : (isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)")}`,
+                    color: tab.color,
+                    transition: "all 0.15s ease"
                   }}
                 >
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
+                  <Icon size={14} style={{ color: tab.color }} />
+                </div>
+
+                {/* Tab Title */}
+                <span style={{ position: "relative", zIndex: 2 }}>{tab.label}</span>
+
+                {/* Optional Mini Status Badge */}
+                {tab.badge && (
+                  <span
+                    style={{
+                      position: "relative",
+                      zIndex: 2,
+                      fontSize: "0.62rem",
+                      fontWeight: "700",
+                      padding: "1px 6px",
+                      borderRadius: "999px",
+                      background: isLight ? "rgba(16, 185, 129, 0.15)" : "rgba(16, 185, 129, 0.25)",
+                      color: "#10b981",
+                      letterSpacing: "0.02em"
+                    }}
+                  >
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
 
       {/* 2. MAIN WORKSPACE */}
       <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -800,9 +812,8 @@ export default function AICoachPage() {
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "8px",
+                      gap: "6px",
                       flexWrap: "wrap",
-                      marginLeft: "38px",
                       marginTop: "4px"
                     }}
                   >
@@ -815,10 +826,10 @@ export default function AICoachPage() {
                           display: "inline-flex",
                           alignItems: "center",
                           gap: "6px",
-                          background: isLight ? "#f8fafc" : "#080c14",
+                          background: isLight ? "#f8fafc" : "#0d111a",
                           border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
                           borderRadius: "6px",
-                          padding: "6px 12px",
+                          padding: "6px 10px",
                           color: isLight ? "#334155" : "#cbd5e1",
                           fontSize: "0.78rem",
                           fontWeight: "500",
@@ -831,7 +842,7 @@ export default function AICoachPage() {
                           e.currentTarget.style.color = isLight ? "#6d28d9" : "#ffffff";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.background = isLight ? "#f8fafc" : "#080c14";
+                          e.currentTarget.style.background = isLight ? "#f8fafc" : "#0d111a";
                           e.currentTarget.style.borderColor = isLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.08)";
                           e.currentTarget.style.color = isLight ? "#334155" : "#cbd5e1";
                         }}
@@ -844,7 +855,7 @@ export default function AICoachPage() {
 
                 {/* TYPING INDICATOR */}
                 {isTyping && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginLeft: "38px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                     <div
                       style={{
                         display: "inline-flex",
@@ -876,8 +887,8 @@ export default function AICoachPage() {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "10px",
-                  padding: "10px 16px",
+                  gap: "8px",
+                  padding: "clamp(8px, 1.5vw, 10px) clamp(10px, 2vw, 16px)",
                   borderTop: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
                   background: isLight ? "#f8fafc" : "#090d16",
                   flexShrink: 0
@@ -890,10 +901,11 @@ export default function AICoachPage() {
                   placeholder="Ask your AI Mentor for hints, code reviews, or concept breakdowns..."
                   style={{
                     flex: 1,
+                    minWidth: 0,
                     background: isLight ? "#ffffff" : "rgba(255, 255, 255, 0.04)",
                     border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "8px",
-                    padding: "9px 14px",
+                    padding: "9px 12px",
                     color: isLight ? "#0f172a" : "#f8fafc",
                     fontSize: "0.85rem",
                     outline: "none",
@@ -912,12 +924,15 @@ export default function AICoachPage() {
                     color: "#ffffff",
                     cursor: inputVal.trim() && !isTyping ? "pointer" : "default",
                     padding: "8px 14px",
+                    minHeight: "38px",
+                    minWidth: "38px",
                     borderRadius: "8px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     opacity: inputVal.trim() && !isTyping ? 1 : 0.4,
-                    transition: "all 0.15s ease"
+                    transition: "all 0.15s ease",
+                    flexShrink: 0
                   }}
                 >
                   <Send size={15} />
@@ -936,12 +951,14 @@ export default function AICoachPage() {
               background: isLight ? "#ffffff" : "#0d111a",
               border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
               borderRadius: "12px",
-              padding: "24px",
+              padding: "clamp(14px, 2.5vw, 22px)",
               display: "flex",
               flexDirection: "column",
               gap: "16px",
-              height: "calc(100vh - 200px)",
-              minHeight: "520px",
+              height: "100%",
+              maxHeight: "100%",
+              minHeight: 0,
+              flex: 1,
               overflowY: "auto"
             }}
           >
@@ -950,7 +967,7 @@ export default function AICoachPage() {
               <p style={{ fontSize: "0.82rem", color: isLight ? "#475569" : "#94a3b8", margin: "4px 0 0 0" }}>Live analytics computed from your actual accepted and attempted submissions across all algorithmic tracks.</p>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 270px), 1fr))", gap: "14px" }}>
               {(coachProfile?.allTopics || [
                 { topic: "Dynamic Programming", accuracy: 0, solvedCount: 0, totalInTopic: 4 },
                 { topic: "Graphs", accuracy: 0, solvedCount: 0, totalInTopic: 3 },
@@ -959,7 +976,7 @@ export default function AICoachPage() {
                 { topic: "Sliding Window", accuracy: 0, solvedCount: 0, totalInTopic: 3 },
                 { topic: "Arrays & Hash Tables", accuracy: 0, solvedCount: 0, totalInTopic: 4 }
               ]).map((t) => (
-                <div key={t.topic} style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div key={t.topic} style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "10px", padding: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <strong style={{ fontSize: "0.92rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc" }}>{t.topic}</strong>
                     <span style={{ fontSize: "0.84rem", fontWeight: "800", color: t.accuracy < 50 ? "#dc2626" : t.accuracy < 75 ? "#d97706" : "#059669" }}>
@@ -992,7 +1009,8 @@ export default function AICoachPage() {
                       textDecoration: "none",
                       display: "flex",
                       alignItems: "center",
-                      justifyContent: "space-between"
+                      justifyContent: "space-between",
+                      minHeight: "36px"
                     }}
                   >
                     <span>Practice {t.topic}</span>
