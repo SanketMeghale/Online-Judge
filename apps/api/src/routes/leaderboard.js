@@ -12,14 +12,6 @@ export function calculateBadge(rating) {
   return "Newbie";
 }
 
-// Benchmark global competitors
-const SEED_BENCHMARK_USERS = [
-  { userId: "u-tourist", username: "Tourist", name: "Gennady Korotkevich", solvedCount: 420, xp: 42000, rating: 2840, badge: "Grandmaster", streak: 42, avatar: "👑" },
-  { userId: "u-benq",    username: "Benq",    name: "Benjamin Qi",          solvedCount: 395, xp: 39500, rating: 2790, badge: "Grandmaster", streak: 38, avatar: "⚡" },
-  { userId: "u-neal",    username: "Neal",    name: "Neal Wu",              solvedCount: 310, xp: 31000, rating: 2680, badge: "Master",      streak: 25, avatar: "🔥" },
-  { userId: "u-ecner",   username: "ecnerwala", name: "Eric Zhang",         solvedCount: 290, xp: 29000, rating: 2610, badge: "Master",      streak: 19, avatar: "🚀" }
-];
-
 /**
  * GET /api/leaderboard
  * Returns global developer rankings based on real user participation, rating, and solved count.
@@ -29,11 +21,6 @@ router.get("/", async (_req, res) => {
     await connectDatabase();
 
     const userMap = new Map();
-
-    // Add benchmark competitors
-    for (const b of SEED_BENCHMARK_USERS) {
-      userMap.set(b.username.toLowerCase(), { ...b });
-    }
 
     // Fetch real registered users from DB
     if (isDatabaseConnected()) {
