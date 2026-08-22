@@ -1515,9 +1515,11 @@ select {
   width: 100%;
 }
 
+[data-theme] textarea.code-editor,
 textarea.code-editor {
   background: transparent !important;
   color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
   border: 0 !important;
   outline: 0 !important;
   box-shadow: none !important;
@@ -3286,22 +3288,28 @@ body[data-theme="light"],
 
 .problem-pane-resizer:hover::before,
 .problem-pane-resizer:focus-visible::before,
-.problem-workspace-split.is-resizing .problem-pane-resizer::before {
+.problem-workspace-split.is-resizing-width .problem-pane-resizer::before {
   background: #6366f1;
   width: 3px;
 }
 
 .problem-pane-resizer:hover .problem-pane-resizer-handle,
 .problem-pane-resizer:focus-visible .problem-pane-resizer-handle,
-.problem-workspace-split.is-resizing .problem-pane-resizer-handle {
+.problem-workspace-split.is-resizing-width .problem-pane-resizer-handle {
   border-color: #6366f1;
   color: #a5b4fc;
   transform: translateX(-50%) scale(1.05);
 }
 
-.problem-workspace-split.is-resizing,
-.problem-workspace-split.is-resizing * {
+.problem-workspace-split.is-resizing-width,
+.problem-workspace-split.is-resizing-width * {
   cursor: col-resize !important;
+  user-select: none !important;
+}
+
+.problem-workspace-split.is-resizing-height,
+.problem-workspace-split.is-resizing-height * {
+  cursor: row-resize !important;
   user-select: none !important;
 }
 

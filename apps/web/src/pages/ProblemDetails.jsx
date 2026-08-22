@@ -99,6 +99,8 @@ function ProblemDetailsInner() {
   const [isPaneResizing, setIsPaneResizing] = useState(false);
   const workspaceRef = useRef(null);
   const problemPaneWidthRef = useRef(problemPaneWidth);
+  problemPaneWidthRef.current = problemPaneWidth;
+
   const [resultPanelHeight, setResultPanelHeight] = useState(() => {
     try {
       const savedHeight = Number(localStorage.getItem("judgo-result-panel-height"));
@@ -109,6 +111,8 @@ function ProblemDetailsInner() {
   });
   const [isResultResizing, setIsResultResizing] = useState(false);
   const resultPanelHeightRef = useRef(resultPanelHeight);
+  resultPanelHeightRef.current = resultPanelHeight;
+
   const resultResizeStartRef = useRef({ y: 0, height: 430 });
   const [expandedResultCaseIndex, setExpandedResultCaseIndex] = useState(null);
 
@@ -515,7 +519,9 @@ function ProblemDetailsInner() {
       {/* Main 2-Column Grid Layout */}
       <div
         ref={workspaceRef}
-        className={`problem-workspace-split${isPaneResizing ? " is-resizing" : ""}`}
+        className={`problem-workspace-split ${
+          isPaneResizing ? "is-resizing-width" : isResultResizing ? "is-resizing-height" : ""
+        }`}
         style={{ "--problem-pane-width": `${problemPaneWidth}%` }}
       >
         
