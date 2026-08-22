@@ -31,8 +31,43 @@ test("Gemini is selected with the supported production default model", () => {
   withAIEnvironment({ GEMINI_API_KEY: "test-gemini-key" }, () => {
     const provider = getAIProvider();
     assert.ok(provider instanceof GeminiProvider);
-    assert.equal(provider.model, "gemini-3.6-flash");
+    assert.equal(provider.model, "gemini-2.5-flash");
   });
+});
+
+test("Gemini retries the stable model when a configured model returns 404", async () => {
+  const originalFetch = globalThis.fetch;
+  const requestedUrls = [];
+
+  globalThis.fetch = async (url) => {
+    requestedUrls.push(String(url));
+    if (String(url).includes("gemini-3.6-flash")) {
+      return new Response(JSON.stringify({ error: { message: "Model not found" } }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    return new Response(
+      JSON.stringify({ candidates: [{ content: { parts: [{ text: "Gemini response" }] } }] }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  };
+
+  try {
+    const provider = new GeminiProvider("test-gemini-key", "gemini-3.6-flash");
+    const reply = await provider.generateCompletion({
+      systemPrompt: "Be concise.",
+      messages: [{ role: "user", content: "Explain binary search." }]
+    });
+
+    assert.equal(reply, "Gemini response");
+    assert.equal(requestedUrls.length, 2);
+    assert.match(requestedUrls[0], /gemini-3\.6-flash/);
+    assert.match(requestedUrls[1], /gemini-2\.5-flash/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("GEMINI_MODEL overrides the default model", () => {

@@ -13,15 +13,13 @@ export class BaseAIProvider {
  * Google Gemini Provider via native REST API
  */
 export class GeminiProvider extends BaseAIProvider {
-  constructor(apiKey, model = "gemini-3.6-flash") {
+  constructor(apiKey, model = "gemini-2.5-flash") {
     super();
     this.apiKey = apiKey;
     this.model = model;
   }
 
   async generateCompletion({ systemPrompt, messages, temperature = 0.7, maxTokens = 1024 }) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
-
     const contents = [];
     if (systemPrompt) {
       contents.push({
@@ -49,24 +47,40 @@ export class GeminiProvider extends BaseAIProvider {
       }
     };
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    const stableFallbackModel = "gemini-2.5-flash";
+    const models = this.model === stableFallbackModel
+      ? [this.model]
+      : [this.model, stableFallbackModel];
 
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Gemini API error (${res.status}): ${errText}`);
+    for (let index = 0; index < models.length; index += 1) {
+      const model = models[index];
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        const canRetryStableModel = res.status === 404 && index < models.length - 1;
+        if (canRetryStableModel) {
+          console.warn(`[Gemini] Model '${model}' is unavailable; retrying with '${stableFallbackModel}'.`);
+          continue;
+        }
+        throw new Error(`Gemini API error (${res.status}) for model '${model}': ${errText}`);
+      }
+
+      const data = await res.json();
+      const candidate = data.candidates?.[0];
+      const text = candidate?.content?.parts?.map((p) => p.text).join("") || "";
+      if (!text.trim()) {
+        throw new Error(`Gemini API returned an empty completion for model '${model}'.`);
+      }
+      return text;
     }
 
-    const data = await res.json();
-    const candidate = data.candidates?.[0];
-    const text = candidate?.content?.parts?.map((p) => p.text).join("") || "";
-    if (!text.trim()) {
-      throw new Error("Gemini API returned an empty completion.");
-    }
-    return text;
+    throw new Error("Gemini API did not return a completion.");
   }
 }
 
@@ -202,7 +216,7 @@ export class LocalMentorProvider extends BaseAIProvider {
 export function getAIProvider() {
   const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (geminiKey) {
-    const geminiModel = String(process.env.GEMINI_MODEL || "gemini-3.6-flash").trim();
+    const geminiModel = String(process.env.GEMINI_MODEL || "gemini-2.5-flash").trim();
     return new GeminiProvider(geminiKey, geminiModel);
   }
 
