@@ -490,68 +490,11 @@ export default function AICoachPage() {
         width: "100%",
         maxWidth: "1360px",
         margin: "0 auto",
-        padding: "0 16px 16px 16px",
-        minHeight: "calc(100vh - 90px)"
+        padding: "4px 16px 16px 16px",
+        minHeight: "calc(100vh - 80px)"
       }}
     >
-      {/* 1. COMPACT DASHBOARD HEADER */}
-      <header
-        className="ai-mentor-header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "8px",
-          padding: "2px 0 0 0"
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <h1
-            style={{
-              fontSize: "1.45rem",
-              fontWeight: "800",
-              color: isLight ? "#0f172a" : "#f8fafc",
-              margin: 0,
-              letterSpacing: "-0.02em"
-            }}
-          >
-            Judgo Intelligence
-          </h1>
-          <span style={{ fontSize: "0.68rem", background: isLight ? "rgba(124, 58, 237, 0.12)" : "rgba(124, 58, 237, 0.18)", color: isLight ? "#7c3aed" : "#c084fc", border: "1px solid rgba(124, 58, 237, 0.3)", padding: "1px 7px", borderRadius: "999px", fontWeight: "700" }}>
-            PRO
-          </span>
-        </div>
-
-        {/* Status indicator: ● Online */}
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "6px",
-            background: isLight ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.1)",
-            border: "1px solid rgba(16, 185, 129, 0.25)",
-            padding: "4px 10px",
-            borderRadius: "999px",
-            fontSize: "0.74rem",
-            fontWeight: "600",
-            color: isLight ? "#059669" : "#10b981"
-          }}
-        >
-          <span
-            style={{
-              width: "5px",
-              height: "5px",
-              borderRadius: "50%",
-              background: isLight ? "#059669" : "#10b981",
-              boxShadow: isLight ? "0 0 6px #059669" : "0 0 6px #10b981"
-            }}
-          />
-          <span>AI Engine Online</span>
-        </div>
-      </header>
-
-      {/* 2. MODERN SEGMENTED NAVBAR WITH COLORFUL ICON BADGES */}
+      {/* 1. PRIMARY WORKSPACE NAVIGATION TABS (WITH ALWAYS-VIBRANT COLORFUL ICONS) */}
       <nav
         className="ai-mentor-tabs"
         style={{
@@ -649,7 +592,7 @@ export default function AICoachPage() {
                 />
               )}
 
-              {/* Colorful Icon Badge Chip */}
+              {/* Colorful Icon Badge Chip (Always Vibrant in All States) */}
               <div
                 style={{
                   position: "relative",
@@ -660,15 +603,13 @@ export default function AICoachPage() {
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  background: isActive
-                    ? (isLight ? tab.lightBg : tab.darkBg)
-                    : (isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.04)"),
-                  border: isActive ? `1px solid ${tab.border}` : "1px solid transparent",
-                  color: isActive ? tab.color : (isLight ? "#64748b" : "#94a3b8"),
+                  background: isLight ? tab.lightBg : tab.darkBg,
+                  border: `1px solid ${isActive ? tab.border : (isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)")}`,
+                  color: tab.color,
                   transition: "all 0.15s ease"
                 }}
               >
-                <Icon size={14} style={{ color: isActive ? tab.color : "inherit" }} />
+                <Icon size={14} style={{ color: tab.color }} />
               </div>
 
               {/* Tab Title */}
@@ -684,10 +625,8 @@ export default function AICoachPage() {
                     fontWeight: "700",
                     padding: "1px 6px",
                     borderRadius: "999px",
-                    background: isActive
-                      ? (isLight ? "rgba(16, 185, 129, 0.15)" : "rgba(16, 185, 129, 0.25)")
-                      : (isLight ? "rgba(0, 0, 0, 0.05)" : "rgba(255, 255, 255, 0.06)"),
-                    color: isActive ? "#10b981" : (isLight ? "#64748b" : "#94a3b8"),
+                    background: isLight ? "rgba(16, 185, 129, 0.15)" : "rgba(16, 185, 129, 0.25)",
+                    color: "#10b981",
                     letterSpacing: "0.02em"
                   }}
                 >
@@ -699,7 +638,7 @@ export default function AICoachPage() {
         })}
       </nav>
 
-      {/* 3. MAIN WORKSPACE */}
+      {/* 2. MAIN WORKSPACE */}
       <div style={{ flex: 1, minHeight: 0 }}>
         {/* TAB 1: AI MENTOR (FULL-WIDTH CHAT STUDIO) */}
         {activeTab === "mentor" && (
@@ -711,8 +650,8 @@ export default function AICoachPage() {
               borderRadius: "12px",
               display: "flex",
               flexDirection: "column",
-              height: "calc(100vh - 165px)",
-              minHeight: "580px",
+              height: "calc(100vh - 120px)",
+              minHeight: "600px",
               boxShadow: isLight ? "0 1px 3px rgba(0, 0, 0, 0.04)" : "0 4px 20px rgba(0, 0, 0, 0.25)",
               overflow: "hidden",
               width: "100%"
