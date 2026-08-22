@@ -594,35 +594,6 @@ function ProblemDetailsInner() {
               <span style={{ background: isLight ? "#f1f5f9" : "#181e2e", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", color: isLight ? "#475569" : "#94a3b8", fontSize: "0.78rem", padding: "3px 10px", borderRadius: "6px", fontWeight: "500" }}>
                 🏷️ {problemWithStatus.topic}
               </span>
-              <span style={{ background: isLight ? "#f1f5f9" : "#181e2e", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", color: isLight ? "#475569" : "#94a3b8", fontSize: "0.78rem", padding: "3px 10px", borderRadius: "6px", fontWeight: "500" }}>
-                Hash Map
-              </span>
-              <span style={{ background: isLight ? "#f1f5f9" : "#181e2e", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", color: isLight ? "#475569" : "#94a3b8", fontSize: "0.78rem", padding: "3px 10px", borderRadius: "6px", fontWeight: "500" }}>
-                📊 {problemWithStatus.acceptance}% Acceptance
-              </span>
-              <span style={{ background: isLight ? "#f1f5f9" : "#181e2e", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", color: isLight ? "#475569" : "#94a3b8", fontSize: "0.78rem", padding: "3px 10px", borderRadius: "6px", fontWeight: "500" }}>
-                ⏱️ {problemWithStatus.points} pts
-              </span>
-            </div>
-
-            {/* Stats Table Grid Card */}
-            <div className="problem-stats-grid" style={{ display: "grid", background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", borderRadius: "10px", padding: "12px", textAlign: "center" }}>
-              <div>
-                <span style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#64748b", display: "block" }}>Time Limit</span>
-                <strong style={{ fontSize: "0.92rem", color: isLight ? "#0f172a" : "#eee" }}>2 sec</strong>
-              </div>
-              <div>
-                <span style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#64748b", display: "block" }}>Memory Limit</span>
-                <strong style={{ fontSize: "0.92rem", color: isLight ? "#0f172a" : "#eee" }}>256 MB</strong>
-              </div>
-              <div>
-                <span style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#64748b", display: "block" }}>Submissions</span>
-                <strong style={{ fontSize: "0.92rem", color: isLight ? "#0f172a" : "#eee" }}>98.7K</strong>
-              </div>
-              <div>
-                <span style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#64748b", display: "block" }}>Points</span>
-                <strong style={{ fontSize: "0.92rem", color: isLight ? "#0f172a" : "#eee" }}>{problemWithStatus.points}</strong>
-              </div>
             </div>
 
             {/* Description Text */}
