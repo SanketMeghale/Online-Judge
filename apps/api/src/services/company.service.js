@@ -445,7 +445,8 @@ Instructions:
     const reply = await aiProvider.generateCompletion({
       systemPrompt,
       messages,
-      temperature: 0.5
+      temperature: 0.5,
+      maxTokens: 4096
     });
     return {
       success: true,

@@ -262,7 +262,8 @@ ${AI_MARKDOWN_FORMATTING_RULES}`;
     reply = await aiProvider.generateCompletion({
       systemPrompt,
       messages: history,
-      temperature: 0.7
+      temperature: 0.7,
+      maxTokens: 4096
     });
   } catch (err) {
     console.error("[AICoach] AI Provider completion failed, using local fallback:", err.message);
@@ -351,7 +352,8 @@ ${code}
     reviewText = await aiProvider.generateCompletion({
       systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
-      temperature: 0.2
+      temperature: 0.2,
+      maxTokens: 4096
     });
   } catch (e) {
     const local = new (await import("./aiProvider.service.js")).LocalMentorProvider();
@@ -408,7 +410,8 @@ Please provide the ${instruction}.`;
     hint = await aiProvider.generateCompletion({
       systemPrompt,
       messages: [{ role: "user", content: userPrompt }],
-      temperature: 0.5
+      temperature: 0.5,
+      maxTokens: 3000
     });
   } catch (e) {
     hint = `💡 **Hint Level ${requestedLevel}:**\nFocus on the core constraint. If you track indices with a Hash Map, you can achieve optimal linear $O(N)$ runtime without nested loops!`;
@@ -899,7 +902,8 @@ ${AI_MARKDOWN_FORMATTING_RULES}`;
           ...history.map((h) => ({ role: h.role, content: h.content })),
           { role: "user", content: `Here is my solution in ${language}:\n\`\`\`${language}\n${code}\n\`\`\`\nPlease evaluate.` }
         ],
-        temperature: 0.4
+        temperature: 0.4,
+        maxTokens: 4096
       });
     } catch (e) {
       // Dynamic code inspection fallback
@@ -993,7 +997,8 @@ CRITICAL PERSONA RULES:
     reply = await aiProvider.generateCompletion({
       systemPrompt,
       messages,
-      temperature: 0.4
+      temperature: 0.4,
+      maxTokens: 4096
     });
   } catch (e) {
     const lower = answer.toLowerCase();

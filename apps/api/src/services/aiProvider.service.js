@@ -4,7 +4,7 @@
  */
 
 export class BaseAIProvider {
-  async generateCompletion({ systemPrompt, messages, temperature = 0.7, maxTokens = 1024 }) {
+  async generateCompletion({ systemPrompt, messages, temperature = 0.7, maxTokens = 4096 }) {
     throw new Error("generateCompletion not implemented");
   }
 }
@@ -19,7 +19,7 @@ export class GeminiProvider extends BaseAIProvider {
     this.model = model;
   }
 
-  async generateCompletion({ systemPrompt, messages, temperature = 0.7, maxTokens = 1024 }) {
+  async generateCompletion({ systemPrompt, messages, temperature = 0.7, maxTokens = 4096 }) {
     const interactionInput = messages
       .map((message) => `${message.role === "assistant" ? "ASSISTANT" : "USER"}:\n${message.content}`)
       .join("\n\n");
@@ -87,7 +87,7 @@ export class OpenAIProvider extends BaseAIProvider {
     this.model = model;
   }
 
-  async generateCompletion({ systemPrompt, messages, temperature = 0.7, maxTokens = 1024 }) {
+  async generateCompletion({ systemPrompt, messages, temperature = 0.7, maxTokens = 4096 }) {
     const url = "https://api.openai.com/v1/chat/completions";
 
     const formattedMessages = [];
