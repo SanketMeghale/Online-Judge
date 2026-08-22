@@ -128,19 +128,19 @@ export default function LeetCodeActivityCalendar({
           <Calendar size={15} className="lc-cal-icon" />
           <h3 className="lc-title">Coding Activity</h3>
           <span className="lc-active-pill">
-            {activeDaysCount || activeDaysInMatrix || 1} active days
+            {activeDaysCount || activeDaysInMatrix} active days
           </span>
         </div>
 
         <div className="lc-header-stats">
           <span className="lc-stat-item" title="Current Active Streak">
             <Flame size={13} className="lc-stat-icon-flame" />
-            <span>Streak: <strong>{currentStreak || 1}d</strong></span>
+            <span>Streak: <strong>{currentStreak}d</strong></span>
           </span>
           <span className="lc-stat-divider">•</span>
           <span className="lc-stat-item" title="Max Recorded Streak">
             <Trophy size={13} className="lc-stat-icon-trophy" />
-            <span>Max: <strong>{maxStreak || 3}d</strong></span>
+            <span>Max: <strong>{maxStreak}d</strong></span>
           </span>
         </div>
       </div>
@@ -228,7 +228,7 @@ export default function LeetCodeActivityCalendar({
       {/* 4. Footer & Legend */}
       <div className="lc-activity-footer">
         <span className="lc-footer-subtext">
-          {totalSubmissionsInMatrix || activityGrid.length} submissions in active range
+          {totalSubmissionsInMatrix} submissions in active range
         </span>
 
         <div className="lc-legend-row">

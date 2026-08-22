@@ -170,9 +170,19 @@ export default function ProgressPage() {
         };
       });
 
-      const liveUserData = getUserById(currentUserId);
-      const solvedTotal = userProblems.filter((p) => p.status === "Solved").length;
+      // Compute real delta: compare period solved vs previous equivalent period
+      const prevCutoff = cutoff > 0 ? cutoff - rangeDays * 24 * 3600 * 1000 : 0;
+      const prevFilteredSubs = userSubmissions.filter((s) => {
+        const ts = new Date(s.submittedAt || s.createdAt || 0).getTime();
+        return ts >= prevCutoff && ts < cutoff;
+      });
+      const prevSolvedSet = new Set(
+        prevFilteredSubs.filter((s) => s.verdict === "AC" || s.verdict === "OK").map((s) => s.problemId || s.problem)
+      );
+      const solvedDelta = solvedSet.size - prevSolvedSet.size;
+      const solvedDeltaStr = solvedDelta >= 0 ? `+${solvedDelta}` : `${solvedDelta}`;
 
+      const liveUserData = getUserById(currentUserId);
       const streakStats = calculateStreak(
         (liveUserData?.activeDates || []).concat(
           userSubmissions.filter((s) => s.verdict === "AC" || s.verdict === "OK" || s.verdict === "Accepted")
@@ -180,11 +190,18 @@ export default function ProgressPage() {
         new Date()
       );
 
+      // Real contestRating — only if user has solved at least 1 problem
+      const allTimeSolvedCount = userProblems.filter((p) => p.status === "Solved").length;
+      const userXp = liveUserData?.xp || 0;
+      const contestRating = allTimeSolvedCount > 0
+        ? 1200 + allTimeSolvedCount * 15 + Math.floor(userXp / 10)
+        : null;
+
       setData({
         success: true,
         overview: {
           solvedCount: solvedSet.size,
-          solvedDelta: "+3",
+          solvedDelta: solvedDeltaStr,
           totalSubmissions,
           acceptedCount,
           waCount,
@@ -195,12 +212,12 @@ export default function ProgressPage() {
           currentStreak: streakStats.currentStreak,
           bestStreak: Math.max(liveUserData?.bestStreak || 0, streakStats.bestStreak),
           activeDaysCount: activityGrid.filter((a) => a.count > 0).length,
-          contestRating: liveUserData?.ranking ? Math.max(1200, 1500 - liveUserData.ranking * 8) : 1200
+          contestRating
         },
         difficultyBreakdown: {
-          Easy: { solved: diffMap.Easy.solved, total: diffMap.Easy.total || 4, percentage: diffMap.Easy.total ? Math.round((diffMap.Easy.solved / diffMap.Easy.total) * 100) : 0 },
-          Medium: { solved: diffMap.Medium.solved, total: diffMap.Medium.total || 4, percentage: diffMap.Medium.total ? Math.round((diffMap.Medium.solved / diffMap.Medium.total) * 100) : 0 },
-          Hard: { solved: diffMap.Hard.solved, total: diffMap.Hard.total || 2, percentage: diffMap.Hard.total ? Math.round((diffMap.Hard.solved / diffMap.Hard.total) * 100) : 0 }
+          Easy: { solved: diffMap.Easy.solved, total: diffMap.Easy.total, percentage: diffMap.Easy.total > 0 ? Math.round((diffMap.Easy.solved / diffMap.Easy.total) * 100) : 0 },
+          Medium: { solved: diffMap.Medium.solved, total: diffMap.Medium.total, percentage: diffMap.Medium.total > 0 ? Math.round((diffMap.Medium.solved / diffMap.Medium.total) * 100) : 0 },
+          Hard: { solved: diffMap.Hard.solved, total: diffMap.Hard.total, percentage: diffMap.Hard.total > 0 ? Math.round((diffMap.Hard.solved / diffMap.Hard.total) * 100) : 0 }
         },
         activityGrid,
         topicProficiency
@@ -356,9 +373,9 @@ export default function ProgressPage() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            <DiffRow label="Easy" solved={diffs.Easy?.solved || 0} total={diffs.Easy?.total || 4} pct={diffs.Easy?.percentage || 0} color={isLight ? "#059669" : "#34d399"} bg={isLight ? "rgba(16,185,129,0.12)" : "rgba(16,185,129,0.12)"} isLight={isLight} />
-            <DiffRow label="Medium" solved={diffs.Medium?.solved || 0} total={diffs.Medium?.total || 4} pct={diffs.Medium?.percentage || 0} color={isLight ? "#d97706" : "#fbbf24"} bg={isLight ? "rgba(245,158,11,0.12)" : "rgba(245,158,11,0.12)"} isLight={isLight} />
-            <DiffRow label="Hard" solved={diffs.Hard?.solved || 0} total={diffs.Hard?.total || 2} pct={diffs.Hard?.percentage || 0} color={isLight ? "#dc2626" : "#f87171"} bg={isLight ? "rgba(239,68,68,0.12)" : "rgba(239,68,68,0.12)"} isLight={isLight} />
+            <DiffRow label="Easy" solved={diffs.Easy?.solved || 0} total={diffs.Easy?.total || 0} pct={diffs.Easy?.percentage || 0} color={isLight ? "#059669" : "#34d399"} bg={isLight ? "rgba(16,185,129,0.12)" : "rgba(16,185,129,0.12)"} isLight={isLight} />
+            <DiffRow label="Medium" solved={diffs.Medium?.solved || 0} total={diffs.Medium?.total || 0} pct={diffs.Medium?.percentage || 0} color={isLight ? "#d97706" : "#fbbf24"} bg={isLight ? "rgba(245,158,11,0.12)" : "rgba(245,158,11,0.12)"} isLight={isLight} />
+            <DiffRow label="Hard" solved={diffs.Hard?.solved || 0} total={diffs.Hard?.total || 0} pct={diffs.Hard?.percentage || 0} color={isLight ? "#dc2626" : "#f87171"} bg={isLight ? "rgba(239,68,68,0.12)" : "rgba(239,68,68,0.12)"} isLight={isLight} />
           </div>
 
           <div style={{ borderTop: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", paddingTop: "10px", fontSize: "0.75rem", color: isLight ? "#64748b" : "#64748b" }}>

@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { connectDatabase, isDatabaseConnected } from "../lib/db.js";
 import { Submission } from "../models/Submission.js";
@@ -140,12 +141,15 @@ router.get("/", requireAuth, async (req, res) => {
       const diff = p.difficulty || "Medium";
       if (!diffMap[diff]) diffMap[diff] = { solved: 0, total: 0 };
       diffMap[diff].total++;
-      problemMap.set(p.id, p);
+      // Store with string-coerced id for consistent lookup
+      problemMap.set(String(p.id || p._id), p);
     }
 
     // All-time user solved set for total solved ratio
     const allTimeSolvedSet = new Set(
-      allUserSubmissions.filter((s) => s.verdict === "AC" || s.verdict === "OK").map((s) => s.problemId || s.problem)
+      allUserSubmissions
+        .filter((s) => s.verdict === "AC" || s.verdict === "OK")
+        .map((s) => String(s.problemId || s.problem))
     );
 
     for (const probId of allTimeSolvedSet) {
@@ -158,22 +162,30 @@ router.get("/", requireAuth, async (req, res) => {
     const difficultyBreakdown = {
       Easy: {
         solved: diffMap.Easy.solved,
-        total: diffMap.Easy.total || 4,
-        percentage: diffMap.Easy.total ? Math.round((diffMap.Easy.solved / diffMap.Easy.total) * 100) : 0
+        total: diffMap.Easy.total,
+        percentage: diffMap.Easy.total > 0 ? Math.round((diffMap.Easy.solved / diffMap.Easy.total) * 100) : 0
       },
       Medium: {
         solved: diffMap.Medium.solved,
-        total: diffMap.Medium.total || 4,
-        percentage: diffMap.Medium.total ? Math.round((diffMap.Medium.solved / diffMap.Medium.total) * 100) : 0
+        total: diffMap.Medium.total,
+        percentage: diffMap.Medium.total > 0 ? Math.round((diffMap.Medium.solved / diffMap.Medium.total) * 100) : 0
       },
       Hard: {
         solved: diffMap.Hard.solved,
-        total: diffMap.Hard.total || 2,
-        percentage: diffMap.Hard.total ? Math.round((diffMap.Hard.solved / diffMap.Hard.total) * 100) : 0
+        total: diffMap.Hard.total,
+        percentage: diffMap.Hard.total > 0 ? Math.round((diffMap.Hard.solved / diffMap.Hard.total) * 100) : 0
       }
     };
 
     // 5. CODING ACTIVITY GRID (HEATMAP)
+    // Build dateMap from ALL user submissions before iterating grid
+    const dateMap = new Map();
+    for (const s of allUserSubmissions) {
+      const dt = new Date(s.submittedAt || s.createdAt || Date.now());
+      const k = formatDateKey(dt);
+      if (k) dateMap.set(k, (dateMap.get(k) || 0) + 1);
+    }
+
     const displayDays = Math.min(rangeDays, 180);
     const activityGrid = [];
 
@@ -240,10 +252,10 @@ router.get("/", requireAuth, async (req, res) => {
       };
     });
 
-    // Contest rating
+    // Contest rating — only show when user has actually solved problems
     const solvedTotal = allTimeSolvedSet.size;
-    const userXp = typeof userDoc.xp === "number" ? userDoc.xp : solvedTotal * 100;
-    const contestRating = 1200 + solvedTotal * 15 + Math.floor(userXp / 10);
+    const userXp = typeof userDoc?.xp === "number" ? userDoc.xp : 0;
+    const contestRating = solvedTotal > 0 ? 1200 + solvedTotal * 15 + Math.floor(userXp / 10) : null;
 
     res.json({
       success: true,
@@ -258,8 +270,8 @@ router.get("/", requireAuth, async (req, res) => {
         ceCount,
         tleCount,
         acceptanceRate,
-        currentStreak: currentStreak || (allTimeSolvedSet.size > 0 ? 1 : 0),
-        bestStreak: Math.max(bestStreak, currentStreak || 1),
+        currentStreak,
+        bestStreak,
         activeDaysCount,
         contestRating
       },
