@@ -201,7 +201,7 @@ function CodeBlock({ language = "text", value = "" }) {
 }
 
 // Markdown parser converting bold, headers, inline code, and lists to styled HTML nodes
-function parseMarkdownInline(text = "") {
+function parseMarkdownInline(text = "", isLight = false) {
   if (!text) return "";
 
   // Split by bold tokens **...**
@@ -215,7 +215,7 @@ function parseMarkdownInline(text = "") {
       parts.push(text.substring(lastIdx, match.index));
     }
     parts.push(
-      <strong key={`b-${match.index}`} style={{ color: "#ffffff", fontWeight: "700" }}>
+      <strong key={`b-${match.index}`} style={{ color: isLight ? "#0f172a" : "#ffffff", fontWeight: "700" }}>
         {match[1]}
       </strong>
     );
@@ -243,9 +243,9 @@ function parseMarkdownInline(text = "") {
         <code
           key={`code-${chunkIdx}-${sMatch.index}`}
           style={{
-            background: "rgba(124, 58, 237, 0.16)",
-            color: "#c084fc",
-            border: "1px solid rgba(124, 58, 237, 0.3)",
+            background: isLight ? "rgba(124, 58, 237, 0.08)" : "rgba(124, 58, 237, 0.16)",
+            color: isLight ? "#6d28d9" : "#c084fc",
+            border: isLight ? "1px solid rgba(124, 58, 237, 0.25)" : "1px solid rgba(124, 58, 237, 0.3)",
             padding: "2px 6px",
             borderRadius: "5px",
             fontSize: "0.84em",
@@ -317,7 +317,7 @@ function FormattedMessage({ text = "" }) {
                       letterSpacing: "-0.01em"
                     }}
                   >
-                    {parseMarkdownInline(trimmed.substring(4))}
+                    {parseMarkdownInline(trimmed.substring(4), isLight)}
                   </h4>
                 );
               }
@@ -334,7 +334,7 @@ function FormattedMessage({ text = "" }) {
                       letterSpacing: "-0.02em"
                     }}
                   >
-                    {parseMarkdownInline(trimmed.substring(3))}
+                    {parseMarkdownInline(trimmed.substring(3), isLight)}
                   </h3>
                 );
               }
@@ -353,7 +353,7 @@ function FormattedMessage({ text = "" }) {
                     }}
                   >
                     <span style={{ color: "#a855f7", fontWeight: "700", lineHeight: "1.4" }}>•</span>
-                    <div style={{ flex: 1 }}>{parseMarkdownInline(trimmed.substring(2))}</div>
+                    <div style={{ flex: 1 }}>{parseMarkdownInline(trimmed.substring(2), isLight)}</div>
                   </div>
                 );
               }
@@ -375,7 +375,7 @@ function FormattedMessage({ text = "" }) {
                     <span style={{ color: "#818cf8", fontWeight: "700", fontSize: "0.82rem", minWidth: "16px" }}>
                       {numMatch[1]}.
                     </span>
-                    <div style={{ flex: 1 }}>{parseMarkdownInline(numMatch[2])}</div>
+                    <div style={{ flex: 1 }}>{parseMarkdownInline(numMatch[2], isLight)}</div>
                   </div>
                 );
               }
@@ -383,7 +383,7 @@ function FormattedMessage({ text = "" }) {
               // Normal text line
               return (
                 <div key={lineIdx} style={{ color: isLight ? "#334155" : "#cbd5e1" }}>
-                  {parseMarkdownInline(trimmed)}
+                  {parseMarkdownInline(trimmed, isLight)}
                 </div>
               );
             })}
@@ -879,7 +879,7 @@ export default function AICoachPage() {
               gridTemplateColumns: "340px 1fr",
               gap: "16px",
               height: "calc(100vh - 200px)",
-              minHeight: "540px"
+              minHeight: 0
             }}
           >
             {/* LEFT COLUMN: TODAY'S FOCUS + WEAK TOPICS */}
@@ -888,7 +888,8 @@ export default function AICoachPage() {
                 display: "flex",
                 flexDirection: "column",
                 gap: "14px",
-                height: "100%"
+                height: "100%",
+                minHeight: 0
               }}
             >
               {/* CARD 1: TODAY'S FOCUS */}
@@ -1103,6 +1104,7 @@ export default function AICoachPage() {
 
             {/* RIGHT COLUMN: AI MENTOR CHAT */}
             <div
+              className="ai-mentor-chat-column"
               style={{
                 background: isLight ? "#ffffff" : "#0d111a",
                 border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
@@ -1110,6 +1112,7 @@ export default function AICoachPage() {
                 display: "flex",
                 flexDirection: "column",
                 height: "100%",
+                minHeight: 0,
                 boxShadow: isLight ? "0 1px 3px rgba(0, 0, 0, 0.04)" : "0 4px 20px rgba(0, 0, 0, 0.25)",
                 overflow: "hidden"
               }}
@@ -1162,9 +1165,13 @@ export default function AICoachPage() {
               {/* CHAT MESSAGES SCROLL AREA */}
               <div
                 ref={chatScrollRef}
+                className="ai-mentor-chat-scroll"
                 style={{
                   flex: 1,
+                  minHeight: 0,
                   overflowY: "auto",
+                  overscrollBehavior: "contain",
+                  WebkitOverflowScrolling: "touch",
                   padding: "16px",
                   display: "flex",
                   flexDirection: "column",

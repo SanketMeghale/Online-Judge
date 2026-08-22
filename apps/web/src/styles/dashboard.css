@@ -1396,6 +1396,11 @@
     grid-template-columns: 1fr !important;
     height: auto !important;
   }
+
+  .ai-mentor-chat-column {
+    height: 580px !important;
+    max-height: 75vh !important;
+  }
 }
 
 @media (max-width: 600px) {
