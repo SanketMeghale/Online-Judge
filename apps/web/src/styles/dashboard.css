@@ -50,17 +50,17 @@
 }
 
 /* --------------------------------------------------------------------------
-   HERO / WELCOME SECTION (COMPACT 2-COLUMN CODING HERO)
+   HERO / WELCOME SECTION
    -------------------------------------------------------------------------- */
 .dash-hero {
   position: relative;
   background: linear-gradient(135deg, #070b14 0%, #0d1224 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 24px 28px;
+  border-radius: 14px;
+  padding: 18px 22px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-  min-height: 230px;
+  min-height: 132px;
   display: flex;
   align-items: center;
 }
@@ -80,18 +80,18 @@
     linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   background-size: 24px 24px;
-  mask-image: radial-gradient(ellipse 70% 60% at 70% 50%, #000 60%, transparent 100%);
-  opacity: 0.6;
+  mask-image: linear-gradient(to right, #000, transparent 85%);
+  opacity: 0.42;
 }
 
 .dash-hero-radial {
   position: absolute;
-  top: -40px;
-  right: -20px;
-  width: 300px;
-  height: 260px;
-  background: radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, rgba(59, 130, 246, 0.04) 50%, transparent 70%);
-  filter: blur(40px);
+  top: -100px;
+  right: -30px;
+  width: 380px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.12) 0%, rgba(59, 130, 246, 0.05) 48%, transparent 72%);
+  filter: blur(34px);
 }
 
 .dash-hero-glyph {
@@ -108,21 +108,21 @@
 .glyph-arrow { top: 40%; right: 40px; }
 .glyph-underscore { bottom: 24px; right: 80px; }
 
-/* 2-Column Hero Layout */
 .dash-hero-layout {
   position: relative;
   z-index: 1;
-  display: grid;
-  grid-template-columns: 1fr minmax(380px, 440px);
+  display: flex;
   align-items: center;
-  gap: 28px;
+  justify-content: space-between;
+  gap: 24px;
   width: 100%;
 }
 
 .dash-hero-left {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
+  min-width: 0;
 }
 
 .dash-hero-badge {
@@ -150,7 +150,7 @@
 }
 
 .dash-hero-title {
-  font-size: 1.85rem;
+  font-size: 1.55rem;
   font-weight: 800;
   letter-spacing: -0.025em;
   color: var(--dash-text-primary);
@@ -165,13 +165,13 @@
 }
 
 .dash-wave {
-  font-size: 1.6rem;
+  font-size: 1.35rem;
   vertical-align: -1px;
 }
 
 .dash-hero-sub {
   color: var(--dash-text-secondary);
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   margin: 0;
   max-width: 480px;
   line-height: 1.45;
@@ -181,8 +181,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
-  margin-top: 4px;
+  justify-content: flex-end;
+  flex-shrink: 0;
 }
 
 .dash-btn-primary {
@@ -193,8 +193,8 @@
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 8px;
-  height: 44px;
-  padding: 0 16px;
+  height: 40px;
+  padding: 0 15px;
   font-size: 0.84rem;
   font-weight: 600;
   text-decoration: none;
@@ -225,7 +225,7 @@
   color: var(--dash-text-primary);
   border: 1px solid var(--dash-border);
   border-radius: 8px;
-  height: 44px;
+  height: 40px;
   padding: 0 14px;
   font-size: 0.84rem;
   font-weight: 500;
@@ -248,6 +248,10 @@
   border-radius: 4px;
   padding: 2px 6px;
   color: var(--dash-text-muted);
+}
+
+.dash-action-success {
+  color: #34d399;
 }
 
 /* RIGHT COLUMN: STATIC CODER PERFORMANCE & STREAK CARD */
@@ -643,11 +647,13 @@
 
 @media (max-width: 900px) {
   .dash-hero-layout {
-    grid-template-columns: 1fr;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
   }
 
-  .dash-hero-right {
-    margin-top: 16px;
+  .dash-hero-actions {
+    justify-content: flex-start;
   }
 }
 
@@ -1499,6 +1505,5 @@
 [data-theme="light"] .ai-coach-quote {
   color: #334155;
 }
-
 
 
