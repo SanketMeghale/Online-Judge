@@ -3,6 +3,8 @@ import { connectDatabase, isDatabaseConnected } from "./db.js";
 import { Contest } from "../models/Contest.js";
 import { ContestRegistration } from "../models/ContestRegistration.js";
 import { findUserById } from "./userStore.js";
+import { Submission } from "../models/Submission.js";
+import { User } from "../models/User.js";
 
 /**
  * Returns fresh seed contests with timestamps dynamically relative to current system time
@@ -275,29 +277,9 @@ export function formatContest(c, userId = null, includeProblems = false) {
 export async function getAllContests(userId = null) {
   await connectDatabase();
 
-  const freshSeeds = getFreshSeedContests();
-
   if (isDatabaseConnected()) {
     try {
-      let docs = await Contest.find().lean();
-
-      // Check if DB is empty or all contests have expired
-      const hasLiveOrUpcoming = docs && docs.some((d) => {
-        const s = computeContestStatus(d);
-        return s === "LIVE" || s === "UPCOMING";
-      });
-
-      if (!docs || docs.length === 0 || !hasLiveOrUpcoming) {
-        console.log("[ContestStore] Seeding/Updating active contests collection...");
-        for (const seed of freshSeeds) {
-          await Contest.findOneAndUpdate(
-            { id: seed.id },
-            { $set: seed },
-            { upsert: true, new: true }
-          );
-        }
-        docs = await Contest.find().lean();
-      }
+      const docs = await Contest.find().lean();
 
       // Check DB user registrations if userId provided
       let userRegs = [];
@@ -317,7 +299,7 @@ export async function getAllContests(userId = null) {
     }
   }
 
-  return freshSeeds.map((c) => formatContest(c, userId));
+  return [];
 }
 
 /**
@@ -349,9 +331,7 @@ export async function getContestById(idOrSlug, userId = null, options = {}) {
     }
   }
 
-  const fresh = getFreshSeedContests();
-  const c = fresh.find((item) => item.id === idOrSlug || item.slug === idOrSlug);
-  return c ? formatContest(c, userId, Boolean(options.includeProblems)) : null;
+  return null;
 }
 
 /**
@@ -410,11 +390,149 @@ export async function registerUserForContest(contestId, userId) {
  * Get contest leaderboard
  */
 export async function getContestLeaderboard(contestId) {
-  return [
-    { rank: 1, userId: "u-tourist", username: "Tourist", avatar: "👑", badge: "Grandmaster", score: 3250, penalty: "00:42:15", solvedProblems: ["A", "B", "C", "D"] },
-    { rank: 2, userId: "u-benq", username: "Benq", avatar: "⚡", badge: "Grandmaster", score: 3100, penalty: "00:48:30", solvedProblems: ["A", "B", "C", "D"] },
-    { rank: 3, userId: "u-neal", username: "Neal", avatar: "🔥", badge: "Master", score: 2750, penalty: "01:05:12", solvedProblems: ["A", "B", "C"] },
-    { rank: 4, userId: "u-ecner", username: "ecnerwala", avatar: "🚀", badge: "Master", score: 2600, penalty: "01:12:40", solvedProblems: ["A", "B", "C"] },
-    { rank: 5, userId: "u-petr", username: "Petr", avatar: "🛡️", badge: "Expert", score: 2200, penalty: "01:18:05", solvedProblems: ["A", "B"] }
-  ];
+  if (!contestId) return [];
+  await connectDatabase();
+
+  try {
+    const contest = await getContestById(contestId);
+    if (!contest) return [];
+
+    // 1. Fetch all submissions for this contest where mode === "SUBMIT"
+    const submissions = await Submission.find({
+      contestId: contest.id,
+      mode: "SUBMIT"
+    }).sort({ createdAt: 1 }).lean();
+
+    // 2. Fetch all registered users for this contest
+    const registrations = await ContestRegistration.find({ contestId: contest.id }).lean();
+    const registeredUserIds = new Set(registrations.map((r) => String(r.userId)));
+
+    // 3. Collect all user IDs who have submissions or registrations
+    const userIds = new Set([
+      ...registeredUserIds,
+      ...submissions.map((s) => String(s.userId))
+    ]);
+
+    if (userIds.size === 0) return [];
+
+    // Fetch user profiles to display real avatars and badges
+    const users = await User.find({
+      _id: { $in: Array.from(userIds).filter((id) => mongoose.Types.ObjectId.isValid(id)) }
+    }).lean();
+
+    const userMap = new Map();
+    for (const u of users) {
+      userMap.set(String(u._id || u.id), u);
+    }
+
+    // Map contest problems to letters A, B, C, D...
+    const problemMap = new Map();
+    const contestProblems = contest.problems || [];
+    contestProblems.forEach((p, idx) => {
+      problemMap.set(p.id, {
+        label: String.fromCharCode(65 + idx),
+        points: p.points || 250
+      });
+    });
+
+    const participantData = {};
+
+    function calculateBadge(rating) {
+      if (!rating) return "Newbie";
+      if (rating >= 2400) return "Grandmaster";
+      if (rating >= 2000) return "Master";
+      if (rating >= 1600) return "Expert";
+      if (rating >= 1200) return "Knight";
+      return "Newbie";
+    }
+
+    // Initialize participants
+    for (const userId of userIds) {
+      const user = userMap.get(userId);
+      participantData[userId] = {
+        userId,
+        username: user?.username || `User_${userId.slice(-6)}`,
+        avatar: user?.avatar || "👤",
+        badge: user?.badges?.[0] || calculateBadge(user?.rating || 1200),
+        score: 0,
+        penaltySeconds: 0,
+        solvedProblems: new Set(),
+        problemAttempts: {}
+      };
+    }
+
+    const contestStart = new Date(contest.startTime).getTime();
+
+    // Process submissions chronologically
+    for (const sub of submissions) {
+      const userId = String(sub.userId);
+      const pData = participantData[userId];
+      if (!pData) continue;
+
+      const prob = problemMap.get(sub.problemId);
+      if (!prob) continue;
+
+      if (!pData.problemAttempts[sub.problemId]) {
+        pData.problemAttempts[sub.problemId] = { solved: false, failedCount: 0, timeSec: 0 };
+      }
+
+      const att = pData.problemAttempts[sub.problemId];
+      if (att.solved) continue;
+
+      const subTime = new Date(sub.submittedAt).getTime();
+      const relativeTimeSec = Math.max(0, Math.floor((subTime - contestStart) / 1000));
+
+      if (sub.status === "Accepted" || sub.status === "ACCEPTED") {
+        att.solved = true;
+        att.timeSec = relativeTimeSec;
+        pData.score += prob.points;
+        pData.solvedProblems.add(prob.label);
+        // Penalty: relative time + 20 minutes (1200s) for each failed attempt before AC
+        pData.penaltySeconds += relativeTimeSec + att.failedCount * 1200;
+      } else {
+        att.failedCount += 1;
+      }
+    }
+
+    function formatPenalty(totalSeconds) {
+      if (totalSeconds === 0) return "00:00:00";
+      const hrs = Math.floor(totalSeconds / 3600);
+      const mins = Math.floor((totalSeconds % 3600) / 60);
+      const secs = totalSeconds % 60;
+      return [
+        String(hrs).padStart(2, "0"),
+        String(mins).padStart(2, "0"),
+        String(secs).padStart(2, "0")
+      ].join(":");
+    }
+
+    const list = Object.values(participantData).map((p) => ({
+      userId: p.userId,
+      username: p.username,
+      avatar: p.avatar,
+      badge: p.badge,
+      score: p.score,
+      penalty: formatPenalty(p.penaltySeconds),
+      solvedProblems: Array.from(p.solvedProblems).sort(),
+      penaltySeconds: p.penaltySeconds
+    }));
+
+    // Sort by score (desc), then by penalty (asc), then by username
+    list.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      if (a.penaltySeconds !== b.penaltySeconds) return a.penaltySeconds - b.penaltySeconds;
+      return a.username.localeCompare(b.username);
+    });
+
+    return list.map((item, index) => {
+      const { penaltySeconds, ...rest } = item;
+      return {
+        ...rest,
+        rank: index + 1
+      };
+    });
+  } catch (error) {
+    console.error("[ContestStore] getContestLeaderboard error:", error);
+    return [];
+  }
 }
