@@ -177,6 +177,9 @@ function ProblemDetailsInner() {
   function startPaneResize(event) {
     if (window.matchMedia("(max-width: 900px)").matches) return;
     event.preventDefault();
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {}
     setIsPaneResizing(true);
     updateProblemPaneWidth(event.clientX);
   }
@@ -189,7 +192,10 @@ function ProblemDetailsInner() {
       updateProblemPaneWidth(event.clientX);
     }
 
-    function handlePointerUp() {
+    function handlePointerUp(event) {
+      try {
+        event.target.releasePointerCapture(event.pointerId);
+      } catch {}
       setIsPaneResizing(false);
       try {
         localStorage.setItem("judgo-problem-pane-width", String(problemPaneWidthRef.current));
@@ -219,6 +225,9 @@ function ProblemDetailsInner() {
 
   function startResultResize(event) {
     event.preventDefault();
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    } catch {}
     resultResizeStartRef.current = {
       y: event.clientY,
       height: resultPanelHeightRef.current
@@ -237,7 +246,10 @@ function ProblemDetailsInner() {
       setResultPanelHeight(nextHeight);
     }
 
-    function handlePointerUp() {
+    function handlePointerUp(event) {
+      try {
+        event.target.releasePointerCapture(event.pointerId);
+      } catch {}
       setIsResultResizing(false);
       try {
         localStorage.setItem("judgo-result-panel-height", String(resultPanelHeightRef.current));
