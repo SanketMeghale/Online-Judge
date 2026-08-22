@@ -74,16 +74,39 @@
 }
 
 .dash-hero-grid {
-  display: none !important;
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(to right, #000, transparent 85%);
+  opacity: 0.42;
 }
 
 .dash-hero-radial {
-  display: none !important;
+  position: absolute;
+  top: -100px;
+  right: -30px;
+  width: 380px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.12) 0%, rgba(59, 130, 246, 0.05) 48%, transparent 72%);
+  filter: blur(34px);
 }
 
 .dash-hero-glyph {
-  display: none !important;
+  position: absolute;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85rem;
+  color: rgba(148, 163, 184, 0.05);
+  user-select: none;
+  font-weight: 700;
 }
+
+.glyph-tag { top: 18px; right: 280px; }
+.glyph-bracket { bottom: 18px; right: 300px; }
+.glyph-arrow { top: 40%; right: 40px; }
+.glyph-underscore { bottom: 24px; right: 80px; }
 
 .dash-hero-layout {
   position: relative;
@@ -1522,7 +1545,9 @@
 }
 
 [data-theme="light"] .dash-hero-grid {
-  display: none !important;
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
 }
 
 [data-theme="light"] .dash-hero-title {
