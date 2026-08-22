@@ -6,15 +6,17 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
-  Cpu,
+  Clock3,
+  GripHorizontal,
   GripVertical,
   History,
+  Info,
   Layers,
   Lightbulb,
+  MemoryStick,
   Sliders,
   Sparkles,
-  XCircle,
-  Zap
+  XCircle
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/apiClient.js";
@@ -97,6 +99,18 @@ function ProblemDetailsInner() {
   const [isPaneResizing, setIsPaneResizing] = useState(false);
   const workspaceRef = useRef(null);
   const problemPaneWidthRef = useRef(problemPaneWidth);
+  const [resultPanelHeight, setResultPanelHeight] = useState(() => {
+    try {
+      const savedHeight = Number(localStorage.getItem("judgo-result-panel-height"));
+      return Number.isFinite(savedHeight) && savedHeight >= 280 && savedHeight <= 720 ? savedHeight : 430;
+    } catch {
+      return 430;
+    }
+  });
+  const [isResultResizing, setIsResultResizing] = useState(false);
+  const resultPanelHeightRef = useRef(resultPanelHeight);
+  const resultResizeStartRef = useRef({ y: 0, height: 430 });
+  const [expandedResultCaseIndex, setExpandedResultCaseIndex] = useState(null);
 
   const fetchAIHint = async (level = 1) => {
     setIsHintLoading(true);
@@ -193,6 +207,51 @@ function ProblemDetailsInner() {
     setProblemPaneWidth(nextWidth);
     try {
       localStorage.setItem("judgo-problem-pane-width", String(nextWidth));
+    } catch {}
+  }
+
+  function startResultResize(event) {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    resultResizeStartRef.current = {
+      y: event.clientY,
+      height: resultPanelHeightRef.current
+    };
+    setIsResultResizing(true);
+  }
+
+  function moveResultResize(event) {
+    if (!isResultResizing) return;
+    event.preventDefault();
+    const delta = resultResizeStartRef.current.y - event.clientY;
+    const nextHeight = Math.min(720, Math.max(280, resultResizeStartRef.current.height + delta));
+    resultPanelHeightRef.current = nextHeight;
+    setResultPanelHeight(nextHeight);
+  }
+
+  function finishResultResize(event) {
+    if (!isResultResizing) return;
+    try {
+      if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+    } catch {}
+    setIsResultResizing(false);
+    try {
+      localStorage.setItem("judgo-result-panel-height", String(resultPanelHeightRef.current));
+    } catch {}
+  }
+
+  function resizeResultWithKeyboard(event) {
+    if (event.key !== "ArrowUp" && event.key !== "ArrowDown" && event.key !== "Home") return;
+    event.preventDefault();
+    const nextHeight = event.key === "Home"
+      ? 430
+      : Math.min(720, Math.max(280, resultPanelHeightRef.current + (event.key === "ArrowUp" ? 24 : -24)));
+    resultPanelHeightRef.current = nextHeight;
+    setResultPanelHeight(nextHeight);
+    try {
+      localStorage.setItem("judgo-result-panel-height", String(nextHeight));
     } catch {}
   }
 
@@ -402,14 +461,11 @@ function ProblemDetailsInner() {
     }
   }
 
-  const activeExample = problemWithStatus.examples[selectedCaseIndex] || problemWithStatus.examples[0] || { input: "", output: "" };
   const testResults = Array.isArray(result?.testResults)
     ? result.testResults
     : Array.isArray(result?.testcases)
     ? result.testcases
     : [];
-  const currentTestResult = testResults[selectedCaseIndex] || null;
-
   const displayVerdict = result?.verdict || "";
   const displayStatusText = result?.statusText || (displayVerdict === "AC" ? "Accepted" : displayVerdict || "Evaluated");
   const displayRuntime = result?.runtime || (typeof result?.executionTimeMs === "number" && result.executionTimeMs > 0 ? `${result.executionTimeMs} ms` : "—");
@@ -418,6 +474,16 @@ function ProblemDetailsInner() {
   const totalCasesNum = typeof result?.totalCases === "number" ? result.totalCases : typeof result?.total === "number" ? result.total : (testResults.length || problemWithStatus.examples.length);
   const processingStatuses = new Set(["QUEUED", "COMPILING", "RUNNING", "JUDGING", "ANALYZING", "FINALIZING"]);
   const isProcessingResult = Boolean(result && (processingStatuses.has(result.status) || result.verdict === "PENDING"));
+  const resultCases = testResults.length
+    ? testResults
+    : displayVerdict === "AC"
+    ? problemWithStatus.examples.map((example) => ({
+        input: example.input,
+        expectedOutput: example.output,
+        actualOutput: example.output,
+        passed: true
+      }))
+    : [];
 
   if (result) {
     console.log("[4] RESULT STATE RENDER", { result, displayVerdict, displayStatusText, testResults });
@@ -732,6 +798,34 @@ function ProblemDetailsInner() {
             isSubmitting={isSubmitting}
           />
 
+          <div
+            className={`result-panel-resizer${isResultResizing ? " is-resizing" : ""}`}
+            role="separator"
+            aria-label="Resize execution result panel"
+            aria-orientation="horizontal"
+            aria-valuemin={280}
+            aria-valuemax={720}
+            aria-valuenow={Math.round(resultPanelHeight)}
+            tabIndex={0}
+            title="Drag to resize results. Double-click or press Home to reset."
+            onPointerDown={startResultResize}
+            onPointerMove={moveResultResize}
+            onPointerUp={finishResultResize}
+            onPointerCancel={finishResultResize}
+            onKeyDown={resizeResultWithKeyboard}
+            onDoubleClick={() => {
+              resultPanelHeightRef.current = 430;
+              setResultPanelHeight(430);
+              try {
+                localStorage.setItem("judgo-result-panel-height", "430");
+              } catch {}
+            }}
+          >
+            <span className="result-panel-resizer-handle" aria-hidden="true">
+              <GripHorizontal size={16} />
+            </span>
+          </div>
+
           {/* Console Results Panel (Smoothly Scrolled into View upon Run / Submit) */}
           <section
             ref={resultPanelRef}
@@ -744,6 +838,7 @@ function ProblemDetailsInner() {
               overflow: "hidden",
               display: "flex",
               flexDirection: "column",
+              height: `${resultPanelHeight}px`,
               boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none"
             }}
           >
@@ -966,201 +1061,140 @@ function ProblemDetailsInner() {
                   )}
                 </div>
               ) : result ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                  {/* Top Verdict Status Strip */}
+                <div className="compact-result-view">
                   <div
-                    className={displayVerdict === "AC" ? "verdict-pop-ac" : displayVerdict === "WA" ? "verdict-shake-wa" : displayVerdict === "CE" ? "verdict-pulse-ce" : ""}
-                    style={{
-                      background: displayVerdict === "AC" ? (isLight ? "rgba(22, 163, 74, 0.08)" : "rgba(34, 197, 94, 0.08)") : displayVerdict === "CE" ? (isLight ? "rgba(220, 38, 38, 0.08)" : "rgba(239, 68, 68, 0.08)") : (isLight ? "rgba(220, 38, 38, 0.08)" : "rgba(248, 113, 113, 0.08)"),
-                      border: `1px solid ${displayVerdict === "AC" ? (isLight ? "rgba(22, 163, 74, 0.4)" : "rgba(34, 197, 94, 0.4)") : (isLight ? "rgba(220, 38, 38, 0.4)" : "rgba(248, 113, 113, 0.4)")}`,
-                      borderRadius: "10px",
-                      padding: "12px 16px",
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center"
-                    }}
+                    key={result.submissionId || result.id || scrollTrigger}
+                    className={`result-verdict-card ${displayVerdict === "AC" ? "is-accepted" : "is-error"}`}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      {displayVerdict === "AC" ? (
-                        <CheckCircle2 size={24} style={{ color: isLight ? "#16a34a" : "#4ade80" }} />
-                      ) : displayVerdict === "CE" ? (
-                        <AlertTriangle size={24} style={{ color: "#ef4444" }} />
-                      ) : (
-                        <XCircle size={24} style={{ color: "#ef4444" }} />
-                      )}
-                      <div>
-                        <strong style={{ fontSize: "1.15rem", color: displayVerdict === "AC" ? (isLight ? "#16a34a" : "#4ade80") : "#ef4444" }}>
-                          {displayVerdict === "AC" ? "Accepted" : displayVerdict === "CE" ? "Compilation Error" : displayVerdict === "WA" ? "Wrong Answer" : displayStatusText}
-                        </strong>
-                        <span style={{ fontSize: "0.78rem", color: isLight ? "#64748b" : "#94a3b8", display: "block", marginTop: "2px" }}>
-                          {displayVerdict === "CE"
-                            ? "Code failed to compile using official language compiler."
-                            : displayVerdict === "AC"
-                            ? `Passed all ${totalCasesNum} testcases successfully.`
-                            : `Passed ${passedCountNum} / ${totalCasesNum} testcases.`}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ── 3 DISTINCT PANELS: COMPILATION, EXECUTION, ALGORITHM ANALYSIS ── */}
-                  <div className="execution-summary-grid" style={{ display: "grid", gap: "10px" }}>
-                    {/* PANEL 1: COMPILATION */}
-                    <div className="execution-summary-card" style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          <Cpu size={15} style={{ color: "#818cf8" }} />
-                          <span style={{ fontSize: "0.74rem", fontWeight: "700", textTransform: "uppercase", color: isLight ? "#64748b" : "#94a3b8" }}>Compilation</span>
-                        </div>
-                        <span style={{ fontSize: "0.72rem", fontWeight: "700", padding: "2px 6px", borderRadius: "4px", background: displayVerdict === "CE" ? "rgba(239, 68, 68, 0.15)" : "rgba(16, 185, 129, 0.15)", color: displayVerdict === "CE" ? "#ef4444" : (isLight ? "#16a34a" : "#4ade80") }}>
-                          {displayVerdict === "CE" ? "✕ Failed" : "✓ Successful"}
-                        </span>
-                      </div>
-                      <strong style={{ fontSize: "0.92rem", color: isLight ? "#0f172a" : "#f8fafc" }}>
-                        {result.compiler?.name ? `${result.compiler.name} ${result.compiler.version || ""}` : language}
-                      </strong>
-                      <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#64748b" }}>
-                        Compilation Time: <strong style={{ color: isLight ? "#0f172a" : "#cbd5e1" }}>{result.compiler?.timeMs || result.compilation_time_ms || 0} ms</strong>
+                    <div className="result-verdict-main">
+                      <span className="result-verdict-icon" aria-hidden="true">
+                        {displayVerdict === "AC" ? (
+                          <CheckCircle2 size={28} />
+                        ) : displayVerdict === "CE" ? (
+                          <AlertTriangle size={28} />
+                        ) : (
+                          <XCircle size={28} />
+                        )}
                       </span>
+                      <div>
+                        <strong className="result-verdict-title">
+                          {displayVerdict === "AC"
+                            ? "Accepted"
+                            : displayVerdict === "CE"
+                            ? "Compilation Error"
+                            : displayVerdict === "WA"
+                            ? "Wrong Answer"
+                            : displayVerdict === "TLE"
+                            ? "Time Limit Exceeded"
+                            : displayVerdict === "RE"
+                            ? "Runtime Error"
+                            : displayVerdict === "SYSTEM_ERROR"
+                            ? "System Error"
+                            : displayStatusText}
+                        </strong>
+                        <span className="result-verdict-subtitle">
+                          {displayVerdict === "AC"
+                            ? `Your code passed all ${totalCasesNum} test cases.`
+                            : displayVerdict === "CE"
+                            ? "The compiler rejected this submission."
+                            : displayVerdict === "TLE"
+                            ? "Your solution exceeded the execution time limit."
+                            : displayVerdict === "RE"
+                            ? "Your program exited unexpectedly during execution."
+                            : displayVerdict === "SYSTEM_ERROR"
+                            ? "The execution service could not complete this run."
+                            : `Passed ${passedCountNum} of ${totalCasesNum} test cases.`}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* PANEL 2: EXECUTION METRICS */}
-                    <div className="execution-summary-card" style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          <Zap size={15} style={{ color: "#38bdf8" }} />
-                          <span style={{ fontSize: "0.74rem", fontWeight: "700", textTransform: "uppercase", color: isLight ? "#64748b" : "#94a3b8" }}>Execution</span>
-                        </div>
-                        <span style={{ fontSize: "0.72rem", fontWeight: "700", padding: "2px 6px", borderRadius: "4px", background: displayVerdict === "CE" ? "rgba(100, 116, 139, 0.15)" : displayVerdict === "AC" ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)", color: displayVerdict === "CE" ? "#64748b" : displayVerdict === "AC" ? (isLight ? "#16a34a" : "#4ade80") : "#ef4444" }}>
-                          {displayVerdict === "CE" ? "Not Executed" : displayVerdict === "AC" ? "✓ Accepted" : displayVerdict}
-                        </span>
+                    <div className="result-verdict-metrics">
+                      <div>
+                        <Clock3 size={16} />
+                        <span><strong>{displayRuntime}</strong><small>Runtime</small></span>
                       </div>
-                      {displayVerdict === "CE" ? (
-                        <span style={{ fontSize: "0.82rem", color: isLight ? "#64748b" : "#64748b", fontStyle: "italic" }}>
-                          Execution aborted due to compile error.
-                        </span>
-                      ) : (
-                        <>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                            <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#94a3b8" }}>Runtime:</span>
-                            <strong style={{ fontSize: "0.92rem", color: isLight ? "#0f172a" : "#f8fafc" }}>{displayRuntime}</strong>
-                          </div>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                            <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#94a3b8" }}>Peak Memory:</span>
-                            <strong style={{ fontSize: "0.92rem", color: isLight ? "#0f172a" : "#f8fafc" }}>{displayMemory}</strong>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    {/* PANEL 3: ALGORITHM COMPLEXITY ANALYSIS (AST) */}
-                    <div className="execution-summary-card" style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "10px", padding: "12px 14px", display: "flex", flexDirection: "column", gap: "6px" }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                          <Brain size={15} style={{ color: "#c084fc" }} />
-                          <span style={{ fontSize: "0.74rem", fontWeight: "700", textTransform: "uppercase", color: isLight ? "#64748b" : "#94a3b8" }}>Algorithm Analysis</span>
-                        </div>
-                        <span style={{ fontSize: "0.7rem", fontWeight: "600", color: "#818cf8" }}>
-                          {result.complexity?.confidence || "Unavailable"} Confidence
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                        <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#94a3b8" }}>Time Complexity:</span>
-                        <strong style={{ fontSize: "0.92rem", color: "#6366f1" }}>{result.complexity?.time || "Unable to determine reliably"}</strong>
-                      </div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                        <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#94a3b8" }}>Space Complexity:</span>
-                        <strong style={{ fontSize: "0.92rem", color: "#8b5cf6" }}>{result.complexity?.space || "Unable to determine reliably"}</strong>
+                      <div>
+                        <MemoryStick size={16} />
+                        <span><strong>{displayMemory}</strong><small>Memory</small></span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Structural Complexity Explanation Bar */}
-                  {result.complexity?.explanation && (
-                    <div className="structural-analysis-bar" style={{ background: isLight ? "rgba(99, 102, 241, 0.06)" : "rgba(120, 80, 255, 0.06)", border: isLight ? "1px solid rgba(99, 102, 241, 0.2)" : "1px solid rgba(120, 80, 255, 0.2)", borderRadius: "8px", padding: "10px 14px", fontSize: "0.82rem", color: isLight ? "#334155" : "#cbd5e1", display: "flex", alignItems: "flex-start", gap: "8px" }}>
-                      <Brain size={16} style={{ color: "#6366f1", flexShrink: 0, marginTop: "2px" }} />
-                      <div>
-                        <strong style={{ color: isLight ? "#4338ca" : "#a5b4fc" }}>Structural Code Analysis: </strong>
-                        <span>{result.complexity.explanation}</span>
-                      </div>
-                    </div>
-                  )}
+                  {resultCases.length ? (
+                    <section className="result-testcases-card">
+                      <header>
+                        <strong>Test Cases</strong>
+                        <span className={displayVerdict === "AC" ? "is-passed" : "is-failed"}>
+                          <CheckCircle2 size={14} />
+                          {resultCases.filter((testCase) => testCase?.passed).length} / {resultCases.length} passed
+                        </span>
+                      </header>
 
-                  {/* Compilation Error Diagnostics if present */}
-                  {displayVerdict === "CE" && (result.compileOutput || result.stderr || result.compiler?.stderr) && (
-                    <div style={{ background: isLight ? "#fef2f2" : "rgba(239, 68, 68, 0.08)", border: isLight ? "1px solid #fecaca" : "1px solid rgba(239, 68, 68, 0.3)", borderRadius: "8px", padding: "12px", color: isLight ? "#991b1b" : "#fca5a5", fontSize: "0.82rem" }}>
-                      <strong style={{ color: "#ef4444" }}>Compiler Diagnostic Error:</strong>
-                      <pre style={{ margin: "6px 0 0 0", color: isLight ? "#991b1b" : "#fca5a5", fontFamily: "monospace", fontSize: "0.8rem", whiteSpace: "pre-wrap" }}>
-                        {result.compileOutput || result.stderr || result.compiler?.stderr}
+                      <div className="result-testcase-list">
+                        {resultCases.map((testCase, index) => {
+                          const passed = Boolean(testCase?.passed);
+                          const expanded = expandedResultCaseIndex === index;
+                          return (
+                            <div className={`result-testcase-row${passed ? " is-passed" : " is-failed"}`} key={testCase?.id || index}>
+                              <button
+                                type="button"
+                                aria-expanded={expanded}
+                                onClick={() => {
+                                  setSelectedCaseIndex(index);
+                                  setExpandedResultCaseIndex(expanded ? null : index);
+                                }}
+                              >
+                                {passed ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+                                <span>Test Case {index + 1}</span>
+                                <strong>{passed ? "Passed" : formatDisplayValue(testCase?.verdict, "Failed")}</strong>
+                                <ChevronDown size={15} className={expanded ? "is-expanded" : ""} />
+                              </button>
+
+                              {expanded ? (
+                                <div className="result-testcase-details">
+                                  <div>
+                                    <span>Input</span>
+                                    <pre>{formatDisplayValue(testCase?.input, "No input")}</pre>
+                                  </div>
+                                  <div>
+                                    <span>Expected</span>
+                                    <pre>{formatDisplayValue(testCase?.expectedOutput, "Not provided")}</pre>
+                                  </div>
+                                  <div>
+                                    <span>Your output</span>
+                                    <pre>{formatDisplayValue(testCase?.actualOutput || testCase?.stdout, "No output")}</pre>
+                                  </div>
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ) : (
+                    <div className="result-diagnostic-card">
+                      <strong>Diagnostic</strong>
+                      <pre>
+                        {formatDisplayValue(
+                          result.compileOutput || result.stderr || result.compiler?.stderr || result.diagnostic || result.statusText,
+                          "No diagnostic details were returned."
+                        )}
                       </pre>
                     </div>
                   )}
 
-                  {/* Failure Difference Box if present */}
-                  {currentTestResult?.difference && !currentTestResult?.passed && displayVerdict !== "CE" && (
-                    <div style={{ background: isLight ? "#fef2f2" : "rgba(239, 68, 68, 0.08)", border: isLight ? "1px solid #fecaca" : "1px solid rgba(239, 68, 68, 0.25)", borderRadius: "8px", padding: "10px 14px", color: isLight ? "#991b1b" : "#fca5a5", fontSize: "0.82rem", display: "flex", gap: "8px", alignItems: "flex-start" }}>
-                      <strong style={{ color: "#ef4444", whiteSpace: "nowrap" }}>Difference:</strong>
-                      <span style={{ fontFamily: "monospace" }}>{currentTestResult.difference}</span>
-                    </div>
-                  )}
-
-                  {/* 3-Column Input / Expected Output / Your Output Grid (Only shown when not CE) */}
-                  {displayVerdict !== "CE" && (
-                    <div className="result-io-grid" style={{ display: "grid", gap: "10px" }}>
-                      <div style={{ background: isLight ? "#f8fafc" : "#080c14", padding: "10px", borderRadius: "8px", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)" }}>
-                        <span style={{ fontSize: "0.75rem", color: isLight ? "#64748b" : "#64748b", fontWeight: "bold" }}>Input</span>
-                        <pre style={{ margin: "4px 0 0 0", color: isLight ? "#334155" : "#cbd5e1", fontFamily: "monospace", fontSize: "0.82rem", whiteSpace: "pre-wrap" }}>
-                          {formatDisplayValue(currentTestResult?.input || activeExample?.input)}
-                        </pre>
-                      </div>
-
-                      <div style={{ background: isLight ? "#f8fafc" : "#080c14", padding: "10px", borderRadius: "8px", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)" }}>
-                        <span style={{ fontSize: "0.75rem", color: isLight ? "#64748b" : "#64748b", fontWeight: "bold" }}>Expected Output</span>
-                        <pre style={{ margin: "4px 0 0 0", color: isLight ? "#16a34a" : "#4ade80", fontFamily: "monospace", fontSize: "0.82rem", whiteSpace: "pre-wrap" }}>
-                          {formatDisplayValue(currentTestResult?.expectedOutput || activeExample?.output)}
-                        </pre>
-                      </div>
-
-                      <div style={{ background: isLight ? "#f8fafc" : "#080c14", padding: "10px", borderRadius: "8px", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)" }}>
-                        <span style={{ fontSize: "0.75rem", color: isLight ? "#64748b" : "#64748b", fontWeight: "bold" }}>Your Output</span>
-                        <pre style={{ margin: "4px 0 0 0", color: (currentTestResult?.passed || displayVerdict === "AC") ? (isLight ? "#16a34a" : "#4ade80") : "#f87171", fontFamily: "monospace", whiteSpace: "pre-wrap" }}>
-                          {formatDisplayValue(
-                            currentTestResult?.stdout ||
-                              currentTestResult?.actualOutput ||
-                              result?.stdout ||
-                              (result?.output && result?.output !== "Evaluation finished" ? result.output : "") ||
-                              "(No output)"
-                          )}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* AI Hint Footer Banner */}
-                  <div className="ai-verification-banner" style={{ background: isLight ? "rgba(99, 102, 241, 0.08)" : "rgba(120, 80, 255, 0.08)", border: isLight ? "1px solid rgba(99, 102, 241, 0.2)" : "1px solid rgba(120, 80, 255, 0.2)", borderRadius: "8px", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div className="ai-verification-copy" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <Sparkles size={16} style={{ color: "#a855f7" }} />
-                      <div>
-                        <strong style={{ color: isLight ? "#7c3aed" : "#c084fc", fontSize: "0.82rem" }}>AI Verification & Explanation</strong>
-                        <p style={{ margin: "2px 0 0 0", color: isLight ? "#475569" : "#cbd5e1", fontSize: "0.78rem" }}>
-                          {displayVerdict === "AC"
-                            ? "Solution accepted! You can run AI Review to explore alternative paradigms."
-                            : "Inspect the compilation/execution diagnostics above or request instant AI assistance."}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveConsoleTab("ai");
-                        fetchAIReview();
-                      }}
-                      style={{ background: "#7850ff", border: "none", borderRadius: "6px", color: "#fff", fontSize: "0.78rem", fontWeight: "bold", padding: "6px 12px", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" }}
-                    >
-                      <Sparkles size={13} />
-                      Explain with AI
-                    </button>
+                  <div className="result-complexity-row">
+                    <div><Brain size={16} /><strong>Complexity</strong></div>
+                    <span>
+                      <strong>{result.complexity?.time || "Unavailable"}</strong> time
+                      <i>•</i>
+                      <strong>{result.complexity?.space || "Unavailable"}</strong> space
+                    </span>
                   </div>
+
+                  <p className="result-footnote">
+                    <Info size={13} /> Results are based on the test cases returned by the execution service.
+                  </p>
                 </div>
               ) : (
                 <div style={{ padding: "2rem", textAlign: "center", color: "#64748b", border: "1px dashed rgba(255,255,255,0.1)", borderRadius: "8px" }}>

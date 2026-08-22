@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Code2,
   Cpu,
@@ -17,7 +17,6 @@ import {
   ArrowRight,
   ChevronRight,
   Terminal,
-  Play,
   Share2,
   Star,
   Users,
@@ -256,11 +255,7 @@ function HeroCodeView({ lang = "python" }) {
 }
 
 export default function LandingPage() {
-  const navigate = useNavigate();
-  const [selectedLang, setSelectedLang] = useState("python");
   const [activeAiTab, setActiveAiTab] = useState(aiTabs[0]);
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [executionPassed, setExecutionPassed] = useState(true);
 
   // Contest Countdown State
   const [countdown, setCountdown] = useState({ days: 2, hours: 14, mins: 32, secs: 45 });
@@ -277,15 +272,6 @@ export default function LandingPage() {
     }, 1000);
     return () => clearInterval(timer);
   }, []);
-
-  function handleRunMockCode() {
-    setIsExecuting(true);
-    setExecutionPassed(false);
-    setTimeout(() => {
-      setIsExecuting(false);
-      setExecutionPassed(true);
-    }, 900);
-  }
 
   return (
     <div className="landing-container">
@@ -343,11 +329,7 @@ export default function LandingPage() {
             2. HERO SECTION
             ========================================================== */}
         <section className="lp-hero-section">
-          <motion.div
-            initial={{ opacity: 0, y: 25 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-          >
+          <div>
             <div className="hero-badge-pill">
               <span className="pulsing-dot" />
               <span>Next-Gen Competitive Programming & AI Mentorship</span>
@@ -377,13 +359,9 @@ export default function LandingPage() {
               </Link>
             </div>
 
-            {/* Animated Platform Capabilities & Micro-Stats Showcase */}
+            {/* Static Platform Capabilities */}
             <div className="hero-feature-pills-row">
-              <motion.div
-                className="hero-feature-pill"
-                whileHover={{ y: -3, scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-              >
+              <div className="hero-feature-pill">
                 <div className="pill-icon-box cyan">
                   <Zap size={15} />
                 </div>
@@ -391,13 +369,9 @@ export default function LandingPage() {
                   <span className="pill-title">&lt; 45ms Sandbox</span>
                   <span className="pill-sub">Real-Time Execution</span>
                 </div>
-              </motion.div>
+              </div>
 
-              <motion.div
-                className="hero-feature-pill"
-                whileHover={{ y: -3, scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-              >
+              <div className="hero-feature-pill">
                 <div className="pill-icon-box purple">
                   <Brain size={15} />
                 </div>
@@ -405,13 +379,9 @@ export default function LandingPage() {
                   <span className="pill-title">AI Mentor</span>
                   <span className="pill-sub">Adaptive Hint Engine</span>
                 </div>
-              </motion.div>
+              </div>
 
-              <motion.div
-                className="hero-feature-pill"
-                whileHover={{ y: -3, scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-              >
+              <div className="hero-feature-pill">
                 <div className="pill-icon-box emerald">
                   <Flame size={15} />
                 </div>
@@ -419,33 +389,12 @@ export default function LandingPage() {
                   <span className="pill-title">Live Arena</span>
                   <span className="pill-sub">Weekly Contests</span>
                 </div>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* Right Side Interactive IDE Mockup */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, delay: 0.15 }}
-            className="hero-mockup-wrapper"
-          >
-            {/* Top Floating Badge: Leaderboard Trophy */}
-            <div className="floating-hero-card rank-trophy-card">
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <div style={{ background: "rgba(120, 80, 255, 0.15)", padding: "6px", borderRadius: "8px" }}>
-                  <Trophy size={18} color="#7c3aed" />
-                </div>
-                <div>
-                  <span className="rank-trophy-title">
-                    Global Rank #14
-                  </span>
-                  <span className="rank-trophy-sub">Top 1% Algorithmic Master</span>
-                </div>
               </div>
             </div>
+          </div>
 
-            {/* Main IDE Container */}
+          {/* Right Side Static Judge Architecture */}
+          <div className="hero-mockup-wrapper hero-static-showcase">
             <div className="hero-ide-card">
               <div className="ide-header-bar">
                 <div className="ide-window-dots">
@@ -454,88 +403,50 @@ export default function LandingPage() {
                   <span className="ide-dot green" />
                 </div>
 
-                <div className="ide-lang-tabs">
-                  <button
-                    className={`ide-tab ${selectedLang === "python" ? "active" : ""}`}
-                    onClick={() => setSelectedLang("python")}
-                  >
-                    Python 3
-                  </button>
-                  <button
-                    className={`ide-tab ${selectedLang === "javascript" ? "active" : ""}`}
-                    onClick={() => setSelectedLang("javascript")}
-                  >
-                    JavaScript
-                  </button>
-                  <button
-                    className={`ide-tab ${selectedLang === "cpp" ? "active" : ""}`}
-                    onClick={() => setSelectedLang("cpp")}
-                  >
-                    C++ 20
-                  </button>
+                <div className="hero-static-file">
+                  <FileCode2 size={14} />
+                  <span>two_sum.py</span>
                 </div>
 
-                <button
-                  onClick={handleRunMockCode}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    background: "linear-gradient(135deg, #7850ff, #00c3ff)",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "6px",
-                    padding: "4px 12px",
-                    fontSize: "0.78rem",
-                    fontWeight: 600,
-                    cursor: "pointer"
-                  }}
-                >
-                  <Play size={12} fill="#fff" />
-                  {isExecuting ? "Executing..." : "Run Solution"}
-                </button>
+                <span className="hero-static-secure"><ShieldCheck size={13} /> Isolated</span>
               </div>
 
-              {/* Code Area */}
+              {/* Fixed code sample */}
               <div className="ide-code-body">
-                <HeroCodeView lang={selectedLang} />
+                <HeroCodeView lang="python" />
               </div>
 
-              {/* Footer Evaluation Bar */}
+              <div className="hero-static-pipeline" aria-label="Judgo execution pipeline">
+                <span><Code2 size={15} /> Source</span>
+                <ChevronRight size={14} />
+                <span><Cpu size={15} /> Queue</span>
+                <ChevronRight size={14} />
+                <span><ShieldCheck size={15} /> Sandbox</span>
+                <ChevronRight size={14} />
+                <span className="pipeline-verdict"><CheckCircle2 size={15} /> Verdict</span>
+              </div>
+
+              {/* Static evaluation summary */}
               <div className="ide-footer-bar">
                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  {executionPassed ? (
-                    <span className="ide-verdict-pill">
-                      <CheckCircle2 size={14} />
-                      Accepted (AC)
-                    </span>
-                  ) : (
-                    <span className="ide-verdict-pill" style={{ background: "rgba(255, 107, 53, 0.15)", color: "#ff6b35", borderColor: "#ff6b35" }}>
-                      <Zap size={14} />
-                      Running Sandbox...
-                    </span>
-                  )}
+                  <span className="ide-verdict-pill">
+                    <CheckCircle2 size={14} />
+                    Accepted
+                  </span>
                   <span className="ide-testcases-count">Testcases: 42/42 Passed</span>
                 </div>
 
                 <div className="ide-metrics">
-                  <span>⚡ Measured runtime</span>
-                  <span>💾 Measured peak memory</span>
+                  <span>10 ms</span>
+                  <span>10.27 MB</span>
                 </div>
               </div>
             </div>
-
-            {/* Bottom Floating Card: AI Mentor Review */}
-            <div className="floating-hero-card ai-review-card">
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                <Sparkles size={16} color="#00c3ff" />
-                <strong className="ai-review-title">AI Code Review</strong>
-              </div>
-              <p className="ai-review-desc">
-                Optimal O(N) time with Hash Map lookup. Solution avoids redundant nested loops.
-              </p>
+            <div className="hero-static-caption">
+              <span>Production judge architecture</span>
+              <strong>Deterministic. Sandboxed. Observable.</strong>
             </div>
-          </motion.div>
+          </div>
         </section>
 
         {/* ==========================================================
