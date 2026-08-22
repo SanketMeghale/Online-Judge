@@ -444,7 +444,7 @@ export default function AICoachPage() {
   const [inputVal, setInputVal] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [chatError, setChatError] = useState(null);
-  const chatBottomRef = useRef(null);
+  const chatScrollRef = useRef(null);
 
   // Code Review Tab State
   const [codeReviewSnippet, setCodeReviewSnippet] = useState("");
@@ -512,8 +512,11 @@ export default function AICoachPage() {
 
   // Auto-scroll chat to bottom
   useEffect(() => {
-    if (activeTab === "mentor") {
-      chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (activeTab === "mentor" && chatScrollRef.current) {
+      chatScrollRef.current.scrollTo({
+        top: chatScrollRef.current.scrollHeight,
+        behavior: "smooth"
+      });
     }
   }, [messages, isTyping, activeTab]);
 
@@ -1157,6 +1160,7 @@ export default function AICoachPage() {
 
               {/* CHAT MESSAGES SCROLL AREA */}
               <div
+                ref={chatScrollRef}
                 style={{
                   flex: 1,
                   overflowY: "auto",
@@ -1303,7 +1307,6 @@ export default function AICoachPage() {
                   </div>
                 )}
 
-                <div ref={chatBottomRef} />
               </div>
 
               {/* CHAT INPUT BAR */}
