@@ -13,67 +13,60 @@ export class BaseAIProvider {
  * Google Gemini Provider via native REST API
  */
 export class GeminiProvider extends BaseAIProvider {
-  constructor(apiKey, model = "gemini-2.5-flash") {
+  constructor(apiKey, model = "gemini-3.6-flash") {
     super();
     this.apiKey = apiKey;
     this.model = model;
   }
 
   async generateCompletion({ systemPrompt, messages, temperature = 0.7, maxTokens = 1024 }) {
-    const contents = [];
-    if (systemPrompt) {
-      contents.push({
-        role: "user",
-        parts: [{ text: `SYSTEM INSTRUCTIONS:\n${systemPrompt}` }]
-      });
-      contents.push({
-        role: "model",
-        parts: [{ text: "Understood. I will strictly follow these instructions as the Judgo AI Mentor." }]
-      });
-    }
-
-    for (const m of messages) {
-      contents.push({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }]
-      });
-    }
-
-    const payload = {
-      contents,
-      generationConfig: {
-        temperature,
-        maxOutputTokens: maxTokens
-      }
-    };
-
-    const stableFallbackModel = "gemini-2.5-flash";
-    const models = this.model === stableFallbackModel
+    const interactionInput = messages
+      .map((message) => `${message.role === "assistant" ? "ASSISTANT" : "USER"}:\n${message.content}`)
+      .join("\n\n");
+    const supportedFallbackModel = "gemini-3.6-flash";
+    const models = this.model === supportedFallbackModel
       ? [this.model]
-      : [this.model, stableFallbackModel];
+      : [this.model, supportedFallbackModel];
 
     for (let index = 0; index < models.length; index += 1) {
       const model = models[index];
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${this.apiKey}`;
+      const url = "https://generativelanguage.googleapis.com/v1beta/interactions";
+      const payload = {
+        model,
+        input: interactionInput,
+        system_instruction: systemPrompt,
+        store: false,
+        generation_config: {
+          temperature,
+          max_output_tokens: maxTokens
+        }
+      };
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": this.apiKey
+        },
         body: JSON.stringify(payload)
       });
 
       if (!res.ok) {
         const errText = await res.text();
-        const canRetryStableModel = res.status === 404 && index < models.length - 1;
-        if (canRetryStableModel) {
-          console.warn(`[Gemini] Model '${model}' is unavailable; retrying with '${stableFallbackModel}'.`);
+        const canRetrySupportedModel = res.status === 404 && index < models.length - 1;
+        if (canRetrySupportedModel) {
+          console.warn(`[Gemini] Model '${model}' is unavailable; retrying with '${supportedFallbackModel}'.`);
           continue;
         }
         throw new Error(`Gemini API error (${res.status}) for model '${model}': ${errText}`);
       }
 
       const data = await res.json();
-      const candidate = data.candidates?.[0];
-      const text = candidate?.content?.parts?.map((p) => p.text).join("") || "";
+      const text = (data.steps || [])
+        .filter((step) => step.type === "model_output")
+        .flatMap((step) => step.content || [])
+        .filter((content) => content.type === "text")
+        .map((content) => content.text || "")
+        .join("");
       if (!text.trim()) {
         throw new Error(`Gemini API returned an empty completion for model '${model}'.`);
       }
@@ -216,7 +209,7 @@ export class LocalMentorProvider extends BaseAIProvider {
 export function getAIProvider() {
   const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (geminiKey) {
-    const geminiModel = String(process.env.GEMINI_MODEL || "gemini-2.5-flash").trim();
+    const geminiModel = String(process.env.GEMINI_MODEL || "gemini-3.6-flash").trim();
     return new GeminiProvider(geminiKey, geminiModel);
   }
 

@@ -31,17 +31,18 @@ test("Gemini is selected with the supported production default model", () => {
   withAIEnvironment({ GEMINI_API_KEY: "test-gemini-key" }, () => {
     const provider = getAIProvider();
     assert.ok(provider instanceof GeminiProvider);
-    assert.equal(provider.model, "gemini-2.5-flash");
+    assert.equal(provider.model, "gemini-3.6-flash");
   });
 });
 
-test("Gemini retries the stable model when a configured model returns 404", async () => {
+test("Gemini uses the Interactions API and retries the supported model after 404", async () => {
   const originalFetch = globalThis.fetch;
-  const requestedUrls = [];
+  const requests = [];
 
-  globalThis.fetch = async (url) => {
-    requestedUrls.push(String(url));
-    if (String(url).includes("gemini-3.6-flash")) {
+  globalThis.fetch = async (url, options) => {
+    const body = JSON.parse(options.body);
+    requests.push({ url: String(url), options, body });
+    if (body.model === "gemini-2.5-flash") {
       return new Response(JSON.stringify({ error: { message: "Model not found" } }), {
         status: 404,
         headers: { "Content-Type": "application/json" }
@@ -49,22 +50,29 @@ test("Gemini retries the stable model when a configured model returns 404", asyn
     }
 
     return new Response(
-      JSON.stringify({ candidates: [{ content: { parts: [{ text: "Gemini response" }] } }] }),
+      JSON.stringify({
+        steps: [{ type: "model_output", content: [{ type: "text", text: "Gemini response" }] }]
+      }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   };
 
   try {
-    const provider = new GeminiProvider("test-gemini-key", "gemini-3.6-flash");
+    const provider = new GeminiProvider("test-gemini-key", "gemini-2.5-flash");
     const reply = await provider.generateCompletion({
       systemPrompt: "Be concise.",
       messages: [{ role: "user", content: "Explain binary search." }]
     });
 
     assert.equal(reply, "Gemini response");
-    assert.equal(requestedUrls.length, 2);
-    assert.match(requestedUrls[0], /gemini-3\.6-flash/);
-    assert.match(requestedUrls[1], /gemini-2\.5-flash/);
+    assert.equal(requests.length, 2);
+    assert.equal(requests[0].url, "https://generativelanguage.googleapis.com/v1beta/interactions");
+    assert.equal(requests[0].body.model, "gemini-2.5-flash");
+    assert.equal(requests[1].body.model, "gemini-3.6-flash");
+    assert.equal(requests[1].body.system_instruction, "Be concise.");
+    assert.match(requests[1].body.input, /USER:\nExplain binary search\./);
+    assert.equal(requests[1].options.headers["x-goog-api-key"], "test-gemini-key");
+    assert.doesNotMatch(requests[1].url, /test-gemini-key/);
   } finally {
     globalThis.fetch = originalFetch;
   }
