@@ -1,303 +1,171 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, useReducedMotion, AnimatePresence } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   CheckCircle2,
   Target,
+  Flame,
   Zap,
-  ShieldCheck,
-  Activity,
-  Terminal as TerminalIcon,
-  Play,
-  RotateCcw,
   Sparkles,
-  Cpu
+  ChevronRight
 } from "lucide-react";
 import { getUserDisplayName } from "../../auth/displayName.js";
+import { calculateStreak, getWeekStreakStatus } from "../../data/appData.js";
 
-const SNIPPETS = [
-  {
-    id: "cpp",
-    label: "C++20",
-    filename: "judgo_engine.cpp",
-    complexity: "O(1) Space",
-    testcases: ["TC #1", "TC #2", "TC #3", "TC #4", "TC #5"],
-    lines: [
-      { num: 1, content: <><span className="syn-kw">template</span> &lt;<span className="syn-kw">typename</span> <span className="syn-type">T</span>&gt;</> },
-      { num: 2, content: <><span className="syn-kw">class</span> <span className="syn-fn">JudgoArena</span> &#123;</> },
-      { num: 3, indent: 1, content: <><span className="syn-kw">public</span>:</> },
-      { num: 4, indent: 2, content: <><span className="syn-kw">auto</span> <span className="syn-fn">evaluate</span>(<span className="syn-type">T</span>&amp; sol) &#123;</> },
-      { num: 5, indent: 2, content: <><span className="syn-kw">return</span> sol.<span className="syn-fn">solve</span>();</> },
-      { num: 6, indent: 1, content: <>&#125;</> },
-      { num: 7, content: <>&#125;;</> }
-    ]
-  },
-  {
-    id: "python",
-    label: "Python 3",
-    filename: "two_sum.py",
-    complexity: "O(N) Hash",
-    testcases: ["TC #1", "TC #2", "TC #3", "TC #4", "TC #5"],
-    lines: [
-      { num: 1, content: <><span className="syn-kw">def</span> <span className="syn-fn">twoSum</span>(nums: <span className="syn-type">list</span>[<span className="syn-type">int</span>], target: <span className="syn-type">int</span>):</> },
-      { num: 2, indent: 1, content: <><span className="syn-var">seen</span> = &#123;&#125;</> },
-      { num: 3, indent: 1, content: <><span className="syn-kw">for</span> i, n <span className="syn-kw">in</span> <span className="syn-fn">enumerate</span>(nums):</> },
-      { num: 4, indent: 2, content: <><span className="syn-kw">if</span> target - n <span className="syn-kw">in</span> seen:</> },
-      { num: 5, indent: 3, content: <><span className="syn-kw">return</span> [seen[target - n], i]</> },
-      { num: 6, indent: 2, content: <>seen[n] = i</> },
-      { num: 7, indent: 1, content: <><span className="syn-kw">return</span> []</> }
-    ]
-  },
-  {
-    id: "ts",
-    label: "TypeScript",
-    filename: "binary_search.ts",
-    complexity: "O(log N)",
-    testcases: ["TC #1", "TC #2", "TC #3", "TC #4", "TC #5"],
-    lines: [
-      { num: 1, content: <><span className="syn-kw">function</span> <span className="syn-fn">binarySearch</span>(arr: <span className="syn-type">number[]</span>, x: <span className="syn-type">number</span>) &#123;</> },
-      { num: 2, indent: 1, content: <><span className="syn-kw">let</span> [l, r] = [<span className="syn-num">0</span>, arr.length - <span className="syn-num">1</span>];</> },
-      { num: 3, indent: 1, content: <><span className="syn-kw">while</span> (l &lt;= r) &#123;</> },
-      { num: 4, indent: 2, content: <><span className="syn-kw">const</span> m = (l + r) &gt;&gt; <span className="syn-num">1</span>;</> },
-      { num: 5, indent: 2, content: <><span className="syn-kw">if</span> (arr[m] === x) <span className="syn-kw">return</span> m;</> },
-      { num: 6, indent: 2, content: <>arr[m] &lt; x ? (l = m + <span className="syn-num">1</span>) : (r = m - <span className="syn-num">1</span>);</> },
-      { num: 7, indent: 1, content: <>&#125; <span className="syn-kw">return</span> -<span className="syn-num">1</span>;</> }
-    ]
-  }
-];
+function HeroStreakCard({ liveUser, user, stats, weeklyGoal, dailyChallenge }) {
+  const activeDates = useMemo(() => {
+    return Array.isArray(liveUser?.activeDates) ? liveUser.activeDates : [];
+  }, [liveUser?.activeDates]);
 
-function CyberMatrixTerminal({ prefersReducedMotion }) {
-  const [activeSnippetIdx, setActiveSnippetIdx] = useState(0);
-  const [isRunning, setIsRunning] = useState(false);
-  const [passedCount, setPassedCount] = useState(5);
-  const [evalPhase, setEvalPhase] = useState("ready"); // "ready" | "compiling" | "testing" | "accepted"
-  const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0 });
-  const [isHovered, setIsHovered] = useState(false);
-  const cardRef = useRef(null);
+  const streakInfo = useMemo(() => {
+    return calculateStreak(activeDates, new Date());
+  }, [activeDates]);
 
-  const snippet = SNIPPETS[activeSnippetIdx];
+  const currentStreak = typeof stats?.currentStreak === "number"
+    ? stats.currentStreak
+    : typeof liveUser?.streak === "number"
+    ? liveUser.streak
+    : streakInfo.currentStreak;
 
-  // Auto-run evaluation sequence
-  const runEvaluation = () => {
-    if (isRunning) return;
-    setIsRunning(true);
-    setEvalPhase("compiling");
-    setPassedCount(0);
+  const bestStreak = Math.max(
+    stats?.bestStreak || 0,
+    liveUser?.bestStreak || 0,
+    streakInfo.bestStreak,
+    currentStreak
+  );
 
-    setTimeout(() => {
-      setEvalPhase("testing");
-      // Cascade testcases 1 by 1
-      let count = 0;
-      const tcInterval = setInterval(() => {
-        count += 1;
-        setPassedCount(count);
-        if (count >= 5) {
-          clearInterval(tcInterval);
-          setEvalPhase("accepted");
-          setIsRunning(false);
-        }
-      }, 240);
-    }, 500);
-  };
+  const isActiveToday = streakInfo.isActiveToday;
+  const weekDays = useMemo(() => {
+    return getWeekStreakStatus(activeDates, new Date());
+  }, [activeDates]);
 
-  // Cycle snippets automatically every 7 seconds
-  useEffect(() => {
-    if (isHovered || isRunning || prefersReducedMotion) return;
-    const interval = setInterval(() => {
-      setActiveSnippetIdx((prev) => {
-        const next = (prev + 1) % SNIPPETS.length;
-        return next;
-      });
-      runEvaluation();
-    }, 6500);
-    return () => clearInterval(interval);
-  }, [isHovered, isRunning, prefersReducedMotion]);
-
-  // Initial trigger
-  useEffect(() => {
-    runEvaluation();
-  }, [activeSnippetIdx]);
-
-  // 3D Parallax Mouse Move Handler
-  const handleMouseMove = (e) => {
-    if (prefersReducedMotion || !cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left - rect.width / 2;
-    const y = e.clientY - rect.top - rect.height / 2;
-    const rotateY = (x / (rect.width / 2)) * 8;
-    const rotateX = -(y / (rect.height / 2)) * 8;
-    setTilt({ rotateX, rotateY });
-  };
-
-  const handleMouseLeave = () => {
-    setIsHovered(false);
-    setTilt({ rotateX: 0, rotateY: 0 });
-  };
+  const solvedCount = stats?.solvedCount ?? liveUser?.solvedProblemIds?.length ?? 0;
+  const rating = stats?.rating ?? 1200;
+  const globalRank = stats?.globalRank ? `#${stats.globalRank}` : "#4";
+  const isDailySolved = dailyChallenge?.solved || false;
+  const dailyUrl = dailyChallenge?.id ? `/problems/${dailyChallenge.id}` : "/problems";
 
   return (
-    <div
-      className="dash-hero-right"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={handleMouseLeave}
-      onMouseMove={handleMouseMove}
-    >
-      {/* Background Cyber Glow */}
-      <div className="dash-editor-glow" aria-hidden="true" />
-
-      {/* Floating Top-Right Badge: Runtime Performance */}
-      <motion.div
-        animate={
-          prefersReducedMotion
-            ? { opacity: 1 }
-            : { y: [0, -5, 0], opacity: [0.95, 1, 0.95] }
-        }
-        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
-        className="dash-floating-chip chip-top-right"
-      >
-        <Zap size={13} style={{ color: "#38bdf8" }} />
-        <span>Runtime measured in the sandbox</span>
-      </motion.div>
-
-      {/* Floating Bottom-Left Badge: Memory & Complexity */}
-      <motion.div
-        animate={
-          prefersReducedMotion
-            ? { opacity: 1 }
-            : { y: [0, 5, 0], opacity: [0.95, 1, 0.95] }
-        }
-        transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
-        className="dash-floating-chip chip-bottom-left"
-      >
-        <ShieldCheck size={13} style={{ color: "#34d399" }} />
-        <span>Complexity derived from submitted source</span>
-      </motion.div>
-
-      {/* 3D Code Window Frame */}
-      <motion.div
-        ref={cardRef}
-        animate={{
-          rotateX: tilt.rotateX,
-          rotateY: tilt.rotateY,
-          scale: isHovered ? 1.02 : 1
-        }}
-        transition={{ type: "spring", stiffness: 280, damping: 22 }}
-        className="dash-code-window"
-      >
-        {/* Terminal Header */}
-        <div className="dash-code-header">
-          <div className="dash-code-dots">
-            <span className="dash-dot dot-close" />
-            <span className="dash-dot dot-minimize" />
-            <span className="dash-dot dot-maximize" />
+    <div className="dash-hero-right">
+      <div className="dash-hero-overview-card">
+        {/* Top Header Strip */}
+        <div className="dash-hero-card-header">
+          <div className="dash-card-title-group">
+            <div className="dash-streak-icon-box">
+              <Flame size={20} className="dash-flame-icon" />
+            </div>
+            <div>
+              <div className="dash-card-eyebrow">CONSISTENCY & STREAK</div>
+              <h3 className="dash-card-heading">
+                {currentStreak} Day{currentStreak === 1 ? "" : "s"} Active Streak
+              </h3>
+            </div>
           </div>
 
-          <div className="dash-code-filename">
-            <TerminalIcon size={12} style={{ color: "#818cf8" }} />
-            <span>{snippet.filename}</span>
+          <div className={`dash-streak-pill ${isActiveToday ? "active" : "pending"}`}>
+            <span className="dash-pill-dot" />
+            <span>{isActiveToday ? "Secured Today" : currentStreak > 0 ? "Keep Alive" : "Start Today"}</span>
           </div>
+        </div>
 
-          {/* Interactive Run / Trigger Button */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              runEvaluation();
-            }}
-            className="dash-run-code-btn"
-            title="Simulate Real-time Evaluation"
-          >
-            {isRunning ? (
+        {/* Motivational Status Text */}
+        <div className="dash-streak-status-banner">
+          <p className="dash-streak-hint">
+            {isActiveToday ? (
               <>
-                <RotateCcw size={10} className="animate-spin" />
-                <span>EVAL</span>
+                <Sparkles size={14} style={{ color: "#10b981", flexShrink: 0 }} />
+                <span>Great work! You've solved a problem today and secured your streak.</span>
+              </>
+            ) : currentStreak > 0 ? (
+              <>
+                <Flame size={14} style={{ color: "#f59e0b", flexShrink: 0 }} />
+                <span>Streak active from yesterday! Solve 1 problem today to keep it going.</span>
               </>
             ) : (
               <>
-                <Play size={10} fill="#10b981" />
-                <span>RUN</span>
+                <Target size={14} style={{ color: "#38bdf8", flexShrink: 0 }} />
+                <span>Solve today's curated challenge to start your consecutive streak.</span>
               </>
             )}
-          </button>
+          </p>
         </div>
 
-        {/* Code Body with Animated Laser Scan Beam */}
-        <div className="dash-code-body-wrapper">
-          <div className="dash-laser-scanline" />
-
-          <div className="dash-code-body">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={snippet.id}
-                initial={{ opacity: 0, y: 3 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -3 }}
-                transition={{ duration: 0.18 }}
-                style={{ display: "flex", flexDirection: "column", gap: "2px" }}
-              >
-                {snippet.lines.map((line, lIdx) => (
-                  <div
-                    key={lIdx}
-                    className={`code-line ${
-                      line.indent === 1
-                        ? "indent"
-                        : line.indent === 2
-                        ? "indent-2"
-                        : line.indent === 3
-                        ? "indent-3"
-                        : ""
-                    } ${evalPhase === "testing" && lIdx === (passedCount % snippet.lines.length) ? "active-eval" : ""}`}
-                  >
-                    <span className="code-ln">{line.num}</span>
-                    <span>{line.content}</span>
-                    {lIdx === snippet.lines.length - 1 && <span className="syn-cursor">|</span>}
-                  </div>
-                ))}
-              </motion.div>
-            </AnimatePresence>
+        {/* 7-Day Weekly Streak Grid */}
+        <div className="dash-hero-week-container">
+          <div className="dash-week-header">
+            <span className="dash-week-title">This Week's Activity</span>
+            <span className="dash-week-pb">Best: {bestStreak}d</span>
           </div>
-        </div>
-
-        {/* Live Testcase Matrix Cascade */}
-        <div className="dash-testcase-matrix">
-          {snippet.testcases.map((tc, idx) => {
-            const isPassed = idx < passedCount;
-            const isRunningThis = evalPhase === "testing" && idx === passedCount;
-            return (
+          <div className="dash-hero-week-grid">
+            {weekDays.map((d, idx) => (
               <div
                 key={idx}
-                className={`dash-tc-node ${isPassed ? "passed" : ""} ${isRunningThis ? "running" : ""}`}
+                className={`dash-week-day-node ${d.isCompleted ? "completed" : ""} ${d.isToday ? "today" : ""} ${d.isPast && !d.isCompleted ? "missed" : ""}`}
+                title={`${d.dayName} (${d.dateKey}): ${d.isCompleted ? "Active / Solved" : d.isToday ? "Today (Pending)" : "No submission"}`}
               >
-                {isPassed ? (
-                  <CheckCircle2 size={10} style={{ color: "#34d399" }} />
-                ) : (
-                  <Cpu size={10} />
-                )}
-                <span>TC{idx + 1}</span>
+                <span className="dash-day-name">{d.dayName[0]}</span>
+                <div className="dash-day-indicator">
+                  {d.isCompleted ? (
+                    <CheckCircle2 size={13} className="dash-day-check" />
+                  ) : (
+                    <span className="dash-day-num">{d.dayNumber}</span>
+                  )}
+                </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
 
-        {/* Terminal Footer with Live Ping Status */}
-        <div className="dash-code-footer">
-          <div className="dash-code-status">
-            <span className="status-ping-dot" />
-            <span>
-              {evalPhase === "compiling"
-                ? "COMPILING C++20..."
-                : evalPhase === "testing"
-                ? `EVALUATING (${passedCount}/5)...`
-                : "ALL 45/45 ACCEPTED"}
+        {/* 3-Column Arena Performance Snapshot */}
+        <div className="dash-hero-metrics-grid">
+          <div className="dash-hero-metric-cell">
+            <span className="dash-metric-label">SOLVED</span>
+            <span className="dash-metric-val">{solvedCount}</span>
+            <span className="dash-metric-sub">Challenges</span>
+          </div>
+          <div className="dash-hero-metric-cell">
+            <span className="dash-metric-label">RATING</span>
+            <span className="dash-metric-val text-blue">{rating}</span>
+            <span className="dash-metric-sub">{globalRank} Rank</span>
+          </div>
+          <div className="dash-hero-metric-cell">
+            <span className="dash-metric-label">WEEKLY GOAL</span>
+            <span className="dash-metric-val text-purple">
+              {weeklyGoal?.solved ?? Math.min(solvedCount, 5)}/{weeklyGoal?.target ?? 5}
+            </span>
+            <span className="dash-metric-sub">
+              {weeklyGoal?.isCompleted ? "✓ Done" : `${Math.max(0, (weeklyGoal?.target ?? 5) - (weeklyGoal?.solved ?? Math.min(solvedCount, 5)))} left`}
             </span>
           </div>
-
-          <div className="dash-latency-badge">
-            <Activity size={10} />
-            <span>{evalPhase === "accepted" ? "complete" : "evaluating"}</span>
-          </div>
         </div>
-      </motion.div>
+
+        {/* Daily Challenge Quick Link Strip */}
+        <Link to={dailyUrl} className="dash-hero-daily-strip">
+          <div className="dash-daily-left">
+            <div className="dash-daily-badge">
+              <Zap size={13} />
+            </div>
+            <div className="dash-daily-info">
+              <span className="dash-daily-tag">TODAY'S CHALLENGE</span>
+              <span className="dash-daily-name">{dailyChallenge?.title || "Daily Coding Challenge"}</span>
+            </div>
+          </div>
+          <div className="dash-daily-right">
+            {isDailySolved ? (
+              <span className="dash-daily-solved-pill">
+                <CheckCircle2 size={12} />
+                <span>Solved</span>
+              </span>
+            ) : (
+              <span className="dash-daily-solve-pill">
+                <span>Solve</span>
+                <ChevronRight size={12} />
+              </span>
+            )}
+          </div>
+        </Link>
+      </div>
     </div>
   );
 }
@@ -305,6 +173,8 @@ function CyberMatrixTerminal({ prefersReducedMotion }) {
 export default function DashboardHero({
   user,
   liveUser,
+  stats = null,
+  weeklyGoal = null,
   continueProblem = null,
   dailyChallenge = null
 }) {
@@ -439,8 +309,14 @@ export default function DashboardHero({
           </motion.div>
         </div>
 
-        {/* RIGHT COLUMN: Cyber Matrix Live Code Evaluator with Laser Scan */}
-        <CyberMatrixTerminal prefersReducedMotion={prefersReducedMotion} />
+        {/* RIGHT COLUMN: Static Coder Performance & Consistency Streak Card */}
+        <HeroStreakCard
+          liveUser={liveUser}
+          user={user}
+          stats={stats}
+          weeklyGoal={weeklyGoal}
+          dailyChallenge={dailyChallenge}
+        />
       </div>
     </motion.section>
   );

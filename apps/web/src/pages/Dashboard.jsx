@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Award, Flame, LineChart, RefreshCw, Target, Trophy } from "lucide-react";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
+import { calculateStreak } from "../data/appData.js";
 import { api } from "../api/apiClient.js";
 
 // Modular Dashboard Components
@@ -75,14 +76,21 @@ export default function Dashboard() {
       const rate = totalSubs > 0 ? ((acceptedCount / totalSubs) * 100).toFixed(1) : "0.0";
       const rating = 1200 + solvedCount * 15;
 
+      const streakStats = calculateStreak(
+        (snapshotUser?.activeDates || []).concat(
+          localSubs.filter((s) => s.verdict === "AC" || s.verdict === "OK" || s.verdict === "Accepted")
+        ),
+        new Date()
+      );
+
       const unsolved = localProblems.find((p) => !solvedSet.has(p.id)) || localProblems[0];
 
       setDashboardData({
         stats: {
           globalRank: 4,
           rating,
-          currentStreak: snapshotUser?.streak || (solvedCount > 0 ? 1 : 0),
-          bestStreak: Math.max(snapshotUser?.streak || 1, 1),
+          currentStreak: streakStats.currentStreak,
+          bestStreak: Math.max(snapshotUser?.bestStreak || 0, streakStats.bestStreak),
           acceptanceRate: `${rate}%`,
           acceptanceRateNum: Number(rate),
           solvedCount,
@@ -193,6 +201,8 @@ export default function Dashboard() {
       <DashboardHero
         user={user}
         liveUser={liveUser}
+        stats={stats}
+        weeklyGoal={weeklyGoal}
         continueProblem={continueProblem}
         dailyChallenge={dailyChallenge}
       />

@@ -27,6 +27,7 @@ import {
 import { api } from "../api/apiClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
+import { calculateStreak } from "../data/appData.js";
 import { useTheme } from "../context/ThemeContext.jsx";
 import DsaSkillTree from "../components/progress/DsaSkillTree.jsx";
 import LeetCodeActivityCalendar from "../components/progress/LeetCodeActivityCalendar.jsx";
@@ -172,6 +173,13 @@ export default function ProgressPage() {
       const liveUserData = getUserById(currentUserId);
       const solvedTotal = userProblems.filter((p) => p.status === "Solved").length;
 
+      const streakStats = calculateStreak(
+        (liveUserData?.activeDates || []).concat(
+          userSubmissions.filter((s) => s.verdict === "AC" || s.verdict === "OK" || s.verdict === "Accepted")
+        ),
+        new Date()
+      );
+
       setData({
         success: true,
         overview: {
@@ -184,8 +192,8 @@ export default function ProgressPage() {
           ceCount,
           tleCount,
           acceptanceRate,
-          currentStreak: solvedTotal > 0 ? 3 : 0,
-          bestStreak: Math.max(5, solvedTotal > 0 ? 3 : 0),
+          currentStreak: streakStats.currentStreak,
+          bestStreak: Math.max(liveUserData?.bestStreak || 0, streakStats.bestStreak),
           activeDaysCount: activityGrid.filter((a) => a.count > 0).length,
           contestRating: liveUserData?.ranking ? Math.max(1200, 1500 - liveUserData.ranking * 8) : 1200
         },

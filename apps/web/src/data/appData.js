@@ -368,7 +368,14 @@ export function enrichUser(database, user) {
   const submissions = Array.isArray(database?.submissions)
     ? database.submissions.filter((submission) => String(submission.userId) === String(user.id || user._id))
     : [];
-  const accepted = submissions.filter((submission) => submission.verdict === "AC").length;
+  const accepted = submissions.filter((submission) => submission.verdict === "AC" || submission.verdict === "OK" || submission.verdict === "Accepted").length;
+
+  const streakStats = calculateStreak(
+    (user.activeDates || []).concat(
+      submissions.filter((s) => s.verdict === "AC" || s.verdict === "OK" || s.verdict === "Accepted")
+    ),
+    new Date()
+  );
 
   return {
     ...user,
@@ -376,7 +383,9 @@ export function enrichUser(database, user) {
     solvedProblemIds: solvedList,
     attemptedProblemIds: Array.isArray(user.attemptedProblemIds) ? user.attemptedProblemIds : [],
     xp: typeof user.xp === "number" ? user.xp : 0,
-    streak: typeof user.streak === "number" ? user.streak : 1,
+    streak: streakStats.currentStreak,
+    bestStreak: Math.max(user.bestStreak || 0, streakStats.bestStreak),
+    activeDates: streakStats.activeDates,
     badges: Array.isArray(user.badges) ? user.badges : [],
     accuracy: submissions.length ? Math.round((accepted / submissions.length) * 100) : 0
   };
@@ -529,12 +538,162 @@ export function createSubmission(database, userId, problem, language, result) {
   };
 }
 
-function getClientDateKey(date = new Date()) {
+export function getClientDateKey(date = new Date()) {
+  if (!date) return null;
   const d = new Date(date);
+  if (isNaN(d.getTime())) return null;
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+export function parseDateKey(key) {
+  if (!key || typeof key !== "string") return null;
+  const parts = key.split("-").map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) return null;
+  const [y, m, d] = parts;
+  return new Date(y, m - 1, d, 12, 0, 0);
+}
+
+/**
+ * Calculates current streak, best streak, and sorted active dates from a list of submissions or timestamps
+ * @param {Array<Object|string>} submissionsOrDates
+ * @param {Date} [referenceDate=new Date()]
+ * @returns {{ currentStreak: number, bestStreak: number, activeDates: string[], lastActiveDate: string|null, isActiveToday: boolean, isActiveYesterday: boolean }}
+ */
+export function calculateStreak(submissionsOrDates = [], referenceDate = new Date()) {
+  const activeDateSet = new Set();
+
+  for (const item of submissionsOrDates) {
+    if (!item) continue;
+    let rawDate = null;
+    if (typeof item === "string" || typeof item === "number" || item instanceof Date) {
+      rawDate = item;
+    } else if (typeof item === "object") {
+      const isAccepted = item.verdict === "AC" || item.verdict === "OK" || item.verdict === "Accepted" || !item.verdict;
+      if (isAccepted) {
+        rawDate = item.submittedAt || item.createdAt || item.date || item.completedAt;
+      }
+    }
+
+    if (rawDate) {
+      const k = getClientDateKey(rawDate);
+      if (k) activeDateSet.add(k);
+    }
+  }
+
+  const sortedDates = Array.from(activeDateSet).sort();
+
+  if (sortedDates.length === 0) {
+    return {
+      currentStreak: 0,
+      bestStreak: 0,
+      activeDates: [],
+      lastActiveDate: null,
+      isActiveToday: false,
+      isActiveYesterday: false
+    };
+  }
+
+  // 1. Calculate historical best streak
+  let bestStreak = 0;
+  let tempStreak = 0;
+  let prevDate = null;
+
+  for (const dStr of sortedDates) {
+    const curDate = parseDateKey(dStr);
+    if (!curDate) continue;
+
+    if (prevDate) {
+      const diffMs = curDate.getTime() - prevDate.getTime();
+      const diffDays = Math.round(diffMs / (24 * 3600 * 1000));
+      if (diffDays === 1) {
+        tempStreak++;
+      } else if (diffDays > 1) {
+        tempStreak = 1;
+      }
+    } else {
+      tempStreak = 1;
+    }
+
+    if (tempStreak > bestStreak) {
+      bestStreak = tempStreak;
+    }
+    prevDate = curDate;
+  }
+
+  // 2. Calculate current active streak ending today or yesterday
+  const now = new Date(referenceDate);
+  const todayKey = getClientDateKey(now);
+
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = getClientDateKey(yesterday);
+
+  const isActiveToday = activeDateSet.has(todayKey);
+  const isActiveYesterday = activeDateSet.has(yesterdayKey);
+
+  let currentStreak = 0;
+
+  if (isActiveToday || isActiveYesterday) {
+    const startRunner = isActiveToday ? new Date(now) : new Date(yesterday);
+    startRunner.setHours(12, 0, 0, 0);
+
+    while (activeDateSet.has(getClientDateKey(startRunner))) {
+      currentStreak++;
+      startRunner.setDate(startRunner.getDate() - 1);
+    }
+  }
+
+  bestStreak = Math.max(bestStreak, currentStreak);
+
+  return {
+    currentStreak,
+    bestStreak,
+    activeDates: sortedDates,
+    lastActiveDate: sortedDates[sortedDates.length - 1] || null,
+    isActiveToday,
+    isActiveYesterday
+  };
+}
+
+/**
+ * Returns the 7 days of the current week (Monday -> Sunday) with completion status
+ * @param {Array<string>} activeDates
+ * @param {Date} [referenceDate=new Date()]
+ * @returns {Array<{ dayName: string, dayNumber: number, dateKey: string, isCompleted: boolean, isToday: boolean, isPast: boolean }>}
+ */
+export function getWeekStreakStatus(activeDates = [], referenceDate = new Date()) {
+  const activeSet = new Set(activeDates);
+  const ref = new Date(referenceDate);
+  const day = ref.getDay(); // 0 is Sun, 1 is Mon...
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+
+  const monday = new Date(ref);
+  monday.setDate(ref.getDate() + diffToMonday);
+  monday.setHours(12, 0, 0, 0);
+
+  const todayKey = getClientDateKey(ref);
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+  return days.map((name, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const dateKey = getClientDateKey(d);
+    const isCompleted = activeSet.has(dateKey);
+    const isToday = dateKey === todayKey;
+    const isPast = d <= ref;
+
+    return {
+      dayName: name,
+      dayNumber: d.getDate(),
+      dateKey,
+      isCompleted,
+      isToday,
+      isPast
+    };
+  });
 }
 
 export function updateUserAfterSubmission(user, problem, verdict) {
@@ -546,37 +705,26 @@ export function updateUserAfterSubmission(user, problem, verdict) {
   const todayKey = getClientDateKey();
   const isAc = verdict === "AC" || verdict === "OK" || verdict === "Accepted";
 
-  const activeDatesSet = new Set(Array.isArray(user.activeDates) ? user.activeDates : []);
-  if (isAc) {
-    activeDatesSet.add(todayKey);
-  }
-  const activeDates = Array.from(activeDatesSet).sort();
-
-  let currentStreak = typeof user.streak === "number" ? user.streak : 0;
-  if (activeDatesSet.has(todayKey)) {
-    let runner = new Date();
-    runner.setHours(12, 0, 0, 0);
-    let count = 0;
-    while (activeDatesSet.has(getClientDateKey(runner))) {
-      count++;
-      runner.setDate(runner.getDate() - 1);
-    }
-    currentStreak = count;
+  const rawActiveDates = Array.isArray(user.activeDates) ? [...user.activeDates] : [];
+  if (isAc && !rawActiveDates.includes(todayKey)) {
+    rawActiveDates.push(todayKey);
   }
 
-  const bestStreak = Math.max(user.bestStreak || 0, currentStreak);
+  const streakStats = calculateStreak(rawActiveDates, new Date());
+  const currentStreak = streakStats.currentStreak;
+  const bestStreak = Math.max(user.bestStreak || 0, streakStats.bestStreak);
 
   const currentStats = user.stats || { activeDays: 1, totalSubmissions: 0, acceptedSubmissions: 0 };
   const nextUser = {
     ...user,
     attemptedProblemIds,
-    activeDates,
+    activeDates: streakStats.activeDates,
     streak: currentStreak,
     bestStreak,
     lastActiveDate: isAc ? todayKey : user.lastActiveDate,
     stats: {
       ...currentStats,
-      activeDays: activeDates.length > 0 ? activeDates.length : (currentStreak > 0 ? currentStreak : 1),
+      activeDays: streakStats.activeDates.length > 0 ? streakStats.activeDates.length : (currentStreak > 0 ? currentStreak : 1),
       totalSubmissions: (currentStats.totalSubmissions || 0) + 1
     }
   };

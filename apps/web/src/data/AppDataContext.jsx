@@ -247,7 +247,36 @@ export function AppDataProvider({ children }) {
           updatedSubmissions.unshift(updatedObj);
         }
 
-        const nextDb = { ...current, submissions: updatedSubmissions };
+        const targetUserId = payload.userId || updatedSubmissions[existingIdx]?.userId;
+        const problemObj = (current.problems || []).find((p) => p.id === payload.problemId);
+        const isAc = updatedVerdict === "AC" || updatedVerdict === "OK" || updatedVerdict === "Accepted";
+
+        let updatedUsers = current.users;
+        if (targetUserId) {
+          updatedUsers = (current.users || []).map((u) => {
+            if (String(u.id) === String(targetUserId) || String(u._id) === String(targetUserId)) {
+              return updateUserAfterSubmission(u, problemObj || { id: payload.problemId }, updatedVerdict);
+            }
+            return u;
+          });
+        }
+
+        const updatedProblems = (current.problems || []).map((p) => {
+          if (p.id === payload.problemId) {
+            return {
+              ...p,
+              status: isAc ? "Solved" : p.status === "Solved" ? "Solved" : "Attempted",
+              userStats: {
+                solved: isAc ? true : !!p.userStats?.solved,
+                attempts: (p.userStats?.attempts || 0) + 1,
+                lastVerdict: updatedVerdict
+              }
+            };
+          }
+          return p;
+        });
+
+        const nextDb = { ...current, submissions: updatedSubmissions, users: updatedUsers, problems: updatedProblems };
         writeDatabase(nextDb);
         return nextDb;
       });
@@ -292,7 +321,50 @@ export function AppDataProvider({ children }) {
 
   async function waitForSubmission(submissionId, problemId, onUpdate) {
     const problem = getProblemById(database, problemId);
-    return pollUntilComplete(submissionId, problem, onUpdate);
+    const finalResult = await pollUntilComplete(submissionId, problem, onUpdate);
+
+    if (finalResult && finalResult.verdict) {
+      updateDatabase((current) => {
+        const matchingSub = current.submissions?.find(
+          (s) => String(s.id) === String(submissionId) || String(s.submissionId) === String(submissionId)
+        );
+        const subUserId = matchingSub?.userId;
+        const isAc = finalResult.verdict === "AC" || finalResult.verdict === "OK" || finalResult.verdict === "Accepted";
+
+        let updatedUsers = current.users;
+        if (subUserId) {
+          updatedUsers = (current.users || []).map((u) => {
+            if (String(u.id) === String(subUserId) || String(u._id) === String(subUserId)) {
+              return updateUserAfterSubmission(u, problem, finalResult.verdict);
+            }
+            return u;
+          });
+        }
+
+        const updatedProblems = (current.problems || []).map((p) => {
+          if (p.id === problemId) {
+            return {
+              ...p,
+              status: isAc ? "Solved" : p.status === "Solved" ? "Solved" : "Attempted",
+              userStats: {
+                solved: isAc ? true : !!p.userStats?.solved,
+                attempts: (p.userStats?.attempts || 0) + 1,
+                lastVerdict: finalResult.verdict
+              }
+            };
+          }
+          return p;
+        });
+
+        return {
+          ...current,
+          users: updatedUsers,
+          problems: updatedProblems
+        };
+      });
+    }
+
+    return finalResult;
   }
 
   // ── Submit Solution ───────────────────────────────────────────────────────────

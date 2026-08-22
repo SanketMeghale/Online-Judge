@@ -411,9 +411,17 @@ export class JudgeWorker {
     const userQuery = mongoose.Types.ObjectId.isValid(String(submission.userId))
       ? { $or: [{ _id: submission.userId }, { id: String(submission.userId) }] }
       : { id: String(submission.userId) };
+
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
     const update = verdict === "AC"
       ? {
-          $addToSet: { solvedProblemIds: submission.problemId, attemptedProblemIds: submission.problemId },
+          $addToSet: {
+            solvedProblemIds: submission.problemId,
+            attemptedProblemIds: submission.problemId,
+            activeDates: todayKey
+          },
           $inc: { xp: 50, "stats.totalSubmissions": 1, "stats.acceptedSubmissions": 1 }
         }
       : {
