@@ -486,7 +486,7 @@ export default function AICoachPage() {
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "14px",
+        gap: "10px",
         width: "100%",
         maxWidth: "1360px",
         margin: "0 auto",
@@ -494,7 +494,7 @@ export default function AICoachPage() {
         minHeight: "calc(100vh - 90px)"
       }}
     >
-      {/* 1. COMPACT HEADER */}
+      {/* 1. COMPACT DASHBOARD HEADER */}
       <header
         className="ai-mentor-header"
         style={{
@@ -502,36 +502,25 @@ export default function AICoachPage() {
           justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",
-          gap: "12px",
-          padding: "4px 0"
+          gap: "8px",
+          padding: "2px 0 0 0"
         }}
       >
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <h1
-              style={{
-                fontSize: "1.75rem",
-                fontWeight: "800",
-                color: isLight ? "#0f172a" : "#f8fafc",
-                margin: 0,
-                letterSpacing: "-0.02em"
-              }}
-            >
-              Judgo Intelligence
-            </h1>
-            <span style={{ fontSize: "0.72rem", background: isLight ? "rgba(124, 58, 237, 0.12)" : "rgba(124, 58, 237, 0.18)", color: isLight ? "#7c3aed" : "#c084fc", border: "1px solid rgba(124, 58, 237, 0.3)", padding: "2px 8px", borderRadius: "999px", fontWeight: "700" }}>
-              PRO
-            </span>
-          </div>
-          <p
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <h1
             style={{
-              color: isLight ? "#475569" : "#94a3b8",
-              fontSize: "0.86rem",
-              margin: "3px 0 0 0"
+              fontSize: "1.45rem",
+              fontWeight: "800",
+              color: isLight ? "#0f172a" : "#f8fafc",
+              margin: 0,
+              letterSpacing: "-0.02em"
             }}
           >
-            Your personal algorithmic intelligence suite for DSA mastery, mock interviews, and company preparation.
-          </p>
+            Judgo Intelligence
+          </h1>
+          <span style={{ fontSize: "0.68rem", background: isLight ? "rgba(124, 58, 237, 0.12)" : "rgba(124, 58, 237, 0.18)", color: isLight ? "#7c3aed" : "#c084fc", border: "1px solid rgba(124, 58, 237, 0.3)", padding: "1px 7px", borderRadius: "999px", fontWeight: "700" }}>
+            PRO
+          </span>
         </div>
 
         {/* Status indicator: ● Online */}
@@ -542,20 +531,20 @@ export default function AICoachPage() {
             gap: "6px",
             background: isLight ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.1)",
             border: "1px solid rgba(16, 185, 129, 0.25)",
-            padding: "5px 12px",
+            padding: "4px 10px",
             borderRadius: "999px",
-            fontSize: "0.78rem",
+            fontSize: "0.74rem",
             fontWeight: "600",
             color: isLight ? "#059669" : "#10b981"
           }}
         >
           <span
             style={{
-              width: "6px",
-              height: "6px",
+              width: "5px",
+              height: "5px",
               borderRadius: "50%",
               background: isLight ? "#059669" : "#10b981",
-              boxShadow: isLight ? "0 0 8px #059669" : "0 0 8px #10b981"
+              boxShadow: isLight ? "0 0 6px #059669" : "0 0 6px #10b981"
             }}
           />
           <span>AI Engine Online</span>
@@ -633,8 +622,8 @@ export default function AICoachPage() {
               display: "grid",
               gridTemplateColumns: "260px 1fr",
               gap: "14px",
-              height: "calc(100vh - 190px)",
-              minHeight: "560px"
+              height: "calc(100vh - 165px)",
+              minHeight: "580px"
             }}
           >
             {/* LEFT COLUMN: COMPACT TODAY'S FOCUS + WEAK TOPICS */}
