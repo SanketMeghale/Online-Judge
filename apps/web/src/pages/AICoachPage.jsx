@@ -488,9 +488,9 @@ export default function AICoachPage() {
         flexDirection: "column",
         gap: "14px",
         width: "100%",
-        maxWidth: "1240px",
+        maxWidth: "1360px",
         margin: "0 auto",
-        paddingBottom: "16px",
+        padding: "0 16px 16px 16px",
         minHeight: "calc(100vh - 90px)"
       }}
     >
@@ -631,20 +631,22 @@ export default function AICoachPage() {
             className="ai-mentor-grid"
             style={{
               display: "grid",
-              gridTemplateColumns: "340px 1fr",
-              gap: "16px",
-              height: "calc(100vh - 200px)",
-              minHeight: 0
+              gridTemplateColumns: "260px 1fr",
+              gap: "14px",
+              height: "calc(100vh - 190px)",
+              minHeight: "560px"
             }}
           >
-            {/* LEFT COLUMN: TODAY'S FOCUS + WEAK TOPICS */}
+            {/* LEFT COLUMN: COMPACT TODAY'S FOCUS + WEAK TOPICS */}
             <div
+              className="ai-mentor-sidebar-column"
               style={{
                 display: "flex",
                 flexDirection: "column",
-                gap: "14px",
+                gap: "10px",
                 height: "100%",
-                minHeight: 0
+                minHeight: 0,
+                overflowY: "auto"
               }}
             >
               {/* CARD 1: TODAY'S FOCUS */}
@@ -653,19 +655,20 @@ export default function AICoachPage() {
                   background: isLight ? "#ffffff" : "#0d111a",
                   border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
                   boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "0 2px 10px rgba(0,0,0,0.2)",
-                  borderRadius: "12px",
-                  padding: "18px 20px",
+                  borderRadius: "10px",
+                  padding: "12px 14px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "10px"
+                  gap: "8px",
+                  flexShrink: 0
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                    <Target size={14} style={{ color: "#a855f7" }} />
+                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                    <Target size={13} style={{ color: "#a855f7" }} />
                     <span
                       style={{
-                        fontSize: "0.72rem",
+                        fontSize: "0.68rem",
                         fontWeight: "700",
                         textTransform: "uppercase",
                         letterSpacing: "0.06em",
@@ -677,31 +680,36 @@ export default function AICoachPage() {
                   </div>
 
                   {todaysFocus?.isSolved && (
-                    <span style={{ fontSize: "0.68rem", color: isLight ? "#059669" : "#34d399", background: isLight ? "rgba(16, 185, 129, 0.12)" : "rgba(52, 211, 153, 0.15)", padding: "1px 6px", borderRadius: "4px", fontWeight: "700" }}>
+                    <span style={{ fontSize: "0.65rem", color: isLight ? "#059669" : "#34d399", background: isLight ? "rgba(16, 185, 129, 0.12)" : "rgba(52, 211, 153, 0.15)", padding: "1px 5px", borderRadius: "4px", fontWeight: "700" }}>
                       SOLVED ✓
                     </span>
                   )}
                 </div>
 
                 {profileLoading ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "6px 0" }}>
-                    <div style={{ width: "80%", height: "18px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.06)", borderRadius: "4px" }} />
-                    <div style={{ width: "40%", height: "14px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)", borderRadius: "4px" }} />
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px", padding: "4px 0" }}>
+                    <div style={{ width: "80%", height: "16px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.06)", borderRadius: "4px" }} />
+                    <div style={{ width: "40%", height: "12px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)", borderRadius: "4px" }} />
                   </div>
                 ) : (
                   <div>
                     <h3
                       style={{
-                        fontSize: "1.02rem",
+                        fontSize: "0.88rem",
                         fontWeight: "700",
                         color: isLight ? "#0f172a" : "#f8fafc",
-                        margin: "0 0 4px 0",
-                        lineHeight: "1.3"
+                        margin: "0 0 3px 0",
+                        lineHeight: "1.25",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical"
                       }}
                     >
                       {todaysFocus?.problem?.title || "Two Sum Array Target"}
                     </h3>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.78rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.72rem" }}>
                       <span style={{
                         color: todaysFocus?.problem?.difficulty === "Easy" ? (isLight ? "#059669" : "#34d399") : todaysFocus?.problem?.difficulty === "Hard" ? "#ef4444" : "#fbbf24",
                         fontWeight: "700"
@@ -714,16 +722,16 @@ export default function AICoachPage() {
                   </div>
                 )}
 
-                {/* Real Dynamic Progress Bar */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "2px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem" }}>
+                {/* Dynamic Progress Bar */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.70rem" }}>
                     <span style={{ color: isLight ? "#64748b" : "#94a3b8" }}>{todaysFocus?.progressText || "Not started"}</span>
                     <span style={{ color: isLight ? "#7c3aed" : "#c084fc", fontWeight: "700" }}>{todaysFocus?.progressPercent ?? 0}%</span>
                   </div>
                   <div
                     style={{
                       width: "100%",
-                      height: "6px",
+                      height: "4px",
                       background: isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)",
                       borderRadius: "999px",
                       overflow: "hidden"
@@ -747,43 +755,44 @@ export default function AICoachPage() {
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    gap: "6px",
+                    gap: "5px",
                     background: isLight ? "rgba(124, 58, 237, 0.1)" : "rgba(124, 58, 237, 0.15)",
                     border: isLight ? "1px solid rgba(124, 58, 237, 0.25)" : "1px solid rgba(124, 58, 237, 0.3)",
                     color: isLight ? "#6d28d9" : "#c084fc",
-                    borderRadius: "8px",
-                    padding: "8px 14px",
-                    fontSize: "0.82rem",
+                    borderRadius: "6px",
+                    padding: "6px 10px",
+                    fontSize: "0.76rem",
                     fontWeight: "600",
                     textDecoration: "none",
-                    marginTop: "4px",
+                    marginTop: "2px",
                     transition: "all 0.15s ease"
                   }}
                 >
                   <span>{todaysFocus?.isSolved ? "Practice Again" : "Solve Challenge"}</span>
-                  <ArrowRight size={14} />
+                  <ArrowRight size={12} />
                 </Link>
               </div>
 
-              {/* CARD 2: WEAK TOPICS */}
+              {/* CARD 2: PRIORITY WEAK TOPICS */}
               <div
                 style={{
                   background: isLight ? "#ffffff" : "#0d111a",
                   border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
                   boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "0 2px 10px rgba(0,0,0,0.2)",
-                  borderRadius: "12px",
-                  padding: "18px 20px",
+                  borderRadius: "10px",
+                  padding: "12px 14px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "12px",
-                  flex: 1
+                  gap: "8px",
+                  flex: 1,
+                  minHeight: 0
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <TrendingUp size={14} style={{ color: "#a855f7" }} />
+                <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                  <TrendingUp size={13} style={{ color: "#a855f7" }} />
                   <span
                     style={{
-                      fontSize: "0.72rem",
+                      fontSize: "0.68rem",
                       fontWeight: "700",
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
@@ -794,27 +803,27 @@ export default function AICoachPage() {
                   </span>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", overflowY: "auto", flex: 1 }}>
                   {profileLoading ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                       {[1, 2, 3].map((i) => (
-                        <div key={i} style={{ width: "100%", height: "24px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)", borderRadius: "4px" }} />
+                        <div key={i} style={{ width: "100%", height: "20px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)", borderRadius: "4px" }} />
                       ))}
                     </div>
                   ) : weakTopics.length === 0 ? (
-                    <div style={{ fontSize: "0.8rem", color: isLight ? "#64748b" : "#94a3b8", padding: "8px 0" }}>
-                      Start solving problems to unlock your personalized topic analytics!
+                    <div style={{ fontSize: "0.74rem", color: isLight ? "#64748b" : "#94a3b8", padding: "6px 0" }}>
+                      Start solving problems to unlock personalized topic analytics!
                     </div>
                   ) : (
                     weakTopics.slice(0, 3).map((t) => (
-                      <div key={t.topic} style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.82rem" }}>
-                          <span style={{ color: isLight ? "#0f172a" : "#f8fafc", fontWeight: "500" }}>{t.topic}</span>
+                      <div key={t.topic} style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.76rem" }}>
+                          <span style={{ color: isLight ? "#0f172a" : "#f8fafc", fontWeight: "500", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.topic}</span>
                           <span style={{ color: t.accuracy < 50 ? "#dc2626" : t.accuracy < 70 ? "#d97706" : "#059669", fontWeight: "700" }}>
                             {t.accuracy}%
                           </span>
                         </div>
-                        <div style={{ width: "100%", height: "6px", background: isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
+                        <div style={{ width: "100%", height: "4px", background: isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
                           <div
                             style={{
                               height: "100%",
@@ -825,15 +834,15 @@ export default function AICoachPage() {
                             }}
                           />
                         </div>
-                        <span style={{ fontSize: "0.68rem", color: isLight ? "#64748b" : "#64748b" }}>
-                          {t.solvedCount} of {t.attemptedCount} solved ({t.totalSubmissions} submissions)
+                        <span style={{ fontSize: "0.66rem", color: isLight ? "#64748b" : "#64748b" }}>
+                          {t.solvedCount}/{t.attemptedCount} solved ({t.totalSubmissions} subs)
                         </span>
                       </div>
                     ))
                   )}
                 </div>
 
-                <div style={{ marginTop: "auto", paddingTop: "8px" }}>
+                <div style={{ marginTop: "auto", paddingTop: "4px" }}>
                   <button
                     type="button"
                     onClick={() => setActiveTab("weak")}
@@ -841,17 +850,17 @@ export default function AICoachPage() {
                       background: "transparent",
                       border: "none",
                       color: isLight ? "#4f46e5" : "#818cf8",
-                      fontSize: "0.8rem",
+                      fontSize: "0.74rem",
                       fontWeight: "600",
                       cursor: "pointer",
                       display: "inline-flex",
                       alignItems: "center",
                       gap: "4px",
-                      padding: 0
+                      padding: "2px 0"
                     }}
                   >
                     <span>View all Topic Analytics</span>
-                    <ArrowRight size={13} />
+                    <ArrowRight size={12} />
                   </button>
                 </div>
               </div>
@@ -943,7 +952,8 @@ export default function AICoachPage() {
                         alignItems: "flex-start",
                         gap: "10px",
                         alignSelf: isAi ? "flex-start" : "flex-end",
-                        maxWidth: isAi ? "90%" : "80%"
+                        maxWidth: isAi ? "96%" : "85%",
+                        width: isAi ? "100%" : "auto"
                       }}
                     >
                       {isAi && (

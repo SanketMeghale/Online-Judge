@@ -1369,7 +1369,7 @@
   }
 
   .ai-mentor-grid {
-    grid-template-columns: 40% 60% !important;
+    grid-template-columns: 240px 1fr !important;
   }
 }
 
