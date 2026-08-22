@@ -35,6 +35,7 @@ import { useAuth } from "../../auth/AuthContext.jsx";
 import { useAppData } from "../../data/AppDataContext.jsx";
 import { calculateLocalHiringEvaluation, ensureDatabase } from "../../data/appData.js";
 import { useTheme } from "../../context/ThemeContext.jsx";
+import AIContentRenderer from "./AIContentRenderer.jsx";
 import "../../styles/mockInterview.css";
 
 const COMPANIES = [
@@ -68,134 +69,7 @@ const TRACKS = [
 
 const DIFFICULTIES = ["Junior (L3)", "Mid-Level (L4)", "Senior (L5)"];
 
-function MarkdownDialogueRenderer({ content = "" }) {
-  if (!content) return null;
-  const [copiedIndex, setCopiedIndex] = useState(null);
 
-  const handleCopy = (codeText, idx) => {
-    try {
-      navigator.clipboard.writeText(codeText);
-      setCopiedIndex(idx);
-      setTimeout(() => setCopiedIndex(null), 2000);
-    } catch {}
-  };
-
-  const renderInline = (text = "") => {
-    // Parse **bold**, *italic*, and `inline-code` or $math$
-    const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`|\$[^\$]+\$)/g);
-    return parts.map((part, i) => {
-      if (part.startsWith("**") && part.endsWith("**") && part.length >= 4) {
-        return (
-          <strong key={i} className="mock-bold-text">
-            {part.slice(2, -2)}
-          </strong>
-        );
-      }
-      if (part.startsWith("*") && part.endsWith("*") && part.length >= 2) {
-        return <em key={i}>{part.slice(1, -1)}</em>;
-      }
-      if (part.startsWith("`") && part.endsWith("`") && part.length >= 2) {
-        return (
-          <code key={i} className="mock-inline-code">
-            {part.slice(1, -1)}
-          </code>
-        );
-      }
-      if (part.startsWith("$") && part.endsWith("$") && part.length >= 2) {
-        return (
-          <code key={i} className="mock-inline-code">
-            {part.slice(1, -1)}
-          </code>
-        );
-      }
-      return part;
-    });
-  };
-
-  // Split by fenced code blocks ```
-  const codeBlocks = content.split(/(```[\s\S]*?```)/g);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-      {codeBlocks.map((block, bIdx) => {
-        if (block.startsWith("```") && block.endsWith("```")) {
-          const lines = block.slice(3, -3).split("\n");
-          const firstLine = lines[0].trim();
-          const hasLang = /^[a-zA-Z0-9_-]+$/.test(firstLine);
-          const lang = hasLang ? firstLine : "code";
-          const rawCode = (hasLang ? lines.slice(1) : lines).join("\n").trim();
-
-          return (
-            <div key={bIdx} className="mock-code-block-card">
-              <div className="mock-code-block-header">
-                <span>{lang.toUpperCase()}</span>
-                <button
-                  type="button"
-                  className="mock-copy-btn"
-                  onClick={() => handleCopy(rawCode, bIdx)}
-                >
-                  {copiedIndex === bIdx ? <Check size={12} style={{ color: "#34d399" }} /> : <Copy size={12} />}
-                  <span>{copiedIndex === bIdx ? "Copied" : "Copy"}</span>
-                </button>
-              </div>
-              <pre className="mock-code-block-content">
-                <code>{rawCode}</code>
-              </pre>
-            </div>
-          );
-        }
-
-        const lines = block.split("\n");
-        return (
-          <div key={bIdx} style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-            {lines.map((line, lIdx) => {
-              const trimmed = line.trim();
-              if (!trimmed) return <div key={lIdx} style={{ height: "4px" }} />;
-
-              if (trimmed.startsWith("### ")) {
-                return (
-                  <h4 key={lIdx} className="mock-chat-h3">
-                    {renderInline(trimmed.slice(4))}
-                  </h4>
-                );
-              }
-              if (trimmed.startsWith("## ")) {
-                return (
-                  <h3 key={lIdx} className="mock-chat-h3">
-                    {renderInline(trimmed.slice(3))}
-                  </h3>
-                );
-              }
-              if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
-                return (
-                  <div key={lIdx} className="mock-bullet-row">
-                    <span className="mock-bullet-dot" />
-                    <div style={{ flex: 1 }}>{renderInline(trimmed.slice(2))}</div>
-                  </div>
-                );
-              }
-              const numMatch = trimmed.match(/^(\d+\.)\s+(.+)$/);
-              if (numMatch) {
-                return (
-                  <div key={lIdx} className="mock-bullet-row">
-                    <span style={{ fontWeight: "700", color: "#818cf8", minWidth: "16px" }}>{numMatch[1]}</span>
-                    <div style={{ flex: 1 }}>{renderInline(numMatch[2])}</div>
-                  </div>
-                );
-              }
-
-              return (
-                <div key={lIdx} style={{ lineHeight: "1.55" }}>
-                  {renderInline(line)}
-                </div>
-              );
-            })}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 // Fallback high-fidelity problem repository covering all 8 companies and 3 tracks
 const FALLBACK_PROBLEMS = {
@@ -1133,7 +1007,7 @@ export default function MockInterviewStudio() {
                 <strong style={{ color: "#38bdf8", display: "block", marginBottom: "6px" }}>
                   Committee Evaluation Summary:
                 </strong>
-                <MarkdownDialogueRenderer content={scorecard.summary || "Candidate evaluation based on authenticated activity."} />
+                <AIContentRenderer content={scorecard.summary || "Candidate evaluation based on authenticated activity."} />
               </div>
 
               {/* Dynamic Strengths & Growth Areas */}
@@ -1162,7 +1036,7 @@ export default function MockInterviewStudio() {
                   <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "0.78rem", color: "#cbd5e1", display: "flex", flexDirection: "column", gap: "6px" }}>
                     {(scorecard.strengths || []).map((s, i) => (
                       <li key={i}>
-                        <MarkdownDialogueRenderer content={s} />
+                        <AIContentRenderer content={s} compact />
                       </li>
                     ))}
                   </ul>
@@ -1192,7 +1066,7 @@ export default function MockInterviewStudio() {
                   <ul style={{ margin: 0, paddingLeft: "18px", fontSize: "0.78rem", color: "#cbd5e1", display: "flex", flexDirection: "column", gap: "6px" }}>
                     {(scorecard.improvements || scorecard.growthAreas || []).map((s, i) => (
                       <li key={i}>
-                        <MarkdownDialogueRenderer content={s} />
+                        <AIContentRenderer content={s} compact />
                       </li>
                     ))}
                   </ul>
@@ -1258,7 +1132,7 @@ export default function MockInterviewStudio() {
                     <div className="mock-msg-meta">
                       <span>{msg.author || (msg.role === "assistant" ? "Interviewer" : "Candidate")}</span>
                     </div>
-                    <MarkdownDialogueRenderer content={msg.content} />
+                    <AIContentRenderer content={msg.content} isUser={msg.role !== "assistant"} />
                   </div>
                 ))}
 
@@ -1372,9 +1246,7 @@ export default function MockInterviewStudio() {
               {/* Evaluation Console if available */}
               {codeEvaluation && (
                 <div className="mock-code-eval-box">
-                  <div style={{ color: "#cbd5e1", fontSize: "0.82rem" }}>
-                    <MarkdownDialogueRenderer content={codeEvaluation} />
-                  </div>
+                  <AIContentRenderer content={codeEvaluation} />
                 </div>
               )}
             </div>

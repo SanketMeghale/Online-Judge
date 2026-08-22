@@ -25,6 +25,7 @@ import CodeEditor from "../components/editor/CodeEditor.jsx";
 import { ProblemErrorBoundary } from "../components/common/ProblemErrorBoundary.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
+import AIContentRenderer from "../components/ai/AIContentRenderer.jsx";
 
 // Universal safe formatting helper to prevent React render crashes from Objects/Arrays
 function formatDisplayValue(val, fallback = "") {
@@ -657,9 +658,16 @@ function ProblemDetailsInner() {
             </div>
             {showHint ? (
               <div style={{ background: isLight ? "#fefce8" : "#080c14", border: isLight ? "1px solid #fef08a" : "1px solid rgba(234, 179, 8, 0.2)", borderRadius: "8px", padding: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                <p style={{ color: isLight ? "#854d0e" : "#fef08a", fontSize: "0.82rem", margin: 0, lineHeight: "1.5" }}>
-                  {isHintLoading ? "Analyzing problem and generating personalized hint..." : (hintText || "💡 Consider identifying repeating subproblems and storing intermediate calculations.")}
-                </p>
+                <div style={{ color: isLight ? "#854d0e" : "#fef08a", fontSize: "0.82rem", margin: 0, lineHeight: "1.5" }}>
+                  {isHintLoading ? (
+                    <span>Analyzing problem and generating personalized hint...</span>
+                  ) : (
+                    <AIContentRenderer
+                      content={hintText || "💡 Consider identifying repeating subproblems and storing intermediate calculations."}
+                      compact
+                    />
+                  )}
+                </div>
                 {hintLevel < 4 && !isHintLoading && (
                   <button
                     type="button"
@@ -1026,8 +1034,8 @@ function ProblemDetailsInner() {
                       </div>
 
                       {/* Review Content Card */}
-                      <div style={{ background: "#080c14", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "16px", color: "#f1f5f9", fontSize: "0.88rem", lineHeight: "1.6", whiteSpace: "pre-wrap", maxHeight: "340px", overflowY: "auto" }}>
-                        {aiReview.review}
+                      <div style={{ background: isLight ? "#ffffff" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "16px", color: isLight ? "#334155" : "#f1f5f9", fontSize: "0.88rem", lineHeight: "1.6", maxHeight: "380px", overflowY: "auto" }}>
+                        <AIContentRenderer content={aiReview.review} />
                       </div>
                     </div>
                   ) : (

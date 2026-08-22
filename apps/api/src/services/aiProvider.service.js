@@ -146,9 +146,9 @@ export class LocalMentorProvider extends BaseAIProvider {
       return this.explainDSAConcept(lastMsg);
     }
 
-    // 4. Complexity Analysis
-    if (lower.includes("complexity") || lower.includes("big o") || lower.includes("time complexity") || lower.includes("space complexity")) {
-      return `### ⏱️ Algorithmic Complexity Breakdown\n\n- **Time Complexity Analysis:**\n  - **$O(N)$ (Linear Time):** When iterating through array/string elements with single pointers or hash-table lookups ($O(1)$ amortized).\n  - **$O(N \\log N)$:** Typical for sorting or divide-and-conquer / segment tree algorithms.\n  - **$O(N^2)$:** Nested loops (often optimized to $O(N)$ using Two Pointers or Sliding Window).\n\n- **Space Complexity Analysis:**\n  - **$O(1)$ Auxiliary Space:** In-place pointer modifications.\n  - **$O(N)$ Space:** Frequency maps, recursion call stack, or memoization tables.\n\nWould you like me to analyze a specific code snippet's runtime?`;
+    // 4. Complexity Analysis & Cheat Sheet
+    if (lower.includes("cheat sheet") || lower.includes("complexity") || lower.includes("big o") || lower.includes("time complexity") || lower.includes("space complexity")) {
+      return `### ⏱️ Algorithmic Complexity Cheat Sheet\n\n| Operation / Data Structure | Average Time | Worst Case Time | Space Complexity | Technical Notes |\n| :--- | :--- | :--- | :--- | :--- |\n| **Array Index Access** | $O(1)$ | $O(1)$ | $O(1)$ | Direct RAM pointer offset |\n| **Hash Map Lookup / Insert** | $O(1)$ | $O(N)$ | $O(N)$ | Amortized constant time via hashing |\n| **Binary Search** | $O(\\log N)$ | $O(\\log N)$ | $O(1)$ | Requires sorted array / monotonic space |\n| **Merge Sort / Heap Sort** | $O(N \\log N)$ | $O(N \\log N)$ | $O(N)$ / $O(1)$ | Divide and conquer sorting guarantee |\n| **Two Pointers Traversal** | $O(N)$ | $O(N)$ | $O(1)$ | Single linear scan with bounding pointers |\n| **Nested Loop Brute Force** | $O(N^2)$ | $O(N^2)$ | $O(1)$ | Quadratic iteration across pairs |\n\n#### 💡 Core Takeaways\n- **Time Invariants:** When $N \\le 10^5$, aim for $O(N)$ or $O(N \\log N)$ to execute under the 1.0s limit.\n- **Space Invariants:** Prefer in-place pointer manipulation ($O(1)$) unless frequency caching ($O(N)$) is required.`;
     }
 
     // 5. General Conversational Mentorship

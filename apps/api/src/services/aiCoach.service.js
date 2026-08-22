@@ -7,6 +7,22 @@ import { getUserLearningProfile, getAllPlatformProblems } from "./userAnalytics.
 import { formatDateKey } from "../lib/streakEngine.js";
 import { analyzeCodeComplexity } from "../lib/complexityEngine.js";
 
+// Universal Markdown & Math formatting instructions for Gemini API
+export const AI_MARKDOWN_FORMATTING_RULES = `
+FORMATTING & SYNTAX INSTRUCTIONS:
+- Use clean, standard GitHub Flavored Markdown.
+- Use #, ##, ###, #### headings appropriately for clear section hierarchy. Never output raw '#' in running text.
+- Use **bold** for emphasis, metrics, and key takeaway points.
+- Use \`inline code\` for data structures, methods, types, variables, and code identifiers.
+- Use fenced code blocks with language identifiers (e.g. \`\`\`python ... \`\`\`, \`\`\`cpp ... \`\`\`) for all multi-line code examples.
+- Use LaTeX $...$ for inline mathematical and Big-O complexity expressions (e.g. $O(1)$, $O(n)$, $O(n \\log n)$, $O(n^2)$, $O(m + n)$).
+- Use $$...$$ for block mathematical expressions when outlining equations.
+- Use standard Markdown tables (| Col 1 | Col 2 |) with clear header dividers whenever comparing data or presenting cheat sheets.
+- Do NOT output raw HTML tags or CSS styles.
+- Do NOT escape Markdown characters unnecessarily.
+- Maintain professional developer tool polish with comfortable spacing.
+`;
+
 // In-memory conversation fallback
 const memoryConversations = new Map();
 const memoryUsages = new Map();
@@ -227,7 +243,9 @@ GUIDELINES FOR YOUR RESPONSES:
 2. When asked for hints, give progressive, conceptual hints instead of immediately outputting the full final code.
 3. When reviewing code, evaluate Big-O Time and Space complexity, logical mistakes, and edge cases clearly.
 4. Adapt explanations to the user's skill level.
-5. Never hallucinate fake user stats. Respect the user's actual progress.`;
+5. Never hallucinate fake user stats. Respect the user's actual progress.
+
+${AI_MARKDOWN_FORMATTING_RULES}`;
 
   // 4. Construct message history for LLM
   const history = (conv.messages || []).slice(-6).map((m) => ({
@@ -319,7 +337,7 @@ STRUCTURE YOUR EVALUATION ACCORDING TO THESE SECTIONS:
 5. 🚀 Clean Code & Optimization Recommendations:
    - Provide concrete, concise idiomatic improvements.
 
-Format with crisp Markdown headers, mathematical notation ($O(...)$), and bullet points.`;
+${AI_MARKDOWN_FORMATTING_RULES}`;
 
   const userPrompt = `Please review this ${language} solution${problem ? ` for problem '${problem.title}' (${problem.difficulty})` : ""}:
 \`\`\`${language}
@@ -374,7 +392,9 @@ export async function getProblemHint({ userId, problemId, hintLevel = 1, current
 
   const systemPrompt = `You are the Judgo AI Hint Coach. Provide a progressive hint for problem '${problem.title}'.
 Goal: ${instruction}.
-Rule: Strictly respect the requested level. Do not jump to higher levels or give the solution prematurely.`;
+Rule: Strictly respect the requested level. Do not jump to higher levels or give the solution prematurely.
+
+${AI_MARKDOWN_FORMATTING_RULES}`;
 
   const userPrompt = `Problem: ${problem.title} (${problem.difficulty}, Topic: ${problem.topic})
 Statement: ${problem.description || problem.statement || ""}
@@ -867,7 +887,9 @@ Provide a strict, professional, and encouraging Bar Raiser code assessment:
 1. State whether the algorithmic logic is sound, modular, and correctly handles boundary/edge cases.
 2. State the exact Time Complexity and Space Complexity using standard Big-O notation.
 3. Highlight 2 specific implementation strengths.
-4. Pose an insightful follow-up question regarding scaling, memory footprint, or concurrency under high throughput.`;
+4. Pose an insightful follow-up question regarding scaling, memory footprint, or concurrency under high throughput.
+
+${AI_MARKDOWN_FORMATTING_RULES}`;
 
     let evaluation = "";
     try {
