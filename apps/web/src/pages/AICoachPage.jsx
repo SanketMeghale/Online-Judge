@@ -551,22 +551,61 @@ export default function AICoachPage() {
         </div>
       </header>
 
-      {/* 2. TAB BAR */}
+      {/* 2. MODERN SEGMENTED NAVBAR WITH COLORFUL ICON BADGES */}
       <nav
         className="ai-mentor-tabs"
         style={{
-          display: "flex",
+          display: "inline-flex",
           alignItems: "center",
-          gap: "8px",
-          borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-          paddingBottom: "8px"
+          gap: "4px",
+          background: isLight ? "rgba(241, 245, 249, 0.85)" : "rgba(15, 23, 42, 0.7)",
+          border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
+          borderRadius: "12px",
+          padding: "4px 5px",
+          width: "fit-content",
+          boxShadow: isLight ? "0 1px 3px rgba(0, 0, 0, 0.03)" : "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)"
         }}
       >
         {[
-          { id: "mentor", label: "AI Mentor", icon: Sparkles },
-          { id: "interview", label: "AI Mock Interview", icon: Compass },
-          { id: "weak", label: "Weak Topics", icon: Target },
-          { id: "companies", label: "Company Sheets", icon: Building2 }
+          {
+            id: "mentor",
+            label: "AI Mentor",
+            icon: Sparkles,
+            color: "#8b5cf6",
+            lightBg: "rgba(139, 92, 246, 0.12)",
+            darkBg: "rgba(139, 92, 246, 0.22)",
+            border: "rgba(139, 92, 246, 0.3)"
+          },
+          {
+            id: "interview",
+            label: "AI Mock Interview",
+            icon: Compass,
+            color: "#10b981",
+            lightBg: "rgba(16, 185, 129, 0.12)",
+            darkBg: "rgba(16, 185, 129, 0.22)",
+            border: "rgba(16, 185, 129, 0.3)",
+            badge: "Live"
+          },
+          {
+            id: "weak",
+            label: "Weak Topics",
+            icon: Flame,
+            color: "#f97316",
+            lightBg: "rgba(249, 115, 22, 0.12)",
+            darkBg: "rgba(249, 115, 22, 0.22)",
+            border: "rgba(249, 115, 22, 0.3)"
+          },
+          {
+            id: "companies",
+            label: "Company Sheets",
+            icon: Building2,
+            color: "#3b82f6",
+            lightBg: "rgba(59, 130, 246, 0.12)",
+            darkBg: "rgba(59, 130, 246, 0.22)",
+            border: "rgba(59, 130, 246, 0.3)"
+          }
         ].map((tab) => {
           const isActive = activeTab === tab.id;
           const Icon = tab.icon;
@@ -576,36 +615,84 @@ export default function AICoachPage() {
               type="button"
               onClick={() => setActiveTab(tab.id)}
               style={{
+                position: "relative",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "7px",
-                padding: "8px 16px",
+                gap: "8px",
+                padding: "7px 14px",
                 borderRadius: "8px",
                 border: "none",
-                background: isActive ? (isLight ? "rgba(124, 58, 237, 0.12)" : "rgba(124, 58, 237, 0.15)") : "transparent",
-                color: isActive ? (isLight ? "#6d28d9" : "#c084fc") : (isLight ? "#64748b" : "#94a3b8"),
-                fontSize: "0.86rem",
+                background: "transparent",
+                color: isActive ? (isLight ? "#0f172a" : "#f8fafc") : (isLight ? "#64748b" : "#94a3b8"),
+                fontSize: "0.84rem",
                 fontWeight: isActive ? "700" : "500",
                 cursor: "pointer",
-                position: "relative",
-                transition: "all 0.15s ease"
+                transition: "all 0.15s ease",
+                userSelect: "none"
               }}
             >
-              <Icon size={15} style={{ color: isActive ? (isLight ? "#6d28d9" : "#c084fc") : (isLight ? "#64748b" : "#64748b") }} />
-              <span>{tab.label}</span>
+              {/* Smooth Floating Pill Background for Active State */}
               {isActive && (
                 <motion.div
-                  layoutId="activeTabIndicator"
+                  layoutId="activeTabSegment"
+                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
                   style={{
                     position: "absolute",
-                    bottom: "-9px",
-                    left: "12px",
-                    right: "12px",
-                    height: "2px",
-                    background: isLight ? "#6366f1" : "#818cf8",
-                    borderRadius: "999px"
+                    inset: 0,
+                    background: isLight ? "#ffffff" : "#1e293b",
+                    borderRadius: "8px",
+                    boxShadow: isLight
+                      ? "0 2px 8px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04)"
+                      : "0 2px 10px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08)",
+                    zIndex: 1
                   }}
                 />
+              )}
+
+              {/* Colorful Icon Badge Chip */}
+              <div
+                style={{
+                  position: "relative",
+                  zIndex: 2,
+                  width: "22px",
+                  height: "22px",
+                  borderRadius: "6px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: isActive
+                    ? (isLight ? tab.lightBg : tab.darkBg)
+                    : (isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.04)"),
+                  border: isActive ? `1px solid ${tab.border}` : "1px solid transparent",
+                  color: isActive ? tab.color : (isLight ? "#64748b" : "#94a3b8"),
+                  transition: "all 0.15s ease"
+                }}
+              >
+                <Icon size={14} style={{ color: isActive ? tab.color : "inherit" }} />
+              </div>
+
+              {/* Tab Title */}
+              <span style={{ position: "relative", zIndex: 2 }}>{tab.label}</span>
+
+              {/* Optional Mini Status Badge */}
+              {tab.badge && (
+                <span
+                  style={{
+                    position: "relative",
+                    zIndex: 2,
+                    fontSize: "0.62rem",
+                    fontWeight: "700",
+                    padding: "1px 6px",
+                    borderRadius: "999px",
+                    background: isActive
+                      ? (isLight ? "rgba(16, 185, 129, 0.15)" : "rgba(16, 185, 129, 0.25)")
+                      : (isLight ? "rgba(0, 0, 0, 0.05)" : "rgba(255, 255, 255, 0.06)"),
+                    color: isActive ? "#10b981" : (isLight ? "#64748b" : "#94a3b8"),
+                    letterSpacing: "0.02em"
+                  }}
+                >
+                  {tab.badge}
+                </span>
               )}
             </button>
           );
