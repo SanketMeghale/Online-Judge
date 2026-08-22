@@ -324,6 +324,16 @@ kbd {
   width: 100%;
 }
 
+.content-shell.content-shell-workspace {
+  padding: 0 !important;
+  max-width: 100% !important;
+  height: calc(100vh - 68px) !important;
+  max-height: calc(100vh - 68px) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
 @media (max-width: 960px) {
   .mobile-hamburger-btn {
     display: flex !important;

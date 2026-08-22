@@ -32,6 +32,11 @@ export default function AppLayout({ children }) {
     } catch {}
   }, [user?.preferences]);
 
+  const isFullHeightWorkspace =
+    location.pathname.startsWith("/ai-coach") ||
+    location.pathname.startsWith("/interviewer") ||
+    location.pathname.startsWith("/problems/");
+
   return (
     <div className="app">
       <AuroraBackground />
@@ -41,17 +46,17 @@ export default function AppLayout({ children }) {
           mobileOpen={mobileSidebarOpen}
           onCloseMobile={() => setMobileSidebarOpen(false)}
         />
-        <div className="content-shell">
+        <div className={`content-shell ${isFullHeightWorkspace ? "content-shell-workspace" : ""}`}>
           <div
             key={location.pathname}
             className="page-enter-fade"
-            style={{ width: "100%", height: "100%" }}
+            style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", minHeight: 0 }}
           >
             <ErrorBoundary>
               {children || <Outlet />}
             </ErrorBoundary>
           </div>
-          <Footer />
+          {!isFullHeightWorkspace && <Footer />}
         </div>
       </div>
     </div>

@@ -486,12 +486,17 @@ export default function AICoachPage() {
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "10px",
+        gap: "8px",
         width: "100%",
         maxWidth: "1360px",
         margin: "0 auto",
-        padding: "4px 16px 16px 16px",
-        minHeight: "calc(100vh - 80px)"
+        padding: "10px 16px 12px 16px",
+        height: "100%",
+        maxHeight: "100%",
+        minHeight: 0,
+        boxSizing: "border-box",
+        overflow: "hidden",
+        flex: 1
       }}
     >
       {/* 1. PRIMARY WORKSPACE NAVIGATION TABS (WITH ALWAYS-VIBRANT COLORFUL ICONS) */}
@@ -508,7 +513,8 @@ export default function AICoachPage() {
           width: "fit-content",
           boxShadow: isLight ? "0 1px 3px rgba(0, 0, 0, 0.03)" : "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
           backdropFilter: "blur(12px)",
-          WebkitBackdropFilter: "blur(12px)"
+          WebkitBackdropFilter: "blur(12px)",
+          flexShrink: 0
         }}
       >
         {[
@@ -639,7 +645,7 @@ export default function AICoachPage() {
       </nav>
 
       {/* 2. MAIN WORKSPACE */}
-      <div style={{ flex: 1, minHeight: 0 }}>
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* TAB 1: AI MENTOR (FULL-WIDTH CHAT STUDIO) */}
         {activeTab === "mentor" && (
           <div
@@ -650,8 +656,10 @@ export default function AICoachPage() {
               borderRadius: "12px",
               display: "flex",
               flexDirection: "column",
-              height: "calc(100vh - 120px)",
-              minHeight: "600px",
+              height: "100%",
+              maxHeight: "100%",
+              minHeight: 0,
+              flex: 1,
               boxShadow: isLight ? "0 1px 3px rgba(0, 0, 0, 0.04)" : "0 4px 20px rgba(0, 0, 0, 0.25)",
               overflow: "hidden",
               width: "100%"
@@ -663,9 +671,10 @@ export default function AICoachPage() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "12px 18px",
+                padding: "10px 16px",
                 borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
-                background: isLight ? "#f8fafc" : "#090d16"
+                background: isLight ? "#f8fafc" : "#090d16",
+                flexShrink: 0
               }}
             >
                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -868,9 +877,10 @@ export default function AICoachPage() {
                   display: "flex",
                   alignItems: "center",
                   gap: "10px",
-                  padding: "12px 16px",
+                  padding: "10px 16px",
                   borderTop: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
-                  background: isLight ? "#f8fafc" : "#090d16"
+                  background: isLight ? "#f8fafc" : "#090d16",
+                  flexShrink: 0
                 }}
               >
                 <input

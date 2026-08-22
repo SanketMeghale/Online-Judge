@@ -1398,8 +1398,10 @@
   }
 
   .ai-mentor-chat-column {
-    height: 580px !important;
-    max-height: 75vh !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    flex: 1 !important;
   }
 }
 
