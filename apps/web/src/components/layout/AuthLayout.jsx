@@ -20,7 +20,6 @@ export default function AuthLayout() {
   return (
     <div className="auth-root-wrapper">
       {/* Background Subtle Grid & Moving Aurora Blobs */}
-      <div className="auth-bg-pattern-layer" />
       <div className="auth-bg-grid" />
       <div className="auth-aurora-blob blob-1" />
       <div className="auth-aurora-blob blob-2" />

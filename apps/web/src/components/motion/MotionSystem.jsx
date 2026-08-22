@@ -426,9 +426,6 @@ export function AuroraBackground() {
         overflow: "hidden"
       }}
     >
-      {/* Global Coding Architecture Background Pattern */}
-      <div className="global-app-bg-pattern" aria-hidden="true" />
-
       {/* Floating Ambient Glyphs */}
       {glyphs.map((g, idx) => (
         <span
