@@ -21,6 +21,12 @@ function assertEmail(email) {
 }
 
 function assertPassword(password) {
+  if (!password) {
+    throw new Error("Enter your password.");
+  }
+}
+
+function assertRegistrationPassword(password) {
   if (!password || password.length < 12) {
     throw new Error("Password must be at least 12 characters.");
   }
@@ -98,7 +104,7 @@ export async function registerWithEmail({ name, username, email, password }) {
   }
 
   assertEmail(email);
-  assertPassword(password);
+  assertRegistrationPassword(password);
 
   const res = await api.register({
     name: name.trim(),

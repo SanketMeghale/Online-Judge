@@ -54,7 +54,7 @@ export default function Register() {
   const requirements = useMemo(() => {
     const pwd = form.password || "";
     return {
-      hasLength: pwd.length >= 8,
+      hasLength: pwd.length >= 12,
       hasUpper: /[A-Z]/.test(pwd),
       hasNumber: /[0-9]/.test(pwd),
       hasSpecial: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)
@@ -104,7 +104,7 @@ export default function Register() {
     }
 
     if (strengthScore < 2) {
-      setError("Please create a stronger password with at least 8 characters.");
+      setError("Please create a stronger password with at least 12 characters.");
       return;
     }
 
@@ -465,7 +465,7 @@ export default function Register() {
                 <span className="auth-req-dot">
                   {requirements.hasLength ? <Check size={10} strokeWidth={3} /> : "•"}
                 </span>
-                <span>8+ characters</span>
+                <span>12+ characters</span>
               </div>
               <div className={`auth-req-item ${requirements.hasUpper ? "met" : ""}`}>
                 <span className="auth-req-dot">
