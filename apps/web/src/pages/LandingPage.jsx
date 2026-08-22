@@ -319,9 +319,7 @@ export default function LandingPage() {
             </div>
 
             <h1 className="lp-hero-title">
-              <span className="gradient-text-purple-cyan">Judgo</span>
-              <br />
-              Master Coding & Ace Interviews
+              Master <span className="gradient-text-purple-cyan">Coding</span> & Ace Interviews
             </h1>
 
             <p className="lp-hero-subtitle">
