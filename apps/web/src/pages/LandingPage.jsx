@@ -40,72 +40,55 @@ const stats = [
   { value: "99.9%", label: "Judge Accuracy", icon: ShieldCheck, color: "#ff6b35" }
 ];
 
-// Feature Cards Data
+// Feature Cards Data (4 Core Pillars)
 const features = [
   {
-    title: "Secure Code Execution",
-    desc: "Isolated multi-language sandbox with sub-second execution, micro-benchmarking, memory limits, and strict I/O validation.",
+    title: "Isolated Code Sandbox",
+    desc: "Sub-second multi-language execution for C++, Python, Java & JS with strict memory limits, zero network access, and micro-benchmarking.",
     icon: ShieldCheck,
     colorClass: "feature-icon-purple"
   },
   {
-    title: "AI Code Review",
-    desc: "Instant post-submission insights, automated Big-O complexity analysis, and intelligent Socratic hints tailored to your solution.",
+    title: "AI Code Reviewer",
+    desc: "Automated Big-O complexity derivation, diagnostic edge-case explanations, and intelligent Socratic hints tailored to your code.",
     icon: Brain,
     colorClass: "feature-icon-cyan"
   },
   {
-    title: "Company Sheets",
-    desc: "Curated problem playlists for FAANG and top-tier startups (Google, Meta, Microsoft, Uber) updated with recent interview frequencies.",
+    title: "FAANG Company Sheets",
+    desc: "Curated problem playlists for Google, Meta, Microsoft, and Amazon updated with recent technical screen interview patterns.",
     icon: Building2,
     colorClass: "feature-icon-green"
   },
   {
-    title: "Coding Contests",
-    desc: "Weekly rated algorithm competitions, virtual participation, dynamic Elo rating updates, and cash prize tournaments.",
+    title: "Weekly Rated Contests",
+    desc: "Live algorithm battles, global Elo rating ladder, automated score penalty system, and real-time leaderboard rankings.",
     icon: Trophy,
     colorClass: "feature-icon-orange"
-  },
-  {
-    title: "Real-Time Leaderboards",
-    desc: "Climb global, university, and company rankings in real-time as your submissions pass edge-case test suites.",
-    icon: LineChart,
-    colorClass: "feature-icon-purple"
-  },
-  {
-    title: "Progress Analytics",
-    desc: "Deep-dive into topic mastery radar charts, submission streak heatmaps, and personalized weakness detection.",
-    icon: Zap,
-    colorClass: "feature-icon-cyan"
   }
 ];
 
-// Timeline Steps
+// Timeline Steps (4 Clean Steps)
 const steps = [
   {
     num: "01",
-    title: "Choose Problem",
-    desc: "Pick from 2,000+ curated algorithmic problems categorized by pattern and difficulty."
+    title: "Pick Problem",
+    desc: "Explore 2,000+ curated algorithmic problems categorized by pattern and difficulty."
   },
   {
     num: "02",
     title: "Write Code",
-    desc: "Code in Python, JavaScript, C++, or Java with intelligent autocomplete and Vim bindings."
+    desc: "Code in Python, C++, Java, or JavaScript with Monaco editor autocomplete and test console."
   },
   {
     num: "03",
-    title: "Run & Submit",
-    desc: "Instant sandboxed execution with visible and hidden test suites evaluated in milliseconds."
+    title: "Sandboxed Run",
+    desc: "Instant evaluation against hidden and boundary test suites in secure isolated containers."
   },
   {
     num: "04",
-    title: "AI Feedback",
-    desc: "Receive actionable breakdown on bottlenecks, time/space limits, and syntax hints."
-  },
-  {
-    num: "05",
-    title: "Track Progress",
-    desc: "Gain XP, maintain your streak, earn badges, and climb the global developer leaderboard."
+    title: "AI Review & Rank",
+    desc: "Gain XP, maintain streaks, get AI diagnostic feedback, and climb global developer leaderboards."
   }
 ];
 
@@ -336,16 +319,14 @@ export default function LandingPage() {
             </div>
 
             <h1 className="lp-hero-title">
-              Master <span className="gradient-text-purple-cyan">Coding</span>.
+              <span className="gradient-text-purple-cyan">Judgo</span>
               <br />
-              Ace Interviews.
-              <br />
-              Become <span className="gradient-text-purple-cyan">Industry Ready</span>.
+              Master Coding & Ace Interviews
             </h1>
 
             <p className="lp-hero-subtitle">
-              Judgo is an AI-powered Online Judge where developers solve coding problems,
-              participate in contests, receive AI feedback, and prepare for technical interviews.
+              High-performance Online Judge with sub-second sandboxed execution,
+              AI code reviews, weekly contests, and curated company prep sheets.
             </p>
 
             <div className="lp-hero-ctas">
