@@ -1515,6 +1515,16 @@ select {
   width: 100%;
 }
 
+textarea.code-editor {
+  background: transparent !important;
+  color: transparent !important;
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  resize: none !important;
+}
+
+
 .editor-status {
   border-top: 1px solid rgba(151, 166, 210, 0.12);
   gap: 24px;

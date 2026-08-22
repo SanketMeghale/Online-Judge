@@ -173,29 +173,32 @@ function ProblemDetailsInner() {
   function startPaneResize(event) {
     if (window.matchMedia("(max-width: 900px)").matches) return;
     event.preventDefault();
-    event.currentTarget.setPointerCapture?.(event.pointerId);
     setIsPaneResizing(true);
     updateProblemPaneWidth(event.clientX);
   }
 
-  function movePaneResize(event) {
+  // Handle global window events for workspace split pane resizing
+  useEffect(() => {
     if (!isPaneResizing) return;
-    event.preventDefault();
-    updateProblemPaneWidth(event.clientX);
-  }
 
-  function finishPaneResize(event) {
-    if (!isPaneResizing) return;
-    try {
-      if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      }
-    } catch {}
-    setIsPaneResizing(false);
-    try {
-      localStorage.setItem("judgo-problem-pane-width", String(problemPaneWidthRef.current));
-    } catch {}
-  }
+    function handlePointerMove(event) {
+      updateProblemPaneWidth(event.clientX);
+    }
+
+    function handlePointerUp() {
+      setIsPaneResizing(false);
+      try {
+        localStorage.setItem("judgo-problem-pane-width", String(problemPaneWidthRef.current));
+      } catch {}
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [isPaneResizing]);
 
   function resizePaneWithKeyboard(event) {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "Home") return;
@@ -212,7 +215,6 @@ function ProblemDetailsInner() {
 
   function startResultResize(event) {
     event.preventDefault();
-    event.currentTarget.setPointerCapture?.(event.pointerId);
     resultResizeStartRef.current = {
       y: event.clientY,
       height: resultPanelHeightRef.current
@@ -220,27 +222,31 @@ function ProblemDetailsInner() {
     setIsResultResizing(true);
   }
 
-  function moveResultResize(event) {
+  // Handle global window events for vertical execution results resizing
+  useEffect(() => {
     if (!isResultResizing) return;
-    event.preventDefault();
-    const delta = resultResizeStartRef.current.y - event.clientY;
-    const nextHeight = Math.min(720, Math.max(280, resultResizeStartRef.current.height + delta));
-    resultPanelHeightRef.current = nextHeight;
-    setResultPanelHeight(nextHeight);
-  }
 
-  function finishResultResize(event) {
-    if (!isResultResizing) return;
-    try {
-      if (event.currentTarget.hasPointerCapture?.(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
-      }
-    } catch {}
-    setIsResultResizing(false);
-    try {
-      localStorage.setItem("judgo-result-panel-height", String(resultPanelHeightRef.current));
-    } catch {}
-  }
+    function handlePointerMove(event) {
+      const delta = resultResizeStartRef.current.y - event.clientY;
+      const nextHeight = Math.min(720, Math.max(280, resultResizeStartRef.current.height + delta));
+      resultPanelHeightRef.current = nextHeight;
+      setResultPanelHeight(nextHeight);
+    }
+
+    function handlePointerUp() {
+      setIsResultResizing(false);
+      try {
+        localStorage.setItem("judgo-result-panel-height", String(resultPanelHeightRef.current));
+      } catch {}
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [isResultResizing]);
 
   function resizeResultWithKeyboard(event) {
     if (event.key !== "ArrowUp" && event.key !== "ArrowDown" && event.key !== "Home") return;
@@ -254,6 +260,7 @@ function ProblemDetailsInner() {
       localStorage.setItem("judgo-result-panel-height", String(nextHeight));
     } catch {}
   }
+
 
   const userSubmissions = useMemo(() => {
     if (!problemId) return [];
@@ -766,9 +773,6 @@ function ProblemDetailsInner() {
           tabIndex={0}
           title="Drag to resize. Double-click or press Home to reset."
           onPointerDown={startPaneResize}
-          onPointerMove={movePaneResize}
-          onPointerUp={finishPaneResize}
-          onPointerCancel={finishPaneResize}
           onKeyDown={resizePaneWithKeyboard}
           onDoubleClick={() => {
             problemPaneWidthRef.current = 46;
@@ -809,9 +813,6 @@ function ProblemDetailsInner() {
             tabIndex={0}
             title="Drag to resize results. Double-click or press Home to reset."
             onPointerDown={startResultResize}
-            onPointerMove={moveResultResize}
-            onPointerUp={finishResultResize}
-            onPointerCancel={finishResultResize}
             onKeyDown={resizeResultWithKeyboard}
             onDoubleClick={() => {
               resultPanelHeightRef.current = 430;
