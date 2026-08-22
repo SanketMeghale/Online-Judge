@@ -269,6 +269,7 @@ function parseMarkdownInline(text = "") {
 
 function FormattedMessage({ text = "" }) {
   if (!text) return null;
+  const { isLight } = useTheme();
 
   // Split by code blocks ```lang ... ```
   const codeBlockRegex = /```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g;
@@ -311,7 +312,7 @@ function FormattedMessage({ text = "" }) {
                     style={{
                       fontSize: "0.98rem",
                       fontWeight: "800",
-                      color: "#f8fafc",
+                      color: isLight ? "#0f172a" : "#f8fafc",
                       margin: "8px 0 2px 0",
                       letterSpacing: "-0.01em"
                     }}
@@ -328,7 +329,7 @@ function FormattedMessage({ text = "" }) {
                     style={{
                       fontSize: "1.05rem",
                       fontWeight: "800",
-                      color: "#f8fafc",
+                      color: isLight ? "#0f172a" : "#f8fafc",
                       margin: "10px 0 2px 0",
                       letterSpacing: "-0.02em"
                     }}
@@ -348,7 +349,7 @@ function FormattedMessage({ text = "" }) {
                       alignItems: "flex-start",
                       gap: "8px",
                       marginLeft: "6px",
-                      color: "#cbd5e1"
+                      color: isLight ? "#334155" : "#cbd5e1"
                     }}
                   >
                     <span style={{ color: "#a855f7", fontWeight: "700", lineHeight: "1.4" }}>•</span>
@@ -368,7 +369,7 @@ function FormattedMessage({ text = "" }) {
                       alignItems: "flex-start",
                       gap: "8px",
                       marginLeft: "6px",
-                      color: "#cbd5e1"
+                      color: isLight ? "#334155" : "#cbd5e1"
                     }}
                   >
                     <span style={{ color: "#818cf8", fontWeight: "700", fontSize: "0.82rem", minWidth: "16px" }}>
@@ -381,7 +382,7 @@ function FormattedMessage({ text = "" }) {
 
               // Normal text line
               return (
-                <div key={lineIdx} style={{ color: "#cbd5e1" }}>
+                <div key={lineIdx} style={{ color: isLight ? "#334155" : "#cbd5e1" }}>
                   {parseMarkdownInline(trimmed)}
                 </div>
               );

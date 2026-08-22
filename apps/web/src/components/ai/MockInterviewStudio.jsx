@@ -34,6 +34,7 @@ import { api } from "../../api/apiClient.js";
 import { useAuth } from "../../auth/AuthContext.jsx";
 import { useAppData } from "../../data/AppDataContext.jsx";
 import { calculateLocalHiringEvaluation, ensureDatabase } from "../../data/appData.js";
+import { useTheme } from "../../context/ThemeContext.jsx";
 import "../../styles/mockInterview.css";
 
 const COMPANIES = [
@@ -483,6 +484,7 @@ const FALLBACK_PROBLEMS = {
 export default function MockInterviewStudio() {
   const { session } = useAuth() || {};
   const { database } = useAppData() || {};
+  const { isLight } = useTheme();
   const currentUser = session?.user || null;
 
   // Setup State
@@ -1418,7 +1420,7 @@ export default function MockInterviewStudio() {
                     width: "28px",
                     height: "28px",
                     borderRadius: "6px",
-                    background: "rgba(255, 255, 255, 0.06)",
+                    background: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.06)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -1467,14 +1469,21 @@ export default function MockInterviewStudio() {
                 type="button"
                 onClick={() => setSelectedDiff(d)}
                 style={{
-                  background: selectedDiff === d ? "rgba(120, 80, 255, 0.15)" : "rgba(255, 255, 255, 0.03)",
-                  border: selectedDiff === d ? "1px solid rgba(120, 80, 255, 0.4)" : "1px solid rgba(255, 255, 255, 0.08)",
-                  color: selectedDiff === d ? "#c4b5fd" : "#94a3b8",
+                  background: selectedDiff === d
+                    ? (isLight ? "rgba(99, 102, 241, 0.1)" : "rgba(120, 80, 255, 0.15)")
+                    : (isLight ? "#f8fafc" : "rgba(255, 255, 255, 0.03)"),
+                  border: selectedDiff === d
+                    ? (isLight ? "1px solid #6366f1" : "1px solid rgba(120, 80, 255, 0.4)")
+                    : (isLight ? "1px solid #cbd5e1" : "1px solid rgba(255, 255, 255, 0.08)"),
+                  color: selectedDiff === d
+                    ? (isLight ? "#4f46e5" : "#c4b5fd")
+                    : (isLight ? "#334155" : "#94a3b8"),
                   padding: "8px 16px",
                   borderRadius: "8px",
                   fontSize: "0.82rem",
                   fontWeight: "700",
-                  cursor: "pointer"
+                  cursor: "pointer",
+                  transition: "all 0.2s ease"
                 }}
               >
                 {d}
@@ -1501,9 +1510,9 @@ export default function MockInterviewStudio() {
             onClick={handleViewLiveEvaluation}
             disabled={loadingEvaluation}
             style={{
-              background: "rgba(120, 80, 255, 0.08)",
-              border: "1px solid rgba(120, 80, 255, 0.25)",
-              color: "#c4b5fd",
+              background: isLight ? "rgba(99, 102, 241, 0.08)" : "rgba(120, 80, 255, 0.08)",
+              border: isLight ? "1px solid rgba(99, 102, 241, 0.25)" : "1px solid rgba(120, 80, 255, 0.25)",
+              color: isLight ? "#4f46e5" : "#c4b5fd",
               borderRadius: "10px",
               padding: "13px 20px",
               fontSize: "0.86rem",
