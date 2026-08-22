@@ -13,7 +13,7 @@ export class BaseAIProvider {
  * Google Gemini Provider via native REST API
  */
 export class GeminiProvider extends BaseAIProvider {
-  constructor(apiKey, model = "gemini-1.5-flash") {
+  constructor(apiKey, model = "gemini-3.6-flash") {
     super();
     this.apiKey = apiKey;
     this.model = model;
@@ -63,6 +63,9 @@ export class GeminiProvider extends BaseAIProvider {
     const data = await res.json();
     const candidate = data.candidates?.[0];
     const text = candidate?.content?.parts?.map((p) => p.text).join("") || "";
+    if (!text.trim()) {
+      throw new Error("Gemini API returned an empty completion.");
+    }
     return text;
   }
 }
@@ -199,7 +202,8 @@ export class LocalMentorProvider extends BaseAIProvider {
 export function getAIProvider() {
   const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (geminiKey) {
-    return new GeminiProvider(geminiKey);
+    const geminiModel = String(process.env.GEMINI_MODEL || "gemini-3.6-flash").trim();
+    return new GeminiProvider(geminiKey, geminiModel);
   }
 
   const openaiKey = process.env.OPENAI_API_KEY;
