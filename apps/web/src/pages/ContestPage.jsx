@@ -212,16 +212,45 @@ export default function ContestPage() {
     >
       {/* ── HEADER & RATING WIDGET ────────────────────────────────────── */}
       <div className="responsive-page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "2px" }}>
-            <Swords size={15} style={{ color: "#a855f7" }} />
-            <span style={{ fontSize: "0.7rem", fontWeight: "700", letterSpacing: "0.1em", textTransform: "uppercase", color: "#a855f7" }}>
-              Contest Arena
-            </span>
+        <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap" }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "2px" }}>
+              <Swords size={15} style={{ color: "#a855f7" }} />
+              <span style={{ fontSize: "0.7rem", fontWeight: "700", letterSpacing: "0.1em", textTransform: "uppercase", color: "#a855f7" }}>
+                Contest Arena
+              </span>
+            </div>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc", margin: 0, letterSpacing: "-0.02em" }}>
+              Contests &amp; Challenges
+            </h1>
           </div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc", margin: 0, letterSpacing: "-0.02em" }}>
-            Contests &amp; Challenges
-          </h1>
+
+          {/* Search Box */}
+          <div className="contest-search-box" style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "7px",
+            background: isLight ? "#ffffff" : "#080c14",
+            border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.08)",
+            boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.03)" : "none",
+            borderRadius: "7px",
+            padding: "5px 11px",
+            minWidth: "240px",
+            marginTop: "6px"
+          }}>
+            <Search size={14} style={{ color: isLight ? "#64748b" : "#475569" }} />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search contests..."
+              style={{ background: "transparent", border: "none", outline: "none", color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.82rem", width: "100%" }}
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} style={{ background: "none", border: "none", cursor: "pointer", color: isLight ? "#64748b" : "#475569", padding: 0, display: "flex" }}>
+                <X size={13} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Rating Card Widget */}
@@ -314,8 +343,8 @@ export default function ContestPage() {
         </motion.div>
       )}
 
-      {/* ── TABS & SEARCH BAR ────────────────────────────────────────── */}
-      <div className="contest-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+      {/* ── TABS TOOLBAR ────────────────────────────────────────── */}
+      <div className="contest-toolbar" style={{ display: "flex", justifyContent: "flex-start", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
         <div className="contest-tabs-scroll" style={{
           display: "flex", gap: "2px",
           background: isLight ? "#ffffff" : "#080c14",
@@ -348,28 +377,6 @@ export default function ContestPage() {
               </button>
             );
           })}
-        </div>
-
-        {/* Search */}
-        <div className="contest-search-box" style={{
-          display: "flex", alignItems: "center", gap: "7px",
-          background: isLight ? "#ffffff" : "#080c14",
-          border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.08)",
-          boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.03)" : "none",
-          borderRadius: "7px", padding: "5px 11px", minWidth: "220px"
-        }}>
-          <Search size={14} style={{ color: isLight ? "#64748b" : "#475569" }} />
-          <input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search contests..."
-            style={{ background: "transparent", border: "none", outline: "none", color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.82rem", width: "100%" }}
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery("")} style={{ background: "none", border: "none", cursor: "pointer", color: isLight ? "#64748b" : "#475569", padding: 0, display: "flex" }}>
-              <X size={13} />
-            </button>
-          )}
         </div>
       </div>
 
