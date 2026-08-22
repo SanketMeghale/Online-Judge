@@ -368,3 +368,94 @@
   gap: 10px;
   background: #090d16;
 }
+
+@media (max-width: 900px) {
+  .admin-layout-root,
+  .admin-main-wrapper,
+  .admin-content-area {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .admin-sidebar {
+    box-shadow: 18px 0 50px rgba(0, 0, 0, 0.55);
+    height: 100dvh;
+    left: 0;
+    max-width: min(280px, 86vw);
+    position: fixed;
+    top: 0;
+    transform: translateX(-105%);
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 260px;
+    z-index: 100;
+  }
+
+  .admin-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .admin-topbar {
+    height: 60px;
+    padding: 0 14px;
+  }
+
+  .admin-topbar .admin-btn:first-child {
+    display: inline-flex !important;
+  }
+
+  .admin-content-area {
+    overflow-x: hidden;
+    padding: 16px;
+  }
+
+  .admin-table-container {
+    overflow-x: auto;
+  }
+
+  .admin-table {
+    min-width: 720px;
+  }
+}
+
+@media (max-width: 520px) {
+  .admin-content-area {
+    padding: 12px;
+  }
+
+  .admin-topbar {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+
+  .admin-topbar-title {
+    font-size: 0.92rem;
+  }
+
+  .admin-system-badge {
+    display: none;
+  }
+
+  .admin-topbar a.admin-btn span {
+    display: none;
+  }
+
+  .admin-card,
+  .admin-modal-body {
+    padding: 15px;
+  }
+
+  .admin-modal-overlay {
+    padding: 10px;
+  }
+
+  .admin-modal-header,
+  .admin-modal-footer {
+    padding: 14px;
+  }
+
+  .admin-modal-footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+}

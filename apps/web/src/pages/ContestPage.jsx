@@ -327,13 +327,14 @@ export default function ContestPage() {
 
   return (
     <motion.div
+      className="contest-page responsive-page"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28 }}
       style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "14px", paddingBottom: "32px" }}
     >
       {/* ── HEADER & RATING WIDGET ────────────────────────────────────── */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+      <div className="responsive-page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "2px" }}>
             <Swords size={15} style={{ color: "#a855f7" }} />
@@ -388,6 +389,7 @@ export default function ContestPage() {
       {/* ── LIVE CONTEST BANNER ─────────────────────────────────────── */}
       {liveContest && (
         <motion.div
+          className="contest-live-banner"
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           style={{
@@ -436,8 +438,8 @@ export default function ContestPage() {
       )}
 
       {/* ── TABS & SEARCH BAR ────────────────────────────────────────── */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-        <div style={{
+      <div className="contest-toolbar" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+        <div className="contest-tabs-scroll" style={{
           display: "flex", gap: "2px",
           background: isLight ? "#ffffff" : "#080c14",
           border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)",
@@ -472,7 +474,7 @@ export default function ContestPage() {
         </div>
 
         {/* Search */}
-        <div style={{
+        <div className="contest-search-box" style={{
           display: "flex", alignItems: "center", gap: "7px",
           background: isLight ? "#ffffff" : "#080c14",
           border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.08)",
@@ -495,7 +497,7 @@ export default function ContestPage() {
       </div>
 
       {/* ── MAIN CONTENT GRID: CARDS + SIDEBAR LEADERBOARD ───────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 290px", gap: "14px", alignItems: "start" }}>
+      <div className="contest-main-grid" style={{ display: "grid", gridTemplateColumns: "1fr 290px", gap: "14px", alignItems: "start" }}>
 
         {/* LEFT: CONTEST CARDS LIST */}
         <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>

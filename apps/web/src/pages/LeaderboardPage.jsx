@@ -51,13 +51,14 @@ export default function LeaderboardPage() {
 
   return (
     <motion.div
+      className="leaderboard-page responsive-page"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
       style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "16px", paddingBottom: "40px" }}
     >
       {/* ── HEADER ──────────────────────────────────────────────────── */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+      <div className="responsive-page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "3px" }}>
             <Trophy size={16} style={{ color: "#fbbf24" }} />
@@ -101,7 +102,7 @@ export default function LeaderboardPage() {
 
       {/* ── PODIUM CARDS (TOP 3) ────────────────────────────────────── */}
       {leaderboard.length >= 3 && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+        <div className="leaderboard-podium-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
           {/* 2nd Place */}
           <PodiumCard entry={leaderboard[1]} pos={2} isLight={isLight} />
           {/* 1st Place */}
@@ -118,7 +119,7 @@ export default function LeaderboardPage() {
         boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none",
         borderRadius: "12px", overflow: "hidden"
       }}>
-        <div style={{ overflowX: "auto" }}>
+        <div className="responsive-table-scroll" style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.86rem" }}>
             <thead>
               <tr style={{

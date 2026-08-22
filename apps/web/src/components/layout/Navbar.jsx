@@ -230,6 +230,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
 
               {/* 2. Quick Theme Toggle Button (Sun/Moon) */}
               <motion.button
+                className="nav-theme-button"
                 whileHover={{ scale: 1.06 }}
                 whileTap={{ scale: 0.94 }}
                 type="button"
@@ -254,8 +255,9 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
               </motion.button>
 
               {/* 3. Notifications Bell */}
-              <div style={{ position: "relative" }}>
+              <div className="nav-notification-wrap" style={{ position: "relative" }}>
                 <button
+                  className="nav-notification-button"
                   type="button"
                   onClick={() => {
                     setNotifOpen((prev) => !prev);
@@ -292,6 +294,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                 <AnimatePresence>
                   {notifOpen && (
                     <motion.div
+                      className="nav-notification-menu"
                       initial={{ opacity: 0, scale: 0.95, y: -6 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -6 }}
@@ -329,8 +332,9 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
               </div>
 
               {/* 3. Top-Right Profile Pill: [Avatar] [User Name] [Chevron ▾] */}
-              <div style={{ position: "relative" }}>
+              <div className="nav-profile-wrap" style={{ position: "relative" }}>
                 <motion.button
+                  className="nav-profile-button"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => {
@@ -374,7 +378,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                   </span>
 
                   {/* User Full Name */}
-                  <strong style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.86rem", fontWeight: "600" }}>
+                  <strong className="nav-profile-name" style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.86rem", fontWeight: "600" }}>
                     {fullName}
                   </strong>
 
@@ -393,6 +397,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                 <AnimatePresence>
                   {dropdownOpen && (
                     <motion.div
+                      className="nav-profile-menu"
                       initial={{ opacity: 0, scale: 0.95, y: -6 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -6 }}

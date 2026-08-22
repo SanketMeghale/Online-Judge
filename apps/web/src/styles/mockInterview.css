@@ -800,6 +800,47 @@
   }
 }
 
+@media (max-width: 600px) {
+  .mock-studio-root,
+  .mock-launcher-card,
+  .mock-config-panel,
+  .mock-interview-panel,
+  .mock-scorecard-hero {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .mock-launcher-card,
+  .mock-config-panel,
+  .mock-interview-panel {
+    border-radius: 12px;
+    padding: 16px 14px;
+  }
+
+  .mock-track-options,
+  .mock-stats-grid,
+  .mock-score-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .mock-chat-message {
+    max-width: 100%;
+  }
+
+  .mock-chat-composer,
+  .mock-action-row,
+  .mock-session-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .mock-tab-row {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
+
 /* ==========================================================================
    LIGHT THEME OVERRIDES
    ========================================================================== */
@@ -879,4 +920,3 @@
 [data-theme="light"] .mock-eval-report-card h3 {
   color: #0f172a;
 }
-

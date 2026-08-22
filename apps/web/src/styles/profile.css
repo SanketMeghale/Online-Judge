@@ -614,4 +614,23 @@
     align-items: flex-start;
     flex-direction: column;
   }
+
+  .prof-identity-content,
+  .prof-identity-top,
+  .prof-badges-strip,
+  .prof-glass-panel,
+  .prof-submissions-panel {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .prof-user-name,
+  .prof-email-text,
+  .prof-meta-line {
+    overflow-wrap: anywhere;
+  }
+
+  .prof-badges-strip {
+    flex-wrap: wrap;
+  }
 }

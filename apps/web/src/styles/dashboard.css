@@ -183,6 +183,7 @@
   gap: 10px;
   justify-content: flex-end;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .dash-btn-primary {
@@ -1397,6 +1398,60 @@
   }
 }
 
+@media (max-width: 600px) {
+  .premium-dashboard {
+    gap: 12px;
+    max-width: 100%;
+  }
+
+  .dash-hero {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .dash-hero-title {
+    font-size: 1.3rem;
+    overflow-wrap: anywhere;
+  }
+
+  .dash-hero-sub {
+    font-size: 0.78rem;
+  }
+
+  .dash-hero-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .dash-btn-primary,
+  .dash-btn-secondary {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .dash-stats-grid,
+  .dash-middle-section,
+  .dash-lower-section,
+  .dash-extras-section {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .dash-stat-card,
+  .dash-card,
+  .ai-coach-card {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .dash-card-header,
+  .weekly-goal-header,
+  .continue-card-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
 /* --------------------------------------------------------------------------
    DASHBOARD SKELETON LOADERS & INTERACTIVE HELPERS
    -------------------------------------------------------------------------- */
@@ -1505,5 +1560,4 @@
 [data-theme="light"] .ai-coach-quote {
   color: #334155;
 }
-
 

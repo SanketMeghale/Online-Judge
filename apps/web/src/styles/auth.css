@@ -23,7 +23,7 @@
 /* Base Wrapper */
 .auth-root-wrapper {
   min-height: 100vh;
-  width: 100vw;
+  width: 100%;
   background-color: var(--auth-bg);
   background-image: 
     radial-gradient(at 0% 0%, rgba(120, 80, 255, 0.15) 0px, transparent 50%),
@@ -1088,5 +1088,54 @@
 
 [data-theme="light"] .auth-recovery-success p {
   color: #64748b;
+}
+
+@media (max-width: 480px) {
+  .auth-root-wrapper {
+    align-items: flex-start;
+    min-height: 100dvh;
+    padding: 12px 10px 24px;
+  }
+
+  .auth-split-container,
+  .auth-glass-panel,
+  .auth-form-stack,
+  .auth-field-group,
+  .auth-input-container {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .auth-glass-panel {
+    border-radius: 15px;
+    padding: 20px 15px;
+  }
+
+  .auth-card-header h2 {
+    font-size: 1.4rem;
+  }
+
+  .auth-social-grid,
+  .auth-req-list {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-social-btn,
+  .auth-submit-btn {
+    min-height: 44px;
+  }
+
+  .auth-divider {
+    margin: 16px 0;
+  }
+
+  .auth-form-stack {
+    gap: 14px;
+  }
+
+  .floating-code-symbol,
+  .auth-aurora-blob.blob-3 {
+    display: none;
+  }
 }
 

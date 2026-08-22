@@ -130,8 +130,80 @@
 /* Company Grid */
 .company-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
   gap: 20px;
+}
+
+@media (max-width: 640px) {
+  .company-sheets-container,
+  .company-detail-container,
+  .company-sheets-hero,
+  .company-detail-hero,
+  .company-detail-card,
+  .company-ai-assistant-card {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .company-sheets-container {
+    gap: 14px;
+  }
+
+  .company-sheets-hero,
+  .company-detail-hero {
+    border-radius: 12px;
+    padding: 18px 15px;
+  }
+
+  .company-hero-title-group h1 {
+    font-size: 1.35rem;
+  }
+
+  .company-controls-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .company-search-box {
+    flex-basis: auto;
+    max-width: none;
+    width: 100%;
+  }
+
+  .company-category-pills {
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .company-cat-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .company-card-grid,
+  .company-detail-stats-grid,
+  .company-problems-grid,
+  .company-topic-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .company-card,
+  .company-detail-card,
+  .company-ai-assistant-card {
+    padding: 16px;
+  }
+
+  .company-ai-chat-input-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .company-ai-chat-input-row button {
+    justify-content: center;
+    min-height: 42px;
+  }
 }
 
 .company-card {
@@ -847,4 +919,3 @@
   border: 1px solid #cbd5e1;
   color: #0f172a;
 }
-
