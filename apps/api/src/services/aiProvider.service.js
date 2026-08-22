@@ -209,7 +209,15 @@ export class LocalMentorProvider extends BaseAIProvider {
 export function getAIProvider() {
   const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   if (geminiKey) {
-    const geminiModel = String(process.env.GEMINI_MODEL || "gemini-3.6-flash").trim();
+    const configuredModel = String(process.env.GEMINI_MODEL || "gemini-3.6-flash").trim();
+    const retiredModels = new Set([
+      "gemini-1.5-flash",
+      "gemini-2.0-flash",
+      "gemini-2.5-flash"
+    ]);
+    const geminiModel = retiredModels.has(configuredModel)
+      ? "gemini-3.6-flash"
+      : configuredModel;
     return new GeminiProvider(geminiKey, geminiModel);
   }
 

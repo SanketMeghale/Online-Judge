@@ -23,7 +23,7 @@
     "verify:production": "node scripts/verify-production.mjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": "22.x"
   },
   "devDependencies": {
     "playwright": "^1.61.1"

@@ -89,6 +89,17 @@ test("GEMINI_MODEL overrides the default model", () => {
   );
 });
 
+test("retired Gemini model configuration is normalized before making a request", () => {
+  withAIEnvironment(
+    { GEMINI_API_KEY: "test-gemini-key", GEMINI_MODEL: "gemini-2.5-flash" },
+    () => {
+      const provider = getAIProvider();
+      assert.ok(provider instanceof GeminiProvider);
+      assert.equal(provider.model, "gemini-3.6-flash");
+    }
+  );
+});
+
 test("OpenAI is selected only when Gemini credentials are absent", () => {
   withAIEnvironment({ OPENAI_API_KEY: "test-openai-key" }, () => {
     assert.ok(getAIProvider() instanceof OpenAIProvider);
