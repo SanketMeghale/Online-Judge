@@ -4137,3 +4137,308 @@ canvas {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   PROBLEMS LIST — RESPONSIVE LAYOUT
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Page wrapper */
+.problems-list-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+/* Header row */
+.problems-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Stat chips strip */
+.problems-stat-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Difficulty breakdown bar */
+.diff-breakdown-bar {
+  border-radius: 10px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.diff-divider {
+  width: 1px;
+  height: 28px;
+}
+
+.diff-completion-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Filter row */
+.problems-filter-row {
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Search box */
+.problems-search-box {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 7px;
+  padding: 6px 11px;
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+/* Difficulty tab group */
+.diff-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 7px;
+  flex-shrink: 0;
+}
+
+/* Result count */
+.problems-result-count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* Table + card container */
+.problems-table-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Footer */
+.problems-table-footer {
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Desktop: show table, hide cards */
+.problems-desktop-table { display: block; }
+.problems-mobile-cards  { display: none; }
+
+/* ─── Mobile Cards ─── */
+.problem-mobile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.problem-mobile-card:active {
+  background: rgba(99, 102, 241, 0.06) !important;
+}
+
+.pmc-top-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pmc-index-col {
+  flex-shrink: 0;
+  width: 22px;
+  padding-top: 2px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.pmc-title-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pmc-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.pmc-points {
+  font-size: 0.7rem;
+}
+
+.pmc-status-col {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+.pmc-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-left: 32px;
+}
+
+.pmc-diff-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.pmc-topic-badge {
+  font-size: 0.68rem;
+  padding: 2px 7px;
+  border-radius: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.pmc-sep {
+  font-size: 0.8rem;
+}
+
+.pmc-acceptance,
+.pmc-tries {
+  font-size: 0.7rem;
+}
+
+/* ─── Breakpoint: ≤ 960px → switch to card layout ─── */
+@media (max-width: 960px) {
+  .problems-desktop-table { display: none !important; }
+  .problems-mobile-cards  { display: block !important; }
+
+  .problems-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .problems-filter-row {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .problems-search-box {
+    flex: 1 1 100%;
+    order: -1;
+  }
+
+  .diff-tabs {
+    flex: 1 1 auto;
+    justify-content: space-between;
+  }
+
+  .diff-tabs button {
+    flex: 1;
+    text-align: center;
+    padding: 5px 6px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .problems-filter-row select {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    font-size: 0.75rem;
+  }
+
+  .problems-result-count {
+    display: none;
+  }
+
+  .problems-table-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 10px 14px;
+  }
+
+  .problems-footer-right {
+    display: none;
+  }
+}
+
+/* ─── Breakpoint: ≤ 640px ─── */
+@media (max-width: 640px) {
+  .problems-stat-chips {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+
+  /* Hide the "Remaining" chip and ring on mobile screens to save space */
+  .problems-stat-chips > div:nth-child(4),
+  .problems-stat-chips > div:last-child {
+    display: none !important;
+  }
+
+  .diff-breakdown-bar {
+    gap: 12px;
+    padding: 10px 12px;
+  }
+
+  .diff-completion-right {
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* ─── Very small: ≤ 380px ─── */
+@media (max-width: 380px) {
+  .problems-list-page {
+    gap: 10px;
+  }
+
+  .diff-breakdown-bar {
+    gap: 8px;
+  }
+
+  .diff-divider {
+    display: none;
+  }
+
+  .pmc-topic-badge {
+    max-width: 90px;
+  }
+
+  .diff-tabs button {
+    padding: 4px 4px !important;
+    font-size: 0.68rem !important;
+  }
+}
+
