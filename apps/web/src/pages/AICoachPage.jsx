@@ -201,7 +201,7 @@ function CodeBlock({ language = "text", value = "" }) {
 }
 
 // Markdown parser converting bold, headers, inline code, and lists to styled HTML nodes
-function parseMarkdownInline(text = "", isLight = false) {
+function parseMarkdownInline(text = "", isLight = false, isUser = false) {
   if (!text) return "";
 
   // Split by bold tokens **...**
@@ -210,12 +210,14 @@ function parseMarkdownInline(text = "", isLight = false) {
   let lastIdx = 0;
   let match;
 
+  const boldColor = isUser ? "#ffffff" : (isLight ? "#0f172a" : "#ffffff");
+
   while ((match = boldRegex.exec(text)) !== null) {
     if (match.index > lastIdx) {
       parts.push(text.substring(lastIdx, match.index));
     }
     parts.push(
-      <strong key={`b-${match.index}`} style={{ color: isLight ? "#0f172a" : "#ffffff", fontWeight: "700" }}>
+      <strong key={`b-${match.index}`} style={{ color: boldColor, fontWeight: "700" }}>
         {match[1]}
       </strong>
     );
@@ -243,9 +245,15 @@ function parseMarkdownInline(text = "", isLight = false) {
         <code
           key={`code-${chunkIdx}-${sMatch.index}`}
           style={{
-            background: isLight ? "rgba(124, 58, 237, 0.08)" : "rgba(124, 58, 237, 0.16)",
-            color: isLight ? "#6d28d9" : "#c084fc",
-            border: isLight ? "1px solid rgba(124, 58, 237, 0.25)" : "1px solid rgba(124, 58, 237, 0.3)",
+            background: isUser
+              ? "rgba(255, 255, 255, 0.2)"
+              : (isLight ? "rgba(124, 58, 237, 0.08)" : "rgba(124, 58, 237, 0.16)"),
+            color: isUser
+              ? "#ffffff"
+              : (isLight ? "#6d28d9" : "#c084fc"),
+            border: isUser
+              ? "1px solid rgba(255, 255, 255, 0.3)"
+              : (isLight ? "1px solid rgba(124, 58, 237, 0.25)" : "1px solid rgba(124, 58, 237, 0.3)"),
             padding: "2px 6px",
             borderRadius: "5px",
             fontSize: "0.84em",
@@ -267,9 +275,12 @@ function parseMarkdownInline(text = "", isLight = false) {
   });
 }
 
-function FormattedMessage({ text = "" }) {
+function FormattedMessage({ text = "", isUser = false }) {
   if (!text) return null;
   const { isLight } = useTheme();
+
+  const textColor = isUser ? "#ffffff" : (isLight ? "#334155" : "#cbd5e1");
+  const headerColor = isUser ? "#ffffff" : (isLight ? "#0f172a" : "#f8fafc");
 
   // Split by code blocks ```lang ... ```
   const codeBlockRegex = /```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g;
@@ -312,12 +323,12 @@ function FormattedMessage({ text = "" }) {
                     style={{
                       fontSize: "0.98rem",
                       fontWeight: "800",
-                      color: isLight ? "#0f172a" : "#f8fafc",
+                      color: headerColor,
                       margin: "8px 0 2px 0",
                       letterSpacing: "-0.01em"
                     }}
                   >
-                    {parseMarkdownInline(trimmed.substring(4), isLight)}
+                    {parseMarkdownInline(trimmed.substring(4), isLight, isUser)}
                   </h4>
                 );
               }
@@ -329,12 +340,12 @@ function FormattedMessage({ text = "" }) {
                     style={{
                       fontSize: "1.05rem",
                       fontWeight: "800",
-                      color: isLight ? "#0f172a" : "#f8fafc",
+                      color: headerColor,
                       margin: "10px 0 2px 0",
                       letterSpacing: "-0.02em"
                     }}
                   >
-                    {parseMarkdownInline(trimmed.substring(3), isLight)}
+                    {parseMarkdownInline(trimmed.substring(3), isLight, isUser)}
                   </h3>
                 );
               }
@@ -349,11 +360,11 @@ function FormattedMessage({ text = "" }) {
                       alignItems: "flex-start",
                       gap: "8px",
                       marginLeft: "6px",
-                      color: isLight ? "#334155" : "#cbd5e1"
+                      color: textColor
                     }}
                   >
-                    <span style={{ color: "#a855f7", fontWeight: "700", lineHeight: "1.4" }}>•</span>
-                    <div style={{ flex: 1 }}>{parseMarkdownInline(trimmed.substring(2), isLight)}</div>
+                    <span style={{ color: isUser ? "#ffffff" : "#a855f7", fontWeight: "700", lineHeight: "1.4" }}>•</span>
+                    <div style={{ flex: 1 }}>{parseMarkdownInline(trimmed.substring(2), isLight, isUser)}</div>
                   </div>
                 );
               }
@@ -369,21 +380,21 @@ function FormattedMessage({ text = "" }) {
                       alignItems: "flex-start",
                       gap: "8px",
                       marginLeft: "6px",
-                      color: isLight ? "#334155" : "#cbd5e1"
+                      color: textColor
                     }}
                   >
-                    <span style={{ color: "#818cf8", fontWeight: "700", fontSize: "0.82rem", minWidth: "16px" }}>
+                    <span style={{ color: isUser ? "#ffffff" : "#818cf8", fontWeight: "700", fontSize: "0.82rem", minWidth: "16px" }}>
                       {numMatch[1]}.
                     </span>
-                    <div style={{ flex: 1 }}>{parseMarkdownInline(numMatch[2], isLight)}</div>
+                    <div style={{ flex: 1 }}>{parseMarkdownInline(numMatch[2], isLight, isUser)}</div>
                   </div>
                 );
               }
 
               // Normal text line
               return (
-                <div key={lineIdx} style={{ color: isLight ? "#334155" : "#cbd5e1" }}>
-                  {parseMarkdownInline(trimmed, isLight)}
+                <div key={lineIdx} style={{ color: textColor }}>
+                  {parseMarkdownInline(trimmed, isLight, isUser)}
                 </div>
               );
             })}
@@ -520,6 +531,28 @@ export default function AICoachPage() {
       });
     }
   }, [messages, isTyping, activeTab]);
+
+  // Enable two-finger touchpad / trackpad scrolling explicitly for AI mentor chat container
+  useEffect(() => {
+    if (activeTab !== "mentor") return;
+    const el = chatScrollRef.current;
+    if (!el) return;
+
+    const onWheel = (e) => {
+      const canScrollUp = el.scrollTop > 0 && e.deltaY < 0;
+      const canScrollDown = Math.ceil(el.scrollTop + el.clientHeight) < el.scrollHeight && e.deltaY > 0;
+      if (canScrollUp || canScrollDown) {
+        el.scrollTop += e.deltaY;
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+    };
+  }, [activeTab]);
 
   // Pre-fill latest submission code for Code Review tab if available
   useEffect(() => {
@@ -1223,7 +1256,7 @@ export default function AICoachPage() {
                             lineHeight: "1.5"
                           }}
                         >
-                          <FormattedMessage text={msg.text} />
+                          <FormattedMessage text={msg.text} isUser={!isAi} />
                         </div>
 
                         <div
