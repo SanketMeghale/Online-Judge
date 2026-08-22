@@ -57,6 +57,7 @@ export default function ContestPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedContest, setSelectedContest] = useState(null);
+  const [isFocused, setIsFocused] = useState(false);
 
   const [leaderboard, setLeaderboard] = useState([]);
   const [liveSeconds, setLiveSeconds] = useState(3600);
@@ -212,7 +213,7 @@ export default function ContestPage() {
     >
       {/* ── HEADER & RATING WIDGET ────────────────────────────────────── */}
       <div className="responsive-page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap", flex: "1 1 auto", maxWidth: "720px" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "2px" }}>
               <Swords size={15} style={{ color: "#a855f7" }} />
@@ -229,19 +230,29 @@ export default function ContestPage() {
           <div className="contest-search-box" style={{
             display: "flex",
             alignItems: "center",
-            gap: "7px",
-            background: isLight ? "#ffffff" : "#080c14",
-            border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.08)",
-            boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.03)" : "none",
-            borderRadius: "7px",
-            padding: "5px 11px",
-            minWidth: "240px",
-            marginTop: "6px"
+            gap: "9px",
+            background: isFocused
+              ? (isLight ? "#ffffff" : "#0c1322")
+              : (isLight ? "#f8fafc" : "rgba(255,255,255,0.02)"),
+            border: isFocused
+              ? "1px solid #6366f1"
+              : (isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)"),
+            boxShadow: isFocused
+              ? (isLight ? "0 0 0 3px rgba(99, 102, 241, 0.12)" : "0 0 0 3px rgba(99, 102, 241, 0.2)")
+              : "none",
+            borderRadius: "10px",
+            padding: "6px 14px",
+            flex: "1 1 280px",
+            maxWidth: "420px",
+            marginTop: "6px",
+            transition: "all 0.2s cubic-bezier(0.16, 1, 0.3, 1)"
           }}>
-            <Search size={14} style={{ color: isLight ? "#64748b" : "#475569" }} />
+            <Search size={14} style={{ color: isFocused ? "#6366f1" : (isLight ? "#64748b" : "#475569"), transition: "color 0.2s ease" }} />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
               placeholder="Search contests..."
               style={{ background: "transparent", border: "none", outline: "none", color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.82rem", width: "100%" }}
             />
