@@ -8,6 +8,7 @@ import {
   Maximize2,
   Minimize2,
   Play,
+  Rocket,
   RotateCcw,
   Sparkles,
   TerminalSquare,
@@ -644,66 +645,96 @@ export default function CodeEditor({
           </div>
         </div>
 
-        {/* Right Side: Run & Submit Action Buttons */}
+        {/* Right Side: Stylish, Modern & Colorful Run & Submit Action Buttons */}
         {onRun && onSubmit ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <button
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            
+            {/* Modern Colorful Run Button */}
+            <motion.button
+              type="button"
               onClick={onRun}
               disabled={isRunning || isSubmitting}
-              type="button"
+              whileHover={isRunning || isSubmitting ? {} : { scale: 1.04, y: -1 }}
+              whileTap={isRunning || isSubmitting ? {} : { scale: 0.96 }}
               style={{
-                background: isLight ? "#ffffff" : "#151b29",
-                border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.14)",
-                borderRadius: "8px",
-                color: isLight ? "#0f172a" : "#f1f5f9",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "7px",
                 padding: "6px 14px",
+                borderRadius: "9px",
                 fontSize: "0.82rem",
                 fontWeight: "700",
+                letterSpacing: "-0.01em",
                 cursor: isRunning || isSubmitting ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                opacity: isRunning || isSubmitting ? 0.7 : 1,
-                transition: "all 0.15s ease",
-                boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.05)" : "none"
+                opacity: isRunning || isSubmitting ? 0.65 : 1,
+                background: isLight
+                  ? "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)"
+                  : "linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.28) 100%)",
+                border: isLight ? "1px solid #6ee7b7" : "1px solid rgba(52, 211, 153, 0.45)",
+                color: isLight ? "#047857" : "#6ee7b7",
+                boxShadow: isLight
+                  ? "0 2px 6px rgba(16, 185, 129, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.8)"
+                  : "0 2px 10px rgba(16, 185, 129, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+                transition: "box-shadow 0.15s ease, border-color 0.15s ease"
               }}
             >
               {isRunning ? (
-                <Loader2 size={14} className="animate-spin" style={{ color: "#38bdf8" }} />
+                <Loader2 size={14} className="animate-spin" style={{ color: "currentColor" }} />
               ) : (
-                <Play size={14} style={{ color: "#22c55e", fill: "#22c55e" }} />
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "16px",
+                    height: "16px",
+                    borderRadius: "50%",
+                    background: isLight ? "rgba(5, 150, 105, 0.15)" : "rgba(52, 211, 153, 0.2)",
+                    color: "currentColor"
+                  }}
+                >
+                  <Play size={10} style={{ fill: "currentColor", marginLeft: "1px" }} />
+                </span>
               )}
-              {isRunning ? "Running..." : "Run"}
-            </button>
+              <span>{isRunning ? "Running..." : "Run"}</span>
+            </motion.button>
 
-            <button
+            {/* Modern Colorful Vibrant Submit Button */}
+            <motion.button
+              type="button"
               onClick={onSubmit}
               disabled={isRunning || isSubmitting}
-              type="button"
+              whileHover={isRunning || isSubmitting ? {} : { scale: 1.04, y: -1 }}
+              whileTap={isRunning || isSubmitting ? {} : { scale: 0.96 }}
               style={{
-                background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
-                border: "none",
-                borderRadius: "8px",
-                color: "#ffffff",
-                padding: "6px 16px",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "7px",
+                padding: "6px 18px",
+                borderRadius: "9px",
                 fontSize: "0.82rem",
                 fontWeight: "700",
+                letterSpacing: "-0.01em",
                 cursor: isRunning || isSubmitting ? "not-allowed" : "pointer",
-                boxShadow: "0 2px 10px rgba(99, 102, 241, 0.35)",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                opacity: isRunning || isSubmitting ? 0.7 : 1,
-                transition: "all 0.15s ease"
+                opacity: isRunning || isSubmitting ? 0.65 : 1,
+                background: isLight
+                  ? "linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%)"
+                  : "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)",
+                border: "1px solid rgba(255, 255, 255, 0.25)",
+                color: "#ffffff",
+                boxShadow: isLight
+                  ? "0 4px 14px rgba(79, 70, 229, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.35)"
+                  : "0 4px 18px rgba(139, 92, 246, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
+                transition: "box-shadow 0.15s ease, filter 0.15s ease"
               }}
             >
               {isSubmitting ? (
-                <Loader2 size={14} className="animate-spin" />
+                <Loader2 size={14} className="animate-spin" style={{ color: "#ffffff" }} />
               ) : (
-                <Zap size={14} style={{ fill: "#ffffff" }} />
+                <Rocket size={13} style={{ fill: "#ffffff", color: "#ffffff" }} />
               )}
-              {isSubmitting ? "Submitting..." : "Submit"}
-            </button>
+              <span>{isSubmitting ? "Submitting..." : "Submit"}</span>
+            </motion.button>
           </div>
         ) : null}
       </div>
