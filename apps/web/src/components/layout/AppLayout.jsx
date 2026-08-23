@@ -21,9 +21,9 @@ export default function AppLayout({ children }) {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
-      const localPrefs = stored ? JSON.parse(stored) : {};
+      const rawTheme = localStorage.getItem("judgo_theme");
       const mergedPrefs = {
-        theme: user?.preferences?.theme || localPrefs.theme || "light",
+        theme: rawTheme || user?.preferences?.theme || localPrefs.theme || "dark",
         accentColor: user?.preferences?.accentColor || localPrefs.accentColor || "indigo",
         density: user?.preferences?.density || localPrefs.density || "comfortable",
         compactMode: user?.preferences?.compactMode ?? localPrefs.compactMode ?? false

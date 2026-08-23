@@ -6,8 +6,8 @@ const SETTINGS_STORAGE_KEY = "judgo-user-settings-v1";
 const THEME_STORAGE_KEY = "judgo_theme";
 
 const ThemeContext = createContext({
-  theme: "light",
-  resolvedTheme: "light",
+  theme: "dark",
+  resolvedTheme: "dark",
   setTheme: () => {},
   toggleTheme: () => {},
   accentColor: "indigo",
@@ -18,7 +18,7 @@ const ThemeContext = createContext({
 
 function getInitialPreferences() {
   if (typeof window === "undefined") {
-    return { theme: "light", accentColor: "indigo", density: "comfortable", compactMode: false };
+    return { theme: "dark", accentColor: "indigo", density: "comfortable", compactMode: false };
   }
 
   try {
@@ -26,14 +26,14 @@ function getInitialPreferences() {
     const storedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
     const parsedSettings = storedSettings ? JSON.parse(storedSettings) : {};
 
-    const theme = rawTheme || parsedSettings.theme || "light";
+    const theme = rawTheme || parsedSettings.theme || "dark";
     const accentColor = parsedSettings.accentColor || "indigo";
     const density = parsedSettings.density || (parsedSettings.compactMode ? "compact" : "comfortable");
     const compactMode = Boolean(parsedSettings.compactMode || density === "compact");
 
     return { theme, accentColor, density, compactMode };
   } catch {
-    return { theme: "light", accentColor: "indigo", density: "comfortable", compactMode: false };
+    return { theme: "dark", accentColor: "indigo", density: "comfortable", compactMode: false };
   }
 }
 
