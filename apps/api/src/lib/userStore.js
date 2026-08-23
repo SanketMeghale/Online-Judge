@@ -436,6 +436,26 @@ export async function updateUserProfile(userId, updateData) {
   if (typeof updateData.bio === "string") {
     allowedFields.bio = updateData.bio.slice(0, 300);
   }
+  if (typeof updateData.photoURL === "string") {
+    allowedFields.photoURL = updateData.photoURL.trim();
+    allowedFields.avatarUrl = updateData.photoURL.trim();
+  }
+  if (typeof updateData.avatarUrl === "string") {
+    allowedFields.avatarUrl = updateData.avatarUrl.trim();
+    allowedFields.photoURL = updateData.avatarUrl.trim();
+  }
+  if (typeof updateData.location === "string") {
+    allowedFields.location = updateData.location.trim().slice(0, 100);
+  }
+  if (typeof updateData.github === "string") {
+    allowedFields.github = updateData.github.trim().slice(0, 200);
+  }
+  if (typeof updateData.linkedin === "string") {
+    allowedFields.linkedin = updateData.linkedin.trim().slice(0, 200);
+  }
+  if (typeof updateData.website === "string") {
+    allowedFields.website = updateData.website.trim().slice(0, 200);
+  }
   if (typeof updateData.language === "string") {
     allowedFields.language = updateData.language;
   }

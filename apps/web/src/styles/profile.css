@@ -634,3 +634,195 @@
     flex-wrap: wrap;
   }
 }
+
+/* ==========================================================================
+   DARK THEME ADAPTIVE STYLES
+   ========================================================================== */
+[data-theme="dark"] .profile-page-root {
+  --prof-ink: #f8fafc;
+  --prof-copy: #cbd5e1;
+  --prof-muted: #94a3b8;
+  --prof-border: rgba(255, 255, 255, 0.08);
+  --prof-soft: #080c14;
+  --prof-primary: #6366f1;
+  --prof-blue: #38bdf8;
+  --prof-green: #10b981;
+  --prof-orange: #fb923c;
+  --prof-purple: #a855f7;
+}
+
+[data-theme="dark"] .prof-hero-card,
+[data-theme="dark"] .prof-stat-card,
+[data-theme="dark"] .prof-glass-panel,
+[data-theme="dark"] .prof-submissions-panel {
+  background: #0d111a;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .prof-stat-card:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .prof-badge-pill {
+  background: #111827;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .prof-level-capsule {
+  background: rgba(8, 12, 20, 0.95);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .prof-xp-bar-track,
+[data-theme="dark"] .prof-topic-track {
+  background: #1e293b;
+}
+
+[data-theme="dark"] .prof-secondary-action {
+  background: #111827;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .prof-secondary-action:hover {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: #6366f1;
+  color: #a5b4fc;
+}
+
+/* ==========================================================================
+   SOCIAL CHIPS & MODAL STYLES
+   ========================================================================== */
+.prof-social-chip {
+  align-items: center;
+  background: var(--prof-soft);
+  border: 1px solid var(--prof-border);
+  border-radius: 6px;
+  color: var(--prof-copy);
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 600;
+  gap: 5px;
+  padding: 3px 8px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.prof-social-chip:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4338ca;
+}
+
+[data-theme="dark"] .prof-social-chip:hover {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: #6366f1;
+  color: #a5b4fc;
+}
+
+.prof-modal-backdrop {
+  align-items: center;
+  backdrop-filter: blur(6px);
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 20px;
+  position: fixed;
+  z-index: 1000;
+}
+
+.prof-modal-card {
+  border-radius: 16px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
+  max-height: 90vh;
+  max-width: 540px;
+  overflow-y: auto;
+  padding: 24px;
+  width: 100%;
+}
+
+.prof-modal-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.prof-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.prof-form-group label {
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.prof-form-group input,
+.prof-form-group textarea {
+  background: var(--prof-soft);
+  border: 1px solid var(--prof-border);
+  border-radius: 8px;
+  color: var(--prof-ink);
+  font-family: inherit;
+  font-size: 0.84rem;
+  padding: 8px 12px;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.prof-form-group input:focus,
+.prof-form-group textarea:focus {
+  border-color: var(--prof-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  outline: none;
+}
+
+.prof-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.prof-btn-cancel {
+  background: transparent;
+  border: 1px solid var(--prof-border);
+  border-radius: 8px;
+  color: var(--prof-copy);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 8px 16px;
+  transition: all 0.15s ease;
+}
+
+.prof-btn-save {
+  background: #4f46e5;
+  border: 1px solid #4338ca;
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 8px 18px;
+  transition: all 0.15s ease;
+}
+
+.prof-btn-save:hover:not(:disabled) {
+  background: #4338ca;
+}
+
+.prof-btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spin-fast {
+  animation: spin 0.8s linear infinite;
+}

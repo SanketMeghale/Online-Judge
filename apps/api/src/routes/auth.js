@@ -258,7 +258,21 @@ router.get("/check-username", optionalAuth, async (request, response) => {
 router.patch("/settings", requireAuth, async (request, response) => {
   try {
     const userId = request.user.id;
-    const { name, displayName, username, bio, language, timezone, preferences } = request.body || {};
+    const {
+      name,
+      displayName,
+      username,
+      bio,
+      photoURL,
+      avatarUrl,
+      location,
+      github,
+      linkedin,
+      website,
+      language,
+      timezone,
+      preferences
+    } = request.body || {};
 
     const cleanName = String(displayName || name || "").trim();
     if (cleanName && cleanName.length < 2) {
@@ -284,6 +298,12 @@ router.patch("/settings", requireAuth, async (request, response) => {
       name: cleanName,
       username: cleanUsername,
       bio: typeof bio === "string" ? bio : undefined,
+      photoURL: typeof photoURL === "string" ? photoURL : typeof avatarUrl === "string" ? avatarUrl : undefined,
+      avatarUrl: typeof avatarUrl === "string" ? avatarUrl : typeof photoURL === "string" ? photoURL : undefined,
+      location: typeof location === "string" ? location : undefined,
+      github: typeof github === "string" ? github : undefined,
+      linkedin: typeof linkedin === "string" ? linkedin : undefined,
+      website: typeof website === "string" ? website : undefined,
       language: typeof language === "string" ? language : undefined,
       timezone: typeof timezone === "string" ? timezone : undefined,
       preferences: preferences && typeof preferences === "object" ? preferences : undefined

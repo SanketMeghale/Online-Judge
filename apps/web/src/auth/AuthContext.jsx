@@ -180,6 +180,30 @@ export function AuthProvider({ children }) {
     return nextSession;
   }
 
+  function updateUser(updatedUser) {
+    if (!updatedUser) return;
+    setSession((current) => {
+      if (!current) return current;
+      const nextSession = {
+        ...current,
+        user: { ...current.user, ...updatedUser }
+      };
+      writeStoredSession(nextSession);
+      return nextSession;
+    });
+
+    updateDatabase((current) => {
+      const uid = String(updatedUser.id || updatedUser._id || "");
+      if (!uid) return current;
+      return {
+        ...current,
+        users: (current.users || []).map((u) =>
+          String(u.id) === uid || String(u._id) === uid ? { ...u, ...updatedUser } : u
+        )
+      };
+    });
+  }
+
   async function logout() {
     try {
       await api.logout();
@@ -199,7 +223,8 @@ export function AuthProvider({ children }) {
       loginGoogle,
       loginGitHub,
       logout,
-      register
+      register,
+      updateUser
     }),
     [session, status]
   );
