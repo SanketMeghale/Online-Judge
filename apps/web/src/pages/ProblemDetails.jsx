@@ -224,13 +224,21 @@ function ProblemDetailsInner() {
     } catch {}
   }
 
+  function updateResultHeight(clientY) {
+    if (!resultResizeStartRef.current) return;
+    const delta = resultResizeStartRef.current.y - clientY;
+    const minH = 180;
+    const maxH = typeof window !== "undefined" ? Math.max(760, window.innerHeight - 100) : 760;
+    const nextHeight = Math.min(maxH, Math.max(minH, Math.round(resultResizeStartRef.current.height + delta)));
+    resultPanelHeightRef.current = nextHeight;
+    setResultPanelHeight(nextHeight);
+  }
+
   function startResultResize(event) {
     event.preventDefault();
-    try {
-      event.currentTarget.setPointerCapture(event.pointerId);
-    } catch {}
+    const clientY = event.touches ? event.touches[0].clientY : event.clientY;
     resultResizeStartRef.current = {
-      y: event.clientY,
+      y: clientY,
       height: resultPanelHeightRef.current
     };
     setIsResultResizing(true);
@@ -241,27 +249,44 @@ function ProblemDetailsInner() {
     if (!isResultResizing) return;
 
     function handlePointerMove(event) {
-      const delta = resultResizeStartRef.current.y - event.clientY;
-      const nextHeight = Math.min(720, Math.max(280, resultResizeStartRef.current.height + delta));
-      resultPanelHeightRef.current = nextHeight;
-      setResultPanelHeight(nextHeight);
+      const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+      if (typeof clientY === "number") {
+        updateResultHeight(clientY);
+      }
     }
 
-    function handlePointerUp(event) {
-      try {
-        event.target.releasePointerCapture(event.pointerId);
-      } catch {}
+    function handlePointerUp() {
       setIsResultResizing(false);
       try {
         localStorage.setItem("judgo-result-panel-height", String(resultPanelHeightRef.current));
       } catch {}
     }
 
-    window.addEventListener("pointermove", handlePointerMove);
+    const prevCursor = document.body.style.cursor;
+    const prevUserSelect = document.body.style.userSelect;
+    document.body.style.cursor = "row-resize";
+    document.body.style.userSelect = "none";
+
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("mousemove", handlePointerMove, { passive: true });
+    window.addEventListener("touchmove", handlePointerMove, { passive: true });
+
     window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("mouseup", handlePointerUp);
+    window.addEventListener("touchend", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerUp);
+
     return () => {
+      document.body.style.cursor = prevCursor;
+      document.body.style.userSelect = prevUserSelect;
       window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("mousemove", handlePointerMove);
+      window.removeEventListener("touchmove", handlePointerMove);
+
       window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("mouseup", handlePointerUp);
+      window.removeEventListener("touchend", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
     };
   }, [isResultResizing]);
 
@@ -270,7 +295,7 @@ function ProblemDetailsInner() {
     event.preventDefault();
     const nextHeight = event.key === "Home"
       ? 430
-      : Math.min(720, Math.max(280, resultPanelHeightRef.current + (event.key === "ArrowUp" ? 24 : -24)));
+      : Math.min(800, Math.max(180, resultPanelHeightRef.current + (event.key === "ArrowUp" ? 24 : -24)));
     resultPanelHeightRef.current = nextHeight;
     setResultPanelHeight(nextHeight);
     try {
@@ -805,12 +830,14 @@ function ProblemDetailsInner() {
             role="separator"
             aria-label="Resize execution result panel"
             aria-orientation="horizontal"
-            aria-valuemin={280}
-            aria-valuemax={720}
+            aria-valuemin={180}
+            aria-valuemax={900}
             aria-valuenow={Math.round(resultPanelHeight)}
             tabIndex={0}
-            title="Drag to resize results. Double-click or press Home to reset."
+            title="Drag to resize result panel vertically. Double-click or press Home to reset."
             onPointerDown={startResultResize}
+            onMouseDown={startResultResize}
+            onTouchStart={startResultResize}
             onKeyDown={resizeResultWithKeyboard}
             onDoubleClick={() => {
               resultPanelHeightRef.current = 430;
@@ -818,6 +845,11 @@ function ProblemDetailsInner() {
               try {
                 localStorage.setItem("judgo-result-panel-height", "430");
               } catch {}
+            }}
+            style={{
+              cursor: "row-resize",
+              touchAction: "none",
+              userSelect: "none"
             }}
           >
             <span className="result-panel-resizer-handle" aria-hidden="true">
