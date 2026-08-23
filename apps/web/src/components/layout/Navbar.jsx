@@ -37,135 +37,11 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // -------------------------------------------------------------------------
-  // GLOBAL AUTO-HIDE NAVBAR STATE & TIMERS
-  // -------------------------------------------------------------------------
-  const [isVisible, setIsVisible] = useState(true);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-
-  const hideTimerRef = useRef(null);
-  const isHoveredRef = useRef(false);
-  const isFocusedRef = useRef(false);
-  const dropdownOpenRef = useRef(false);
-  const notifOpenRef = useRef(false);
-  const paletteOpenRef = useRef(false);
-
-  // Keep refs in sync for event callbacks without stale closures
-  useEffect(() => {
-    isHoveredRef.current = isHovered;
-  }, [isHovered]);
-
-  useEffect(() => {
-    isFocusedRef.current = isFocused;
-  }, [isFocused]);
-
-  useEffect(() => {
-    dropdownOpenRef.current = dropdownOpen;
-  }, [dropdownOpen]);
-
-  useEffect(() => {
-    notifOpenRef.current = notifOpen;
-  }, [notifOpen]);
-
-  useEffect(() => {
-    paletteOpenRef.current = paletteOpen;
-  }, [paletteOpen]);
-
-  const clearHideTimer = useCallback(() => {
-    if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-  }, []);
-
-  const scheduleHide = useCallback((delay = 1200) => {
-    clearHideTimer();
-    hideTimerRef.current = setTimeout(() => {
-      // Do not hide if user is interacting with navbar, dropdowns, or has keyboard focus
-      if (
-        isHoveredRef.current ||
-        dropdownOpenRef.current ||
-        notifOpenRef.current ||
-        paletteOpenRef.current ||
-        isFocusedRef.current
-      ) {
-        return;
-      }
-      setIsVisible(false);
-    }, delay);
-  }, [clearHideTimer]);
-
-  const showNavbar = useCallback(() => {
-    clearHideTimer();
-    setIsVisible(true);
-  }, [clearHideTimer]);
-
-  // Page Entry: Navbar initially visible on route change, then auto-hides after ~1.8s
-  useEffect(() => {
-    showNavbar();
-    scheduleHide(1800);
-  }, [location.pathname, showNavbar, scheduleHide]);
-
-  // Keep visible while dropdowns / palette / focus are active; schedule hide when closed
-  useEffect(() => {
-    if (dropdownOpen || notifOpen || paletteOpen || isFocused || isHovered) {
-      showNavbar();
-    } else {
-      scheduleHide(1000);
-    }
-  }, [dropdownOpen, notifOpen, paletteOpen, isFocused, isHovered, showNavbar, scheduleHide]);
-
-  // Global pointer listener for top edge trigger (14px) and mobile touch
-  useEffect(() => {
-    let lastTime = 0;
-    function handlePointerMove(e) {
-      const now = Date.now();
-      if (now - lastTime < 50) return;
-      lastTime = now;
-
-      // Reveal navbar when cursor moves to the top 14px of viewport
-      if (e.clientY <= 14) {
-        showNavbar();
-      }
-    }
-
-    function handleTouchStart(e) {
-      if (e.touches && e.touches[0] && e.touches[0].clientY <= 36) {
-        showNavbar();
-        scheduleHide(2500);
-      }
-    }
-
-    window.addEventListener("pointermove", handlePointerMove, { passive: true });
-    window.addEventListener("touchstart", handleTouchStart, { passive: true });
-    return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("touchstart", handleTouchStart);
-    };
-  }, [showNavbar, scheduleHide]);
-
-  // Apply CSS custom properties to document root for smooth content expansion
-  useEffect(() => {
-    const root = document.documentElement;
-    if (isVisible) {
-      root.style.setProperty("--global-nav-height", "68px");
-      root.style.setProperty("--global-nav-transform", "translateY(0)");
-      root.style.setProperty("--global-nav-opacity", "1");
-    } else {
-      root.style.setProperty("--global-nav-height", "0px");
-      root.style.setProperty("--global-nav-transform", "translateY(-100%)");
-      root.style.setProperty("--global-nav-opacity", "0");
-    }
-  }, [isVisible]);
-
   const currentUserId = user?.id || user?._id || "";
   const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
 
   const fullName = getUserDisplayName(liveUser);
   const username = String(liveUser?.username || "").trim();
-  const email = String(liveUser?.email || "").trim();
-  const avatarLetter = String(fullName || username || "D").slice(0, 1).toUpperCase();
   const streakCount = calculateStreak(
     [...(Array.isArray(liveUser?.activeDates) ? liveUser.activeDates : []), liveUser?.lastActiveDate].filter(Boolean),
     new Date()
@@ -174,11 +50,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
   // Scroll listener for smooth glass transition
   useEffect(() => {
     function handleScroll() {
-      if (window.scrollY > 10) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      setIsScrolled(window.scrollY > 10);
     }
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
@@ -204,93 +76,42 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
 
   return (
     <>
-      {/* Invisible Trigger Zone at Top Edge of Viewport (14px) */}
-      <div
-        className="navbar-top-trigger-zone"
-        onPointerEnter={showNavbar}
-        onTouchStart={() => {
-          showNavbar();
-          scheduleHide(2500);
-        }}
-        aria-hidden="true"
+      <header
+        className={`navbar navbar-modern ${isScrolled ? "navbar-scrolled" : ""}`}
         style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: "14px",
-          zIndex: 101,
-          pointerEvents: isVisible ? "none" : "auto"
-        }}
-      />
-
-      {/* Navbar Wrapper (Collapses height dynamically to reclaim vertical space) */}
-      <div
-        className={`navbar-wrapper ${!isVisible ? "is-hidden" : ""}`}
-        style={{
+          background: isLight
+            ? (isScrolled ? "rgba(255, 255, 255, 0.96)" : "rgba(255, 255, 255, 0.90)")
+            : (isScrolled ? "rgba(8, 12, 20, 0.95)" : "rgba(8, 12, 20, 0.85)"),
+          backdropFilter: "blur(12px)",
+          borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.07)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          height: "64px",
+          minHeight: "64px",
+          padding: "0 20px",
           position: "sticky",
           top: 0,
           zIndex: 100,
-          height: isVisible ? "68px" : "0px",
-          transition: "height 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-          overflow: "visible",
-          width: "100%"
+          width: "100%",
+          boxSizing: "border-box",
+          transition: "background 0.2s ease, border-color 0.2s ease"
         }}
       >
-        <header
-          className={`navbar navbar-modern ${isScrolled ? "navbar-scrolled" : ""} ${!isVisible ? "is-hidden" : ""}`}
-          onMouseEnter={() => {
-            setIsHovered(true);
-            showNavbar();
-          }}
-          onMouseLeave={() => {
-            setIsHovered(false);
-            scheduleHide(1000);
-          }}
-          onFocusCapture={() => {
-            setIsFocused(true);
-            showNavbar();
-          }}
-          onBlurCapture={(e) => {
-            if (!e.currentTarget.contains(e.relatedTarget)) {
-              setIsFocused(false);
-              scheduleHide(1000);
-            }
-          }}
-          style={{
-            background: isLight
-              ? (isScrolled ? "rgba(255, 255, 255, 0.96)" : "rgba(255, 255, 255, 0.90)")
-              : (isScrolled ? "rgba(8, 12, 20, 0.94)" : "rgba(8, 12, 20, 0.82)"),
-            backdropFilter: "blur(12px)",
-            borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.07)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            height: "68px",
-            padding: "0 24px",
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            transform: isVisible ? "translateY(0)" : "translateY(-100%)",
-            transition: "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, border-color 0.2s ease",
-            pointerEvents: isVisible ? "auto" : "none"
-          }}
-        >
-          {/* Left: Hamburger (Mobile) & Brand Logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-            {/* Mobile Hamburger Button */}
-            <button
-              type="button"
-              onClick={onToggleSidebar}
-              className="mobile-hamburger-btn"
-              aria-label="Toggle navigation menu"
+        {/* Left: Hamburger (Mobile) & Brand Logo */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          {/* Mobile Hamburger Button */}
+          <button
+            type="button"
+            onClick={onToggleSidebar}
+            className="mobile-hamburger-btn"
+            aria-label="Toggle navigation menu"
             style={{
               background: "transparent",
               border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: "8px",
-              width: "36px",
-              height: "36px",
+              borderRadius: "7px",
+              width: "32px",
+              height: "32px",
               display: "none",
               alignItems: "center",
               justifyContent: "center",
@@ -310,12 +131,12 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
               navigate("/admin/login");
             }}
             title="Judgo Coding Platform"
-            style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none", cursor: "pointer" }}
+            style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none", cursor: "pointer" }}
           >
             <motion.div
-              whileHover={{ scale: 1.12, rotate: 8 }}
-              whileTap={{ scale: 0.92 }}
-              animate={{ y: [0, -2.5, 0] }}
+              whileHover={{ scale: 1.08, rotate: 6 }}
+              whileTap={{ scale: 0.94 }}
+              animate={{ y: [0, -2, 0] }}
               transition={{
                 y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" },
                 scale: { duration: 0.2 },
@@ -325,16 +146,16 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                filter: "drop-shadow(0 2px 10px rgba(100, 80, 255, 0.7)) drop-shadow(0 0 18px rgba(59,130,246,0.35))"
+                filter: "drop-shadow(0 2px 8px rgba(100, 80, 255, 0.6))"
               }}
             >
               <img
                 src="/logo.png"
                 alt="Judgo Logo"
-                style={{ width: "38px", height: "38px", objectFit: "contain", display: "block", background: "transparent" }}
+                style={{ width: "28px", height: "28px", objectFit: "contain", display: "block", background: "transparent" }}
               />
             </motion.div>
-            <span style={{ fontSize: "1.22rem", fontWeight: "800", letterSpacing: "-0.02em", color: isLight ? "#0f172a" : "#ffffff" }}>
+            <span style={{ fontSize: "1.1rem", fontWeight: "800", letterSpacing: "-0.02em", color: isLight ? "#0f172a" : "#ffffff" }}>
               Judgo
             </span>
           </Link>
@@ -347,30 +168,35 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "10px",
+            gap: "8px",
             background: isLight ? "#f1f5f9" : "#0d111a",
             border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: "10px",
-            padding: "8px 16px",
-            width: "340px",
+            borderRadius: "8px",
+            padding: "0 12px",
+            height: "38px",
+            width: "320px",
             maxWidth: "100%",
             color: isLight ? "#64748b" : "#64748b",
-            fontSize: "0.85rem",
+            fontSize: "0.82rem",
             cursor: "pointer",
-            transition: "all 0.15s ease"
+            transition: "all 0.15s ease",
+            boxSizing: "border-box"
           }}
         >
-          <Search size={15} style={{ color: isLight ? "#64748b" : "#64748b" }} />
-          <span style={{ flex: 1, color: isLight ? "#475569" : "#94a3b8" }}>Search problems, tags, topics...</span>
+          <Search size={14} style={{ color: isLight ? "#64748b" : "#64748b", flexShrink: 0 }} />
+          <span style={{ flex: 1, color: isLight ? "#475569" : "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            Search problems, tags, topics...
+          </span>
           <kbd
             style={{
               background: isLight ? "#ffffff" : "rgba(255, 255, 255, 0.06)",
               border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255, 255, 255, 0.1)",
               borderRadius: "4px",
-              padding: "2px 6px",
-              fontSize: "0.72rem",
+              padding: "1px 5px",
+              fontSize: "0.68rem",
               color: isLight ? "#475569" : "#94a3b8",
-              boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.05)" : "none"
+              boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.05)" : "none",
+              flexShrink: 0
             }}
           >
             ⌘ K
@@ -378,7 +204,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
         </div>
 
         {/* Right: Streak + Notifications + Profile Area */}
-        <div className="topbar-right" style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+        <div className="topbar-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
           {isAuthenticated ? (
             <>
               {/* 1. Streak Badge */}
@@ -389,27 +215,29 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "6px",
+                  gap: "5px",
                   background: streakCount > 0 ? "rgba(245, 158, 11, 0.1)" : "rgba(100, 116, 139, 0.1)",
                   border: streakCount > 0 ? "1px solid rgba(245, 158, 11, 0.25)" : "1px solid rgba(100, 116, 139, 0.25)",
-                  padding: "4px 10px",
+                  padding: "0 10px",
+                  height: "32px",
                   borderRadius: "999px",
-                  fontSize: "0.82rem",
+                  fontSize: "0.78rem",
                   color: streakCount > 0 ? "#fbbf24" : "#94a3b8",
                   fontWeight: "600",
                   textDecoration: "none",
-                  transition: "transform 0.15s ease, border-color 0.15s ease"
+                  transition: "transform 0.15s ease, border-color 0.15s ease",
+                  boxSizing: "border-box"
                 }}
               >
-                <Flame size={15} style={{ color: streakCount > 0 ? "#f59e0b" : "#64748b" }} />
+                <Flame size={14} style={{ color: streakCount > 0 ? "#f59e0b" : "#64748b" }} />
                 <span>{streakCount} {streakCount === 1 ? "Day" : "Days"}</span>
               </Link>
 
               {/* 2. Quick Theme Toggle Button (Sun/Moon) */}
               <motion.button
                 className="nav-theme-button"
-                whileHover={{ scale: 1.06 }}
-                whileTap={{ scale: 0.94 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 type="button"
                 onClick={toggleTheme}
                 title={`Current theme: ${theme} (${resolvedTheme}). Click to switch to ${isLight ? "Dark" : "Light"} mode.`}
@@ -417,18 +245,19 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                 style={{
                   background: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.04)",
                   border: isLight ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(255, 255, 255, 0.08)",
-                  borderRadius: "8px",
-                  width: "36px",
-                  height: "36px",
+                  borderRadius: "7px",
+                  width: "32px",
+                  height: "32px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   color: isLight ? "#f59e0b" : "#818cf8",
                   cursor: "pointer",
-                  transition: "all 0.15s ease"
+                  transition: "all 0.15s ease",
+                  flexShrink: 0
                 }}
               >
-                {isLight ? <Sun size={17} /> : <Moon size={17} />}
+                {isLight ? <Sun size={15} /> : <Moon size={15} />}
               </motion.button>
 
               {/* 3. Notifications Bell */}
@@ -443,25 +272,26 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                   style={{
                     background: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.04)",
                     border: isLight ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(255, 255, 255, 0.08)",
-                    borderRadius: "8px",
-                    width: "36px",
-                    height: "36px",
+                    borderRadius: "7px",
+                    width: "32px",
+                    height: "32px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     color: isLight ? "#475569" : "#94a3b8",
                     cursor: "pointer",
-                    position: "relative"
+                    position: "relative",
+                    flexShrink: 0
                   }}
                 >
-                  <Bell size={16} />
+                  <Bell size={15} />
                   <span
                     style={{
                       position: "absolute",
-                      top: "7px",
-                      right: "7px",
-                      width: "6px",
-                      height: "6px",
+                      top: "6px",
+                      right: "6px",
+                      width: "5px",
+                      height: "5px",
                       borderRadius: "50%",
                       background: "#3b82f6"
                     }}
@@ -528,18 +358,20 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                       ? "1px solid rgba(99, 102, 241, 0.35)"
                       : isLight ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(255, 255, 255, 0.08)",
                     borderRadius: "999px",
-                    padding: "4px 12px 4px 4px",
+                    padding: "2px 8px 2px 2px",
+                    height: "34px",
                     display: "flex",
                     alignItems: "center",
-                    gap: "8px",
-                    transition: "all 0.15s ease"
+                    gap: "6px",
+                    transition: "all 0.15s ease",
+                    boxSizing: "border-box"
                   }}
                 >
                   {/* Clean Circular Avatar */}
                   <span
                     style={{
-                      width: "30px",
-                      height: "30px",
+                      width: "28px",
+                      height: "28px",
                       borderRadius: "50%",
                       background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
                       color: "#ffffff",
@@ -547,21 +379,21 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "0.84rem",
-                      boxShadow: "0 2px 8px rgba(79, 70, 229, 0.3)"
+                      fontSize: "0.80rem",
+                      boxShadow: "0 2px 6px rgba(79, 70, 229, 0.3)"
                     }}
                   >
                     {avatarLetter}
                   </span>
 
                   {/* User Full Name */}
-                  <strong className="nav-profile-name" style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.86rem", fontWeight: "600" }}>
+                  <strong className="nav-profile-name" style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.82rem", fontWeight: "600" }}>
                     {fullName}
                   </strong>
 
                   {/* Chevron Indicator */}
                   <ChevronDown
-                    size={14}
+                    size={13}
                     style={{
                       color: isLight ? "#64748b" : "#94a3b8",
                       transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
@@ -581,7 +413,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                       transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
                       style={{
                         position: "absolute",
-                        top: "calc(100% + 8px)",
+                        top: "calc(100% + 6px)",
                         right: 0,
                         width: "230px",
                         background: isLight ? "#ffffff" : "#0d111a",
@@ -598,18 +430,18 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                       {/* Dropdown Header Card */}
                       <div
                         style={{
-                          padding: "10px 12px 12px",
+                          padding: "8px 10px 10px",
                           borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
                           marginBottom: "4px",
                           display: "flex",
                           alignItems: "center",
-                          gap: "10px"
+                          gap: "8px"
                         }}
                       >
                         <span
                           style={{
-                            width: "36px",
-                            height: "36px",
+                            width: "32px",
+                            height: "32px",
                             borderRadius: "50%",
                             background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
                             color: "#ffffff",
@@ -617,22 +449,22 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            fontSize: "0.95rem"
+                            fontSize: "0.90rem"
                           }}
                         >
                           {avatarLetter}
                         </span>
                         <div style={{ overflow: "hidden" }}>
-                          <strong style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.88rem", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <strong style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.84rem", display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                             {fullName}
                           </strong>
-                          <p style={{ margin: 0, fontSize: "0.75rem", color: isLight ? "#64748b" : "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                            {username ? `@${username}` : email}
+                          <p style={{ margin: 0, fontSize: "0.72rem", color: isLight ? "#64748b" : "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {username ? `@${username}` : (email || "Logged in")}
                           </p>
                         </div>
                       </div>
 
-                      {/* Dropdown Links */}
+                      {/* Dropdown Menu Items */}
                       <Link
                         to="/profile"
                         onClick={() => setDropdownOpen(false)}
@@ -640,10 +472,10 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                           display: "flex",
                           alignItems: "center",
                           gap: "10px",
-                          padding: "8px 12px",
+                          padding: "7px 10px",
                           color: isLight ? "#334155" : "#cbd5e1",
                           textDecoration: "none",
-                          fontSize: "0.84rem",
+                          fontSize: "0.82rem",
                           borderRadius: "6px",
                           transition: "background 0.12s ease"
                         }}
@@ -661,17 +493,17 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                           display: "flex",
                           alignItems: "center",
                           gap: "10px",
-                          padding: "8px 12px",
+                          padding: "7px 10px",
                           color: isLight ? "#334155" : "#cbd5e1",
                           textDecoration: "none",
-                          fontSize: "0.84rem",
+                          fontSize: "0.82rem",
                           borderRadius: "6px",
                           transition: "background 0.12s ease"
                         }}
                         onMouseEnter={(e) => (e.currentTarget.style.background = isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.05)")}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
-                        <History size={15} style={{ color: "#818cf8" }} />
+                        <History size={15} style={{ color: "#38bdf8" }} />
                         <span>Submissions</span>
                       </Link>
 
@@ -682,91 +514,116 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                           display: "flex",
                           alignItems: "center",
                           gap: "10px",
-                          padding: "8px 12px",
+                          padding: "7px 10px",
                           color: isLight ? "#334155" : "#cbd5e1",
                           textDecoration: "none",
-                          fontSize: "0.84rem",
+                          fontSize: "0.82rem",
                           borderRadius: "6px",
                           transition: "background 0.12s ease"
                         }}
                         onMouseEnter={(e) => (e.currentTarget.style.background = isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.05)")}
                         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
-                        <Settings size={15} style={{ color: "#818cf8" }} />
-                        <span>Account Settings</span>
+                        <Settings size={15} style={{ color: "#a855f7" }} />
+                        <span>Settings</span>
                       </Link>
 
-                      <Link
-                        to="/settings?tab=editor"
-                        onClick={() => setDropdownOpen(false)}
+                      {/* Admin Panel Quick Entry (Conditional for Admins) */}
+                      {user?.role === "admin" && (
+                        <Link
+                          to="/admin/dashboard"
+                          onClick={() => setDropdownOpen(false)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "7px 10px",
+                            color: "#ec4899",
+                            textDecoration: "none",
+                            fontSize: "0.82rem",
+                            borderRadius: "6px",
+                            fontWeight: "600",
+                            transition: "background 0.12s ease"
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(236,72,153,0.08)")}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                        >
+                          <Shield size={15} />
+                          <span>Admin Panel</span>
+                        </Link>
+                      )}
+
+                      {/* Theme Mode Selector Row */}
+                      <div
                         style={{
                           display: "flex",
                           alignItems: "center",
-                          gap: "10px",
-                          padding: "8px 12px",
-                          color: isLight ? "#334155" : "#cbd5e1",
-                          textDecoration: "none",
-                          fontSize: "0.84rem",
-                          borderRadius: "6px",
-                          transition: "background 0.12s ease"
+                          justifyContent: "space-between",
+                          padding: "6px 10px",
+                          borderTop: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
+                          marginTop: "4px"
                         }}
-                        onMouseEnter={(e) => (e.currentTarget.style.background = isLight ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.05)")}
-                        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       >
-                        <Code2 size={15} style={{ color: "#818cf8" }} />
-                        <span>Editor Preferences</span>
-                      </Link>
-
-                      <div style={{ borderTop: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", margin: "6px 0 4px" }} />
-
-                      {/* Theme Mode Quick Selector */}
-                      <div style={{ padding: "4px 6px" }}>
-                        <span style={{ fontSize: "0.7rem", color: isLight ? "#64748b" : "#94a3b8", textTransform: "uppercase", fontWeight: "700", display: "block", marginBottom: "6px", paddingLeft: "4px" }}>
-                          Theme Mode
-                        </span>
-                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "4px", background: isLight ? "#f1f5f9" : "rgba(0,0,0,0.3)", padding: "3px", borderRadius: "8px" }}>
-                          {[
-                            { id: "dark", label: "Dark", icon: Moon },
-                            { id: "light", label: "Light", icon: Sun },
-                            { id: "system", label: "System", icon: Laptop }
-                          ].map((t) => {
-                            const Icon = t.icon;
-                            const isSelected = theme === t.id;
-                            return (
-                              <button
-                                key={t.id}
-                                type="button"
-                                onClick={() => setTheme(t.id)}
-                                style={{
-                                  background: isSelected ? "var(--dash-accent-primary, #6366f1)" : "transparent",
-                                  color: isSelected ? "#ffffff" : isLight ? "#475569" : "#94a3b8",
-                                  border: "none",
-                                  borderRadius: "6px",
-                                  padding: "5px 4px",
-                                  fontSize: "0.73rem",
-                                  fontWeight: isSelected ? "700" : "500",
-                                  cursor: "pointer",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  gap: "4px",
-                                  transition: "all 0.12s ease"
-                                }}
-                              >
-                                <Icon size={12} />
-                                <span>{t.label}</span>
-                              </button>
-                            );
-                          })}
+                        <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#94a3b8" }}>Theme</span>
+                        <div style={{ display: "flex", gap: "2px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.05)", padding: "2px", borderRadius: "6px" }}>
+                          <button
+                            type="button"
+                            onClick={() => setTheme("light")}
+                            title="Light mode"
+                            style={{
+                              background: theme === "light" ? (isLight ? "#ffffff" : "rgba(255,255,255,0.15)") : "transparent",
+                              border: "none",
+                              borderRadius: "4px",
+                              padding: "3px 6px",
+                              cursor: "pointer",
+                              color: theme === "light" ? "#f59e0b" : "#64748b",
+                              display: "flex",
+                              alignItems: "center"
+                            }}
+                          >
+                            <Sun size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setTheme("dark")}
+                            title="Dark mode"
+                            style={{
+                              background: theme === "dark" ? (isLight ? "#ffffff" : "rgba(255,255,255,0.15)") : "transparent",
+                              border: "none",
+                              borderRadius: "4px",
+                              padding: "3px 6px",
+                              cursor: "pointer",
+                              color: theme === "dark" ? "#818cf8" : "#64748b",
+                              display: "flex",
+                              alignItems: "center"
+                            }}
+                          >
+                            <Moon size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setTheme("system")}
+                            title="System theme"
+                            style={{
+                              background: theme === "system" ? (isLight ? "#ffffff" : "rgba(255,255,255,0.15)") : "transparent",
+                              border: "none",
+                              borderRadius: "4px",
+                              padding: "3px 6px",
+                              cursor: "pointer",
+                              color: theme === "system" ? (isLight ? "#0f172a" : "#ffffff") : "#64748b",
+                              display: "flex",
+                              alignItems: "center"
+                            }}
+                          >
+                            <Laptop size={13} />
+                          </button>
                         </div>
                       </div>
 
-                      <div style={{ borderTop: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", margin: "4px 0" }} />
-
                       {/* Sign Out Button */}
                       <button
-                        onClick={handleLogout}
                         type="button"
+                        onClick={handleLogout}
                         style={{
                           width: "100%",
                           background: "transparent",
@@ -774,10 +631,10 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                           display: "flex",
                           alignItems: "center",
                           gap: "10px",
-                          padding: "8px 12px",
+                          padding: "7px 10px",
                           color: "#f87171",
                           cursor: "pointer",
-                          fontSize: "0.84rem",
+                          fontSize: "0.82rem",
                           borderRadius: "6px",
                           textAlign: "left",
                           transition: "background 0.12s ease"
@@ -798,14 +655,17 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
               <Link
                 to="/login"
                 style={{
-                  color: "#cbd5e1",
+                  color: isLight ? "#334155" : "#cbd5e1",
                   textDecoration: "none",
-                  padding: "8px 16px",
-                  fontSize: "0.85rem",
+                  padding: "0 12px",
+                  height: "32px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  fontSize: "0.80rem",
                   fontWeight: "600",
-                  borderRadius: "8px",
-                  background: "rgba(255, 255, 255, 0.05)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)"
+                  borderRadius: "7px",
+                  background: isLight ? "rgba(0,0,0,0.04)" : "rgba(255, 255, 255, 0.05)",
+                  border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)"
                 }}
               >
                 Log in
@@ -815,12 +675,15 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
                 style={{
                   color: "#ffffff",
                   textDecoration: "none",
-                  padding: "8px 16px",
-                  fontSize: "0.85rem",
+                  padding: "0 14px",
+                  height: "32px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  fontSize: "0.80rem",
                   fontWeight: "600",
-                  borderRadius: "8px",
+                  borderRadius: "7px",
                   background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
-                  boxShadow: "0 4px 14px rgba(79, 70, 229, 0.35)"
+                  boxShadow: "0 2px 10px rgba(79, 70, 229, 0.3)"
                 }}
               >
                 Sign up
@@ -829,7 +692,6 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
           )}
         </div>
       </header>
-      </div>
 
       {/* Command Palette Modal */}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
