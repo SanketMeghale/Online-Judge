@@ -314,16 +314,23 @@ function ProblemDetailsInner() {
     }
   }, [getSubmissionsForUser, problemId, currentUserId, result]);
 
+  function getStarterForLanguage(p, lang) {
+    if (!p || !p.starterCode) return "";
+    const key = String(lang).toLowerCase().trim();
+    if (key === "c++" || key === "cpp") return p.starterCode.cpp || p.starterCode["c++"] || "";
+    if (key === "javascript" || key === "js") return p.starterCode.javascript || p.starterCode.js || "";
+    if (key === "python" || key === "py" || key === "python 3" || key === "python3") return p.starterCode.python || p.starterCode.py || "";
+    if (key === "java" || key === "java 24") return p.starterCode.java || "";
+    return p.starterCode[key] || p.starterCode[lang] || "";
+  }
+
   const [code, setCode] = useState(() =>
-    getSavedCode(problemId, "Python", problem?.starterCode?.Python ?? "")
+    getSavedCode(problemId, "Python", getStarterForLanguage(problem, "Python"))
   );
 
   useEffect(() => {
     if (!problemWithStatus) return;
-    const starter =
-      problemWithStatus.starterCode?.[language.toLowerCase()] ||
-      problemWithStatus.starterCode?.[language] ||
-      "";
+    const starter = getStarterForLanguage(problemWithStatus, language);
     setCode(getSavedCode(problemWithStatus.id, language, starter));
     setResult(null);
     setError("");
@@ -426,11 +433,14 @@ function ProblemDetailsInner() {
 
   function handleLanguageChange(nextLanguage) {
     setLanguage(nextLanguage);
-    const starter =
-      problemWithStatus.starterCode?.[nextLanguage.toLowerCase()] ||
-      problemWithStatus.starterCode?.[nextLanguage] ||
-      "";
+    const starter = getStarterForLanguage(problemWithStatus, nextLanguage);
     setCode(getSavedCode(problemWithStatus.id, nextLanguage, starter));
+  }
+
+  function handleResetCode() {
+    const starter = getStarterForLanguage(problemWithStatus, language);
+    setCode(starter);
+    saveCode(problemWithStatus.id, language, starter);
   }
 
   async function handleRun() {
@@ -821,6 +831,8 @@ function ProblemDetailsInner() {
             onLanguageChange={handleLanguageChange}
             onRun={handleRun}
             onSubmit={handleSubmit}
+            onReset={handleResetCode}
+            starterCode={getStarterForLanguage(problemWithStatus, language)}
             isRunning={isRunning}
             isSubmitting={isSubmitting}
           />
