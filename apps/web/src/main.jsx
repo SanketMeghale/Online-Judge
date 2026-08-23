@@ -48,6 +48,8 @@ const AdminSettings = lazy(() => import("./pages/admin/AdminSettings.jsx"));
 
 import "./styles/main.css";
 
+import { ErrorBoundary } from "./components/common/ErrorBoundary.jsx";
+
 // Global error handlers for diagnostics
 window.onerror = (...args) => {
   console.error("[GLOBAL ERROR]", args);
@@ -59,7 +61,37 @@ window.onunhandledrejection = (event) => {
 
 function RootPage() {
   const { isAuthenticated, isCheckingSession } = useAuth();
-  if (isCheckingSession) return null;
+  if (isCheckingSession) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "var(--bg-app, #050a18)",
+          color: "var(--text-primary, #f8fafc)",
+          fontFamily: "var(--font-family, sans-serif)"
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px" }}>
+          <div
+            style={{
+              width: "36px",
+              height: "36px",
+              border: "3px solid rgba(124, 58, 237, 0.2)",
+              borderTopColor: "#7c3aed",
+              borderRadius: "50%",
+              animation: "spin 0.8s linear infinite"
+            }}
+          />
+          <span style={{ fontSize: "0.9rem", color: "var(--text-muted, #94a3b8)", fontWeight: 500 }}>
+            Loading Judgo…
+          </span>
+        </div>
+      </div>
+    );
+  }
   if (!isAuthenticated) return <LandingPage />;
   return (
     <AppLayout>
@@ -74,10 +106,11 @@ createRoot(document.getElementById("root")).render(
       <AuthProvider>
         <ThemeProvider>
           <BrowserRouter>
-            <Suspense fallback={<div className="route-loading">Loading…</div>}>
-            <Routes>
-              {/* Root Route: Landing Page for Unauthenticated Users, Dashboard for Authenticated */}
-              <Route path="/" element={<RootPage />} />
+            <ErrorBoundary>
+              <Suspense fallback={<div className="route-loading" style={{ minHeight: "100vh", background: "var(--bg-app, #050a18)", color: "var(--text-primary, #f8fafc)", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading…</div>}>
+                <Routes>
+                  {/* Root Route: Landing Page for Unauthenticated Users, Dashboard for Authenticated */}
+                  <Route path="/" element={<RootPage />} />
 
               {/* Authenticated Dashboard & Coding Workspace Routes */}
               <Route element={<RequireAuth />}>
@@ -144,6 +177,7 @@ createRoot(document.getElementById("root")).render(
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             </Suspense>
+          </ErrorBoundary>
           </BrowserRouter>
         </ThemeProvider>
       </AuthProvider>

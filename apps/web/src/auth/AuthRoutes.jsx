@@ -34,11 +34,32 @@ export function PublicOnlyRoute() {
 
 function AuthLoading() {
   return (
-    <main className="auth-page">
-      <section className="auth-card auth-loading-card">
-        <span className="section-kicker">Session</span>
-        <h1>Checking your session...</h1>
-      </section>
-    </main>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "var(--bg-app, #050a18)",
+        color: "var(--text-primary, #f8fafc)",
+        fontFamily: "var(--font-family, sans-serif)"
+      }}
+    >
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px" }}>
+        <div
+          style={{
+            width: "36px",
+            height: "36px",
+            border: "3px solid rgba(124, 58, 237, 0.2)",
+            borderTopColor: "#7c3aed",
+            borderRadius: "50%",
+            animation: "spin 0.8s linear infinite"
+          }}
+        />
+        <span style={{ fontSize: "0.9rem", color: "var(--text-muted, #94a3b8)", fontWeight: 500 }}>
+          Loading your session…
+        </span>
+      </div>
+    </div>
   );
 }
