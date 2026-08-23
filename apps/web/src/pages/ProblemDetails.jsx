@@ -16,7 +16,8 @@ import {
   MemoryStick,
   Sliders,
   Sparkles,
-  XCircle
+  XCircle,
+  Zap
 } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/apiClient.js";
