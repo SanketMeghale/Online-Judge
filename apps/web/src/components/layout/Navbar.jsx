@@ -42,6 +42,8 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
 
   const fullName = getUserDisplayName(liveUser);
   const username = String(liveUser?.username || "").trim();
+  const email = String(liveUser?.email || user?.email || "").trim();
+  const avatarLetter = String(fullName || username || email || "U").slice(0, 1).toUpperCase();
   const streakCount = calculateStreak(
     [...(Array.isArray(liveUser?.activeDates) ? liveUser.activeDates : []), liveUser?.lastActiveDate].filter(Boolean),
     new Date()
