@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
@@ -30,11 +30,134 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
   const { getUserById } = useAppData();
   const { theme, resolvedTheme, isLight, toggleTheme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  // -------------------------------------------------------------------------
+  // GLOBAL AUTO-HIDE NAVBAR STATE & TIMERS
+  // -------------------------------------------------------------------------
+  const [isVisible, setIsVisible] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
+  const hideTimerRef = useRef(null);
+  const isHoveredRef = useRef(false);
+  const isFocusedRef = useRef(false);
+  const dropdownOpenRef = useRef(false);
+  const notifOpenRef = useRef(false);
+  const paletteOpenRef = useRef(false);
+
+  // Keep refs in sync for event callbacks without stale closures
+  useEffect(() => {
+    isHoveredRef.current = isHovered;
+  }, [isHovered]);
+
+  useEffect(() => {
+    isFocusedRef.current = isFocused;
+  }, [isFocused]);
+
+  useEffect(() => {
+    dropdownOpenRef.current = dropdownOpen;
+  }, [dropdownOpen]);
+
+  useEffect(() => {
+    notifOpenRef.current = notifOpen;
+  }, [notifOpen]);
+
+  useEffect(() => {
+    paletteOpenRef.current = paletteOpen;
+  }, [paletteOpen]);
+
+  const clearHideTimer = useCallback(() => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleHide = useCallback((delay = 1200) => {
+    clearHideTimer();
+    hideTimerRef.current = setTimeout(() => {
+      // Do not hide if user is interacting with navbar, dropdowns, or has keyboard focus
+      if (
+        isHoveredRef.current ||
+        dropdownOpenRef.current ||
+        notifOpenRef.current ||
+        paletteOpenRef.current ||
+        isFocusedRef.current
+      ) {
+        return;
+      }
+      setIsVisible(false);
+    }, delay);
+  }, [clearHideTimer]);
+
+  const showNavbar = useCallback(() => {
+    clearHideTimer();
+    setIsVisible(true);
+  }, [clearHideTimer]);
+
+  // Page Entry: Navbar initially visible on route change, then auto-hides after ~1.8s
+  useEffect(() => {
+    showNavbar();
+    scheduleHide(1800);
+  }, [location.pathname, showNavbar, scheduleHide]);
+
+  // Keep visible while dropdowns / palette / focus are active; schedule hide when closed
+  useEffect(() => {
+    if (dropdownOpen || notifOpen || paletteOpen || isFocused || isHovered) {
+      showNavbar();
+    } else {
+      scheduleHide(1000);
+    }
+  }, [dropdownOpen, notifOpen, paletteOpen, isFocused, isHovered, showNavbar, scheduleHide]);
+
+  // Global pointer listener for top edge trigger (14px) and mobile touch
+  useEffect(() => {
+    let lastTime = 0;
+    function handlePointerMove(e) {
+      const now = Date.now();
+      if (now - lastTime < 50) return;
+      lastTime = now;
+
+      // Reveal navbar when cursor moves to the top 14px of viewport
+      if (e.clientY <= 14) {
+        showNavbar();
+      }
+    }
+
+    function handleTouchStart(e) {
+      if (e.touches && e.touches[0] && e.touches[0].clientY <= 36) {
+        showNavbar();
+        scheduleHide(2500);
+      }
+    }
+
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("touchstart", handleTouchStart);
+    };
+  }, [showNavbar, scheduleHide]);
+
+  // Apply CSS custom properties to document root for smooth content expansion
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isVisible) {
+      root.style.setProperty("--global-nav-height", "68px");
+      root.style.setProperty("--global-nav-transform", "translateY(0)");
+      root.style.setProperty("--global-nav-opacity", "1");
+    } else {
+      root.style.setProperty("--global-nav-height", "0px");
+      root.style.setProperty("--global-nav-transform", "translateY(-100%)");
+      root.style.setProperty("--global-nav-opacity", "0");
+    }
+  }, [isVisible]);
 
   const currentUserId = user?.id || user?._id || "";
   const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
@@ -81,33 +204,87 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
 
   return (
     <>
-      <header
-        className={`navbar navbar-modern ${isScrolled ? "navbar-scrolled" : ""}`}
+      {/* Invisible Trigger Zone at Top Edge of Viewport (14px) */}
+      <div
+        className="navbar-top-trigger-zone"
+        onPointerEnter={showNavbar}
+        onTouchStart={() => {
+          showNavbar();
+          scheduleHide(2500);
+        }}
+        aria-hidden="true"
         style={{
-          background: isLight
-            ? (isScrolled ? "rgba(255, 255, 255, 0.96)" : "rgba(255, 255, 255, 0.90)")
-            : (isScrolled ? "rgba(8, 12, 20, 0.94)" : "rgba(8, 12, 20, 0.82)"),
-          backdropFilter: "blur(12px)",
-          borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.07)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          height: "68px",
-          padding: "0 24px",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: "14px",
+          zIndex: 101,
+          pointerEvents: isVisible ? "none" : "auto"
+        }}
+      />
+
+      {/* Navbar Wrapper (Collapses height dynamically to reclaim vertical space) */}
+      <div
+        className={`navbar-wrapper ${!isVisible ? "is-hidden" : ""}`}
+        style={{
           position: "sticky",
           top: 0,
           zIndex: 100,
-          transition: "all 0.2s ease"
+          height: isVisible ? "68px" : "0px",
+          transition: "height 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+          overflow: "visible",
+          width: "100%"
         }}
       >
-        {/* Left: Hamburger (Mobile) & Brand Logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-          {/* Mobile Hamburger Button */}
-          <button
-            type="button"
-            onClick={onToggleSidebar}
-            className="mobile-hamburger-btn"
-            aria-label="Toggle navigation menu"
+        <header
+          className={`navbar navbar-modern ${isScrolled ? "navbar-scrolled" : ""} ${!isVisible ? "is-hidden" : ""}`}
+          onMouseEnter={() => {
+            setIsHovered(true);
+            showNavbar();
+          }}
+          onMouseLeave={() => {
+            setIsHovered(false);
+            scheduleHide(1000);
+          }}
+          onFocusCapture={() => {
+            setIsFocused(true);
+            showNavbar();
+          }}
+          onBlurCapture={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget)) {
+              setIsFocused(false);
+              scheduleHide(1000);
+            }
+          }}
+          style={{
+            background: isLight
+              ? (isScrolled ? "rgba(255, 255, 255, 0.96)" : "rgba(255, 255, 255, 0.90)")
+              : (isScrolled ? "rgba(8, 12, 20, 0.94)" : "rgba(8, 12, 20, 0.82)"),
+            backdropFilter: "blur(12px)",
+            borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.07)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            height: "68px",
+            padding: "0 24px",
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            transform: isVisible ? "translateY(0)" : "translateY(-100%)",
+            transition: "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease, border-color 0.2s ease",
+            pointerEvents: isVisible ? "auto" : "none"
+          }}
+        >
+          {/* Left: Hamburger (Mobile) & Brand Logo */}
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            {/* Mobile Hamburger Button */}
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              className="mobile-hamburger-btn"
+              aria-label="Toggle navigation menu"
             style={{
               background: "transparent",
               border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
@@ -652,6 +829,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
           )}
         </div>
       </header>
+      </div>
 
       {/* Command Palette Modal */}
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
