@@ -500,8 +500,12 @@ function ProblemDetailsInner() {
                 type="button"
                 className={`judgo-ide-tab-btn${activeLeftTab === "description" ? " is-active" : ""}`}
                 onClick={() => setActiveLeftTab("description")}
+                style={{
+                  borderBottomColor: activeLeftTab === "description" ? "#0284c7" : "transparent",
+                  color: activeLeftTab === "description" ? (isLight ? "#0369a1" : "#38bdf8") : undefined
+                }}
               >
-                <FileText size={14} />
+                <FileText size={15} style={{ color: "#0284c7" }} />
                 <span>Description</span>
               </button>
 
@@ -515,8 +519,12 @@ function ProblemDetailsInner() {
                     fetchAIReview();
                   }
                 }}
+                style={{
+                  borderBottomColor: activeLeftTab === "solutions" ? "#9333ea" : "transparent",
+                  color: activeLeftTab === "solutions" ? (isLight ? "#7e22ce" : "#c084fc") : undefined
+                }}
               >
-                <FlaskConical size={14} />
+                <FlaskConical size={15} style={{ color: "#a855f7" }} />
                 <span>Solutions</span>
               </button>
 
@@ -525,11 +533,26 @@ function ProblemDetailsInner() {
                 type="button"
                 className={`judgo-ide-tab-btn${activeLeftTab === "submissions" ? " is-active" : ""}`}
                 onClick={() => setActiveLeftTab("submissions")}
+                style={{
+                  borderBottomColor: activeLeftTab === "submissions" ? "#ea580c" : "transparent",
+                  color: activeLeftTab === "submissions" ? (isLight ? "#c2410c" : "#fb923c") : undefined
+                }}
               >
-                <History size={14} />
+                <History size={15} style={{ color: "#f97316" }} />
                 <span>Submissions</span>
                 {userSubmissions.length > 0 && (
-                  <span style={{ fontSize: "0.7rem", opacity: 0.8 }}>({userSubmissions.length})</span>
+                  <span
+                    style={{
+                      fontSize: "0.7rem",
+                      fontWeight: "800",
+                      background: "rgba(249, 115, 22, 0.12)",
+                      color: "#ea580c",
+                      padding: "1px 5px",
+                      borderRadius: "99px"
+                    }}
+                  >
+                    {userSubmissions.length}
+                  </span>
                 )}
               </button>
 
@@ -538,8 +561,12 @@ function ProblemDetailsInner() {
                 type="button"
                 className={`judgo-ide-tab-btn${activeLeftTab === "testResult" ? " is-active" : ""}`}
                 onClick={() => setActiveLeftTab("testResult")}
+                style={{
+                  borderBottomColor: activeLeftTab === "testResult" ? "#16a34a" : "transparent",
+                  color: activeLeftTab === "testResult" ? (isLight ? "#15803d" : "#4ade80") : undefined
+                }}
               >
-                <Zap size={14} />
+                <Zap size={15} style={{ color: "#16a34a", fill: "#16a34a" }} />
                 <span>Test Result</span>
                 {displayVerdict && (
                   <span
@@ -562,8 +589,12 @@ function ProblemDetailsInner() {
                 type="button"
                 className={`judgo-ide-tab-btn${activeLeftTab === "testcases" ? " is-active" : ""}`}
                 onClick={() => setActiveLeftTab("testcases")}
+                style={{
+                  borderBottomColor: activeLeftTab === "testcases" ? "#06b6d4" : "transparent",
+                  color: activeLeftTab === "testcases" ? (isLight ? "#0891b2" : "#22d3ee") : undefined
+                }}
               >
-                <Layers size={14} />
+                <Layers size={15} style={{ color: "#06b6d4" }} />
                 <span>Testcases</span>
               </button>
             </div>
@@ -1144,21 +1175,32 @@ function ProblemDetailsInner() {
                           onClick={() => setSelectedCaseIndex(idx)}
                           style={{
                             background: selectedCaseIndex === idx
-                              ? isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.2)"
+                              ? isLight ? "rgba(6, 182, 212, 0.12)" : "rgba(6, 182, 212, 0.2)"
                               : isLight ? "#f8fafc" : "#0d111a",
                             border: selectedCaseIndex === idx
-                              ? "1px solid #6366f1"
+                              ? "1px solid #06b6d4"
                               : `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`,
                             color: selectedCaseIndex === idx
-                              ? isLight ? "#4f46e5" : "#818cf8"
+                              ? isLight ? "#0891b2" : "#22d3ee"
                               : isLight ? "#475569" : "#cbd5e1",
                             borderRadius: "6px",
-                            padding: "4px 10px",
+                            padding: "4px 11px",
                             fontSize: "0.76rem",
                             fontWeight: "700",
-                            cursor: "pointer"
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "5px"
                           }}
                         >
+                          <span
+                            style={{
+                              width: "6px",
+                              height: "6px",
+                              borderRadius: "50%",
+                              background: selectedCaseIndex === idx ? "#06b6d4" : "#64748b"
+                            }}
+                          />
                           Case {idx + 1}
                         </button>
                       ))}
@@ -1179,7 +1221,7 @@ function ProblemDetailsInner() {
                           cursor: "pointer"
                         }}
                       >
-                        <Plus size={13} />
+                        <Plus size={13} style={{ color: "#06b6d4" }} />
                       </button>
                     </div>
 
@@ -1187,8 +1229,8 @@ function ProblemDetailsInner() {
                     {problemWithStatus.examples[selectedCaseIndex] && (
                       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                         <div>
-                          <span style={{ fontSize: "0.75rem", fontWeight: "700", color: isLight ? "#64748b" : "#94a3b8" }}>
-                            Input
+                          <span style={{ fontSize: "0.76rem", fontWeight: "700", color: isLight ? "#0284c7" : "#38bdf8", display: "flex", alignItems: "center", gap: "4px" }}>
+                            <span>📥</span> Input
                           </span>
                           <pre
                             style={{
@@ -1208,8 +1250,8 @@ function ProblemDetailsInner() {
                         </div>
 
                         <div>
-                          <span style={{ fontSize: "0.75rem", fontWeight: "700", color: isLight ? "#64748b" : "#94a3b8" }}>
-                            Expected Output
+                          <span style={{ fontSize: "0.76rem", fontWeight: "700", color: isLight ? "#16a34a" : "#4ade80", display: "flex", alignItems: "center", gap: "4px" }}>
+                            <span>📤</span> Expected Output
                           </span>
                           <pre
                             style={{
@@ -1233,8 +1275,8 @@ function ProblemDetailsInner() {
                 ) : (
                   /* Custom Input Textarea */
                   <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#94a3b8", fontWeight: "bold" }}>
-                      Custom STDIN (Used on Run)
+                    <span style={{ fontSize: "0.76rem", color: isLight ? "#0284c7" : "#38bdf8", fontWeight: "bold", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <span>⚙️</span> Custom STDIN (Used on Run)
                     </span>
                     <textarea
                       style={{

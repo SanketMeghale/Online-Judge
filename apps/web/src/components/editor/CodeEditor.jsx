@@ -350,7 +350,7 @@ export default function CodeEditor({
       style={{
         background: themePalette.bg,
         border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
-        borderRadius: isFullscreen ? "0" : "14px",
+        borderRadius: isFullscreen ? "0" : "10px",
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
@@ -358,7 +358,11 @@ export default function CodeEditor({
         position: isFullscreen ? "fixed" : "relative",
         inset: isFullscreen ? 0 : "auto",
         zIndex: isFullscreen ? 9999 : 10,
-        height: isFullscreen ? "100vh" : "auto"
+        width: "100%",
+        height: isFullscreen ? "100vh" : "100%",
+        maxHeight: isFullscreen ? "100vh" : "100%",
+        flex: 1,
+        minHeight: 0
       }}
     >
       {/* Modern Redesigned Editor Toolbar Header */}
