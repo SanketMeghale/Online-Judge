@@ -1,19 +1,27 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  ArrowUpDown,
   CheckCircle2,
+  ChevronDown,
   Circle,
   Clock,
   Filter,
+  Flag,
+  Flame,
   Hash,
   Layers,
+  LayoutGrid,
+  Leaf,
+  List,
   Search,
   SlidersHorizontal,
   Target,
   Timer,
   TrendingUp,
-  X
+  X,
+  Zap
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
@@ -42,6 +50,18 @@ export default function ProblemsList() {
   const [statusFilter,    setStatusFilter]    = useState("All");
   const [sortBy,          setSortBy]          = useState("default");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchInputRef = useRef(null);
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     if (syncBackendData) syncBackendData();
@@ -164,32 +184,77 @@ export default function ProblemsList() {
         </div>
       </div>
 
-      {/* ── FILTER ROW ── */}
+      {/* ── ULTRA-MODERN COMPACT FILTER BAR ── */}
       <div
         className="problems-filter-row"
         style={{
+          position: "relative",
           background: isLight ? "#ffffff" : "#0d111a",
           border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
-          boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none",
-          gap: "8px"
+          borderRadius: "9999px",
+          padding: "6px 10px",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          flexWrap: "wrap",
+          boxShadow: isLight
+            ? "0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02)"
+            : "0 4px 24px -2px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04)",
+          overflow: "hidden"
         }}
       >
-        {/* Modern Search Box with Focus Glow */}
+        {/* Top-Left Ambient Accent Glow */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: "24px",
+            width: "120px",
+            height: "2px",
+            background: "linear-gradient(90deg, #6366f1, #a855f7, transparent)",
+            opacity: 0.85,
+            pointerEvents: "none"
+          }}
+        />
+
+        {/* Bottom-Right Ambient Accent Glow */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            right: "36px",
+            width: "140px",
+            height: "2px",
+            background: "linear-gradient(90deg, transparent, #a855f7, #6366f1)",
+            opacity: 0.85,
+            pointerEvents: "none"
+          }}
+        />
+
+        {/* 1. Pill Search Input with ⌘K Shortcut */}
         <div
           className="problems-search-box"
           style={{
+            borderRadius: "9999px",
             background: isLight ? "#f8fafc" : "#080c14",
             border: isSearchFocused
               ? isLight ? "1px solid #6366f1" : "1px solid #818cf8"
-              : isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.12)",
+              : isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
             boxShadow: isSearchFocused
               ? isLight ? "0 0 0 3px rgba(99, 102, 241, 0.15)" : "0 0 0 3px rgba(99, 102, 241, 0.25)"
-              : isLight ? "0 1px 2px rgba(0,0,0,0.03)" : "none",
-            height: "34px"
+              : isLight ? "0 1px 2px rgba(0,0,0,0.02)" : "none",
+            height: "36px",
+            padding: "0 12px",
+            flex: "1 1 200px",
+            minWidth: "160px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px"
           }}
         >
-          <Search size={14} style={{ color: isSearchFocused ? "#6366f1" : "#64748b", flexShrink: 0, transition: "color 0.15s ease" }} />
+          <Search size={14} style={{ color: isSearchFocused ? "#6366f1" : "#94a3b8", flexShrink: 0, transition: "color 0.15s ease" }} />
           <input
+            ref={searchInputRef}
             type="text"
             value={query}
             onFocus={() => setIsSearchFocused(true)}
@@ -202,7 +267,7 @@ export default function ProblemsList() {
               fontWeight: "500"
             }}
           />
-          {query && (
+          {query ? (
             <button
               type="button"
               onClick={() => setQuery("")}
@@ -220,83 +285,275 @@ export default function ProblemsList() {
             >
               <X size={13} />
             </button>
+          ) : (
+            <kbd
+              style={{
+                fontSize: "0.68rem",
+                padding: "2px 6px",
+                borderRadius: "5px",
+                background: isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)",
+                color: "#94a3b8",
+                fontWeight: "600",
+                letterSpacing: "0.02em",
+                fontFamily: "inherit"
+              }}
+            >
+              ⌘K
+            </kbd>
           )}
         </div>
 
-        {/* Modern Segmented Difficulty Switcher */}
+        {/* 2. Modern Segmented Difficulty Switcher (Pill with Distinct Icons) */}
         <div
           className="diff-tabs"
           style={{
-            background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)",
-            border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)",
-            height: "34px"
+            background: isLight ? "#f8fafc" : "rgba(255,255,255,0.03)",
+            border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)",
+            borderRadius: "9999px",
+            padding: "3px",
+            height: "36px",
+            display: "flex",
+            alignItems: "center",
+            gap: "3px"
           }}
         >
-          {["All", "Easy", "Medium", "Hard"].map((d) => {
-            const active = difficulty === d;
-            const col = d === "Easy"
-              ? (isLight ? "#059669" : "#34d399")
-              : d === "Medium"
-              ? (isLight ? "#d97706" : "#fbbf24")
-              : d === "Hard"
-              ? (isLight ? "#dc2626" : "#f87171")
-              : (isLight ? "#4f46e5" : "#a5b4fc");
+          {/* All Tab */}
+          <button
+            type="button"
+            onClick={() => setDifficulty("All")}
+            style={{
+              background: difficulty === "All"
+                ? isLight ? "#0f172a" : "#111827"
+                : "transparent",
+              border: difficulty === "All"
+                ? isLight ? "1px solid #0f172a" : "1px solid rgba(99, 102, 241, 0.45)"
+                : "1px solid transparent",
+              color: difficulty === "All" ? "#ffffff" : isLight ? "#475569" : "#cbd5e1",
+              boxShadow: difficulty === "All" ? "0 2px 10px rgba(99, 102, 241, 0.35)" : "none",
+              borderRadius: "9999px",
+              padding: "4px 12px",
+              fontSize: "0.78rem",
+              fontWeight: "700",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              transition: "all 0.15s ease",
+              lineHeight: 1
+            }}
+          >
+            <LayoutGrid size={13} style={{ color: difficulty === "All" ? "#a5b4fc" : "#94a3b8" }} />
+            <span>All</span>
+          </button>
 
-            const activeBg = d === "All"
-              ? (isLight ? "#ffffff" : "rgba(99, 102, 241, 0.2)")
-              : (isLight ? (d === "Easy" ? "#ecfdf5" : d === "Medium" ? "#fffbeb" : "#fef2f2") : DIFF_META[d]?.bg || "rgba(99,102,241,0.16)");
+          {/* Easy Tab */}
+          <button
+            type="button"
+            onClick={() => setDifficulty("Easy")}
+            style={{
+              background: difficulty === "Easy"
+                ? isLight ? "#ecfdf5" : "rgba(16, 185, 129, 0.16)"
+                : "transparent",
+              border: difficulty === "Easy"
+                ? isLight ? "1px solid #a7f3d0" : "1px solid rgba(52, 211, 153, 0.35)"
+                : "1px solid transparent",
+              color: difficulty === "Easy" ? (isLight ? "#059669" : "#34d399") : isLight ? "#475569" : "#cbd5e1",
+              boxShadow: difficulty === "Easy" && isLight ? "0 1px 3px rgba(16, 185, 129, 0.15)" : "none",
+              borderRadius: "9999px",
+              padding: "4px 12px",
+              fontSize: "0.78rem",
+              fontWeight: "700",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              transition: "all 0.15s ease",
+              lineHeight: 1
+            }}
+          >
+            <Leaf size={13} style={{ color: isLight ? "#059669" : "#34d399" }} />
+            <span>Easy</span>
+          </button>
 
-            const activeBorder = d === "All"
-              ? (isLight ? "#cbd5e1" : "rgba(99, 102, 241, 0.4)")
-              : (isLight ? (d === "Easy" ? "#a7f3d0" : d === "Medium" ? "#fde68a" : "#fecaca") : DIFF_META[d]?.border || "rgba(99,102,241,0.35)");
+          {/* Medium Tab */}
+          <button
+            type="button"
+            onClick={() => setDifficulty("Medium")}
+            style={{
+              background: difficulty === "Medium"
+                ? isLight ? "#fffbeb" : "rgba(245, 158, 11, 0.16)"
+                : "transparent",
+              border: difficulty === "Medium"
+                ? isLight ? "1px solid #fde68a" : "1px solid rgba(251, 191, 36, 0.35)"
+                : "1px solid transparent",
+              color: difficulty === "Medium" ? (isLight ? "#d97706" : "#fbbf24") : isLight ? "#475569" : "#cbd5e1",
+              boxShadow: difficulty === "Medium" && isLight ? "0 1px 3px rgba(245, 158, 11, 0.15)" : "none",
+              borderRadius: "9999px",
+              padding: "4px 12px",
+              fontSize: "0.78rem",
+              fontWeight: "700",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              transition: "all 0.15s ease",
+              lineHeight: 1
+            }}
+          >
+            <Zap size={13} style={{ color: isLight ? "#d97706" : "#fbbf24", fill: isLight ? "#d97706" : "#fbbf24" }} />
+            <span>Medium</span>
+          </button>
 
-            return (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setDifficulty(d)}
-                style={{
-                  background: active ? activeBg : "transparent",
-                  border: active ? `1px solid ${activeBorder}` : "1px solid transparent",
-                  color: active ? col : isLight ? "#64748b" : "#94a3b8",
-                  padding: "3px 9px",
-                  borderRadius: "6px",
-                  fontSize: "0.78rem",
-                  fontWeight: active ? "700" : "500",
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                  lineHeight: 1,
-                  boxShadow: active && isLight ? "0 1px 2px rgba(0,0,0,0.04)" : "none"
-                }}
-              >
-                {d}
-              </button>
-            );
-          })}
+          {/* Hard Tab */}
+          <button
+            type="button"
+            onClick={() => setDifficulty("Hard")}
+            style={{
+              background: difficulty === "Hard"
+                ? isLight ? "#fef2f2" : "rgba(239, 68, 68, 0.16)"
+                : "transparent",
+              border: difficulty === "Hard"
+                ? isLight ? "1px solid #fecaca" : "1px solid rgba(248, 113, 113, 0.35)"
+                : "1px solid transparent",
+              color: difficulty === "Hard" ? (isLight ? "#dc2626" : "#f87171") : isLight ? "#475569" : "#cbd5e1",
+              boxShadow: difficulty === "Hard" && isLight ? "0 1px 3px rgba(239, 68, 68, 0.15)" : "none",
+              borderRadius: "9999px",
+              padding: "4px 12px",
+              fontSize: "0.78rem",
+              fontWeight: "700",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              transition: "all 0.15s ease",
+              lineHeight: 1
+            }}
+          >
+            <Flame size={13} style={{ color: isLight ? "#dc2626" : "#f87171", fill: isLight ? "#dc2626" : "#f87171" }} />
+            <span>Hard</span>
+          </button>
         </div>
 
-        {/* Dropdown Filters with Refined Styling */}
-        <select value={topic} onChange={(e) => setTopic(e.target.value)} style={getSelectStyle(isLight)} title="Filter by Topic">
-          <option value="All">All Topics</option>
-          {topics.filter((t) => t !== "All").map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
+        {/* 3. All Topics Dropdown Pill */}
+        <div
+          style={{
+            position: "relative",
+            display: "inline-flex",
+            alignItems: "center",
+            borderRadius: "9999px",
+            background: isLight ? "#ffffff" : "#080c14",
+            border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255, 255, 255, 0.1)",
+            height: "36px",
+            boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.03)" : "none"
+          }}
+        >
+          <Layers size={13} style={{ position: "absolute", left: "12px", pointerEvents: "none", color: isLight ? "#334155" : "#94a3b8" }} />
+          <select
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            style={{
+              padding: "0 28px 0 32px",
+              height: "100%",
+              borderRadius: "9999px",
+              border: "none",
+              background: "transparent",
+              outline: "none",
+              cursor: "pointer",
+              fontSize: "0.8rem",
+              fontWeight: "600",
+              color: isLight ? "#0f172a" : "#f1f5f9",
+              appearance: "none"
+            }}
+            title="Filter by Topic"
+          >
+            <option value="All">All Topics</option>
+            {topics.filter((t) => t !== "All").map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          <ChevronDown size={12} style={{ position: "absolute", right: "10px", pointerEvents: "none", color: isLight ? "#334155" : "#94a3b8" }} />
+        </div>
 
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={getSelectStyle(isLight)} title="Filter by Solved Status">
-          <option value="All">All Status</option>
-          <option value="Solved">✓ Solved</option>
-          <option value="Attempted">○ Attempted</option>
-          <option value="Unsolved">○ Unsolved</option>
-        </select>
+        {/* 4. All Status Dropdown Pill */}
+        <div
+          style={{
+            position: "relative",
+            display: "inline-flex",
+            alignItems: "center",
+            borderRadius: "9999px",
+            background: isLight ? "#ffffff" : "#080c14",
+            border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255, 255, 255, 0.1)",
+            height: "36px",
+            boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.03)" : "none"
+          }}
+        >
+          <Flag size={13} style={{ position: "absolute", left: "12px", pointerEvents: "none", color: isLight ? "#334155" : "#94a3b8" }} />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            style={{
+              padding: "0 28px 0 32px",
+              height: "100%",
+              borderRadius: "9999px",
+              border: "none",
+              background: "transparent",
+              outline: "none",
+              cursor: "pointer",
+              fontSize: "0.8rem",
+              fontWeight: "600",
+              color: isLight ? "#0f172a" : "#f1f5f9",
+              appearance: "none"
+            }}
+            title="Filter by Solved Status"
+          >
+            <option value="All">All Status</option>
+            <option value="Solved">✓ Solved</option>
+            <option value="Attempted">○ Attempted</option>
+            <option value="Unsolved">○ Unsolved</option>
+          </select>
+          <ChevronDown size={12} style={{ position: "absolute", right: "10px", pointerEvents: "none", color: isLight ? "#334155" : "#94a3b8" }} />
+        </div>
 
-        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={getSelectStyle(isLight)} title="Sort Problems">
-          <option value="default">Sort: Default</option>
-          <option value="difficulty">Difficulty ↑</option>
-          <option value="acceptance">Acceptance ↓</option>
-          <option value="attempts">Most Attempted</option>
-          <option value="points">Points ↓</option>
-        </select>
+        {/* 5. Sort Dropdown Pill */}
+        <div
+          style={{
+            position: "relative",
+            display: "inline-flex",
+            alignItems: "center",
+            borderRadius: "9999px",
+            background: isLight ? "#ffffff" : "#080c14",
+            border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255, 255, 255, 0.1)",
+            height: "36px",
+            boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.03)" : "none"
+          }}
+        >
+          <ArrowUpDown size={13} style={{ position: "absolute", left: "12px", pointerEvents: "none", color: isLight ? "#334155" : "#94a3b8" }} />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            style={{
+              padding: "0 28px 0 32px",
+              height: "100%",
+              borderRadius: "9999px",
+              border: "none",
+              background: "transparent",
+              outline: "none",
+              cursor: "pointer",
+              fontSize: "0.8rem",
+              fontWeight: "600",
+              color: isLight ? "#0f172a" : "#f1f5f9",
+              appearance: "none"
+            }}
+            title="Sort Problems"
+          >
+            <option value="default">Sort: Default</option>
+            <option value="difficulty">Difficulty ↑</option>
+            <option value="acceptance">Acceptance ↓</option>
+            <option value="attempts">Most Attempted</option>
+            <option value="points">Points ↓</option>
+          </select>
+          <ChevronDown size={12} style={{ position: "absolute", right: "10px", pointerEvents: "none", color: isLight ? "#334155" : "#94a3b8" }} />
+        </div>
 
         {/* Clear Filters Badge Button */}
         {hasFilters && (
@@ -310,9 +567,9 @@ export default function ProblemsList() {
               gap: "4px",
               background: isLight ? "#fee2e2" : "rgba(239, 68, 68, 0.15)",
               border: isLight ? "1px solid #fca5a5" : "1px solid rgba(239, 68, 68, 0.3)",
-              borderRadius: "8px",
-              padding: "5px 10px",
-              height: "34px",
+              borderRadius: "9999px",
+              padding: "0 12px",
+              height: "36px",
               color: isLight ? "#b91c1c" : "#fca5a5",
               fontSize: "0.78rem",
               fontWeight: "700",
@@ -324,21 +581,31 @@ export default function ProblemsList() {
           </button>
         )}
 
-        {/* Live Problem Count Badge */}
-        <span
+        {/* 6. Problem Counter Pill Badge */}
+        <div
           className="problems-result-count"
           style={{
-            background: isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.05)",
-            border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.07)",
-            padding: "5px 10px",
-            borderRadius: "7px",
-            color: isLight ? "#475569" : "#94a3b8",
-            fontWeight: "600",
-            fontSize: "0.76rem"
+            background: isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.12)",
+            border: isLight ? "1px solid #c7d2fe" : "1px solid rgba(99, 102, 241, 0.25)",
+            borderRadius: "9999px",
+            height: "36px",
+            padding: "0 14px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            marginLeft: "auto"
           }}
         >
-          <strong style={{ color: isLight ? "#0f172a" : "#ffffff" }}>{filteredProblems.length}</strong> / {totalCount} problems
-        </span>
+          <List size={15} style={{ color: "#6366f1", flexShrink: 0 }} />
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", lineHeight: 1.1 }}>
+            <span style={{ fontSize: "0.8rem", fontWeight: "800", color: isLight ? "#4f46e5" : "#a5b4fc" }}>
+              {filteredProblems.length} / {totalCount}
+            </span>
+            <span style={{ fontSize: "0.62rem", color: isLight ? "#64748b" : "#94a3b8", fontWeight: "600" }}>
+              problems
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* ── PROBLEMS TABLE / CARDS ── */}

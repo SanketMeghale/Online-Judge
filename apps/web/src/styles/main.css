@@ -4220,8 +4220,8 @@ canvas {
 
 /* Filter row */
 .problems-filter-row {
-  border-radius: 12px;
-  padding: 8px 12px;
+  border-radius: 9999px;
+  padding: 6px 10px;
   display: flex;
   align-items: center;
   gap: 8px;
