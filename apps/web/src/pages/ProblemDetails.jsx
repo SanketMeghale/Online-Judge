@@ -404,7 +404,7 @@ function ProblemDetailsInner() {
       // 1. Problem Statement & Description Panel
       // ---------------------------------------------------------------------
       problem: {
-        title: "Problem Statement",
+        title: "Description",
         icon: FileText,
         renderHeaderActions: () => (
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -717,7 +717,7 @@ function ProblemDetailsInner() {
       // 2. Code Editor Panel
       // ---------------------------------------------------------------------
       editor: {
-        title: "Code Editor",
+        title: "Code",
         icon: Code2,
         renderContent: () => (
           <div style={{ display: "flex", flex: 1, flexDirection: "column", height: "100%", minHeight: 0 }}>
@@ -741,7 +741,7 @@ function ProblemDetailsInner() {
       // 3. Execution Console & Results Panel
       // ---------------------------------------------------------------------
       result: {
-        title: "Execution Console & Testcases",
+        title: "Testcase",
         icon: Layers,
         renderHeaderActions: () => (
           displayVerdict ? (
@@ -1205,17 +1205,17 @@ function ProblemDetailsInner() {
     <div
       className="problem-detail-page-container"
       data-lenis-prevent="true"
-      style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%", maxWidth: "1600px" }}
+      style={{ display: "flex", flexDirection: "column", height: "100%", maxHeight: "100%", width: "100%", minHeight: 0, overflow: "hidden" }}
     >
       <WorkspaceLayout
         headerLeft={
-          <nav className="problem-crumbs" style={{ display: "flex", alignItems: "center", gap: "8px", color: isLight ? "#64748b" : "#8b9bb4", fontSize: "0.85rem" }}>
+          <nav className="problem-crumbs" style={{ display: "flex", alignItems: "center", gap: "6px", color: isLight ? "#64748b" : "#8b9bb4", fontSize: "0.82rem" }}>
             <Link to="/problems" style={{ color: isLight ? "#64748b" : "#8b9bb4", textDecoration: "none" }}>
               Problems
             </Link>
-            <ChevronRight size={14} />
+            <ChevronRight size={13} />
             <span>{problemWithStatus.topic}</span>
-            <ChevronRight size={14} />
+            <ChevronRight size={13} />
             <strong style={{ color: isLight ? "#0f172a" : "#ffffff" }}>{problemWithStatus.title}</strong>
           </nav>
         }

@@ -17,7 +17,7 @@ import {
 import { useTheme } from "../../context/ThemeContext.jsx";
 import "../../styles/workspace.css";
 
-const STORAGE_KEY = "judgo-workspace-layout-v3";
+const STORAGE_KEY = "judgo-workspace-layout";
 
 let splitIdCounter = 1;
 function genSplitId() {
@@ -26,8 +26,27 @@ function genSplitId() {
 
 export const WORKSPACE_PRESETS = {
   default: {
-    name: "Standard IDE",
+    name: "Reference Layout",
     icon: Layout,
+    tree: {
+      type: "split",
+      id: "split-root",
+      direction: "horizontal",
+      splitRatio: 0.48,
+      first: {
+        type: "split",
+        id: "split-left",
+        direction: "vertical",
+        splitRatio: 0.58,
+        first: { type: "panel", panelId: "problem" },
+        second: { type: "panel", panelId: "result" }
+      },
+      second: { type: "panel", panelId: "editor" }
+    }
+  },
+  standard: {
+    name: "Standard IDE",
+    icon: PanelLeft,
     tree: {
       type: "split",
       id: "split-root",
@@ -80,25 +99,6 @@ export const WORKSPACE_PRESETS = {
         first: { type: "panel", panelId: "result" },
         second: { type: "panel", panelId: "problem" }
       }
-    }
-  },
-  editorFocus: {
-    name: "Editor & Result Left",
-    icon: PanelLeft,
-    tree: {
-      type: "split",
-      id: "split-root",
-      direction: "horizontal",
-      splitRatio: 0.55,
-      first: {
-        type: "split",
-        id: "split-sub",
-        direction: "vertical",
-        splitRatio: 0.6,
-        first: { type: "panel", panelId: "editor" },
-        second: { type: "panel", panelId: "result" }
-      },
-      second: { type: "panel", panelId: "problem" }
     }
   }
 };
@@ -243,7 +243,7 @@ function updateSplitRatioInTree(node, splitId, nextRatio) {
 
 function loadInitialTree(requiredPanels = ["problem", "editor", "result"]) {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("judgo-workspace-layout-v3");
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && (parsed.type === "split" || parsed.type === "panel")) {
@@ -305,7 +305,7 @@ export default function WorkspaceLayout({
     });
   }, [persistTree]);
 
-  // Reset to default
+  // Reset to default reference layout
   const handleReset = useCallback(() => {
     setMaximizedPanelId(null);
     const def = cloneTree(WORKSPACE_PRESETS.default.tree);
@@ -323,7 +323,7 @@ export default function WorkspaceLayout({
   }, [updateLayoutTree]);
 
   // -------------------------------------------------------------------------
-  // Resizing System (Pointer Events + Global Listeners)
+  // Resizing System (Pointer Events + Global Listeners with Clamping)
   // -------------------------------------------------------------------------
   const handleResizerPointerDown = useCallback((e, splitId, direction, splitBoxElement) => {
     e.preventDefault();
@@ -353,11 +353,17 @@ export default function WorkspaceLayout({
       if (direction === "horizontal") {
         if (!rect.width) return;
         const offset = e.clientX - rect.left;
-        nextRatio = Math.min(0.85, Math.max(0.15, offset / rect.width));
+        // Clamp min width: Problem >= 260px, Editor >= 340px
+        const minRatio = Math.max(0.15, Math.min(0.4, 260 / rect.width));
+        const maxRatio = Math.min(0.85, Math.max(0.6, 1 - (340 / rect.width)));
+        nextRatio = Math.min(maxRatio, Math.max(minRatio, offset / rect.width));
       } else {
         if (!rect.height) return;
         const offset = e.clientY - rect.top;
-        nextRatio = Math.min(0.85, Math.max(0.15, offset / rect.height));
+        // Clamp min height: Result >= 140px, Editor >= 200px
+        const minRatio = Math.max(0.15, Math.min(0.4, 140 / rect.height));
+        const maxRatio = Math.min(0.85, Math.max(0.6, 1 - (140 / rect.height)));
+        nextRatio = Math.min(maxRatio, Math.max(minRatio, offset / rect.height));
       }
 
       setLayoutTree((current) => updateSplitRatioInTree(current, splitId, nextRatio));
@@ -386,7 +392,7 @@ export default function WorkspaceLayout({
   // Drag & Drop Repositioning System
   // -------------------------------------------------------------------------
   const handleDragStart = useCallback((e, panelId) => {
-    // Only initiate drag if left mouse click
+    // Only initiate drag on left mouse click
     if (e.button !== 0) return;
     setActiveDragPanel(panelId);
     setHoveredDropTarget(null);
@@ -472,9 +478,9 @@ export default function WorkspaceLayout({
               title="Drag to reposition panel into any split or location"
             >
               <span className="workspace-panel-drag-handle">
-                <GripVertical size={15} />
+                <GripVertical size={14} />
               </span>
-              <Icon size={15} style={{ color: "var(--ws-accent)", flexShrink: 0 }} />
+              <Icon size={14} style={{ color: "var(--ws-accent)", flexShrink: 0 }} />
               <span className="workspace-panel-title">{title}</span>
             </div>
 
@@ -626,7 +632,7 @@ export default function WorkspaceLayout({
       <div className="workspace-panel workspace-maximized-panel">
         <div className="workspace-panel-header">
           <div className="workspace-panel-title-wrap">
-            <Icon size={16} style={{ color: "var(--ws-accent)" }} />
+            <Icon size={15} style={{ color: "var(--ws-accent)" }} />
             <span className="workspace-panel-title">{title} (Maximized)</span>
           </div>
           <div className="workspace-panel-actions">
@@ -658,22 +664,30 @@ export default function WorkspaceLayout({
 
         <div className="workspace-toolbar-right">
           {/* Quick Presets */}
-          <div style={{ display: "flex", alignItems: "center", gap: "2px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)", padding: "2px", borderRadius: "8px", border: "1px solid var(--ws-border)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "2px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)", padding: "2px", borderRadius: "6px", border: "1px solid var(--ws-border)" }}>
             <button
               type="button"
               onClick={() => handleApplyPreset("default")}
               className="workspace-preset-pill"
-              title="Standard Online Judge Layout (Problem Left, Editor Top-Right, Result Bottom-Right)"
+              title="Reference Layout (Problem Top-Left, Testcases Bottom-Left, Code Editor Right)"
             >
-              <Layout size={13} /> Standard
+              <Layout size={12} /> Reference
+            </button>
+            <button
+              type="button"
+              onClick={() => handleApplyPreset("standard")}
+              className="workspace-preset-pill"
+              title="Standard IDE (Problem Left, Code Editor Top-Right, Result Bottom-Right)"
+            >
+              <PanelLeft size={12} /> Standard
             </button>
             <button
               type="button"
               onClick={() => handleApplyPreset("threeColumn")}
               className="workspace-preset-pill"
-              title="3-Column Layout (Problem | Editor | Result)"
+              title="3-Column Arena (Problem | Editor | Result)"
             >
-              <Columns size={13} /> 3-Column
+              <Columns size={12} /> 3-Column
             </button>
             <button
               type="button"
@@ -681,7 +695,7 @@ export default function WorkspaceLayout({
               className="workspace-preset-pill"
               title="Stacked Vertical Layout (Editor / Result / Problem)"
             >
-              <Rows size={13} /> Stacked
+              <Rows size={12} /> Stacked
             </button>
           </div>
 
@@ -692,7 +706,7 @@ export default function WorkspaceLayout({
             className="workspace-tool-btn"
             title="Reset workspace panels to default layout and sizes"
           >
-            <RotateCcw size={13} /> Reset Layout
+            <RotateCcw size={12} /> Reset Layout
           </button>
         </div>
       </div>
@@ -731,9 +745,9 @@ function SplitBox({
   const firstStyle = useMemo(() => {
     const pct = Math.round(ratio * 10000) / 100;
     if (direction === "horizontal") {
-      return { width: `calc(${pct}% - 4px)`, flexShrink: 0 };
+      return { width: `calc(${pct}% - 5px)`, flexShrink: 0 };
     }
-    return { height: `calc(${pct}% - 4px)`, flexShrink: 0 };
+    return { height: `calc(${pct}% - 5px)`, flexShrink: 0 };
   }, [direction, ratio]);
 
   return (
@@ -747,11 +761,11 @@ function SplitBox({
         {renderFirst()}
       </div>
 
-      {/* Draggable Divider Splitter */}
+      {/* Draggable Divider Splitter (10px Hit Area) */}
       <div
         className={`workspace-splitter ${direction}${isResizingThis ? " is-active" : ""}`}
         onPointerDown={(e) => onResizerPointerDown(e, node.id, direction, splitBoxRef.current)}
-        title={`Drag to resize ${direction === "horizontal" ? "columns" : "rows"}`}
+        title={`Drag to resize ${direction === "horizontal" ? "columns horizontally" : "rows vertically"}`}
       >
         <span className="workspace-splitter-handle">
           {direction === "horizontal" ? <GripVertical size={11} /> : <GripHorizontal size={11} />}
