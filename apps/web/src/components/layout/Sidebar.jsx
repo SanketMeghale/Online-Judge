@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { NavLink, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
@@ -7,15 +7,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Code2,
-  Home,
   LayoutDashboard,
-  Rocket,
   Settings,
   Sparkles,
   Swords,
   TrendingUp,
-  User,
-  X
+  User
 } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext.jsx";
 import { getUserDisplayName } from "../../auth/displayName.js";
@@ -47,19 +44,58 @@ const navSections = [
   }
 ];
 
+function isRouteActive(itemTo, pathname) {
+  if (itemTo === "/dashboard") {
+    return pathname === "/dashboard" || pathname === "/";
+  }
+  if (itemTo === "/problems") {
+    return pathname.startsWith("/problems") || pathname.startsWith("/practice");
+  }
+  if (itemTo === "/contests") {
+    return pathname.startsWith("/contests") || pathname.startsWith("/contest");
+  }
+  if (itemTo === "/ai-coach") {
+    return (
+      pathname.startsWith("/ai-coach") ||
+      pathname.startsWith("/interviewer") ||
+      pathname.startsWith("/companies")
+    );
+  }
+  if (itemTo === "/stats") {
+    return pathname.startsWith("/stats") || pathname.startsWith("/progress");
+  }
+  if (itemTo === "/profile") {
+    return pathname.startsWith("/profile");
+  }
+  if (itemTo === "/settings") {
+    return pathname.startsWith("/settings");
+  }
+  return pathname === itemTo;
+}
+
 export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }) {
+  const location = useLocation();
   const { user } = useAuth();
   const { getUserById } = useAppData();
   const { isLight } = useTheme();
+
   const currentUserId = user?.id || user?._id || "";
   const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
   const displayName = getUserDisplayName(liveUser);
   const userHandle = String(liveUser?.username || liveUser?.email || "").trim();
+  const avatarLetter = String(displayName || userHandle || "D").slice(0, 1).toUpperCase();
 
-  const [collapsed, setCollapsed] = useState(false);
+  // Dashboard exception: expanded by default on Dashboard; collapsed icon rail (72px) on all other routes
+  const isDashboardRoute = location.pathname === "/dashboard" || location.pathname === "/";
+  const [collapsed, setCollapsed] = useState(!isDashboardRoute);
   const [hoveredItem, setHoveredItem] = useState(null);
 
-  const sidebarWidth = collapsed ? "68px" : "240px";
+  // Automatically update default collapse state upon route navigation
+  useEffect(() => {
+    setCollapsed(!isDashboardRoute);
+  }, [location.pathname, isDashboardRoute]);
+
+  const sidebarWidth = collapsed ? "72px" : "260px";
 
   return (
     <>
@@ -89,6 +125,8 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
         }`}
         style={{
           width: sidebarWidth,
+          minWidth: sidebarWidth,
+          maxWidth: sidebarWidth,
           background: isLight ? "#ffffff" : "#080c14",
           borderRight: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.07)",
           display: "flex",
@@ -97,22 +135,28 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
           height: "calc(100dvh - var(--global-nav-height, 68px))",
           position: "sticky",
           top: "var(--global-nav-height, 68px)",
-          transition: "top 0.25s cubic-bezier(0.16, 1, 0.3, 1), min-height 0.25s cubic-bezier(0.16, 1, 0.3, 1), height 0.25s cubic-bezier(0.16, 1, 0.3, 1), width 0.24s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease",
+          transition:
+            "width 280ms cubic-bezier(0.16, 1, 0.3, 1), min-width 280ms cubic-bezier(0.16, 1, 0.3, 1), max-width 280ms cubic-bezier(0.16, 1, 0.3, 1), top 0.25s cubic-bezier(0.16, 1, 0.3, 1), min-height 0.25s cubic-bezier(0.16, 1, 0.3, 1), height 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease",
           zIndex: 95,
-          padding: collapsed ? "14px 8px 16px" : "14px 12px 18px",
-          userSelect: "none"
+          padding: collapsed ? "14px 10px 18px" : "14px 12px 18px",
+          userSelect: "none",
+          overflowX: "visible",
+          overflowY: "auto",
+          boxSizing: "border-box"
         }}
       >
-        {/* Collapse Toggle Row (Desktop only) */}
+        {/* Collapse Toggle Row */}
         <div
           className="sidebar-toggle-row"
           style={{
             display: "flex",
             justifyContent: collapsed ? "center" : "space-between",
             alignItems: "center",
-            padding: "0 4px 12px",
+            padding: collapsed ? "0 0 12px" : "0 4px 12px",
             borderBottom: isLight ? "1px solid #f1f5f9" : "1px solid rgba(255, 255, 255, 0.06)",
-            marginBottom: "12px"
+            marginBottom: "12px",
+            minHeight: "36px",
+            width: "100%"
           }}
         >
           {!collapsed && (
@@ -136,20 +180,21 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
             className="sidebar-collapse-btn"
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             style={{
-              background: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.03)",
+              background: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.04)",
               border: isLight ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(255, 255, 255, 0.08)",
               borderRadius: "6px",
-              width: "28px",
-              height: "28px",
+              width: "30px",
+              height: "30px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: isLight ? "#475569" : "#94a3b8",
               cursor: "pointer",
-              transition: "all 0.15s ease"
+              transition: "all 0.15s ease",
+              flexShrink: 0
             }}
           >
-            {collapsed ? <ChevronRight size={15} /> : <ChevronLeft size={15} />}
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </button>
         </div>
 
@@ -159,13 +204,18 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: "18px",
-            flex: 1
+            gap: collapsed ? "12px" : "16px",
+            flex: 1,
+            width: "100%"
           }}
         >
           {navSections.map(({ category, items }) => (
-            <div key={category} className="sidebar-group" style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
-              {/* Category Header Label */}
+            <div
+              key={category}
+              className="sidebar-group"
+              style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%" }}
+            >
+              {/* Category Header Label or Subtle Divider */}
               {!collapsed ? (
                 <span
                   style={{
@@ -180,156 +230,269 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                   {category}
                 </span>
               ) : (
-                <div style={{ height: "1px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)", margin: "4px 8px" }} />
+                <div
+                  style={{
+                    height: "1px",
+                    background: isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.05)",
+                    margin: "4px 4px 6px"
+                  }}
+                />
               )}
 
-              {/* Items List */}
-              {items.map(({ label, to, icon: Icon, iconColor }) => (
-                <div
-                  key={label}
-                  style={{ position: "relative" }}
-                  onMouseEnter={() => setHoveredItem(label)}
-                  onMouseLeave={() => setHoveredItem(null)}
-                >
-                  <NavLink
-                    to={to}
-                    onClick={onCloseMobile}
-                    end={to === "/dashboard"}
-                    style={({ isActive }) => ({
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "12px",
-                      padding: collapsed ? "10px 0" : "8px 12px",
-                      justifyContent: collapsed ? "center" : "flex-start",
-                      borderRadius: "8px",
-                      textDecoration: "none",
-                      fontSize: "0.86rem",
-                      fontWeight: isActive ? "600" : "500",
-                      color: isActive
-                        ? isLight ? "#4f46e5" : "#ffffff"
-                        : isLight ? "#475569" : "#94a3b8",
-                      background: isActive
-                        ? isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.12)"
-                        : hoveredItem === label
-                        ? isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.04)"
-                        : "transparent",
-                      border: isActive
-                        ? isLight ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid rgba(99, 102, 241, 0.28)"
-                        : "1px solid transparent",
-                      position: "relative",
-                      transition: "all 0.15s ease"
-                    })}
+              {/* Navigation Items */}
+              {items.map(({ label, to, icon: Icon, iconColor }) => {
+                const active = isRouteActive(to, location.pathname);
+
+                return (
+                  <div
+                    key={label}
+                    style={{ position: "relative", width: "100%" }}
+                    onMouseEnter={() => setHoveredItem(label)}
+                    onMouseLeave={() => setHoveredItem(null)}
                   >
-                    {({ isActive }) => (
-                      <>
-                        <Icon
-                          size={17}
-                          style={{
-                            color: isActive ? "#4f46e5" : isLight ? iconColor : "#64748b",
-                            flexShrink: 0,
-                            transition: "color 0.15s ease"
-                          }}
-                        />
-
-                        {!collapsed && (
-                          <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {label}
-                          </span>
-                        )}
-
-                        {/* Active Accent Indicator */}
-                        {isActive && !collapsed && (
-                          <div
-                            style={{
-                              marginLeft: "auto",
-                              width: "3px",
-                              height: "14px",
-                              borderRadius: "2px",
-                              background: "#6366f1"
-                            }}
-                          />
-                        )}
-                      </>
-                    )}
-                  </NavLink>
-
-                  {/* Hover Tooltip when Collapsed */}
-                  {collapsed && hoveredItem === label && (
-                    <motion.div
-                      initial={{ opacity: 0, x: 6 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.12 }}
+                    <NavLink
+                      to={to}
+                      onClick={onCloseMobile}
                       style={{
-                        position: "absolute",
-                        left: "calc(100% + 10px)",
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        background: isLight ? "#ffffff" : "#0f1628",
-                        border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.12)",
-                        color: isLight ? "#0f172a" : "#f8fafc",
-                        padding: "4px 10px",
-                        borderRadius: "6px",
-                        fontSize: "0.78rem",
-                        fontWeight: "600",
-                        whiteSpace: "nowrap",
-                        zIndex: 110,
-                        boxShadow: isLight ? "0 4px 12px rgba(0,0,0,0.1)" : "0 8px 24px rgba(0,0,0,0.5)",
-                        pointerEvents: "none"
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        padding: collapsed ? "0" : "8px 12px",
+                        width: collapsed ? "46px" : "100%",
+                        height: collapsed ? "44px" : "auto",
+                        margin: collapsed ? "0 auto" : "0",
+                        justifyContent: collapsed ? "center" : "flex-start",
+                        borderRadius: collapsed ? "10px" : "8px",
+                        textDecoration: "none",
+                        fontSize: "0.86rem",
+                        fontWeight: active ? "600" : "500",
+                        color: active
+                          ? isLight ? "#4f46e5" : "#ffffff"
+                          : isLight ? "#475569" : "#94a3b8",
+                        background: active
+                          ? isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.14)"
+                          : hoveredItem === label
+                          ? isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.04)"
+                          : "transparent",
+                        border: active
+                          ? isLight ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid rgba(99, 102, 241, 0.32)"
+                          : "1px solid transparent",
+                        boxShadow: active && collapsed
+                          ? "0 2px 8px rgba(99, 102, 241, 0.18)"
+                          : "none",
+                        position: "relative",
+                        transition: "all 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
+                        boxSizing: "border-box"
                       }}
                     >
-                      {label}
-                    </motion.div>
-                  )}
-                </div>
-              ))}
+                      <Icon
+                        size={18}
+                        style={{
+                          color: active ? "#6366f1" : isLight ? iconColor : "#64748b",
+                          flexShrink: 0,
+                          transition: "color 0.15s ease"
+                        }}
+                      />
+
+                      {!collapsed && (
+                        <span
+                          style={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis"
+                          }}
+                        >
+                          {label}
+                        </span>
+                      )}
+
+                      {/* Active Accent Indicator for Expanded Mode */}
+                      {active && !collapsed && (
+                        <div
+                          style={{
+                            marginLeft: "auto",
+                            width: "3px",
+                            height: "14px",
+                            borderRadius: "2px",
+                            background: "#6366f1"
+                          }}
+                        />
+                      )}
+                    </NavLink>
+
+                    {/* Floating Tooltip when Collapsed */}
+                    <AnimatePresence>
+                      {collapsed && hoveredItem === label && (
+                        <motion.div
+                          initial={{ opacity: 0, x: 6, scale: 0.95 }}
+                          animate={{ opacity: 1, x: 0, scale: 1 }}
+                          exit={{ opacity: 0, x: 4, scale: 0.95 }}
+                          transition={{ duration: 0.14, ease: "easeOut" }}
+                          style={{
+                            position: "absolute",
+                            left: "calc(100% + 14px)",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            background: isLight ? "#ffffff" : "#0f1628",
+                            border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.14)",
+                            color: isLight ? "#0f172a" : "#f8fafc",
+                            padding: "5px 12px",
+                            borderRadius: "7px",
+                            fontSize: "0.79rem",
+                            fontWeight: "600",
+                            whiteSpace: "nowrap",
+                            zIndex: 120,
+                            boxShadow: isLight
+                              ? "0 4px 14px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.06)"
+                              : "0 8px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)",
+                            pointerEvents: "none",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "7px"
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: "6px",
+                              height: "6px",
+                              borderRadius: "50%",
+                              background: iconColor
+                            }}
+                          />
+                          <span>{label}</span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                );
+              })}
             </div>
           ))}
         </div>
 
-        {/* Footer: Compact Pro Developer Card */}
-        {!collapsed && (
-          <div
-            className="sidebar-pro-card"
-            style={{
-              marginTop: "auto",
-              background: isLight
-                ? "linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)"
-                : "linear-gradient(135deg, rgba(15, 22, 40, 0.95) 0%, rgba(99, 102, 241, 0.08) 100%)",
-              border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: "10px",
-              padding: "12px 14px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "4px"
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <Sparkles size={14} style={{ color: "#a855f7" }} />
-              <strong style={{ fontSize: "0.82rem", color: isLight ? "#0f172a" : "#f8fafc", fontWeight: "700" }}>{displayName}</strong>
-            </div>
-            <p style={{ fontSize: "0.74rem", color: isLight ? "#475569" : "#94a3b8", margin: 0, lineHeight: "1.4", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {userHandle ? (liveUser?.username ? `@${userHandle}` : userHandle) : "Authenticated user"}
-            </p>
-            <NavLink
-              to="/stats"
-              onClick={onCloseMobile}
+        {/* Footer Area: User Pro Card when Expanded, Mini Avatar Button when Collapsed */}
+        <div style={{ marginTop: "auto", paddingTop: "12px", width: "100%" }}>
+          {!collapsed ? (
+            <div
+              className="sidebar-pro-card"
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "4px",
-                fontSize: "0.76rem",
-                fontWeight: "600",
-                color: "#6366f1",
-                textDecoration: "none",
-                marginTop: "4px"
+                background: isLight
+                  ? "linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)"
+                  : "linear-gradient(135deg, rgba(15, 22, 40, 0.95) 0%, rgba(99, 102, 241, 0.08) 100%)",
+                border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
+                borderRadius: "10px",
+                padding: "12px 14px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "4px"
               }}
             >
-              <span>View Progress</span>
-              <ArrowRight size={12} />
-            </NavLink>
-          </div>
-        )}
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <Sparkles size={14} style={{ color: "#a855f7" }} />
+                <strong
+                  style={{
+                    fontSize: "0.82rem",
+                    color: isLight ? "#0f172a" : "#f8fafc",
+                    fontWeight: "700"
+                  }}
+                >
+                  {displayName}
+                </strong>
+              </div>
+              <p
+                style={{
+                  fontSize: "0.74rem",
+                  color: isLight ? "#475569" : "#94a3b8",
+                  margin: 0,
+                  lineHeight: "1.4",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap"
+                }}
+              >
+                {userHandle ? (liveUser?.username ? `@${userHandle}` : userHandle) : "Authenticated user"}
+              </p>
+              <NavLink
+                to="/stats"
+                onClick={onCloseMobile}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "0.76rem",
+                  fontWeight: "600",
+                  color: "#6366f1",
+                  textDecoration: "none",
+                  marginTop: "4px"
+                }}
+              >
+                <span>View Progress</span>
+                <ArrowRight size={12} />
+              </NavLink>
+            </div>
+          ) : (
+            <div
+              style={{ position: "relative", display: "flex", justifyContent: "center", width: "100%" }}
+              onMouseEnter={() => setHoveredItem("User Profile")}
+              onMouseLeave={() => setHoveredItem(null)}
+            >
+              <NavLink
+                to="/profile"
+                onClick={onCloseMobile}
+                style={{
+                  width: "42px",
+                  height: "42px",
+                  borderRadius: "10px",
+                  background: isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.05)",
+                  border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#6366f1",
+                  fontWeight: "800",
+                  fontSize: "0.84rem",
+                  textDecoration: "none",
+                  transition: "all 0.15s ease"
+                }}
+              >
+                {avatarLetter}
+              </NavLink>
+
+              {/* Floating Tooltip for Profile */}
+              <AnimatePresence>
+                {hoveredItem === "User Profile" && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 6, scale: 0.95 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: 4, scale: 0.95 }}
+                    transition={{ duration: 0.14, ease: "easeOut" }}
+                    style={{
+                      position: "absolute",
+                      left: "calc(100% + 14px)",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: isLight ? "#ffffff" : "#0f1628",
+                      border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.14)",
+                      color: isLight ? "#0f172a" : "#f8fafc",
+                      padding: "5px 12px",
+                      borderRadius: "7px",
+                      fontSize: "0.79rem",
+                      fontWeight: "600",
+                      whiteSpace: "nowrap",
+                      zIndex: 120,
+                      boxShadow: isLight
+                        ? "0 4px 14px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.06)"
+                        : "0 8px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)",
+                      pointerEvents: "none"
+                    }}
+                  >
+                    <span>{displayName}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
       </aside>
     </>
   );
