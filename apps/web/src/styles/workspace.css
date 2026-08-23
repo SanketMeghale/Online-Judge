@@ -1,0 +1,514 @@
+/* ==========================================================================
+   JUDGO WORKSPACE LAYOUT & DOCKING SYSTEM
+   ========================================================================== */
+
+.workspace-root {
+  --ws-bg: #ffffff;
+  --ws-panel-bg: #ffffff;
+  --ws-header-bg: #f8fafc;
+  --ws-border: #e2e8f0;
+  --ws-border-subtle: rgba(226, 232, 240, 0.7);
+  --ws-text-primary: #0f172a;
+  --ws-text-secondary: #475569;
+  --ws-text-muted: #64748b;
+  --ws-splitter-bg: rgba(148, 163, 184, 0.2);
+  --ws-splitter-hover: #6366f1;
+  --ws-dropzone-bg: rgba(99, 102, 241, 0.12);
+  --ws-dropzone-border: #6366f1;
+  --ws-dropzone-text: #4f46e5;
+  --ws-accent: #4f46e5;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 100%;
+  width: 100%;
+}
+
+[data-theme="dark"] .workspace-root {
+  --ws-bg: #0b0f17;
+  --ws-panel-bg: #0d111a;
+  --ws-header-bg: #121722;
+  --ws-border: rgba(255, 255, 255, 0.08);
+  --ws-border-subtle: rgba(255, 255, 255, 0.04);
+  --ws-text-primary: #f8fafc;
+  --ws-text-secondary: #cbd5e1;
+  --ws-text-muted: #94a3b8;
+  --ws-splitter-bg: rgba(255, 255, 255, 0.08);
+  --ws-splitter-hover: #818cf8;
+  --ws-dropzone-bg: rgba(99, 102, 241, 0.18);
+  --ws-dropzone-border: #818cf8;
+  --ws-dropzone-text: #a5b4fc;
+  --ws-accent: #6366f1;
+}
+
+/* --------------------------------------------------------------------------
+   WORKSPACE TOP CONTROLS TOOLBAR
+   -------------------------------------------------------------------------- */
+.workspace-toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  min-height: 36px;
+  padding: 0 2px;
+}
+
+.workspace-toolbar-left {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workspace-toolbar-right {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.workspace-tool-btn {
+  align-items: center;
+  background: var(--ws-header-bg);
+  border: 1px solid var(--ws-border);
+  border-radius: 7px;
+  color: var(--ws-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.76rem;
+  font-weight: 600;
+  gap: 5px;
+  padding: 5px 9px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.workspace-tool-btn:hover {
+  background: var(--ws-dropzone-bg);
+  border-color: var(--ws-dropzone-border);
+  color: var(--ws-dropzone-text);
+}
+
+.workspace-preset-pill {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--ws-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.72rem;
+  font-weight: 600;
+  gap: 4px;
+  padding: 4px 8px;
+  transition: all 0.15s ease;
+}
+
+.workspace-preset-pill:hover {
+  background: var(--ws-header-bg);
+  color: var(--ws-text-primary);
+}
+
+.workspace-preset-pill.active {
+  background: var(--ws-dropzone-bg);
+  border-color: var(--ws-dropzone-border);
+  color: var(--ws-dropzone-text);
+  font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   WORKSPACE MAIN VIEW CONTAINER
+   -------------------------------------------------------------------------- */
+.workspace-container {
+  border-radius: 12px;
+  height: calc(100vh - 170px);
+  min-height: 680px;
+  max-height: 1100px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.workspace-container.is-resizing {
+  user-select: none !important;
+}
+
+.workspace-container.is-resizing * {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+.workspace-container.is-resizing-h {
+  cursor: col-resize !important;
+}
+
+.workspace-container.is-resizing-v {
+  cursor: row-resize !important;
+}
+
+/* --------------------------------------------------------------------------
+   SPLIT CONTAINER (Recursive Flex Box)
+   -------------------------------------------------------------------------- */
+.workspace-split-box {
+  display: flex;
+  flex: 1;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.workspace-split-box.horizontal {
+  flex-direction: row;
+}
+
+.workspace-split-box.vertical {
+  flex-direction: column;
+}
+
+.workspace-split-first {
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.workspace-split-second {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+/* --------------------------------------------------------------------------
+   DRAGGABLE SPLITTER / RESIZER DIVIDER
+   -------------------------------------------------------------------------- */
+.workspace-splitter {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  position: relative;
+  touch-action: none;
+  transition: background-color 0.15s ease;
+  user-select: none;
+  z-index: 10;
+}
+
+.workspace-splitter.horizontal {
+  cursor: col-resize;
+  margin: 0 1px;
+  width: 8px;
+}
+
+.workspace-splitter.vertical {
+  cursor: row-resize;
+  height: 8px;
+  margin: 1px 0;
+}
+
+.workspace-splitter::before {
+  background: var(--ws-splitter-bg);
+  border-radius: 99px;
+  content: "";
+  position: absolute;
+  transition: background-color 0.15s ease, width 0.15s ease, height 0.15s ease;
+}
+
+.workspace-splitter.horizontal::before {
+  height: 100%;
+  width: 2px;
+}
+
+.workspace-splitter.vertical::before {
+  height: 2px;
+  width: 100%;
+}
+
+.workspace-splitter:hover::before,
+.workspace-splitter.is-active::before {
+  background: var(--ws-splitter-hover);
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+}
+
+.workspace-splitter.horizontal:hover::before,
+.workspace-splitter.horizontal.is-active::before {
+  width: 4px;
+}
+
+.workspace-splitter.vertical:hover::before,
+.workspace-splitter.vertical.is-active::before {
+  height: 4px;
+}
+
+.workspace-splitter-handle {
+  align-items: center;
+  background: var(--ws-panel-bg);
+  border: 1px solid var(--ws-border);
+  border-radius: 4px;
+  color: var(--ws-text-muted);
+  display: flex;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transition: opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  z-index: 2;
+}
+
+.workspace-splitter.horizontal .workspace-splitter-handle {
+  height: 28px;
+  width: 14px;
+}
+
+.workspace-splitter.vertical .workspace-splitter-handle {
+  height: 14px;
+  width: 28px;
+}
+
+.workspace-splitter:hover .workspace-splitter-handle,
+.workspace-splitter.is-active .workspace-splitter-handle {
+  border-color: var(--ws-splitter-hover);
+  color: var(--ws-splitter-hover);
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------------------
+   WORKSPACE PANEL (Individual Window)
+   -------------------------------------------------------------------------- */
+.workspace-panel {
+  background: var(--ws-panel-bg);
+  border: 1px solid var(--ws-border);
+  border-radius: 10px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.workspace-panel.is-dragged {
+  opacity: 0.45;
+  outline: 2px dashed var(--ws-accent);
+}
+
+.workspace-panel-header {
+  align-items: center;
+  background: var(--ws-header-bg);
+  border-bottom: 1px solid var(--ws-border);
+  cursor: default;
+  display: flex;
+  flex-shrink: 0;
+  height: 38px;
+  justify-content: space-between;
+  padding: 0 10px;
+  user-select: none;
+}
+
+.workspace-panel-title-wrap {
+  align-items: center;
+  cursor: grab;
+  display: flex;
+  gap: 7px;
+  min-width: 0;
+  touch-action: none;
+}
+
+.workspace-panel-title-wrap:active {
+  cursor: grabbing;
+}
+
+.workspace-panel-drag-handle {
+  align-items: center;
+  border-radius: 4px;
+  color: var(--ws-text-muted);
+  display: flex;
+  justify-content: center;
+  padding: 2px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.workspace-panel-title-wrap:hover .workspace-panel-drag-handle {
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--ws-accent);
+}
+
+.workspace-panel-title {
+  color: var(--ws-text-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-panel-actions {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+}
+
+.workspace-panel-btn {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--ws-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 24px;
+  justify-content: center;
+  padding: 0;
+  transition: all 0.15s ease;
+  width: 24px;
+}
+
+.workspace-panel-btn:hover {
+  background: var(--ws-border);
+  color: var(--ws-text-primary);
+}
+
+.workspace-panel-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  height: calc(100% - 38px);
+  min-height: 0;
+  min-width: 0;
+  overflow-y: auto;
+  position: relative;
+}
+
+/* --------------------------------------------------------------------------
+   DROP ZONES OVERLAY
+   -------------------------------------------------------------------------- */
+.workspace-dropzone-overlay {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr 1fr;
+  inset: 0;
+  pointer-events: all;
+  position: absolute;
+  z-index: 100;
+}
+
+.workspace-dropzone-target {
+  align-items: center;
+  background: rgba(99, 102, 241, 0.03);
+  border: 1px dashed transparent;
+  cursor: copy;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.workspace-dropzone-target.zone-top {
+  grid-column: 1 / 4;
+  grid-row: 1 / 2;
+}
+
+.workspace-dropzone-target.zone-bottom {
+  grid-column: 1 / 4;
+  grid-row: 3 / 4;
+}
+
+.workspace-dropzone-target.zone-left {
+  grid-column: 1 / 2;
+  grid-row: 2 / 3;
+}
+
+.workspace-dropzone-target.zone-right {
+  grid-column: 3 / 4;
+  grid-row: 2 / 3;
+}
+
+.workspace-dropzone-target.zone-center {
+  grid-column: 2 / 3;
+  grid-row: 2 / 3;
+}
+
+.workspace-dropzone-target.is-hovered {
+  backdrop-filter: blur(2px);
+  background: var(--ws-dropzone-bg);
+  border: 2px dashed var(--ws-dropzone-border);
+  box-shadow: inset 0 0 16px rgba(99, 102, 241, 0.2);
+  z-index: 10;
+}
+
+.workspace-dropzone-hint {
+  align-items: center;
+  background: var(--ws-panel-bg);
+  border: 1px solid var(--ws-dropzone-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: var(--ws-dropzone-text);
+  display: flex;
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 5px;
+  padding: 4px 8px;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   MAXIMIZED PANEL VIEW
+   -------------------------------------------------------------------------- */
+.workspace-maximized-panel {
+  border-radius: 12px;
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  width: 100%;
+  z-index: 50;
+}
+
+/* --------------------------------------------------------------------------
+   MOBILE / RESPONSIVE STACK
+   -------------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  .workspace-container {
+    height: auto !important;
+    max-height: none !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  .workspace-split-box {
+    flex-direction: column !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .workspace-split-first,
+  .workspace-split-second,
+  .workspace-panel {
+    flex: none !important;
+    height: auto !important;
+    margin-bottom: 12px !important;
+    max-height: none !important;
+    min-height: 380px !important;
+    width: 100% !important;
+  }
+
+  .workspace-splitter {
+    display: none !important;
+  }
+
+  .workspace-panel-content {
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+  }
+}

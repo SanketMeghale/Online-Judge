@@ -7,8 +7,8 @@ import {
   ChevronDown,
   ChevronRight,
   Clock3,
-  GripHorizontal,
-  GripVertical,
+  Code2,
+  FileText,
   History,
   Info,
   Layers,
@@ -16,6 +16,7 @@ import {
   MemoryStick,
   Sliders,
   Sparkles,
+  Terminal,
   XCircle,
   Zap
 } from "lucide-react";
@@ -27,6 +28,7 @@ import { ProblemErrorBoundary } from "../components/common/ProblemErrorBoundary.
 import { useAppData } from "../data/AppDataContext.jsx";
 import { useTheme } from "../context/ThemeContext.jsx";
 import AIContentRenderer from "../components/ai/AIContentRenderer.jsx";
+import WorkspaceLayout from "../components/workspace/WorkspaceLayout.jsx";
 
 // Universal safe formatting helper to prevent React render crashes from Objects/Arrays
 function formatDisplayValue(val, fallback = "") {
@@ -90,14 +92,6 @@ function ProblemDetailsInner() {
   const [aiReview, setAiReview] = useState(null);
   const [isReviewLoading, setIsReviewLoading] = useState(false);
   const [scrollTrigger, setScrollTrigger] = useState(0);
-  const [problemPaneWidth, setProblemPaneWidth] = useState(() => {
-    try {
-      const savedWidth = Number(localStorage.getItem("judgo-problem-pane-width"));
-      return Number.isFinite(savedWidth) && savedWidth >= 32 && savedWidth <= 64 ? savedWidth : 46;
-    } catch {
-      return 46;
-    }
-  });
   const [isBookmarked, setIsBookmarked] = useState(() => {
     try {
       return localStorage.getItem(`judgo-bookmark-${problemId}`) === "true";
@@ -116,24 +110,6 @@ function ProblemDetailsInner() {
     });
   }
 
-  const [isPaneResizing, setIsPaneResizing] = useState(false);
-  const workspaceRef = useRef(null);
-  const problemPaneWidthRef = useRef(problemPaneWidth);
-  problemPaneWidthRef.current = problemPaneWidth;
-
-  const [resultPanelHeight, setResultPanelHeight] = useState(() => {
-    try {
-      const savedHeight = Number(localStorage.getItem("judgo-result-panel-height"));
-      return Number.isFinite(savedHeight) && savedHeight >= 280 && savedHeight <= 720 ? savedHeight : 430;
-    } catch {
-      return 430;
-    }
-  });
-  const [isResultResizing, setIsResultResizing] = useState(false);
-  const resultPanelHeightRef = useRef(resultPanelHeight);
-  resultPanelHeightRef.current = resultPanelHeight;
-
-  const resultResizeStartRef = useRef({ y: 0, height: 430 });
   const [expandedResultCaseIndex, setExpandedResultCaseIndex] = useState(null);
 
   const fetchAIHint = async (level = 1) => {
@@ -181,147 +157,6 @@ function ProblemDetailsInner() {
   };
 
   const resultPanelRef = useRef(null);
-
-  function updateProblemPaneWidth(clientX) {
-    const workspace = workspaceRef.current;
-    if (!workspace) return;
-
-    const bounds = workspace.getBoundingClientRect();
-    if (!bounds.width) return;
-
-    const nextWidth = Math.min(64, Math.max(32, ((clientX - bounds.left) / bounds.width) * 100));
-    problemPaneWidthRef.current = nextWidth;
-    setProblemPaneWidth(nextWidth);
-  }
-
-  function startPaneResize(event) {
-    if (window.matchMedia("(max-width: 900px)").matches) return;
-    event.preventDefault();
-    try {
-      event.currentTarget.setPointerCapture(event.pointerId);
-    } catch {}
-    setIsPaneResizing(true);
-    updateProblemPaneWidth(event.clientX);
-  }
-
-  // Handle global window events for workspace split pane resizing
-  useEffect(() => {
-    if (!isPaneResizing) return;
-
-    function handlePointerMove(event) {
-      updateProblemPaneWidth(event.clientX);
-    }
-
-    function handlePointerUp(event) {
-      try {
-        event.target.releasePointerCapture(event.pointerId);
-      } catch {}
-      setIsPaneResizing(false);
-      try {
-        localStorage.setItem("judgo-problem-pane-width", String(problemPaneWidthRef.current));
-      } catch {}
-    }
-
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-    return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-    };
-  }, [isPaneResizing]);
-
-  function resizePaneWithKeyboard(event) {
-    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "Home") return;
-    event.preventDefault();
-    const nextWidth = event.key === "Home"
-      ? 46
-      : Math.min(64, Math.max(32, problemPaneWidthRef.current + (event.key === "ArrowLeft" ? -2 : 2)));
-    problemPaneWidthRef.current = nextWidth;
-    setProblemPaneWidth(nextWidth);
-    try {
-      localStorage.setItem("judgo-problem-pane-width", String(nextWidth));
-    } catch {}
-  }
-
-  function updateResultHeight(clientY) {
-    if (!resultResizeStartRef.current) return;
-    const delta = resultResizeStartRef.current.y - clientY;
-    const minH = 180;
-    const maxH = typeof window !== "undefined" ? Math.max(760, window.innerHeight - 100) : 760;
-    const nextHeight = Math.min(maxH, Math.max(minH, Math.round(resultResizeStartRef.current.height + delta)));
-    resultPanelHeightRef.current = nextHeight;
-    setResultPanelHeight(nextHeight);
-  }
-
-  function startResultResize(event) {
-    event.preventDefault();
-    const clientY = event.touches ? event.touches[0].clientY : event.clientY;
-    resultResizeStartRef.current = {
-      y: clientY,
-      height: resultPanelHeightRef.current
-    };
-    setIsResultResizing(true);
-  }
-
-  // Handle global window events for vertical execution results resizing
-  useEffect(() => {
-    if (!isResultResizing) return;
-
-    function handlePointerMove(event) {
-      const clientY = event.touches ? event.touches[0].clientY : event.clientY;
-      if (typeof clientY === "number") {
-        updateResultHeight(clientY);
-      }
-    }
-
-    function handlePointerUp() {
-      setIsResultResizing(false);
-      try {
-        localStorage.setItem("judgo-result-panel-height", String(resultPanelHeightRef.current));
-      } catch {}
-    }
-
-    const prevCursor = document.body.style.cursor;
-    const prevUserSelect = document.body.style.userSelect;
-    document.body.style.cursor = "row-resize";
-    document.body.style.userSelect = "none";
-
-    window.addEventListener("pointermove", handlePointerMove, { passive: true });
-    window.addEventListener("mousemove", handlePointerMove, { passive: true });
-    window.addEventListener("touchmove", handlePointerMove, { passive: true });
-
-    window.addEventListener("pointerup", handlePointerUp);
-    window.addEventListener("mouseup", handlePointerUp);
-    window.addEventListener("touchend", handlePointerUp);
-    window.addEventListener("pointercancel", handlePointerUp);
-
-    return () => {
-      document.body.style.cursor = prevCursor;
-      document.body.style.userSelect = prevUserSelect;
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("mousemove", handlePointerMove);
-      window.removeEventListener("touchmove", handlePointerMove);
-
-      window.removeEventListener("pointerup", handlePointerUp);
-      window.removeEventListener("mouseup", handlePointerUp);
-      window.removeEventListener("touchend", handlePointerUp);
-      window.removeEventListener("pointercancel", handlePointerUp);
-    };
-  }, [isResultResizing]);
-
-  function resizeResultWithKeyboard(event) {
-    if (event.key !== "ArrowUp" && event.key !== "ArrowDown" && event.key !== "Home") return;
-    event.preventDefault();
-    const nextHeight = event.key === "Home"
-      ? 430
-      : Math.min(800, Math.max(180, resultPanelHeightRef.current + (event.key === "ArrowUp" ? 24 : -24)));
-    resultPanelHeightRef.current = nextHeight;
-    setResultPanelHeight(nextHeight);
-    try {
-      localStorage.setItem("judgo-result-panel-height", String(nextHeight));
-    } catch {}
-  }
-
 
   const userSubmissions = useMemo(() => {
     if (!problemId) return [];
@@ -519,13 +354,10 @@ function ProblemDetailsInner() {
         code
       });
 
-      console.log("[2] NORMALIZED RESULT", nextResult);
-
       if (!nextResult) {
         throw new Error("No evaluation response received from submission service.");
       }
 
-      console.log("[3] SETTING RESULT", nextResult);
       setResult({
         ...nextResult,
         type: "submit"
@@ -563,216 +395,178 @@ function ProblemDetailsInner() {
       }))
     : [];
 
-  if (result) {
-    console.log("[4] RESULT STATE RENDER", { result, displayVerdict, displayStatusText, testResults });
-  }
-
-  return (
-    <div
-      className="problem-detail-page-container"
-      data-lenis-prevent="true"
-      style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%", maxWidth: "1600px" }}
-    >
-      {/* Breadcrumb Navigation */}
-      <nav className="problem-crumbs" style={{ display: "flex", alignItems: "center", gap: "8px", color: isLight ? "#64748b" : "#8b9bb4", fontSize: "0.85rem" }}>
-        <Link to="/problems" style={{ color: isLight ? "#64748b" : "#8b9bb4", textDecoration: "none" }}>
-          Problems
-        </Link>
-        <ChevronRight size={14} />
-        <span>{problemWithStatus.topic}</span>
-        <ChevronRight size={14} />
-        <strong style={{ color: isLight ? "#0f172a" : "#ffffff" }}>{problemWithStatus.title}</strong>
-      </nav>
-
-      {/* Main 2-Column Grid Layout */}
-      <div
-        ref={workspaceRef}
-        className={`problem-workspace-split ${
-          isPaneResizing ? "is-resizing-width" : isResultResizing ? "is-resizing-height" : ""
-        }`}
-        style={{ "--problem-pane-width": `${problemPaneWidth}%` }}
-      >
-        
-        {/* LEFT COLUMN: Problem Statement & Testcases List */}
-        <div className="problem-workspace-pane problem-workspace-pane-description" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          
-          {/* Problem Statement Card */}
-          <section
-            className="problem-statement-card"
-            style={{
-              background: isLight ? "#ffffff" : "#0d111a",
-              border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
-              borderRadius: "14px",
-              padding: "16px 18px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "12px",
-              boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none"
-            }}
-          >
-            {/* Compact Header: Title + Status + Bookmark in Row 1 */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
-              <h1 style={{ fontSize: "1.3rem", fontWeight: "800", color: isLight ? "#0f172a" : "#ffffff", margin: 0, letterSpacing: "-0.01em" }}>
+  // =========================================================================
+  // Panel Definitions for Docking & Resizable Workspace
+  // =========================================================================
+  const workspacePanels = useMemo(() => {
+    return {
+      // ---------------------------------------------------------------------
+      // 1. Problem Statement & Description Panel
+      // ---------------------------------------------------------------------
+      problem: {
+        title: "Problem Statement",
+        icon: FileText,
+        renderHeaderActions: () => (
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            {problemWithStatus.status && (
+              <span
+                className="solved-pill"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  color: problemWithStatus.status?.toLowerCase() === "solved" || result?.verdict === "AC" ? "#16a34a" : "#eab308",
+                  fontSize: "0.74rem",
+                  background: problemWithStatus.status?.toLowerCase() === "solved" || result?.verdict === "AC" ? "rgba(34, 197, 94, 0.12)" : "rgba(234, 179, 8, 0.12)",
+                  border: problemWithStatus.status?.toLowerCase() === "solved" || result?.verdict === "AC" ? "1px solid rgba(34, 197, 94, 0.25)" : "1px solid rgba(234, 179, 8, 0.25)",
+                  padding: "1px 6px",
+                  borderRadius: "5px",
+                  fontWeight: "700"
+                }}
+              >
+                <CheckCircle2 size={12} />
+                {formatDisplayValue(problemWithStatus.status, "Solved")}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={toggleBookmark}
+              title={isBookmarked ? "Bookmarked (Click to remove)" : "Bookmark this problem"}
+              style={{
+                background: isBookmarked ? (isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.15)") : "transparent",
+                border: isBookmarked ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid transparent",
+                borderRadius: "5px",
+                cursor: "pointer",
+                padding: "3px 5px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: isBookmarked ? (isLight ? "#4f46e5" : "#818cf8") : (isLight ? "#94a3b8" : "#64748b"),
+                transition: "all 0.15s ease"
+              }}
+            >
+              <Bookmark size={14} fill={isBookmarked ? "currentColor" : "none"} />
+            </button>
+          </div>
+        ),
+        renderContent: () => (
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px", padding: "16px" }}>
+            {/* Title & Headline */}
+            <div>
+              <h1 style={{ fontSize: "1.25rem", fontWeight: "800", color: isLight ? "#0f172a" : "#ffffff", margin: "0 0 8px 0", letterSpacing: "-0.01em" }}>
                 {problemWithStatus.title}
               </h1>
 
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                {problemWithStatus.status && (
-                  <span
-                    className="solved-pill"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      color: problemWithStatus.status?.toLowerCase() === "solved" || result?.verdict === "AC" ? "#16a34a" : "#eab308",
-                      fontSize: "0.76rem",
-                      background: problemWithStatus.status?.toLowerCase() === "solved" || result?.verdict === "AC" ? "rgba(34, 197, 94, 0.12)" : "rgba(234, 179, 8, 0.12)",
-                      border: problemWithStatus.status?.toLowerCase() === "solved" || result?.verdict === "AC" ? "1px solid rgba(34, 197, 94, 0.25)" : "1px solid rgba(234, 179, 8, 0.25)",
-                      padding: "2px 8px",
-                      borderRadius: "6px",
-                      fontWeight: "700"
-                    }}
-                  >
-                    <CheckCircle2 size={13} />
-                    {formatDisplayValue(problemWithStatus.status, "Solved")}
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={toggleBookmark}
-                  title={isBookmarked ? "Bookmarked (Click to remove)" : "Bookmark this problem"}
-                  style={{
-                    background: isBookmarked ? (isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.15)") : "transparent",
-                    border: isBookmarked ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid transparent",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    padding: "4px",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: isBookmarked ? (isLight ? "#4f46e5" : "#818cf8") : (isLight ? "#94a3b8" : "#64748b"),
-                    transition: "all 0.15s ease"
-                  }}
+              {/* Compact Inline Tags */}
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                <span
+                  className={`difficulty difficulty-${problemWithStatus.difficulty.toLowerCase()}`}
+                  style={{ fontSize: "0.72rem", padding: "2px 7px", borderRadius: "5px", fontWeight: "700" }}
                 >
-                  <Bookmark size={16} fill={isBookmarked ? "currentColor" : "none"} />
-                </button>
-              </div>
-            </div>
+                  {problemWithStatus.difficulty}
+                </span>
 
-            {/* Compact Inline Tags Row: Difficulty, Topic, Acceptance, Points & Company */}
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-              {/* Difficulty Tag */}
-              <span
-                className={`difficulty difficulty-${problemWithStatus.difficulty.toLowerCase()}`}
-                style={{
-                  fontSize: "0.72rem",
-                  padding: "2px 8px",
-                  borderRadius: "6px",
-                  fontWeight: "700",
-                  letterSpacing: "0.01em"
-                }}
-              >
-                {problemWithStatus.difficulty}
-              </span>
-
-              {/* Topic Tag */}
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  background: isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.05)",
-                  border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-                  color: isLight ? "#475569" : "#cbd5e1",
-                  fontSize: "0.74rem",
-                  padding: "2px 8px",
-                  borderRadius: "6px",
-                  fontWeight: "600"
-                }}
-              >
-                <span>🏷️</span>
-                <span>{problemWithStatus.topic}</span>
-              </span>
-
-              {/* Acceptance Rate Tag */}
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  background: isLight ? "#f8fafc" : "rgba(255, 255, 255, 0.04)",
-                  border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
-                  color: isLight ? "#64748b" : "#94a3b8",
-                  fontSize: "0.74rem",
-                  padding: "2px 8px",
-                  borderRadius: "6px",
-                  fontWeight: "600"
-                }}
-                title="Global acceptance rate"
-              >
-                <Zap size={12} style={{ color: "#eab308", fill: "#eab308" }} />
-                <span>{problemWithStatus.acceptance}%</span>
-              </span>
-
-              {/* Score / Points Tag */}
-              <span
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px",
-                  background: isLight ? "#f8fafc" : "rgba(255, 255, 255, 0.04)",
-                  border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
-                  color: isLight ? "#64748b" : "#94a3b8",
-                  fontSize: "0.74rem",
-                  padding: "2px 8px",
-                  borderRadius: "6px",
-                  fontWeight: "600"
-                }}
-                title="Points for solving"
-              >
-                <Sparkles size={12} style={{ color: "#a855f7" }} />
-                <span>{problemWithStatus.points} pts</span>
-              </span>
-
-              {/* Company Tag (if available) */}
-              {Array.isArray(problemWithStatus.companyTags) && problemWithStatus.companyTags.length > 0 && (
                 <span
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
                     gap: "4px",
-                    background: isLight ? "#f5f3ff" : "rgba(124, 58, 237, 0.12)",
-                    border: isLight ? "1px solid #ddd6fe" : "1px solid rgba(124, 58, 237, 0.25)",
-                    color: isLight ? "#6d28d9" : "#c084fc",
-                    fontSize: "0.74rem",
-                    padding: "2px 8px",
-                    borderRadius: "6px",
+                    background: isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.05)",
+                    border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
+                    color: isLight ? "#475569" : "#cbd5e1",
+                    fontSize: "0.72rem",
+                    padding: "2px 7px",
+                    borderRadius: "5px",
                     fontWeight: "600"
                   }}
-                  title="Target Company"
                 >
-                  <span>🏢</span>
-                  <span>{problemWithStatus.companyTags[0]}</span>
+                  <span>🏷️</span>
+                  <span>{problemWithStatus.topic}</span>
                 </span>
-              )}
+
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    background: isLight ? "#f8fafc" : "rgba(255, 255, 255, 0.04)",
+                    border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
+                    color: isLight ? "#64748b" : "#94a3b8",
+                    fontSize: "0.72rem",
+                    padding: "2px 7px",
+                    borderRadius: "5px",
+                    fontWeight: "600"
+                  }}
+                  title="Global acceptance rate"
+                >
+                  <Zap size={11} style={{ color: "#eab308", fill: "#eab308" }} />
+                  <span>{problemWithStatus.acceptance}%</span>
+                </span>
+
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    background: isLight ? "#f8fafc" : "rgba(255, 255, 255, 0.04)",
+                    border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
+                    color: isLight ? "#64748b" : "#94a3b8",
+                    fontSize: "0.72rem",
+                    padding: "2px 7px",
+                    borderRadius: "5px",
+                    fontWeight: "600"
+                  }}
+                  title="Points for solving"
+                >
+                  <Sparkles size={11} style={{ color: "#a855f7" }} />
+                  <span>{problemWithStatus.points} pts</span>
+                </span>
+
+                {Array.isArray(problemWithStatus.companyTags) && problemWithStatus.companyTags.length > 0 && (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      background: isLight ? "#f5f3ff" : "rgba(124, 58, 237, 0.12)",
+                      border: isLight ? "1px solid #ddd6fe" : "1px solid rgba(124, 58, 237, 0.25)",
+                      color: isLight ? "#6d28d9" : "#c084fc",
+                      fontSize: "0.72rem",
+                      padding: "2px 7px",
+                      borderRadius: "5px",
+                      fontWeight: "600"
+                    }}
+                    title="Target Company"
+                  >
+                    <span>🏢</span>
+                    <span>{problemWithStatus.companyTags[0]}</span>
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Description Text */}
             <div>
-              <h3 style={{ fontSize: "0.95rem", color: isLight ? "#475569" : "#94a3b8", marginBottom: "6px", fontWeight: "bold" }}>Description</h3>
-              <p style={{ color: isLight ? "#334155" : "#cbd5e1", fontSize: "0.9rem", lineHeight: "1.6", margin: 0, whiteSpace: "pre-line" }}>
+              <h3 style={{ fontSize: "0.88rem", color: isLight ? "#475569" : "#94a3b8", marginBottom: "6px", fontWeight: "bold" }}>
+                Description
+              </h3>
+              <p style={{ color: isLight ? "#334155" : "#cbd5e1", fontSize: "0.88rem", lineHeight: "1.6", margin: 0, whiteSpace: "pre-line" }}>
                 {problemWithStatus.statement}
               </p>
             </div>
 
             {/* Examples */}
             <div>
-              <h3 style={{ fontSize: "0.95rem", color: isLight ? "#475569" : "#94a3b8", marginBottom: "8px", fontWeight: "bold" }}>Examples</h3>
+              <h3 style={{ fontSize: "0.88rem", color: isLight ? "#475569" : "#94a3b8", marginBottom: "8px", fontWeight: "bold" }}>
+                Examples
+              </h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {problemWithStatus.examples.map((example, index) => (
                   <div key={index} style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "10px 12px" }}>
-                    <strong style={{ color: isLight ? "#2563eb" : "#60a5fa", fontSize: "0.82rem", display: "block", marginBottom: "4px" }}>Example {index + 1}</strong>
-                    <pre style={{ margin: 0, color: isLight ? "#334155" : "#cbd5e1", fontFamily: "monospace", fontSize: "0.82rem", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>
+                    <strong style={{ color: isLight ? "#2563eb" : "#60a5fa", fontSize: "0.8rem", display: "block", marginBottom: "4px" }}>
+                      Example {index + 1}
+                    </strong>
+                    <pre style={{ margin: 0, color: isLight ? "#334155" : "#cbd5e1", fontFamily: "monospace", fontSize: "0.8rem", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>
                       {`Input: ${formatDisplayValue(example.input)}\nOutput: ${formatDisplayValue(example.output)}`}
                     </pre>
                   </div>
@@ -782,21 +576,23 @@ function ProblemDetailsInner() {
 
             {/* Constraints */}
             <div>
-              <h3 style={{ fontSize: "0.95rem", color: isLight ? "#475569" : "#94a3b8", marginBottom: "6px", fontWeight: "bold" }}>Constraints</h3>
-              <ul style={{ margin: 0, paddingLeft: "18px", color: isLight ? "#334155" : "#cbd5e1", fontSize: "0.85rem", lineHeight: "1.6" }}>
+              <h3 style={{ fontSize: "0.88rem", color: isLight ? "#475569" : "#94a3b8", marginBottom: "6px", fontWeight: "bold" }}>
+                Constraints
+              </h3>
+              <ul style={{ margin: 0, paddingLeft: "18px", color: isLight ? "#334155" : "#cbd5e1", fontSize: "0.84rem", lineHeight: "1.6" }}>
                 {problemWithStatus.constraints.map((constraint, idx) => (
                   <li key={idx}>{formatDisplayValue(constraint)}</li>
                 ))}
               </ul>
             </div>
 
-            {/* Hint Bar */}
+            {/* AI Progressive Hint Accordion */}
             <div
               style={{
                 background: isLight ? "#f8fafc" : "#131826",
                 border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
                 borderRadius: "8px",
-                padding: "10px 14px",
+                padding: "9px 12px",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
@@ -810,11 +606,13 @@ function ProblemDetailsInner() {
                 }
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", color: isLight ? "#0f172a" : "#cbd5e1", fontSize: "0.85rem" }}>
-                <Lightbulb size={16} style={{ color: "#eab308" }} />
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", color: isLight ? "#0f172a" : "#cbd5e1", fontSize: "0.82rem" }}>
+                <Lightbulb size={15} style={{ color: "#eab308" }} />
                 <span>AI Progressive Hint {showHint ? `(Level ${hintLevel}/4)` : ""}</span>
               </div>
-              <span style={{ fontSize: "0.75rem", color: isLight ? "#64748b" : "#8b9bb4" }}>4 levels <ChevronDown size={14} /></span>
+              <span style={{ fontSize: "0.74rem", color: isLight ? "#64748b" : "#8b9bb4" }}>
+                4 levels <ChevronDown size={13} />
+              </span>
             </div>
             {showHint ? (
               <div style={{ background: isLight ? "#fefce8" : "#080c14", border: isLight ? "1px solid #fef08a" : "1px solid rgba(234, 179, 8, 0.2)", borderRadius: "8px", padding: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -852,165 +650,131 @@ function ProblemDetailsInner() {
                 )}
               </div>
             ) : null}
-          </section>
 
-          {/* Testcases Selection List Card */}
-          <section className="testcases-list-card" style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "16px", display: "flex", flexDirection: "column", gap: "10px", boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 style={{ fontSize: "0.95rem", color: isLight ? "#0f172a" : "#fff", fontWeight: "bold", margin: 0 }}>Testcases</h3>
-              <span style={{ fontSize: "0.78rem", color: isLight ? "#64748b" : "#64748b" }}>
-                {testResults.length
-                  ? `${testResults.filter((t) => t?.passed).length} / ${testResults.length}`
-                  : `${problemWithStatus.examples.length} / ${problemWithStatus.examples.length}`} testcases
-              </span>
-            </div>
+            {/* Testcase selector quick cards */}
+            <div style={{ marginTop: "4px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                <h4 style={{ fontSize: "0.85rem", color: isLight ? "#0f172a" : "#fff", fontWeight: "bold", margin: 0 }}>
+                  Test Cases ({problemWithStatus.examples.length})
+                </h4>
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                {problemWithStatus.examples.map((example, index) => {
+                  const caseRes = testResults[index];
+                  const isPass = caseRes ? Boolean(caseRes.passed) : displayVerdict === "AC";
+                  const isSelected = selectedCaseIndex === index;
 
-            {/* Testcases List Items */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              {problemWithStatus.examples.map((example, index) => {
-                const caseRes = testResults[index];
-                const isPass = caseRes ? Boolean(caseRes.passed) : displayVerdict === "AC";
-                const isSelected = selectedCaseIndex === index;
-
-                return (
-                  <div
-                    key={index}
-                    onClick={() => setSelectedCaseIndex(index)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      background: isSelected
-                        ? isLight ? "#eef2ff" : "rgba(120, 80, 255, 0.15)"
-                        : isLight ? "#f8fafc" : "#080c14",
-                      border: isSelected
-                        ? "1px solid #6366f1"
-                        : isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)",
-                      borderRadius: "8px",
-                      padding: "8px 12px",
-                      cursor: "pointer",
-                      transition: "all 0.15s ease"
-                    }}
-                  >
-                    {isPass ? (
-                      <CheckCircle2 size={16} style={{ color: "#16a34a" }} />
-                    ) : (
-                      <XCircle size={16} style={{ color: "#f43f5e" }} />
-                    )}
-                    <strong style={{ color: isSelected ? "#6366f1" : isLight ? "#0f172a" : "#cbd5e1", fontSize: "0.82rem" }}>
-                      Case {index + 1}
-                    </strong>
-                    <span
+                  return (
+                    <div
+                      key={index}
+                      onClick={() => setSelectedCaseIndex(index)}
                       style={{
-                        color: isLight ? "#64748b" : "#64748b",
-                        fontSize: "0.78rem",
-                        fontFamily: "monospace",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap"
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        background: isSelected
+                          ? isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.15)"
+                          : isLight ? "#f8fafc" : "#080c14",
+                        border: isSelected
+                          ? "1px solid #6366f1"
+                          : isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)",
+                        borderRadius: "7px",
+                        padding: "7px 10px",
+                        cursor: "pointer",
+                        transition: "all 0.15s ease"
                       }}
                     >
-                      {formatDisplayValue(example.input)}
-                    </span>
-                  </div>
-                );
-              })}
+                      {isPass ? (
+                        <CheckCircle2 size={14} style={{ color: "#16a34a" }} />
+                      ) : (
+                        <XCircle size={14} style={{ color: "#f43f5e" }} />
+                      )}
+                      <strong style={{ color: isSelected ? "#6366f1" : isLight ? "#0f172a" : "#cbd5e1", fontSize: "0.78rem" }}>
+                        Case {index + 1}
+                      </strong>
+                      <span
+                        style={{
+                          color: isLight ? "#64748b" : "#64748b",
+                          fontSize: "0.74rem",
+                          fontFamily: "monospace",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap"
+                        }}
+                      >
+                        {formatDisplayValue(example.input)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </section>
-        </div>
-
-        <div
-          className="problem-pane-resizer"
-          role="separator"
-          aria-label="Resize problem description and code editor"
-          aria-orientation="vertical"
-          aria-valuemin={32}
-          aria-valuemax={64}
-          aria-valuenow={Math.round(problemPaneWidth)}
-          tabIndex={0}
-          title="Drag to resize. Double-click or press Home to reset."
-          onPointerDown={startPaneResize}
-          onKeyDown={resizePaneWithKeyboard}
-          onDoubleClick={() => {
-            problemPaneWidthRef.current = 46;
-            setProblemPaneWidth(46);
-            try {
-              localStorage.setItem("judgo-problem-pane-width", "46");
-            } catch {}
-          }}
-        >
-          <span className="problem-pane-resizer-handle" aria-hidden="true">
-            <GripVertical size={16} />
-          </span>
-        </div>
-
-        {/* RIGHT COLUMN: Code Editor & Console Results Panel */}
-        <div className="problem-workspace-pane problem-workspace-pane-editor" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          
-          {/* Code Editor */}
-          <CodeEditor
-            code={code}
-            language={language}
-            onCodeChange={handleCodeChange}
-            onLanguageChange={handleLanguageChange}
-            onRun={handleRun}
-            onSubmit={handleSubmit}
-            onReset={handleResetCode}
-            starterCode={getStarterForLanguage(problemWithStatus, language)}
-            isRunning={isRunning}
-            isSubmitting={isSubmitting}
-          />
-
-          <div
-            className={`result-panel-resizer${isResultResizing ? " is-resizing" : ""}`}
-            role="separator"
-            aria-label="Resize execution result panel"
-            aria-orientation="horizontal"
-            aria-valuemin={180}
-            aria-valuemax={900}
-            aria-valuenow={Math.round(resultPanelHeight)}
-            tabIndex={0}
-            title="Drag to resize result panel vertically. Double-click or press Home to reset."
-            onPointerDown={startResultResize}
-            onMouseDown={startResultResize}
-            onTouchStart={startResultResize}
-            onKeyDown={resizeResultWithKeyboard}
-            onDoubleClick={() => {
-              resultPanelHeightRef.current = 430;
-              setResultPanelHeight(430);
-              try {
-                localStorage.setItem("judgo-result-panel-height", "430");
-              } catch {}
-            }}
-            style={{
-              cursor: "row-resize",
-              touchAction: "none",
-              userSelect: "none"
-            }}
-          >
-            <span className="result-panel-resizer-handle" aria-hidden="true">
-              <GripHorizontal size={16} />
-            </span>
           </div>
+        )
+      },
 
-          {/* Console Results Panel (Smoothly Scrolled into View upon Run / Submit) */}
-          <section
+      // ---------------------------------------------------------------------
+      // 2. Code Editor Panel
+      // ---------------------------------------------------------------------
+      editor: {
+        title: "Code Editor",
+        icon: Code2,
+        renderContent: () => (
+          <div style={{ display: "flex", flex: 1, flexDirection: "column", height: "100%", minHeight: 0 }}>
+            <CodeEditor
+              code={code}
+              language={language}
+              onCodeChange={handleCodeChange}
+              onLanguageChange={handleLanguageChange}
+              onRun={handleRun}
+              onSubmit={handleSubmit}
+              onReset={handleResetCode}
+              starterCode={getStarterForLanguage(problemWithStatus, language)}
+              isRunning={isRunning}
+              isSubmitting={isSubmitting}
+            />
+          </div>
+        )
+      },
+
+      // ---------------------------------------------------------------------
+      // 3. Execution Console & Results Panel
+      // ---------------------------------------------------------------------
+      result: {
+        title: "Execution Console & Testcases",
+        icon: Layers,
+        renderHeaderActions: () => (
+          displayVerdict ? (
+            <span
+              style={{
+                fontSize: "0.72rem",
+                fontWeight: "800",
+                color: displayVerdict === "AC" ? "#16a34a" : "#ef4444",
+                background: displayVerdict === "AC" ? "rgba(22, 163, 74, 0.12)" : "rgba(239, 68, 68, 0.12)",
+                border: `1px solid ${displayVerdict === "AC" ? "rgba(22, 163, 74, 0.25)" : "rgba(239, 68, 68, 0.25)"}`,
+                padding: "2px 6px",
+                borderRadius: "5px"
+              }}
+            >
+              {displayVerdict === "AC" ? "Accepted" : displayVerdict}
+            </span>
+          ) : null
+        ),
+        renderContent: () => (
+          <div
             ref={resultPanelRef}
             className="console-results-panel"
             style={{
-              scrollMarginTop: "90px",
-              background: isLight ? "#ffffff" : "#0d111a",
-              border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
-              borderRadius: "14px",
-              overflow: "hidden",
               display: "flex",
               flexDirection: "column",
-              height: `${resultPanelHeight}px`,
-              boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none"
+              flex: 1,
+              height: "100%",
+              minHeight: 0,
+              overflow: "hidden"
             }}
           >
             {/* Console Tab Bar */}
-            <div className="console-tab-bar" style={{ background: isLight ? "#f8fafc" : "#131826", borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 10px" }}>
+            <div className="console-tab-bar" style={{ background: isLight ? "#f8fafc" : "#131826", borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 10px", flexShrink: 0 }}>
               <div className="console-tab-list" style={{ display: "flex", gap: "2px" }}>
                 <button
                   onClick={() => setActiveConsoleTab("testcase")}
@@ -1020,16 +784,16 @@ function ProblemDetailsInner() {
                     border: "none",
                     borderBottom: activeConsoleTab === "testcase" ? "2px solid #6366f1" : "2px solid transparent",
                     color: activeConsoleTab === "testcase" ? (isLight ? "#4f46e5" : "#fff") : (isLight ? "#64748b" : "#8b9bb4"),
-                    fontSize: "0.82rem",
+                    fontSize: "0.8rem",
                     fontWeight: "bold",
-                    padding: "10px 12px",
+                    padding: "9px 11px",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     gap: "5px"
                   }}
                 >
-                  <Layers size={14} />
+                  <Layers size={13} />
                   Testcases
                 </button>
 
@@ -1041,9 +805,9 @@ function ProblemDetailsInner() {
                     border: "none",
                     borderBottom: activeConsoleTab === "custom" ? "2px solid #6366f1" : "2px solid transparent",
                     color: activeConsoleTab === "custom" ? (isLight ? "#4f46e5" : "#fff") : (isLight ? "#64748b" : "#8b9bb4"),
-                    fontSize: "0.82rem",
+                    fontSize: "0.8rem",
                     fontWeight: "bold",
-                    padding: "10px 12px",
+                    padding: "9px 11px",
                     cursor: "pointer"
                   }}
                 >
@@ -1058,9 +822,9 @@ function ProblemDetailsInner() {
                     border: "none",
                     borderBottom: activeConsoleTab === "result" ? "2px solid #6366f1" : "2px solid transparent",
                     color: activeConsoleTab === "result" ? (isLight ? "#4f46e5" : "#fff") : (isLight ? "#64748b" : "#8b9bb4"),
-                    fontSize: "0.82rem",
+                    fontSize: "0.8rem",
                     fontWeight: "bold",
-                    padding: "10px 12px",
+                    padding: "9px 11px",
                     cursor: "pointer"
                   }}
                 >
@@ -1075,16 +839,16 @@ function ProblemDetailsInner() {
                     border: "none",
                     borderBottom: activeConsoleTab === "history" ? "2px solid #6366f1" : "2px solid transparent",
                     color: activeConsoleTab === "history" ? (isLight ? "#4f46e5" : "#fff") : (isLight ? "#64748b" : "#8b9bb4"),
-                    fontSize: "0.82rem",
+                    fontSize: "0.8rem",
                     fontWeight: "bold",
-                    padding: "10px 12px",
+                    padding: "9px 11px",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     gap: "5px"
                   }}
                 >
-                  <History size={14} />
+                  <History size={13} />
                   Submissions ({userSubmissions.length})
                 </button>
 
@@ -1096,45 +860,85 @@ function ProblemDetailsInner() {
                     border: "none",
                     borderBottom: activeConsoleTab === "ai" ? "2px solid #6366f1" : "2px solid transparent",
                     color: activeConsoleTab === "ai" ? "#9333ea" : (isLight ? "#64748b" : "#8b9bb4"),
-                    fontSize: "0.82rem",
+                    fontSize: "0.8rem",
                     fontWeight: "bold",
-                    padding: "10px 12px",
+                    padding: "9px 11px",
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     gap: "5px"
                   }}
                 >
-                  <Sparkles size={14} style={{ color: "#9333ea" }} />
-                  AI Review <span style={{ background: "#6366f1", color: "#fff", fontSize: "0.6rem", padding: "1px 5px", borderRadius: "999px" }}>NEW</span>
+                  <Sparkles size={13} style={{ color: "#9333ea" }} />
+                  AI Review
                 </button>
               </div>
 
               <div style={{ display: "flex", gap: "8px", color: isLight ? "#64748b" : "#64748b" }}>
-                <Sliders size={15} style={{ cursor: "pointer" }} />
+                <Sliders size={14} style={{ cursor: "pointer" }} />
               </div>
             </div>
 
             {/* Console Body Area */}
-            <div className="console-results-body" style={{ padding: "14px" }}>
+            <div className="console-results-body" style={{ padding: "14px", flex: 1, overflowY: "auto" }}>
               {isRunning || isSubmitting || isProcessingResult ? (
-                <div style={{ padding: "2.5rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1rem", color: "#8b9bb4" }}>
-                  <div className="spinner" style={{ width: 32, height: 32, border: "3px solid #333", borderTopColor: "#7850ff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                <div style={{ padding: "2rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: "#8b9bb4" }}>
+                  <div className="spinner" style={{ width: 30, height: 30, border: "3px solid #333", borderTopColor: "#6366f1", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
                   <div style={{ textAlign: "center" }}>
-                    <strong style={{ fontSize: "1rem", color: "#f8fafc", display: "block" }}>
-                      {result?.statusText || (isSubmitting ? "Queued..." : "Preparing execution...")}
+                    <strong style={{ fontSize: "0.95rem", color: isLight ? "#0f172a" : "#f8fafc", display: "block" }}>
+                      {result?.statusText || (isSubmitting ? "Queued for Sandbox Evaluation..." : "Preparing execution...")}
                     </strong>
-                    <div style={{ marginTop: "8px", display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.8rem", color: "#94a3b8" }}>
-                      <span>Actual worker state: {result?.status || "ENQUEUEING"}</span>
-                      <span>Execution runs in a disposable, networkless sandbox.</span>
+                    <div style={{ marginTop: "6px", display: "flex", flexDirection: "column", gap: "3px", fontSize: "0.78rem", color: "#94a3b8" }}>
+                      <span>Worker status: {result?.status || "RUNNING"}</span>
+                      <span>Execution runs in an isolated networkless sandbox.</span>
                     </div>
                   </div>
                 </div>
+              ) : activeConsoleTab === "testcase" ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                    {problemWithStatus.examples.map((_, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setSelectedCaseIndex(idx)}
+                        style={{
+                          background: selectedCaseIndex === idx ? (isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.2)") : (isLight ? "#f8fafc" : "#0d111a"),
+                          border: selectedCaseIndex === idx ? "1px solid #6366f1" : `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`,
+                          color: selectedCaseIndex === idx ? (isLight ? "#4f46e5" : "#818cf8") : (isLight ? "#475569" : "#cbd5e1"),
+                          borderRadius: "6px",
+                          padding: "4px 10px",
+                          fontSize: "0.76rem",
+                          fontWeight: "700",
+                          cursor: "pointer"
+                        }}
+                      >
+                        Case {idx + 1}
+                      </button>
+                    ))}
+                  </div>
+                  {problemWithStatus.examples[selectedCaseIndex] && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div>
+                        <span style={{ fontSize: "0.75rem", fontWeight: "700", color: "#64748b" }}>Input:</span>
+                        <pre style={{ background: isLight ? "#f8fafc" : "#080c14", border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.06)"}`, padding: "8px 10px", borderRadius: "6px", fontSize: "0.8rem", margin: "4px 0 0 0", color: isLight ? "#0f172a" : "#f1f5f9" }}>
+                          {formatDisplayValue(problemWithStatus.examples[selectedCaseIndex].input)}
+                        </pre>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "0.75rem", fontWeight: "700", color: "#64748b" }}>Expected Output:</span>
+                        <pre style={{ background: isLight ? "#f8fafc" : "#080c14", border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.06)"}`, padding: "8px 10px", borderRadius: "6px", fontSize: "0.8rem", margin: "4px 0 0 0", color: isLight ? "#0f172a" : "#f1f5f9" }}>
+                          {formatDisplayValue(problemWithStatus.examples[selectedCaseIndex].output)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : activeConsoleTab === "custom" ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <span style={{ fontSize: "0.8rem", color: "#8b9bb4", fontWeight: "bold" }}>Custom STDIN</span>
+                  <span style={{ fontSize: "0.78rem", color: "#8b9bb4", fontWeight: "bold" }}>Custom STDIN</span>
                   <textarea
-                    style={{ width: "100%", height: "90px", background: "#080c14", color: "#eee", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "8px", fontFamily: "monospace", fontSize: "0.85rem" }}
+                    style={{ width: "100%", height: "100px", background: isLight ? "#f8fafc" : "#080c14", color: isLight ? "#0f172a" : "#eee", border: `1px solid ${isLight ? "#cbd5e1" : "rgba(255,255,255,0.08)"}`, borderRadius: "8px", padding: "8px", fontFamily: "monospace", fontSize: "0.82rem" }}
                     placeholder="Enter custom stdin..."
                     value={customInput}
                     onChange={(e) => setCustomInput(e.target.value)}
@@ -1142,7 +946,7 @@ function ProblemDetailsInner() {
                 </div>
               ) : activeConsoleTab === "history" ? (
                 <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
                     <thead>
                       <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.08)", textAlign: "left", color: "#64748b" }}>
                         <th style={{ padding: "6px" }}>Status</th>
@@ -1157,9 +961,9 @@ function ProblemDetailsInner() {
                           <td style={{ padding: "6px", fontWeight: "bold", color: sub?.verdict === "AC" ? "#4ade80" : "#f87171" }}>
                             {formatDisplayValue(sub?.verdict, "AC")}
                           </td>
-                          <td style={{ padding: "6px", color: "#cbd5e1" }}>{formatDisplayValue(sub?.language, "python")}</td>
-                          <td style={{ padding: "6px", color: "#cbd5e1" }}>{formatDisplayValue(sub?.runtime, "—")}</td>
-                          <td style={{ padding: "6px", color: "#cbd5e1" }}>{formatDisplayValue(sub?.memory, "—")}</td>
+                          <td style={{ padding: "6px", color: isLight ? "#334155" : "#cbd5e1" }}>{formatDisplayValue(sub?.language, "python")}</td>
+                          <td style={{ padding: "6px", color: isLight ? "#334155" : "#cbd5e1" }}>{formatDisplayValue(sub?.runtime, "—")}</td>
+                          <td style={{ padding: "6px", color: isLight ? "#334155" : "#cbd5e1" }}>{formatDisplayValue(sub?.memory, "—")}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1168,60 +972,49 @@ function ProblemDetailsInner() {
               ) : activeConsoleTab === "ai" ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                   {isReviewLoading ? (
-                    <div style={{ padding: "2.5rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: "#c084fc" }}>
-                      <div className="spinner" style={{ width: 28, height: 28, border: "3px solid rgba(192, 132, 252, 0.2)", borderTopColor: "#c084fc", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                      <span style={{ fontWeight: "600", fontSize: "0.9rem", color: "#f1f5f9" }}>Judgo Intelligence is evaluating Big-O complexity & code structure...</span>
+                    <div style={{ padding: "2rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: "#c084fc" }}>
+                      <div className="spinner" style={{ width: 26, height: 26, border: "3px solid rgba(192, 132, 252, 0.2)", borderTopColor: "#c084fc", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                      <span style={{ fontWeight: "600", fontSize: "0.85rem", color: isLight ? "#0f172a" : "#f1f5f9" }}>Judgo Intelligence is evaluating complexity & structure...</span>
                     </div>
                   ) : aiReview ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                      {/* Review Header Banner */}
-                      <div style={{ background: "rgba(120, 80, 255, 0.1)", border: "1px solid rgba(120, 80, 255, 0.3)", borderRadius: "10px", padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                          <Sparkles size={20} color="#c084fc" />
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                      <div style={{ background: isLight ? "#f5f3ff" : "rgba(120, 80, 255, 0.1)", border: `1px solid ${isLight ? "#ddd6fe" : "rgba(120, 80, 255, 0.3)"}`, borderRadius: "8px", padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <Sparkles size={18} color="#c084fc" />
                           <div>
-                            <strong style={{ fontSize: "1rem", color: "#f8fafc" }}>Judgo AI Code Review & Complexity Report</strong>
-                            <span style={{ display: "block", fontSize: "0.76rem", color: "#94a3b8" }}>
-                              Language: <span style={{ textTransform: "capitalize", color: "#cbd5e1" }}>{aiReview.language || language}</span> • Evaluated against FAANG & Competitive rubrics
+                            <strong style={{ fontSize: "0.9rem", color: isLight ? "#0f172a" : "#f8fafc" }}>Judgo AI Code Review & Complexity Report</strong>
+                            <span style={{ display: "block", fontSize: "0.72rem", color: isLight ? "#64748b" : "#94a3b8" }}>
+                              Language: <span style={{ textTransform: "capitalize" }}>{aiReview.language || language}</span> • Evaluated against FAANG rubrics
                             </span>
                           </div>
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                          {aiReview.score && (
-                            <div style={{ background: "#080c14", border: "1px solid rgba(120, 80, 255, 0.4)", borderRadius: "8px", padding: "4px 12px", textAlign: "center" }}>
-                              <span style={{ fontSize: "0.66rem", color: "#94a3b8", textTransform: "uppercase", fontWeight: "bold" }}>Quality Score</span>
-                              <strong style={{ display: "block", fontSize: "1.05rem", color: "#4ade80" }}>{aiReview.score}</strong>
-                            </div>
-                          )}
-                          <button
-                            type="button"
-                            onClick={fetchAIReview}
-                            style={{ background: "#7850ff", border: "none", borderRadius: "6px", color: "#fff", fontSize: "0.78rem", fontWeight: "bold", padding: "6px 12px", cursor: "pointer" }}
-                          >
-                            Re-analyze
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={fetchAIReview}
+                          style={{ background: "#7850ff", border: "none", borderRadius: "6px", color: "#fff", fontSize: "0.74rem", fontWeight: "bold", padding: "5px 10px", cursor: "pointer" }}
+                        >
+                          Re-analyze
+                        </button>
                       </div>
-
-                      {/* Review Content Card */}
-                      <div style={{ background: isLight ? "#ffffff" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "16px", color: isLight ? "#334155" : "#f1f5f9", fontSize: "0.88rem", lineHeight: "1.6", maxHeight: "380px", overflowY: "auto" }}>
+                      <div style={{ background: isLight ? "#ffffff" : "#080c14", border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, borderRadius: "8px", padding: "12px", fontSize: "0.84rem", lineHeight: "1.6" }}>
                         <AIContentRenderer content={aiReview.review} />
                       </div>
                     </div>
                   ) : (
-                    <div style={{ padding: "2.5rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", background: "rgba(120, 80, 255, 0.04)", border: "1px dashed rgba(120, 80, 255, 0.25)", borderRadius: "10px" }}>
-                      <Sparkles size={28} color="#c084fc" />
+                    <div style={{ padding: "2rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", background: "rgba(120, 80, 255, 0.04)", border: "1px dashed rgba(120, 80, 255, 0.25)", borderRadius: "8px" }}>
+                      <Sparkles size={24} color="#c084fc" />
                       <div>
-                        <strong style={{ color: "#f8fafc", fontSize: "1rem" }}>Instant AI Code Review & Complexity Analysis</strong>
-                        <p style={{ margin: "4px 0 0 0", color: "#94a3b8", fontSize: "0.82rem" }}>
+                        <strong style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.92rem" }}>Instant AI Code Review & Complexity Analysis</strong>
+                        <p style={{ margin: "4px 0 0 0", color: "#94a3b8", fontSize: "0.78rem" }}>
                           Get mathematical Big-O Time & Space breakdown, edge-case vulnerability scan, and clean code tips.
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={fetchAIReview}
-                        style={{ background: "linear-gradient(135deg, #7850ff 0%, #a855f7 100%)", border: "none", borderRadius: "8px", color: "#fff", fontWeight: "bold", fontSize: "0.85rem", padding: "10px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
+                        style={{ background: "linear-gradient(135deg, #7850ff 0%, #a855f7 100%)", border: "none", borderRadius: "7px", color: "#fff", fontWeight: "bold", fontSize: "0.8rem", padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
                       >
-                        <Sparkles size={16} />
+                        <Sparkles size={14} />
                         Analyze Solution with AI
                       </button>
                     </div>
@@ -1236,11 +1029,11 @@ function ProblemDetailsInner() {
                     <div className="result-verdict-main">
                       <span className="result-verdict-icon" aria-hidden="true">
                         {displayVerdict === "AC" ? (
-                          <CheckCircle2 size={28} />
+                          <CheckCircle2 size={26} />
                         ) : displayVerdict === "CE" ? (
-                          <AlertTriangle size={28} />
+                          <AlertTriangle size={26} />
                         ) : (
-                          <XCircle size={28} />
+                          <XCircle size={26} />
                         )}
                       </span>
                       <div>
@@ -1277,11 +1070,11 @@ function ProblemDetailsInner() {
 
                     <div className="result-verdict-metrics">
                       <div>
-                        <Clock3 size={16} />
+                        <Clock3 size={15} />
                         <span><strong>{displayRuntime}</strong><small>Runtime</small></span>
                       </div>
                       <div>
-                        <MemoryStick size={16} />
+                        <MemoryStick size={15} />
                         <span><strong>{displayMemory}</strong><small>Memory</small></span>
                       </div>
                     </div>
@@ -1292,7 +1085,7 @@ function ProblemDetailsInner() {
                       <header>
                         <strong>Test Cases</strong>
                         <span className={displayVerdict === "AC" ? "is-passed" : "is-failed"}>
-                          <CheckCircle2 size={14} />
+                          <CheckCircle2 size={13} />
                           {resultCases.filter((testCase) => testCase?.passed).length} / {resultCases.length} passed
                         </span>
                       </header>
@@ -1311,10 +1104,10 @@ function ProblemDetailsInner() {
                                   setExpandedResultCaseIndex(expanded ? null : index);
                                 }}
                               >
-                                {passed ? <CheckCircle2 size={15} /> : <XCircle size={15} />}
+                                {passed ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
                                 <span>Test Case {index + 1}</span>
                                 <strong>{passed ? "Passed" : formatDisplayValue(testCase?.verdict, "Failed")}</strong>
-                                <ChevronDown size={15} className={expanded ? "is-expanded" : ""} />
+                                <ChevronDown size={14} className={expanded ? "is-expanded" : ""} />
                               </button>
 
                               {expanded ? (
@@ -1351,7 +1144,7 @@ function ProblemDetailsInner() {
                   )}
 
                   <div className="result-complexity-row">
-                    <div><Brain size={16} /><strong>Complexity</strong></div>
+                    <div><Brain size={15} /><strong>Complexity</strong></div>
                     <span>
                       <strong>{result.complexity?.time || "Unavailable"}</strong> time
                       <i>•</i>
@@ -1360,7 +1153,7 @@ function ProblemDetailsInner() {
                   </div>
 
                   <p className="result-footnote">
-                    <Info size={13} /> Results are based on the test cases returned by the execution service.
+                    <Info size={12} /> Results are based on the test cases returned by the execution service.
                   </p>
                 </div>
               ) : (
@@ -1371,9 +1164,63 @@ function ProblemDetailsInner() {
 
               {error ? <p className="form-error" style={{ color: "#ef4444", marginTop: "8px" }}>{formatDisplayValue(error)}</p> : null}
             </div>
-          </section>
-        </div>
-      </div>
+          </div>
+        )
+      }
+    };
+  }, [
+    problemWithStatus,
+    isLight,
+    isBookmarked,
+    result,
+    code,
+    language,
+    isRunning,
+    isSubmitting,
+    activeConsoleTab,
+    selectedCaseIndex,
+    customInput,
+    showHint,
+    hintLevel,
+    hintText,
+    isHintLoading,
+    aiReview,
+    isReviewLoading,
+    scrollTrigger,
+    expandedResultCaseIndex,
+    testResults,
+    displayVerdict,
+    displayStatusText,
+    displayRuntime,
+    displayMemory,
+    passedCountNum,
+    totalCasesNum,
+    isProcessingResult,
+    resultCases,
+    userSubmissions,
+    error
+  ]);
+
+  return (
+    <div
+      className="problem-detail-page-container"
+      data-lenis-prevent="true"
+      style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%", maxWidth: "1600px" }}
+    >
+      <WorkspaceLayout
+        headerLeft={
+          <nav className="problem-crumbs" style={{ display: "flex", alignItems: "center", gap: "8px", color: isLight ? "#64748b" : "#8b9bb4", fontSize: "0.85rem" }}>
+            <Link to="/problems" style={{ color: isLight ? "#64748b" : "#8b9bb4", textDecoration: "none" }}>
+              Problems
+            </Link>
+            <ChevronRight size={14} />
+            <span>{problemWithStatus.topic}</span>
+            <ChevronRight size={14} />
+            <strong style={{ color: isLight ? "#0f172a" : "#ffffff" }}>{problemWithStatus.title}</strong>
+          </nav>
+        }
+        panels={workspacePanels}
+      />
     </div>
   );
 }
