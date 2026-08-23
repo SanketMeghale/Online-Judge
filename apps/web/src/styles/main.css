@@ -4220,38 +4220,59 @@ canvas {
 
 /* Filter row */
 .problems-filter-row {
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 8px 12px;
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  transition: all 0.2s ease;
 }
 
 /* Search box */
 .problems-search-box {
   display: flex;
   align-items: center;
-  gap: 7px;
-  border-radius: 7px;
-  padding: 6px 11px;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 6px 12px;
   flex: 1 1 220px;
   min-width: 0;
+  transition: all 0.15s ease;
+}
+
+.problems-search-box input {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  min-height: unset !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  font-size: 0.83rem !important;
+}
+
+.problems-search-box input:focus {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 /* Difficulty tab group */
 .diff-tabs {
   display: flex;
-  gap: 2px;
+  gap: 3px;
   padding: 3px;
-  border-radius: 7px;
+  border-radius: 8px;
   flex-shrink: 0;
 }
 
 /* Result count */
 .problems-result-count {
   margin-left: auto;
-  font-size: 0.75rem;
+  font-size: 0.76rem;
   white-space: nowrap;
 }
 

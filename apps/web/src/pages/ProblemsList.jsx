@@ -36,11 +36,12 @@ export default function ProblemsList() {
 
   const initialTopic = searchParams.get("topic") || "All";
 
-  const [query,        setQuery]        = useState("");
-  const [difficulty,   setDifficulty]   = useState("All");
-  const [topic,        setTopic]        = useState(initialTopic);
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [sortBy,       setSortBy]       = useState("default");
+  const [query,           setQuery]           = useState("");
+  const [difficulty,      setDifficulty]      = useState("All");
+  const [topic,           setTopic]           = useState(initialTopic);
+  const [statusFilter,    setStatusFilter]    = useState("All");
+  const [sortBy,          setSortBy]          = useState("default");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   useEffect(() => {
     if (syncBackendData) syncBackendData();
@@ -164,62 +165,132 @@ export default function ProblemsList() {
       </div>
 
       {/* ── FILTER ROW ── */}
-      <div className="problems-filter-row" style={{
-        background: isLight ? "#ffffff" : "#0d111a",
-        border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)",
-        boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none",
-      }}>
-        <div className="problems-search-box" style={{
-          background: isLight ? "#f8fafc" : "#080c14",
-          border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.09)",
-        }}>
-          <Search size={14} style={{ color: "#64748b", flexShrink: 0 }} />
-          <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="Search problems..."
-            style={{ background: "transparent", border: "none", outline: "none", color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.83rem", width: "100%" }} />
+      <div
+        className="problems-filter-row"
+        style={{
+          background: isLight ? "#ffffff" : "#0d111a",
+          border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
+          boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none",
+          gap: "8px"
+        }}
+      >
+        {/* Modern Search Box with Focus Glow */}
+        <div
+          className="problems-search-box"
+          style={{
+            background: isLight ? "#f8fafc" : "#080c14",
+            border: isSearchFocused
+              ? isLight ? "1px solid #6366f1" : "1px solid #818cf8"
+              : isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.12)",
+            boxShadow: isSearchFocused
+              ? isLight ? "0 0 0 3px rgba(99, 102, 241, 0.15)" : "0 0 0 3px rgba(99, 102, 241, 0.25)"
+              : isLight ? "0 1px 2px rgba(0,0,0,0.03)" : "none",
+            height: "34px"
+          }}
+        >
+          <Search size={14} style={{ color: isSearchFocused ? "#6366f1" : "#64748b", flexShrink: 0, transition: "color 0.15s ease" }} />
+          <input
+            type="text"
+            value={query}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search problems or topics..."
+            style={{
+              color: isLight ? "#0f172a" : "#f8fafc",
+              fontSize: "0.82rem",
+              fontWeight: "500"
+            }}
+          />
           {query && (
-            <button onClick={() => setQuery("")} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b", display: "flex", padding: 0 }}>
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              title="Clear search"
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "#64748b",
+                display: "flex",
+                alignItems: "center",
+                padding: "2px",
+                borderRadius: "4px"
+              }}
+            >
               <X size={13} />
             </button>
           )}
         </div>
 
-        <div className="diff-tabs" style={{
-          background: isLight ? "#f1f5f9" : "#080c14",
-          border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)"
-        }}>
-          {["All", "Easy", "Medium", "Hard"].map(d => {
+        {/* Modern Segmented Difficulty Switcher */}
+        <div
+          className="diff-tabs"
+          style={{
+            background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)",
+            border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.07)",
+            height: "34px"
+          }}
+        >
+          {["All", "Easy", "Medium", "Hard"].map((d) => {
             const active = difficulty === d;
-            const col = d === "Easy" ? (isLight ? "#059669" : "#34d399")
-              : d === "Medium" ? (isLight ? "#d97706" : "#fbbf24")
-              : d === "Hard" ? (isLight ? "#dc2626" : "#f87171")
-              : (isLight ? "#4f46e5" : "#818cf8");
+            const col = d === "Easy"
+              ? (isLight ? "#059669" : "#34d399")
+              : d === "Medium"
+              ? (isLight ? "#d97706" : "#fbbf24")
+              : d === "Hard"
+              ? (isLight ? "#dc2626" : "#f87171")
+              : (isLight ? "#4f46e5" : "#a5b4fc");
+
+            const activeBg = d === "All"
+              ? (isLight ? "#ffffff" : "rgba(99, 102, 241, 0.2)")
+              : (isLight ? (d === "Easy" ? "#ecfdf5" : d === "Medium" ? "#fffbeb" : "#fef2f2") : DIFF_META[d]?.bg || "rgba(99,102,241,0.16)");
+
+            const activeBorder = d === "All"
+              ? (isLight ? "#cbd5e1" : "rgba(99, 102, 241, 0.4)")
+              : (isLight ? (d === "Easy" ? "#a7f3d0" : d === "Medium" ? "#fde68a" : "#fecaca") : DIFF_META[d]?.border || "rgba(99,102,241,0.35)");
+
             return (
-              <button key={d} onClick={() => setDifficulty(d)} style={{
-                background: active ? (d === "All" ? (isLight ? "rgba(99,102,241,0.18)" : "rgba(99,102,241,0.16)") : DIFF_META[d]?.bg || "rgba(99,102,241,0.16)") : "transparent",
-                border: active ? `1px solid ${d === "All" ? "rgba(99,102,241,0.35)" : DIFF_META[d]?.border || "rgba(99,102,241,0.35)"}` : "1px solid transparent",
-                color: active ? (d === "All" ? (isLight ? "#4338ca" : "#a5b4fc") : col) : "#64748b",
-                padding: "4px 10px", borderRadius: "5px", fontSize: "0.78rem",
-                fontWeight: active ? "700" : "500", cursor: "pointer", transition: "all 0.12s ease", lineHeight: 1
-              }}>
+              <button
+                key={d}
+                type="button"
+                onClick={() => setDifficulty(d)}
+                style={{
+                  background: active ? activeBg : "transparent",
+                  border: active ? `1px solid ${activeBorder}` : "1px solid transparent",
+                  color: active ? col : isLight ? "#64748b" : "#94a3b8",
+                  padding: "3px 9px",
+                  borderRadius: "6px",
+                  fontSize: "0.78rem",
+                  fontWeight: active ? "700" : "500",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  lineHeight: 1,
+                  boxShadow: active && isLight ? "0 1px 2px rgba(0,0,0,0.04)" : "none"
+                }}
+              >
                 {d}
               </button>
             );
           })}
         </div>
 
-        <select value={topic} onChange={e => setTopic(e.target.value)} style={getSelectStyle(isLight)}>
+        {/* Dropdown Filters with Refined Styling */}
+        <select value={topic} onChange={(e) => setTopic(e.target.value)} style={getSelectStyle(isLight)} title="Filter by Topic">
           <option value="All">All Topics</option>
-          {topics.filter(t => t !== "All").map(t => <option key={t} value={t}>{t}</option>)}
+          {topics.filter((t) => t !== "All").map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
         </select>
 
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={getSelectStyle(isLight)}>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={getSelectStyle(isLight)} title="Filter by Solved Status">
           <option value="All">All Status</option>
           <option value="Solved">✓ Solved</option>
           <option value="Attempted">○ Attempted</option>
           <option value="Unsolved">○ Unsolved</option>
         </select>
 
-        <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={getSelectStyle(isLight)}>
+        <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} style={getSelectStyle(isLight)} title="Sort Problems">
           <option value="default">Sort: Default</option>
           <option value="difficulty">Difficulty ↑</option>
           <option value="acceptance">Acceptance ↓</option>
@@ -227,19 +298,46 @@ export default function ProblemsList() {
           <option value="points">Points ↓</option>
         </select>
 
+        {/* Clear Filters Badge Button */}
         {hasFilters && (
-          <button onClick={clearFilters} style={{
-            display: "flex", alignItems: "center", gap: "4px",
-            background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)",
-            borderRadius: "7px", padding: "5px 10px",
-            color: isLight ? "#dc2626" : "#f87171", fontSize: "0.78rem", fontWeight: "600", cursor: "pointer"
-          }}>
+          <button
+            type="button"
+            onClick={clearFilters}
+            title="Reset all active filters"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              background: isLight ? "#fee2e2" : "rgba(239, 68, 68, 0.15)",
+              border: isLight ? "1px solid #fca5a5" : "1px solid rgba(239, 68, 68, 0.3)",
+              borderRadius: "8px",
+              padding: "5px 10px",
+              height: "34px",
+              color: isLight ? "#b91c1c" : "#fca5a5",
+              fontSize: "0.78rem",
+              fontWeight: "700",
+              cursor: "pointer",
+              transition: "all 0.15s ease"
+            }}
+          >
             <X size={12} /> Clear
           </button>
         )}
 
-        <span className="problems-result-count" style={{ color: "#64748b" }}>
-          {filteredProblems.length} / {totalCount} problems
+        {/* Live Problem Count Badge */}
+        <span
+          className="problems-result-count"
+          style={{
+            background: isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.05)",
+            border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.07)",
+            padding: "5px 10px",
+            borderRadius: "7px",
+            color: isLight ? "#475569" : "#94a3b8",
+            fontWeight: "600",
+            fontSize: "0.76rem"
+          }}
+        >
+          <strong style={{ color: isLight ? "#0f172a" : "#ffffff" }}>{filteredProblems.length}</strong> / {totalCount} problems
         </span>
       </div>
 
@@ -530,9 +628,16 @@ const tdStyle = { padding: "10px 12px", verticalAlign: "middle" };
 function getSelectStyle(isLight) {
   return {
     background: isLight ? "#f8fafc" : "#080c14",
-    border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.09)",
-    borderRadius: "7px", padding: "5px 10px",
-    color: isLight ? "#334155" : "#94a3b8",
-    fontSize: "0.8rem", cursor: "pointer", outline: "none"
+    border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.12)",
+    borderRadius: "8px",
+    padding: "6px 12px",
+    height: "34px",
+    color: isLight ? "#0f172a" : "#f1f5f9",
+    fontSize: "0.8rem",
+    fontWeight: "600",
+    cursor: "pointer",
+    outline: "none",
+    boxShadow: isLight ? "0 1px 2px rgba(0,0,0,0.03)" : "none",
+    transition: "border-color 0.15s ease, box-shadow 0.15s ease"
   };
 }
