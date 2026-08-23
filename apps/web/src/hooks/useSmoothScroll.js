@@ -17,7 +17,17 @@ export function useSmoothScroll() {
         smoothWheel: true,
         wheelMultiplier: 1.0,
         touchMultiplier: 1.5,
-        infinite: false
+        infinite: false,
+        prevent: (node) =>
+          node?.nodeType === 1 &&
+          (node.hasAttribute?.("data-lenis-prevent") ||
+            Boolean(node.closest?.("[data-lenis-prevent]")) ||
+            node.classList?.contains("code-editor") ||
+            Boolean(node.closest?.(".code-editor")) ||
+            Boolean(node.closest?.(".problem-detail-page-container")) ||
+            Boolean(node.closest?.(".problem-workspace-pane")) ||
+            Boolean(node.closest?.(".console-results-panel")) ||
+            Boolean(node.closest?.(".ai-mentor-chat-scroll")))
       });
 
       let animationFrameId;

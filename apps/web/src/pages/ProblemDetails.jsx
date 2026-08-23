@@ -516,6 +516,7 @@ function ProblemDetailsInner() {
   return (
     <div
       className="problem-detail-page-container"
+      data-lenis-prevent="true"
       style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%", maxWidth: "1600px" }}
     >
       {/* Breadcrumb Navigation */}

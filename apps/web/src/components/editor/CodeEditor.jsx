@@ -249,7 +249,7 @@ export default function CodeEditor({
   }
 
   return (
-    <section className="editor-panel" style={{ background: themePalette.bg, border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none" }}>
+    <section className="editor-panel" data-lenis-prevent="true" style={{ background: themePalette.bg, border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none" }}>
       {/* Editor Header Bar */}
       <div className="editor-toolbar" style={{ background: themePalette.gutterBg, padding: "8px 14px", borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -381,6 +381,7 @@ export default function CodeEditor({
           <textarea
             ref={textareaRef}
             className="code-editor"
+            data-lenis-prevent="true"
             onChange={(event) => onCodeChange(event.target.value)}
             onKeyDown={handleKeyDown}
             onScroll={handleScroll}

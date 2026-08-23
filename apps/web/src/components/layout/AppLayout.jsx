@@ -34,8 +34,7 @@ export default function AppLayout({ children }) {
 
   const isFullHeightWorkspace =
     location.pathname.startsWith("/ai-coach") ||
-    location.pathname.startsWith("/interviewer") ||
-    location.pathname.startsWith("/problems/");
+    location.pathname.startsWith("/interviewer");
 
   return (
     <div className="app">
