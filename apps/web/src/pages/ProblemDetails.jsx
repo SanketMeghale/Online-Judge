@@ -97,6 +97,24 @@ function ProblemDetailsInner() {
       return 46;
     }
   });
+  const [isBookmarked, setIsBookmarked] = useState(() => {
+    try {
+      return localStorage.getItem(`judgo-bookmark-${problemId}`) === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  function toggleBookmark() {
+    setIsBookmarked((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(`judgo-bookmark-${problemId}`, String(next));
+      } catch {}
+      return next;
+    });
+  }
+
   const [isPaneResizing, setIsPaneResizing] = useState(false);
   const workspaceRef = useRef(null);
   const problemPaneWidthRef = useRef(problemPaneWidth);
@@ -584,53 +602,158 @@ function ProblemDetailsInner() {
               background: isLight ? "#ffffff" : "#0d111a",
               border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
               borderRadius: "14px",
-              padding: "20px",
+              padding: "16px 18px",
               display: "flex",
               flexDirection: "column",
-              gap: "14px",
+              gap: "12px",
               boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none"
             }}
           >
-            {/* Header Title Row */}
-            <div className="problem-title-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div>
-                <span
-                  className={`difficulty difficulty-${problemWithStatus.difficulty.toLowerCase()}`}
-                  style={{ fontSize: "0.75rem", padding: "2px 10px", borderRadius: "6px", fontWeight: "bold" }}
-                >
-                  {problemWithStatus.difficulty}
-                </span>
-                <h1 style={{ fontSize: "1.45rem", fontWeight: "800", color: isLight ? "#0f172a" : "#fff", margin: "8px 0 0 0" }}>
-                  {problemWithStatus.title}
-                </h1>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                <span
-                  className="solved-pill"
+            {/* Compact Header: Title + Status + Bookmark in Row 1 */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px", flexWrap: "wrap" }}>
+              <h1 style={{ fontSize: "1.3rem", fontWeight: "800", color: isLight ? "#0f172a" : "#ffffff", margin: 0, letterSpacing: "-0.01em" }}>
+                {problemWithStatus.title}
+              </h1>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                {problemWithStatus.status && (
+                  <span
+                    className="solved-pill"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      color: problemWithStatus.status?.toLowerCase() === "solved" || result?.verdict === "AC" ? "#16a34a" : "#eab308",
+                      fontSize: "0.76rem",
+                      background: problemWithStatus.status?.toLowerCase() === "solved" || result?.verdict === "AC" ? "rgba(34, 197, 94, 0.12)" : "rgba(234, 179, 8, 0.12)",
+                      border: problemWithStatus.status?.toLowerCase() === "solved" || result?.verdict === "AC" ? "1px solid rgba(34, 197, 94, 0.25)" : "1px solid rgba(234, 179, 8, 0.25)",
+                      padding: "2px 8px",
+                      borderRadius: "6px",
+                      fontWeight: "700"
+                    }}
+                  >
+                    <CheckCircle2 size={13} />
+                    {formatDisplayValue(problemWithStatus.status, "Solved")}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={toggleBookmark}
+                  title={isBookmarked ? "Bookmarked (Click to remove)" : "Bookmark this problem"}
                   style={{
-                    display: "flex",
+                    background: isBookmarked ? (isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.15)") : "transparent",
+                    border: isBookmarked ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid transparent",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    padding: "4px",
+                    display: "inline-flex",
                     alignItems: "center",
-                    gap: "5px",
-                    color: "#16a34a",
-                    fontSize: "0.82rem",
-                    background: "rgba(34, 197, 94, 0.12)",
-                    padding: "3px 10px",
-                    borderRadius: "999px",
-                    fontWeight: "600"
+                    justifyContent: "center",
+                    color: isBookmarked ? (isLight ? "#4f46e5" : "#818cf8") : (isLight ? "#94a3b8" : "#64748b"),
+                    transition: "all 0.15s ease"
                   }}
                 >
-                  <CheckCircle2 size={14} />
-                  {formatDisplayValue(problemWithStatus.status, "Attempted")}
-                </span>
-                <Bookmark size={18} style={{ color: isLight ? "#94a3b8" : "#64748b", cursor: "pointer" }} />
+                  <Bookmark size={16} fill={isBookmarked ? "currentColor" : "none"} />
+                </button>
               </div>
             </div>
 
-            {/* Topic & Metric Tags */}
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              <span style={{ background: isLight ? "#f1f5f9" : "#181e2e", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)", color: isLight ? "#475569" : "#94a3b8", fontSize: "0.78rem", padding: "3px 10px", borderRadius: "6px", fontWeight: "500" }}>
-                🏷️ {problemWithStatus.topic}
+            {/* Compact Inline Tags Row: Difficulty, Topic, Acceptance, Points & Company */}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+              {/* Difficulty Tag */}
+              <span
+                className={`difficulty difficulty-${problemWithStatus.difficulty.toLowerCase()}`}
+                style={{
+                  fontSize: "0.72rem",
+                  padding: "2px 8px",
+                  borderRadius: "6px",
+                  fontWeight: "700",
+                  letterSpacing: "0.01em"
+                }}
+              >
+                {problemWithStatus.difficulty}
               </span>
+
+              {/* Topic Tag */}
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  background: isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.05)",
+                  border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
+                  color: isLight ? "#475569" : "#cbd5e1",
+                  fontSize: "0.74rem",
+                  padding: "2px 8px",
+                  borderRadius: "6px",
+                  fontWeight: "600"
+                }}
+              >
+                <span>🏷️</span>
+                <span>{problemWithStatus.topic}</span>
+              </span>
+
+              {/* Acceptance Rate Tag */}
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  background: isLight ? "#f8fafc" : "rgba(255, 255, 255, 0.04)",
+                  border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
+                  color: isLight ? "#64748b" : "#94a3b8",
+                  fontSize: "0.74rem",
+                  padding: "2px 8px",
+                  borderRadius: "6px",
+                  fontWeight: "600"
+                }}
+                title="Global acceptance rate"
+              >
+                <Zap size={12} style={{ color: "#eab308", fill: "#eab308" }} />
+                <span>{problemWithStatus.acceptance}%</span>
+              </span>
+
+              {/* Score / Points Tag */}
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  background: isLight ? "#f8fafc" : "rgba(255, 255, 255, 0.04)",
+                  border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
+                  color: isLight ? "#64748b" : "#94a3b8",
+                  fontSize: "0.74rem",
+                  padding: "2px 8px",
+                  borderRadius: "6px",
+                  fontWeight: "600"
+                }}
+                title="Points for solving"
+              >
+                <Sparkles size={12} style={{ color: "#a855f7" }} />
+                <span>{problemWithStatus.points} pts</span>
+              </span>
+
+              {/* Company Tag (if available) */}
+              {Array.isArray(problemWithStatus.companyTags) && problemWithStatus.companyTags.length > 0 && (
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    background: isLight ? "#f5f3ff" : "rgba(124, 58, 237, 0.12)",
+                    border: isLight ? "1px solid #ddd6fe" : "1px solid rgba(124, 58, 237, 0.25)",
+                    color: isLight ? "#6d28d9" : "#c084fc",
+                    fontSize: "0.74rem",
+                    padding: "2px 8px",
+                    borderRadius: "6px",
+                    fontWeight: "600"
+                  }}
+                  title="Target Company"
+                >
+                  <span>🏢</span>
+                  <span>{problemWithStatus.companyTags[0]}</span>
+                </span>
+              )}
             </div>
 
             {/* Description Text */}
