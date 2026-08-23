@@ -95,7 +95,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
     setCollapsed(!isDashboardRoute);
   }, [location.pathname, isDashboardRoute]);
 
-  const sidebarWidth = collapsed ? "72px" : "260px";
+  const sidebarWidth = collapsed ? "60px" : "240px";
 
   return (
     <>
@@ -131,17 +131,19 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
           borderRight: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.07)",
           display: "flex",
           flexDirection: "column",
-          minHeight: "calc(100dvh - var(--global-nav-height, 68px))",
-          height: "calc(100dvh - var(--global-nav-height, 68px))",
+          minHeight: "calc(100dvh - var(--global-nav-height, 64px))",
+          height: "calc(100dvh - var(--global-nav-height, 64px))",
           position: "sticky",
-          top: "var(--global-nav-height, 68px)",
+          top: "var(--global-nav-height, 64px)",
           transition:
             "width 280ms cubic-bezier(0.16, 1, 0.3, 1), min-width 280ms cubic-bezier(0.16, 1, 0.3, 1), max-width 280ms cubic-bezier(0.16, 1, 0.3, 1), top 0.25s cubic-bezier(0.16, 1, 0.3, 1), min-height 0.25s cubic-bezier(0.16, 1, 0.3, 1), height 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease",
           zIndex: 95,
-          padding: collapsed ? "14px 10px 18px" : "14px 12px 18px",
+          padding: collapsed ? "8px 6px 10px" : "10px 10px 14px",
           userSelect: "none",
           overflowX: "visible",
           overflowY: "auto",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
           boxSizing: "border-box"
         }}
       >
@@ -152,17 +154,17 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
             display: "flex",
             justifyContent: collapsed ? "center" : "space-between",
             alignItems: "center",
-            padding: collapsed ? "0 0 12px" : "0 4px 12px",
+            padding: collapsed ? "0 0 6px" : "0 4px 6px",
             borderBottom: isLight ? "1px solid #f1f5f9" : "1px solid rgba(255, 255, 255, 0.06)",
-            marginBottom: "12px",
-            minHeight: "36px",
+            marginBottom: "6px",
+            minHeight: "28px",
             width: "100%"
           }}
         >
           {!collapsed && (
             <span
               style={{
-                fontSize: "0.72rem",
+                fontSize: "0.68rem",
                 fontWeight: "700",
                 letterSpacing: "0.06em",
                 color: isLight ? "#64748b" : "#475569",
@@ -183,8 +185,8 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
               background: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.04)",
               border: isLight ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(255, 255, 255, 0.08)",
               borderRadius: "6px",
-              width: "30px",
-              height: "30px",
+              width: "28px",
+              height: "28px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -194,7 +196,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
               flexShrink: 0
             }}
           >
-            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </button>
         </div>
 
@@ -204,26 +206,28 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: collapsed ? "12px" : "16px",
+            gap: collapsed ? "4px" : "8px",
             flex: 1,
-            width: "100%"
+            width: "100%",
+            scrollbarWidth: "none",
+            msOverflowStyle: "none"
           }}
         >
           {navSections.map(({ category, items }) => (
             <div
               key={category}
               className="sidebar-group"
-              style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%" }}
+              style={{ display: "flex", flexDirection: "column", gap: "2px", width: "100%" }}
             >
               {/* Category Header Label or Subtle Divider */}
               {!collapsed ? (
                 <span
                   style={{
-                    fontSize: "0.68rem",
+                    fontSize: "0.64rem",
                     fontWeight: "700",
                     letterSpacing: "0.08em",
                     color: isLight ? "#94a3b8" : "#475569",
-                    padding: "0 10px 4px",
+                    padding: "0 8px 2px",
                     textTransform: "uppercase"
                   }}
                 >
@@ -233,8 +237,8 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                 <div
                   style={{
                     height: "1px",
-                    background: isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.05)",
-                    margin: "4px 4px 6px"
+                    background: isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.06)",
+                    margin: "2px 4px 3px"
                   }}
                 />
               )}
@@ -256,15 +260,15 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "12px",
-                        padding: collapsed ? "0" : "8px 12px",
-                        width: collapsed ? "46px" : "100%",
-                        height: collapsed ? "44px" : "auto",
+                        gap: "10px",
+                        padding: collapsed ? "0" : "6px 10px",
+                        width: collapsed ? "38px" : "100%",
+                        height: collapsed ? "36px" : "auto",
                         margin: collapsed ? "0 auto" : "0",
                         justifyContent: collapsed ? "center" : "flex-start",
-                        borderRadius: collapsed ? "10px" : "8px",
+                        borderRadius: collapsed ? "8px" : "7px",
                         textDecoration: "none",
-                        fontSize: "0.86rem",
+                        fontSize: "0.82rem",
                         fontWeight: active ? "600" : "500",
                         color: active
                           ? isLight ? "#4f46e5" : "#ffffff"
@@ -278,7 +282,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                           ? isLight ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid rgba(99, 102, 241, 0.32)"
                           : "1px solid transparent",
                         boxShadow: active && collapsed
-                          ? "0 2px 8px rgba(99, 102, 241, 0.18)"
+                          ? "0 2px 6px rgba(99, 102, 241, 0.18)"
                           : "none",
                         position: "relative",
                         transition: "all 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -286,7 +290,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                       }}
                     >
                       <Icon
-                        size={18}
+                        size={16}
                         style={{
                           color: active ? "#6366f1" : isLight ? iconColor : "#64748b",
                           flexShrink: 0,
@@ -312,7 +316,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                           style={{
                             marginLeft: "auto",
                             width: "3px",
-                            height: "14px",
+                            height: "12px",
                             borderRadius: "2px",
                             background: "#6366f1"
                           }}
@@ -330,15 +334,15 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                           transition={{ duration: 0.14, ease: "easeOut" }}
                           style={{
                             position: "absolute",
-                            left: "calc(100% + 14px)",
+                            left: "calc(100% + 10px)",
                             top: "50%",
                             transform: "translateY(-50%)",
                             background: isLight ? "#ffffff" : "#0f1628",
                             border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.14)",
                             color: isLight ? "#0f172a" : "#f8fafc",
-                            padding: "5px 12px",
-                            borderRadius: "7px",
-                            fontSize: "0.79rem",
+                            padding: "4px 10px",
+                            borderRadius: "6px",
+                            fontSize: "0.76rem",
                             fontWeight: "600",
                             whiteSpace: "nowrap",
                             zIndex: 120,
@@ -348,13 +352,13 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                             pointerEvents: "none",
                             display: "flex",
                             alignItems: "center",
-                            gap: "7px"
+                            gap: "6px"
                           }}
                         >
                           <span
                             style={{
-                              width: "6px",
-                              height: "6px",
+                              width: "5px",
+                              height: "5px",
                               borderRadius: "50%",
                               background: iconColor
                             }}
@@ -371,7 +375,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
         </div>
 
         {/* Footer Area: User Pro Card when Expanded, Mini Avatar Button when Collapsed */}
-        <div style={{ marginTop: "auto", paddingTop: "12px", width: "100%" }}>
+        <div style={{ marginTop: "auto", paddingTop: "6px", width: "100%" }}>
           {!collapsed ? (
             <div
               className="sidebar-pro-card"
@@ -380,18 +384,18 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                   ? "linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)"
                   : "linear-gradient(135deg, rgba(15, 22, 40, 0.95) 0%, rgba(99, 102, 241, 0.08) 100%)",
                 border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-                borderRadius: "10px",
-                padding: "12px 14px",
+                borderRadius: "8px",
+                padding: "8px 10px",
                 display: "flex",
                 flexDirection: "column",
-                gap: "4px"
+                gap: "2px"
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <Sparkles size={14} style={{ color: "#a855f7" }} />
+                <Sparkles size={13} style={{ color: "#a855f7" }} />
                 <strong
                   style={{
-                    fontSize: "0.82rem",
+                    fontSize: "0.78rem",
                     color: isLight ? "#0f172a" : "#f8fafc",
                     fontWeight: "700"
                   }}
@@ -401,10 +405,10 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
               </div>
               <p
                 style={{
-                  fontSize: "0.74rem",
+                  fontSize: "0.70rem",
                   color: isLight ? "#475569" : "#94a3b8",
                   margin: 0,
-                  lineHeight: "1.4",
+                  lineHeight: "1.3",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap"
@@ -419,15 +423,15 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "4px",
-                  fontSize: "0.76rem",
+                  fontSize: "0.72rem",
                   fontWeight: "600",
                   color: "#6366f1",
                   textDecoration: "none",
-                  marginTop: "4px"
+                  marginTop: "2px"
                 }}
               >
                 <span>View Progress</span>
-                <ArrowRight size={12} />
+                <ArrowRight size={11} />
               </NavLink>
             </div>
           ) : (
@@ -440,9 +444,9 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                 to="/profile"
                 onClick={onCloseMobile}
                 style={{
-                  width: "42px",
-                  height: "42px",
-                  borderRadius: "10px",
+                  width: "36px",
+                  height: "36px",
+                  borderRadius: "8px",
                   background: isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.05)",
                   border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
                   display: "flex",
@@ -450,7 +454,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                   justifyContent: "center",
                   color: "#6366f1",
                   fontWeight: "800",
-                  fontSize: "0.84rem",
+                  fontSize: "0.80rem",
                   textDecoration: "none",
                   transition: "all 0.15s ease"
                 }}

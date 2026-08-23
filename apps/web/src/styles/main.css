@@ -602,6 +602,22 @@ kbd {
   }
 }
 
+/* Hide native scrollbar tracks on sidebar completely */
+.sidebar,
+.sidebar-modern,
+.sidebar-nav-sections {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.sidebar::-webkit-scrollbar,
+.sidebar-modern::-webkit-scrollbar,
+.sidebar-nav-sections::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 .sidebar-art {
   align-items: center;
   display: flex;
