@@ -4224,9 +4224,15 @@ canvas {
 
 .responsive-table-scroll,
 .table-shell,
-.admin-table-container {
+.admin-table-container,
+.judgo-ide-tab-content,
+.judgo-ide-right-pane,
+.judgo-ide-exec-body,
+.code-editor,
+.sidebar,
+.prof-modal-card {
   max-width: 100%;
-  overflow-x: auto;
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
 

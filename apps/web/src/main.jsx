@@ -115,6 +115,35 @@ function RootPage() {
   );
 }
 
+function RouteLoadingFallback() {
+  return (
+    <div
+      style={{
+        minHeight: "60vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        gap: "12px",
+        color: "var(--text-muted, #94a3b8)",
+        fontSize: "0.85rem",
+        fontWeight: "500"
+      }}
+    >
+      <div
+        style={{
+          width: "28px",
+          height: "28px",
+          border: "2.5px solid rgba(99, 102, 241, 0.18)",
+          borderTopColor: "#6366f1",
+          borderRadius: "50%",
+          animation: "spinSmooth 0.75s linear infinite"
+        }}
+      />
+    </div>
+  );
+}
+
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AppDataProvider>
@@ -122,7 +151,7 @@ createRoot(document.getElementById("root")).render(
         <ThemeProvider>
           <BrowserRouter>
             <ErrorBoundary>
-              <Suspense fallback={<div className="route-loading" style={{ minHeight: "100vh", background: "var(--bg-app, #050a18)", color: "var(--text-primary, #f8fafc)", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading…</div>}>
+              <Suspense fallback={<RouteLoadingFallback />}>
                 <Routes>
                   {/* Root Route: Landing Page for Unauthenticated Users, Dashboard for Authenticated */}
                   <Route path="/" element={<RootPage />} />

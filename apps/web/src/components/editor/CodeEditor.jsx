@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AlignLeft,
@@ -123,7 +123,7 @@ function highlightLine(str, theme) {
     });
 }
 
-export default function CodeEditor({
+function CodeEditor({
   code,
   value,
   language = "Python",
@@ -223,6 +223,11 @@ export default function CodeEditor({
     (l) => l.id.toLowerCase() === String(language).toLowerCase() ||
            (l.id === "C++" && String(language).toLowerCase() === "cpp")
   ) || LANGUAGES[0];
+
+  const highlightedCodeHtml = useMemo(
+    () => highlightSyntax(currentCode, language, currentEditorTheme),
+    [currentCode, language, currentEditorTheme]
+  );
 
   function handleScroll() {
     if (preRef.current && textareaRef.current) {
@@ -801,7 +806,7 @@ export default function CodeEditor({
               color: themePalette.textColor,
               background: "transparent"
             }}
-            dangerouslySetInnerHTML={{ __html: highlightSyntax(currentCode, language, currentEditorTheme) }}
+            dangerouslySetInnerHTML={{ __html: highlightedCodeHtml }}
           />
 
           {/* Editable Textarea (Front, Transparent Text with Caret) */}
@@ -876,3 +881,5 @@ export default function CodeEditor({
     </section>
   );
 }
+
+export default memo(CodeEditor);

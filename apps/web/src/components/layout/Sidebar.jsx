@@ -136,7 +136,8 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
           position: "sticky",
           top: "var(--global-nav-height, 64px)",
           transition:
-            "width 280ms cubic-bezier(0.16, 1, 0.3, 1), min-width 280ms cubic-bezier(0.16, 1, 0.3, 1), max-width 280ms cubic-bezier(0.16, 1, 0.3, 1), top 0.25s cubic-bezier(0.16, 1, 0.3, 1), min-height 0.25s cubic-bezier(0.16, 1, 0.3, 1), height 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease",
+            "width 220ms cubic-bezier(0.16, 1, 0.3, 1), min-width 220ms cubic-bezier(0.16, 1, 0.3, 1), max-width 220ms cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, border-color 0.15s ease",
+          willChange: "width, min-width, max-width",
           zIndex: 95,
           padding: collapsed ? "8px 6px 10px" : "10px 10px 14px",
           userSelect: "none",
@@ -285,7 +286,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                           ? "0 2px 6px rgba(99, 102, 241, 0.18)"
                           : "none",
                         position: "relative",
-                        transition: "all 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
+                        transition: "background-color 0.14s ease, border-color 0.14s ease, color 0.14s ease, transform 0.14s ease",
                         boxSizing: "border-box"
                       }}
                     >

@@ -10,7 +10,7 @@ export function useSmoothScroll() {
     let lenis;
     try {
       lenis = new Lenis({
-        duration: 1.15,
+        duration: 1.0,
         easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
         orientation: "vertical",
         gestureOrientation: "vertical",
@@ -22,6 +22,10 @@ export function useSmoothScroll() {
           node?.nodeType === 1 &&
           (node.hasAttribute?.("data-lenis-prevent") ||
             Boolean(node.closest?.("[data-lenis-prevent]")) ||
+            Boolean(node.closest?.(".judgo-ide-tab-content")) ||
+            Boolean(node.closest?.(".judgo-ide-right-pane")) ||
+            Boolean(node.closest?.(".judgo-ide-exec-body")) ||
+            Boolean(node.closest?.(".sidebar")) ||
             node.classList?.contains("code-editor") ||
             Boolean(node.closest?.(".code-editor")) ||
             Boolean(node.closest?.(".problem-detail-page-container")) ||
@@ -33,7 +37,11 @@ export function useSmoothScroll() {
             Boolean(node.closest?.(".company-sheet-page")) ||
             Boolean(node.closest?.(".mock-studio-root")) ||
             Boolean(node.closest?.(".mock-launcher-card")) ||
-            Boolean(node.closest?.(".mock-chat-scroll")))
+            Boolean(node.closest?.(".mock-chat-scroll")) ||
+            Boolean(node.closest?.(".responsive-table-scroll")) ||
+            Boolean(node.closest?.(".table-shell")) ||
+            Boolean(node.closest?.(".prof-modal-card")) ||
+            Boolean(node.closest?.(".admin-table-container")))
       });
 
       let animationFrameId;

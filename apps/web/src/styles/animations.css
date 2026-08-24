@@ -1,8 +1,43 @@
 /* ==========================================================================
-   JUDGO PREMIUM GPU-ACCELERATED ANIMATION SYSTEM
+   JUDGO HIGH-PERFORMANCE GPU-ACCELERATED ANIMATION SYSTEM
+   Focused on smooth 60/120 FPS transitions, zero layout-shift, and instant feel
    ========================================================================== */
 
-/* Shimmer Skeleton */
+/* 1. Global Page Entrance Transition */
+@keyframes pageEnterFade {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 4px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.page-enter-fade {
+  animation: pageEnterFade 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+}
+
+/* 2. Instant Tab Transition */
+@keyframes tabFadeEnter {
+  from {
+    opacity: 0.88;
+    transform: translate3d(0, 2px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.tab-content-enter {
+  animation: tabFadeEnter 0.14s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+}
+
+/* 3. Shimmer Skeleton Loader */
 @keyframes shimmerWave {
   0% {
     background-position: -200% 0;
@@ -22,9 +57,10 @@
   background-size: 200% 100%;
   animation: shimmerWave 1.8s infinite ease-in-out;
   border-radius: 8px;
+  will-change: background-position;
 }
 
-/* Pulse Neon Glow */
+/* 4. Pulse Neon Glow */
 @keyframes pulseGlow {
   0%, 100% {
     box-shadow: 0 0 15px rgba(120, 80, 255, 0.35);
@@ -40,36 +76,38 @@
   animation: pulseGlow 3s infinite ease-in-out;
 }
 
-/* Compiler Verdict Animations */
+/* 5. Compiler Verdict Animations */
 @keyframes verdictPopSuccess {
   0% {
-    transform: scale(0.92);
+    transform: scale3d(0.95, 0.95, 1);
     box-shadow: 0 0 0 rgba(16, 185, 129, 0);
   }
   50% {
-    transform: scale(1.04);
-    box-shadow: 0 0 25px rgba(16, 185, 129, 0.6);
+    transform: scale3d(1.02, 1.02, 1);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
   }
   100% {
-    transform: scale(1);
-    box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+    transform: scale3d(1, 1, 1);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.25);
   }
 }
 
 .verdict-pop-ac {
-  animation: verdictPopSuccess 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  animation: verdictPopSuccess 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, box-shadow;
 }
 
 @keyframes shakeError {
-  0%, 100% { transform: translateX(0); }
-  20%, 60% { transform: translateX(-6px); }
-  40%, 80% { transform: translateX(6px); }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  20%, 60% { transform: translate3d(-5px, 0, 0); }
+  40%, 80% { transform: translate3d(5px, 0, 0); }
 }
 
 .verdict-shake-wa {
-  animation: shakeError 0.45s ease-in-out;
+  animation: shakeError 0.35s ease-in-out;
   border-color: #ff4d4f !important;
-  box-shadow: 0 0 20px rgba(255, 77, 79, 0.4) !important;
+  box-shadow: 0 0 16px rgba(255, 77, 79, 0.35) !important;
+  will-change: transform;
 }
 
 @keyframes pulseOrange {
@@ -77,7 +115,7 @@
     box-shadow: 0 0 10px rgba(255, 169, 64, 0.2);
   }
   50% {
-    box-shadow: 0 0 25px rgba(255, 169, 64, 0.55);
+    box-shadow: 0 0 22px rgba(255, 169, 64, 0.5);
   }
 }
 
@@ -86,18 +124,18 @@
   border-color: #ffa940 !important;
 }
 
-/* Floating Code Glyphs Background */
+/* 6. Hardware-Accelerated Floating Code Glyphs Background */
 @keyframes floatGlyphSlow {
   0% {
-    transform: translateY(0px) rotate(0deg);
+    transform: translate3d(0, 0px, 0) rotate(0deg);
     opacity: 0.03;
   }
   50% {
-    transform: translateY(-16px) rotate(4deg);
-    opacity: 0.07;
+    transform: translate3d(0, -14px, 0) rotate(3deg);
+    opacity: 0.06;
   }
   100% {
-    transform: translateY(0px) rotate(0deg);
+    transform: translate3d(0, 0px, 0) rotate(0deg);
     opacity: 0.03;
   }
 }
@@ -109,39 +147,42 @@
   font-weight: 700;
   user-select: none;
   pointer-events: none;
-  z-index: -1;
+  z-index: 0;
   animation: floatGlyphSlow 8s ease-in-out infinite;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
-/* Button Ripple & Hover Glow */
+/* 7. Button & Card Micro-Interactions (140-180ms) */
 .btn-animated-glow {
   position: relative;
   overflow: hidden;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.16s ease, background-color 0.16s ease;
 }
 
 .btn-animated-glow:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(120, 80, 255, 0.45);
+  transform: translate3d(0, -1.5px, 0);
+  box-shadow: 0 6px 20px rgba(120, 80, 255, 0.38);
 }
 
 .btn-animated-glow:active {
-  transform: scale(0.97);
+  transform: translate3d(0, 0, 0) scale3d(0.985, 0.985, 1);
 }
 
-/* Glowing Border Shift */
 .card-glow-interactive {
   position: relative;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+  will-change: transform;
 }
 
 .card-glow-interactive:hover {
-  transform: translateY(-4px);
-  border-color: rgba(120, 80, 255, 0.45) !important;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 25px rgba(120, 80, 255, 0.25) !important;
+  transform: translate3d(0, -3px, 0);
+  border-color: rgba(120, 80, 255, 0.4) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), 0 0 20px rgba(120, 80, 255, 0.18) !important;
 }
 
-/* Smooth Spinner */
+/* 8. Smooth Spinner */
 @keyframes spinSmooth {
   to {
     transform: rotate(360deg);
@@ -149,47 +190,41 @@
 }
 
 .spin-smooth {
-  animation: spinSmooth 0.8s linear infinite;
+  animation: spinSmooth 0.75s linear infinite;
+  will-change: transform;
 }
 
-/* Top Podium Medals Glow */
+/* 9. Top Podium Medals Glow */
 .podium-gold {
-  box-shadow: 0 0 25px rgba(255, 215, 0, 0.35);
-  border-color: rgba(255, 215, 0, 0.6) !important;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+  border-color: rgba(255, 215, 0, 0.55) !important;
 }
 
 .podium-silver {
-  box-shadow: 0 0 20px rgba(192, 192, 192, 0.3);
-  border-color: rgba(192, 192, 192, 0.5) !important;
+  box-shadow: 0 0 16px rgba(192, 192, 192, 0.25);
+  border-color: rgba(192, 192, 192, 0.45) !important;
 }
 
 .podium-bronze {
-  box-shadow: 0 0 20px rgba(205, 127, 50, 0.3);
-  border-color: rgba(205, 127, 50, 0.5) !important;
+  box-shadow: 0 0 16px rgba(205, 127, 50, 0.25);
+  border-color: rgba(205, 127, 50, 0.45) !important;
 }
 
-/* Progress Ring Animation */
-@keyframes ringFill {
-  from {
-    stroke-dashoffset: 283;
-  }
-}
-
+/* 10. Progress Ring Animation */
 .xp-progress-ring {
-  transition: stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Micro-interaction: Tag Pulse */
+/* 11. Micro-interaction: Tag Pulse */
 .tag-pulse {
-  transition: all 0.2s ease;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .tag-pulse:hover {
-  transform: scale(1.05);
-  filter: brightness(1.2);
+  transform: translate3d(0, -1px, 0);
 }
 
-/* Respect Prefers Reduced Motion */
+/* 12. Respect Prefers Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -198,5 +233,8 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .floating-code-glyph {
+    display: none !important;
   }
 }

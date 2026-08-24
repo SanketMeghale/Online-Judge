@@ -162,34 +162,41 @@ function ProblemDetailsInner() {
   useEffect(() => {
     if (!isResizing) return;
 
+    let rafId = null;
+
     function handlePointerMove(e) {
-      if (!splitContainerRef.current) return;
-      const rect = splitContainerRef.current.getBoundingClientRect();
-      if (!rect.width) return;
+      if (rafId) cancelAnimationFrame(rafId);
 
-      const offset = e.clientX - rect.left;
-      const minRatio = Math.max(0.2, 320 / rect.width);
-      const maxRatio = Math.min(0.8, 1 - (400 / rect.width));
-      const nextRatio = Math.min(maxRatio, Math.max(minRatio, offset / rect.width));
-      setSplitRatio(nextRatio);
+      rafId = requestAnimationFrame(() => {
+        if (!splitContainerRef.current) return;
+        const rect = splitContainerRef.current.getBoundingClientRect();
+        if (!rect.width) return;
 
+        const offset = e.clientX - rect.left;
+        const minRatio = Math.max(0.2, 320 / rect.width);
+        const maxRatio = Math.min(0.8, 1 - 400 / rect.width);
+        const nextRatio = Math.min(maxRatio, Math.max(minRatio, offset / rect.width));
+        setSplitRatio(nextRatio);
+      });
+    }
+
+    function handlePointerUp() {
+      if (rafId) cancelAnimationFrame(rafId);
+      setIsResizing(false);
+      try {
+        localStorage.setItem("judgo-problem-pane-ratio", String(splitRatio));
+      } catch {}
       if (typeof window !== "undefined") {
         window.dispatchEvent(new Event("resize"));
       }
     }
 
-    function handlePointerUp() {
-      setIsResizing(false);
-      try {
-        localStorage.setItem("judgo-problem-pane-ratio", String(splitRatio));
-      } catch {}
-    }
-
-    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
     window.addEventListener("pointerup", handlePointerUp);
     window.addEventListener("pointercancel", handlePointerUp);
 
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
       window.removeEventListener("pointercancel", handlePointerUp);
