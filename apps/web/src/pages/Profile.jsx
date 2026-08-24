@@ -596,14 +596,14 @@ export default function Profile() {
             }}
           >
             <div className={`prof-stat-icon-box ${tone}`}>
-              <Icon size={20} />
+              <Icon size={16} />
             </div>
             <div className="prof-stat-info">
               <span className="prof-stat-label">{label}</span>
               <strong className="prof-stat-val" style={{ color: isLight ? "#0f172a" : "#f8fafc" }}>
                 {value}
               </strong>
-              <span style={{ fontSize: "0.68rem", color: "#64748b", marginTop: "1px" }}>
+              <span style={{ fontSize: "0.66rem", color: "#64748b", marginTop: "1px" }}>
                 {subtext}
               </span>
             </div>
@@ -617,9 +617,9 @@ export default function Profile() {
       <div style={{
         display: "flex",
         alignItems: "center",
-        gap: "6px",
+        gap: "4px",
         borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-        paddingBottom: "4px"
+        paddingBottom: "3px"
       }}>
         {[
           { id: "overview", label: "Overview & Analytics", icon: Compass },
@@ -637,19 +637,19 @@ export default function Profile() {
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "6px",
+                gap: "5px",
                 background: active ? (isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.16)") : "transparent",
                 border: active ? `1px solid ${isLight ? "#c7d2fe" : "rgba(99, 102, 241, 0.35)"}` : "1px solid transparent",
                 color: active ? (isLight ? "#4338ca" : "#a5b4fc") : isLight ? "#64748b" : "#94a3b8",
-                padding: "7px 14px",
-                borderRadius: "8px",
-                fontSize: "0.82rem",
+                padding: "5px 11px",
+                borderRadius: "6px",
+                fontSize: "0.78rem",
                 fontWeight: active ? "700" : "600",
                 cursor: "pointer",
                 transition: "all 0.15s ease"
               }}
             >
-              <Icon size={14} />
+              <Icon size={13} />
               {tab.label}
             </button>
           );

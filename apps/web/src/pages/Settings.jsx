@@ -572,8 +572,8 @@ export default function Settings() {
               >
                 <div
                   style={{
-                    width: "48px",
-                    height: "48px",
+                    width: "40px",
+                    height: "40px",
                     borderRadius: "50%",
                     background: "linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%)",
                     display: "flex",
@@ -581,7 +581,7 @@ export default function Settings() {
                     justifyContent: "center",
                     color: "#ffffff",
                     fontWeight: "800",
-                    fontSize: "1.2rem",
+                    fontSize: "1.05rem",
                     flexShrink: 0
                   }}
                 >

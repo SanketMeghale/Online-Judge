@@ -5,12 +5,12 @@
 .dsa-tree-container {
   background: #0d111a;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 20px 22px;
+  border-radius: 12px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  gap: 12px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.25);
   position: relative;
   overflow: visible;
 }
