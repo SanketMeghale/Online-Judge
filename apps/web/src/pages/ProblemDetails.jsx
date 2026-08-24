@@ -177,6 +177,7 @@ function ProblemDetailsInner() {
   }, [isResizing, splitRatio]);
 
   // Refs for 100% Code Editor and scrollable Execution Panel below it
+  const rightPaneRef = useRef(null);
   const editorWrapperRef = useRef(null);
   const execPanelRef = useRef(null);
 
