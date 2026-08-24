@@ -5,18 +5,13 @@
 .company-sheets-container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   max-width: 1380px;
   margin: 0 auto;
-  color: #f1f5f9;
-  font-family: inherit;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  padding-right: 2px;
+  min-height: 100%;
+  height: auto;
+  overflow: visible;
 }
 
 /* Header & Search Bar */
@@ -482,12 +477,9 @@
   width: 100%;
   max-width: 1380px;
   margin: 0 auto;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  padding-right: 2px;
+  min-height: 100%;
+  height: auto;
+  overflow: visible;
 }
 
 /* 1. Compact Detail Hero */

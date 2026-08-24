@@ -148,6 +148,36 @@ body[data-theme="light"],
   box-sizing: border-box;
 }
 
+html {
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  width: 100%;
+  min-height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+#root {
+  min-height: 100dvh;
+  width: 100%;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
 html,
 body,
 #root {
@@ -156,13 +186,6 @@ body,
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  background: var(--bg-base);
-  color: var(--text-primary);
 }
 
 button,
@@ -4232,7 +4255,6 @@ canvas {
 .sidebar,
 .prof-modal-card {
   max-width: 100%;
-  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
 

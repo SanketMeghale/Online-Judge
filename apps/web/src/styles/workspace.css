@@ -362,7 +362,6 @@
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
-  scroll-behavior: smooth;
   scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
   scrollbar-width: thin;
 }
