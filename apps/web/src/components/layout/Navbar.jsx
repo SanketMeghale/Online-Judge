@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -44,10 +44,18 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
   const username = String(liveUser?.username || "").trim();
   const email = String(liveUser?.email || user?.email || "").trim();
   const avatarLetter = String(fullName || username || email || "U").slice(0, 1).toUpperCase();
-  const streakCount = calculateStreak(
-    [...(Array.isArray(liveUser?.activeDates) ? liveUser.activeDates : []), liveUser?.lastActiveDate].filter(Boolean),
-    new Date()
-  ).currentStreak;
+  const streakCount = useMemo(() => {
+    // 1. If liveUser has a valid streak number from MongoDB, prioritize it directly
+    if (typeof liveUser?.streak === "number" && liveUser.streak >= 0) {
+      return liveUser.streak;
+    }
+
+    // 2. Otherwise calculate accurately from user's authentic activeDates array
+    const activeDatesList = Array.isArray(liveUser?.activeDates) ? liveUser.activeDates : [];
+    if (activeDatesList.length === 0) return 0;
+
+    return calculateStreak(activeDatesList, new Date()).currentStreak;
+  }, [liveUser?.streak, liveUser?.activeDates]);
 
   // Scroll listener for smooth glass transition
   useEffect(() => {
