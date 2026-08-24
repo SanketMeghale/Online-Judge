@@ -466,13 +466,13 @@ function ProblemDetailsInner() {
     >
       {/* Top Compact Breadcrumb Navigation Bar */}
       <div className="judgo-ide-top-bar">
-        <nav style={{ display: "flex", alignItems: "center", gap: "6px", color: isLight ? "#64748b" : "#8b9bb4", fontSize: "0.82rem" }}>
+        <nav style={{ display: "flex", alignItems: "center", gap: "5px", color: isLight ? "#64748b" : "#8b9bb4", fontSize: "0.75rem" }}>
           <Link to="/problems" style={{ color: isLight ? "#64748b" : "#8b9bb4", textDecoration: "none" }}>
             Problems
           </Link>
-          <ChevronRight size={13} />
+          <ChevronRight size={11} />
           <span>{problemWithStatus.topic}</span>
-          <ChevronRight size={13} />
+          <ChevronRight size={11} />
           <strong style={{ color: isLight ? "#0f172a" : "#ffffff" }}>{problemWithStatus.title}</strong>
         </nav>
 
@@ -481,7 +481,6 @@ function ProblemDetailsInner() {
             type="button"
             onClick={() => {
               setSplitRatio(0.45);
-              setExecSplitRatio(0.70);
             }}
             title="Reset workspace layout split to default"
             style={{
@@ -489,16 +488,16 @@ function ProblemDetailsInner() {
               border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`,
               borderRadius: "5px",
               color: isLight ? "#64748b" : "#94a3b8",
-              fontSize: "0.72rem",
+              fontSize: "0.68rem",
               fontWeight: "600",
-              padding: "2px 7px",
+              padding: "1px 6px",
               cursor: "pointer",
               display: "inline-flex",
               alignItems: "center",
               gap: "4px"
             }}
           >
-            <RotateCcw size={11} /> Reset Layout
+            <RotateCcw size={10} /> Reset Layout
           </button>
         </div>
       </div>
@@ -528,7 +527,7 @@ function ProblemDetailsInner() {
                   color: activeLeftTab === "description" ? (isLight ? "#0369a1" : "#38bdf8") : undefined
                 }}
               >
-                <FileText size={15} style={{ color: "#0284c7" }} />
+                <FileText size={13} style={{ color: "#0284c7" }} />
                 <span>Description</span>
               </button>
 
@@ -542,7 +541,7 @@ function ProblemDetailsInner() {
                   color: activeLeftTab === "testcases" ? (isLight ? "#0891b2" : "#22d3ee") : undefined
                 }}
               >
-                <Layers size={15} style={{ color: "#06b6d4" }} />
+                <Layers size={13} style={{ color: "#06b6d4" }} />
                 <span>Testcases</span>
               </button>
 
@@ -561,7 +560,7 @@ function ProblemDetailsInner() {
                   color: activeLeftTab === "solutions" ? (isLight ? "#7e22ce" : "#c084fc") : undefined
                 }}
               >
-                <Lightbulb size={15} style={{ color: "#9333ea" }} />
+                <Lightbulb size={13} style={{ color: "#9333ea" }} />
                 <span>Solutions</span>
               </button>
 
@@ -580,13 +579,13 @@ function ProblemDetailsInner() {
                   color: activeLeftTab === "aiReview" ? (isLight ? "#db2777" : "#f472b6") : undefined
                 }}
               >
-                <Sparkles size={15} style={{ color: "#ec4899" }} />
+                <Sparkles size={13} style={{ color: "#ec4899" }} />
                 <span>AI Review</span>
               </button>
             </div>
 
             {/* Right Side Header Quick Actions (Bookmark + Solved Status) */}
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0, paddingLeft: "6px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "5px", flexShrink: 0, paddingLeft: "4px" }}>
               {problemWithStatus.status && (
                 <span
                   style={{
@@ -594,7 +593,7 @@ function ProblemDetailsInner() {
                     alignItems: "center",
                     gap: "3px",
                     color: problemWithStatus.status?.toLowerCase() === "solved" || result?.verdict === "AC" ? "#16a34a" : "#eab308",
-                    fontSize: "0.72rem",
+                    fontSize: "0.68rem",
                     background: problemWithStatus.status?.toLowerCase() === "solved" || result?.verdict === "AC" ? "rgba(34, 197, 94, 0.12)" : "rgba(234, 179, 8, 0.12)",
                     border: problemWithStatus.status?.toLowerCase() === "solved" || result?.verdict === "AC" ? "1px solid rgba(34, 197, 94, 0.25)" : "1px solid rgba(234, 179, 8, 0.25)",
                     padding: "1px 5px",
@@ -602,7 +601,7 @@ function ProblemDetailsInner() {
                     fontWeight: "700"
                   }}
                 >
-                  <CheckCircle2 size={11} />
+                  <CheckCircle2 size={10} />
                   {formatDisplayValue(problemWithStatus.status, "Solved")}
                 </span>
               )}
@@ -624,7 +623,7 @@ function ProblemDetailsInner() {
                   transition: "all 0.15s ease"
                 }}
               >
-                <Bookmark size={13} fill={isBookmarked ? "currentColor" : "none"} />
+                <Bookmark size={12} fill={isBookmarked ? "currentColor" : "none"} />
               </button>
             </div>
           </div>
@@ -635,18 +634,18 @@ function ProblemDetailsInner() {
                 LEFT TAB 1: DESCRIPTION
                 --------------------------------------------------------------- */}
             {activeLeftTab === "description" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {/* Title & Difficulty Headline */}
                 <div>
-                  <h1 style={{ fontSize: "1.25rem", fontWeight: "800", color: isLight ? "#0f172a" : "#ffffff", margin: "0 0 8px 0", letterSpacing: "-0.01em" }}>
+                  <h1 style={{ fontSize: "1.05rem", fontWeight: "800", color: isLight ? "#0f172a" : "#ffffff", margin: "0 0 6px 0", letterSpacing: "-0.01em" }}>
                     {problemWithStatus.title}
                   </h1>
 
                   {/* Compact Inline Tags Row */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap" }}>
                     <span
                       className={`difficulty difficulty-${problemWithStatus.difficulty.toLowerCase()}`}
-                      style={{ fontSize: "0.72rem", padding: "2px 7px", borderRadius: "5px", fontWeight: "700" }}
+                      style={{ fontSize: "0.68rem", padding: "1px 6px", borderRadius: "4px", fontWeight: "700" }}
                     >
                       {problemWithStatus.difficulty}
                     </span>
@@ -655,13 +654,13 @@ function ProblemDetailsInner() {
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
-                        gap: "4px",
+                        gap: "3px",
                         background: isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.05)",
                         border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
                         color: isLight ? "#475569" : "#cbd5e1",
-                        fontSize: "0.72rem",
-                        padding: "2px 7px",
-                        borderRadius: "5px",
+                        fontSize: "0.68rem",
+                        padding: "1px 6px",
+                        borderRadius: "4px",
                         fontWeight: "600"
                       }}
                     >
@@ -674,13 +673,13 @@ function ProblemDetailsInner() {
                         style={{
                           display: "inline-flex",
                           alignItems: "center",
-                          gap: "4px",
+                          gap: "3px",
                           background: isLight ? "#f5f3ff" : "rgba(124, 58, 237, 0.12)",
                           border: isLight ? "1px solid #ddd6fe" : "1px solid rgba(124, 58, 237, 0.25)",
                           color: isLight ? "#6d28d9" : "#c084fc",
-                          fontSize: "0.72rem",
-                          padding: "2px 7px",
-                          borderRadius: "5px",
+                          fontSize: "0.68rem",
+                          padding: "1px 6px",
+                          borderRadius: "4px",
                           fontWeight: "600"
                         }}
                         title="Target Company"
@@ -694,18 +693,18 @@ function ProblemDetailsInner() {
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
-                        gap: "4px",
+                        gap: "3px",
                         background: isLight ? "#f8fafc" : "rgba(255, 255, 255, 0.04)",
                         border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
                         color: isLight ? "#64748b" : "#94a3b8",
-                        fontSize: "0.72rem",
-                        padding: "2px 7px",
-                        borderRadius: "5px",
+                        fontSize: "0.68rem",
+                        padding: "1px 6px",
+                        borderRadius: "4px",
                         fontWeight: "600"
                       }}
                       title="Global acceptance rate"
                     >
-                      <Zap size={11} style={{ color: "#eab308", fill: "#eab308" }} />
+                      <Zap size={10} style={{ color: "#eab308", fill: "#eab308" }} />
                       <span>{problemWithStatus.acceptance}%</span>
                     </span>
 
@@ -713,18 +712,18 @@ function ProblemDetailsInner() {
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
-                        gap: "4px",
+                        gap: "3px",
                         background: isLight ? "#f8fafc" : "rgba(255, 255, 255, 0.04)",
                         border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
                         color: isLight ? "#64748b" : "#94a3b8",
-                        fontSize: "0.72rem",
-                        padding: "2px 7px",
-                        borderRadius: "5px",
+                        fontSize: "0.68rem",
+                        padding: "1px 6px",
+                        borderRadius: "4px",
                         fontWeight: "600"
                       }}
                       title="Points for solving"
                     >
-                      <Sparkles size={11} style={{ color: "#a855f7" }} />
+                      <Sparkles size={10} style={{ color: "#a855f7" }} />
                       <span>{problemWithStatus.points} pts</span>
                     </span>
                   </div>
@@ -732,26 +731,26 @@ function ProblemDetailsInner() {
 
                 {/* Description Text */}
                 <div>
-                  <h3 style={{ fontSize: "0.86rem", color: isLight ? "#475569" : "#94a3b8", marginBottom: "6px", fontWeight: "bold" }}>
+                  <h3 style={{ fontSize: "0.78rem", color: isLight ? "#475569" : "#94a3b8", marginBottom: "4px", fontWeight: "700" }}>
                     Description
                   </h3>
-                  <p style={{ color: isLight ? "#334155" : "#cbd5e1", fontSize: "0.88rem", lineHeight: "1.6", margin: 0, whiteSpace: "pre-line" }}>
+                  <p style={{ color: isLight ? "#334155" : "#cbd5e1", fontSize: "0.80rem", lineHeight: "1.55", margin: 0, whiteSpace: "pre-line" }}>
                     {problemWithStatus.statement}
                   </p>
                 </div>
 
                 {/* Examples */}
                 <div>
-                  <h3 style={{ fontSize: "0.86rem", color: isLight ? "#475569" : "#94a3b8", marginBottom: "8px", fontWeight: "bold" }}>
+                  <h3 style={{ fontSize: "0.78rem", color: isLight ? "#475569" : "#94a3b8", marginBottom: "6px", fontWeight: "700" }}>
                     Examples
                   </h3>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     {problemWithStatus.examples.map((example, index) => (
-                      <div key={index} style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", padding: "10px 12px" }}>
-                        <strong style={{ color: isLight ? "#2563eb" : "#60a5fa", fontSize: "0.8rem", display: "block", marginBottom: "4px" }}>
+                      <div key={index} style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", borderRadius: "6px", padding: "8px 10px" }}>
+                        <strong style={{ color: isLight ? "#2563eb" : "#60a5fa", fontSize: "0.72rem", display: "block", marginBottom: "3px" }}>
                           Example {index + 1}
                         </strong>
-                        <pre style={{ margin: 0, color: isLight ? "#334155" : "#cbd5e1", fontFamily: "monospace", fontSize: "0.8rem", lineHeight: "1.5", whiteSpace: "pre-wrap" }}>
+                        <pre style={{ margin: 0, color: isLight ? "#334155" : "#cbd5e1", fontFamily: "monospace", fontSize: "0.74rem", lineHeight: "1.4", whiteSpace: "pre-wrap" }}>
                           {`Input: ${formatDisplayValue(example.input)}\nOutput: ${formatDisplayValue(example.output)}`}
                         </pre>
                       </div>
@@ -761,10 +760,10 @@ function ProblemDetailsInner() {
 
                 {/* Constraints */}
                 <div>
-                  <h3 style={{ fontSize: "0.86rem", color: isLight ? "#475569" : "#94a3b8", marginBottom: "6px", fontWeight: "bold" }}>
+                  <h3 style={{ fontSize: "0.78rem", color: isLight ? "#475569" : "#94a3b8", marginBottom: "4px", fontWeight: "700" }}>
                     Constraints
                   </h3>
-                  <ul style={{ margin: 0, paddingLeft: "18px", color: isLight ? "#334155" : "#cbd5e1", fontSize: "0.84rem", lineHeight: "1.6" }}>
+                  <ul style={{ margin: 0, paddingLeft: "16px", color: isLight ? "#334155" : "#cbd5e1", fontSize: "0.76rem", lineHeight: "1.45" }}>
                     {problemWithStatus.constraints.map((constraint, idx) => (
                       <li key={idx}>{formatDisplayValue(constraint)}</li>
                     ))}
@@ -776,8 +775,8 @@ function ProblemDetailsInner() {
                   style={{
                     background: isLight ? "#f8fafc" : "#131826",
                     border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
-                    borderRadius: "8px",
-                    padding: "9px 12px",
+                    borderRadius: "6px",
+                    padding: "7px 10px",
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
@@ -791,17 +790,17 @@ function ProblemDetailsInner() {
                     }
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", color: isLight ? "#0f172a" : "#cbd5e1", fontSize: "0.82rem" }}>
-                    <Lightbulb size={15} style={{ color: "#eab308" }} />
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", color: isLight ? "#0f172a" : "#cbd5e1", fontSize: "0.76rem" }}>
+                    <Lightbulb size={13} style={{ color: "#eab308" }} />
                     <span>AI Progressive Hint {showHint ? `(Level ${hintLevel}/4)` : ""}</span>
                   </div>
-                  <span style={{ fontSize: "0.74rem", color: isLight ? "#64748b" : "#8b9bb4" }}>
-                    4 levels <ChevronDown size={13} />
+                  <span style={{ fontSize: "0.70rem", color: isLight ? "#64748b" : "#8b9bb4" }}>
+                    4 levels <ChevronDown size={11} />
                   </span>
                 </div>
                 {showHint && (
-                  <div style={{ background: isLight ? "#fefce8" : "#080c14", border: isLight ? "1px solid #fef08a" : "1px solid rgba(234, 179, 8, 0.2)", borderRadius: "8px", padding: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                    <div style={{ color: isLight ? "#854d0e" : "#fef08a", fontSize: "0.82rem", margin: 0, lineHeight: "1.5" }}>
+                  <div style={{ background: isLight ? "#fefce8" : "#080c14", border: isLight ? "1px solid #fef08a" : "1px solid rgba(234, 179, 8, 0.2)", borderRadius: "6px", padding: "10px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <div style={{ color: isLight ? "#854d0e" : "#fef08a", fontSize: "0.76rem", margin: 0, lineHeight: "1.45" }}>
                       {isHintLoading ? (
                         <span>Analyzing problem and generating personalized hint...</span>
                       ) : (
@@ -823,9 +822,9 @@ function ProblemDetailsInner() {
                           background: isLight ? "#fde047" : "rgba(234, 179, 8, 0.15)",
                           border: isLight ? "1px solid #ca8a04" : "1px solid rgba(234, 179, 8, 0.3)",
                           color: isLight ? "#713f12" : "#fbbf24",
-                          borderRadius: "6px",
-                          padding: "4px 10px",
-                          fontSize: "0.74rem",
+                          borderRadius: "5px",
+                          padding: "3px 8px",
+                          fontSize: "0.70rem",
                           fontWeight: "600",
                           cursor: "pointer"
                         }}
@@ -843,39 +842,39 @@ function ProblemDetailsInner() {
                 --------------------------------------------------------------- */}
             {activeLeftTab === "testcases" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, paddingBottom: "8px" }}>
-                  <strong style={{ fontSize: "0.88rem", color: isLight ? "#0f172a" : "#f8fafc" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, paddingBottom: "6px" }}>
+                  <strong style={{ fontSize: "0.80rem", color: isLight ? "#0f172a" : "#f8fafc" }}>
                     Sample Problem Testcases
                   </strong>
-                  <span style={{ fontSize: "0.74rem", color: isLight ? "#64748b" : "#8b9bb4" }}>
+                  <span style={{ fontSize: "0.70rem", color: isLight ? "#64748b" : "#8b9bb4" }}>
                     {problemWithStatus.examples.length} testcase specifications
                   </span>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {problemWithStatus.examples.map((tc, idx) => (
                     <div
                       key={idx}
                       style={{
                         background: isLight ? "#f8fafc" : "#080c14",
                         border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`,
-                        borderRadius: "8px",
-                        padding: "10px 12px"
+                        borderRadius: "6px",
+                        padding: "8px 10px"
                       }}
                     >
-                      <span style={{ fontSize: "0.78rem", fontWeight: "700", color: "#06b6d4", display: "inline-block", marginBottom: "6px" }}>
+                      <span style={{ fontSize: "0.72rem", fontWeight: "700", color: "#06b6d4", display: "inline-block", marginBottom: "4px" }}>
                         Case {idx + 1}
                       </span>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                         <div>
-                          <small style={{ color: isLight ? "#64748b" : "#94a3b8", fontSize: "0.72rem", fontWeight: "600" }}>Input:</small>
-                          <pre style={{ margin: "2px 0 0", padding: "6px 8px", background: isLight ? "#ffffff" : "#0f1628", borderRadius: "5px", fontSize: "0.78rem", fontFamily: "monospace", color: isLight ? "#0f172a" : "#f1f5f9" }}>
+                          <small style={{ color: isLight ? "#64748b" : "#94a3b8", fontSize: "0.68rem", fontWeight: "600" }}>Input:</small>
+                          <pre style={{ margin: "2px 0 0", padding: "5px 7px", background: isLight ? "#ffffff" : "#0f1628", borderRadius: "4px", fontSize: "0.72rem", fontFamily: "monospace", color: isLight ? "#0f172a" : "#f1f5f9" }}>
                             {formatDisplayValue(tc.input)}
                           </pre>
                         </div>
                         <div>
-                          <small style={{ color: isLight ? "#64748b" : "#94a3b8", fontSize: "0.72rem", fontWeight: "600" }}>Expected Output:</small>
-                          <pre style={{ margin: "2px 0 0", padding: "6px 8px", background: isLight ? "#ffffff" : "#0f1628", borderRadius: "5px", fontSize: "0.78rem", fontFamily: "monospace", color: "#16a34a" }}>
+                          <small style={{ color: isLight ? "#64748b" : "#94a3b8", fontSize: "0.68rem", fontWeight: "600" }}>Expected Output:</small>
+                          <pre style={{ margin: "2px 0 0", padding: "5px 7px", background: isLight ? "#ffffff" : "#0f1628", borderRadius: "4px", fontSize: "0.72rem", fontFamily: "monospace", color: "#16a34a" }}>
                             {formatDisplayValue(tc.output)}
                           </pre>
                         </div>
@@ -890,15 +889,15 @@ function ProblemDetailsInner() {
                 LEFT TAB 3: SOLUTIONS & EDITORIAL
                 --------------------------------------------------------------- */}
             {activeLeftTab === "solutions" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-                <div style={{ background: isLight ? "#f5f3ff" : "rgba(120, 80, 255, 0.1)", border: `1px solid ${isLight ? "#ddd6fe" : "rgba(120, 80, 255, 0.3)"}`, borderRadius: "8px", padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <Lightbulb size={18} color="#c084fc" />
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ background: isLight ? "#f5f3ff" : "rgba(120, 80, 255, 0.1)", border: `1px solid ${isLight ? "#ddd6fe" : "rgba(120, 80, 255, 0.3)"}`, borderRadius: "6px", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Lightbulb size={16} color="#c084fc" />
                     <div>
-                      <strong style={{ fontSize: "0.9rem", color: isLight ? "#0f172a" : "#f8fafc" }}>
+                      <strong style={{ fontSize: "0.82rem", color: isLight ? "#0f172a" : "#f8fafc" }}>
                         Algorithmic Solutions & Complexity
                       </strong>
-                      <span style={{ display: "block", fontSize: "0.74rem", color: isLight ? "#64748b" : "#94a3b8" }}>
+                      <span style={{ display: "block", fontSize: "0.70rem", color: isLight ? "#64748b" : "#94a3b8" }}>
                         Optimal patterns, invariants, and Big-O complexity bounds
                       </span>
                     </div>
@@ -907,36 +906,36 @@ function ProblemDetailsInner() {
                     type="button"
                     onClick={fetchAIReview}
                     disabled={isReviewLoading}
-                    style={{ background: "#7850ff", border: "none", borderRadius: "6px", color: "#fff", fontSize: "0.74rem", fontWeight: "bold", padding: "5px 10px", cursor: "pointer" }}
+                    style={{ background: "#7850ff", border: "none", borderRadius: "5px", color: "#fff", fontSize: "0.70rem", fontWeight: "bold", padding: "4px 8px", cursor: "pointer" }}
                   >
                     {isReviewLoading ? "Analyzing..." : "Re-evaluate"}
                   </button>
                 </div>
 
                 {isReviewLoading ? (
-                  <div style={{ padding: "3rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: "#c084fc" }}>
-                    <div className="spinner" style={{ width: 28, height: 28, border: "3px solid rgba(192, 132, 252, 0.2)", borderTopColor: "#c084fc", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                    <span style={{ fontWeight: "600", fontSize: "0.85rem", color: isLight ? "#0f172a" : "#f1f5f9" }}>Evaluating optimal solution approaches...</span>
+                  <div style={{ padding: "2.5rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.5rem", color: "#c084fc" }}>
+                    <div className="spinner" style={{ width: 24, height: 24, border: "2px solid rgba(192, 132, 252, 0.2)", borderTopColor: "#c084fc", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                    <span style={{ fontWeight: "600", fontSize: "0.78rem", color: isLight ? "#0f172a" : "#f1f5f9" }}>Evaluating optimal solution approaches...</span>
                   </div>
                 ) : aiReview ? (
-                  <div style={{ background: isLight ? "#ffffff" : "#080c14", border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, borderRadius: "8px", padding: "14px", fontSize: "0.84rem", lineHeight: "1.6" }}>
-                    <AIContentRenderer content={aiReview.review} />
+                  <div style={{ background: isLight ? "#ffffff" : "#080c14", border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, borderRadius: "6px", padding: "12px", fontSize: "0.78rem", lineHeight: "1.5" }}>
+                    <AIContentRenderer content={aiReview.review} compact />
                   </div>
                 ) : (
-                  <div style={{ padding: "2rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", background: "rgba(120, 80, 255, 0.04)", border: "1px dashed rgba(120, 80, 255, 0.25)", borderRadius: "8px" }}>
-                    <Sparkles size={24} color="#c084fc" />
+                  <div style={{ padding: "1.5rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", background: "rgba(120, 80, 255, 0.04)", border: "1px dashed rgba(120, 80, 255, 0.25)", borderRadius: "6px" }}>
+                    <Sparkles size={20} color="#c084fc" />
                     <div>
-                      <strong style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.92rem" }}>Instant Solution & Complexity Breakdown</strong>
-                      <p style={{ margin: "4px 0 0 0", color: "#94a3b8", fontSize: "0.78rem" }}>
+                      <strong style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.82rem" }}>Instant Solution & Complexity Breakdown</strong>
+                      <p style={{ margin: "3px 0 0 0", color: "#94a3b8", fontSize: "0.72rem" }}>
                         Explore optimal approaches, Big-O trade-offs, and edge case strategies for {problemWithStatus.title}.
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={fetchAIReview}
-                      style={{ background: "linear-gradient(135deg, #7850ff 0%, #a855f7 100%)", border: "none", borderRadius: "7px", color: "#fff", fontWeight: "bold", fontSize: "0.8rem", padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
+                      style={{ background: "linear-gradient(135deg, #7850ff 0%, #a855f7 100%)", border: "none", borderRadius: "6px", color: "#fff", fontWeight: "bold", fontSize: "0.74rem", padding: "6px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" }}
                     >
-                      <Sparkles size={14} />
+                      <Sparkles size={12} />
                       Generate Solution Walkthrough
                     </button>
                   </div>
@@ -948,15 +947,15 @@ function ProblemDetailsInner() {
                 LEFT TAB 4: AI REVIEW & MENTOR
                 --------------------------------------------------------------- */}
             {activeLeftTab === "aiReview" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                <div style={{ background: isLight ? "#fdf2f8" : "rgba(236, 72, 153, 0.08)", border: `1px solid ${isLight ? "#fbcfe8" : "rgba(236, 72, 153, 0.25)"}`, borderRadius: "8px", padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <Sparkles size={18} color="#ec4899" />
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ background: isLight ? "#fdf2f8" : "rgba(236, 72, 153, 0.08)", border: `1px solid ${isLight ? "#fbcfe8" : "rgba(236, 72, 153, 0.25)"}`, borderRadius: "6px", padding: "10px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Sparkles size={16} color="#ec4899" />
                     <div>
-                      <strong style={{ fontSize: "0.9rem", color: isLight ? "#831843" : "#f472b6" }}>
+                      <strong style={{ fontSize: "0.82rem", color: isLight ? "#831843" : "#f472b6" }}>
                         AI Code Review & Mentor
                       </strong>
-                      <span style={{ display: "block", fontSize: "0.74rem", color: isLight ? "#9d174d" : "#cbd5e1" }}>
+                      <span style={{ display: "block", fontSize: "0.70rem", color: isLight ? "#9d174d" : "#cbd5e1" }}>
                         Live analysis of code quality, invariants, and edge case safety
                       </span>
                     </div>
@@ -968,46 +967,46 @@ function ProblemDetailsInner() {
                     style={{
                       background: "linear-gradient(135deg, #ec4899 0%, #db2777 100%)",
                       border: "none",
-                      borderRadius: "6px",
+                      borderRadius: "5px",
                       color: "#fff",
-                      fontSize: "0.74rem",
+                      fontSize: "0.70rem",
                       fontWeight: "bold",
-                      padding: "5px 12px",
+                      padding: "4px 10px",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                       gap: "4px"
                     }}
                   >
-                    <Sparkles size={12} />
+                    <Sparkles size={11} />
                     {isReviewLoading ? "Analyzing..." : "Review My Code"}
                   </button>
                 </div>
 
                 {isReviewLoading ? (
-                  <div style={{ padding: "3rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: "#ec4899" }}>
-                    <div className="spinner" style={{ width: 28, height: 28, border: "3px solid rgba(236, 72, 153, 0.2)", borderTopColor: "#ec4899", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                    <span style={{ fontWeight: "600", fontSize: "0.85rem", color: isLight ? "#0f172a" : "#f1f5f9" }}>Analyzing code structure and correctness...</span>
+                  <div style={{ padding: "2.5rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.5rem", color: "#ec4899" }}>
+                    <div className="spinner" style={{ width: 24, height: 24, border: "2px solid rgba(236, 72, 153, 0.2)", borderTopColor: "#ec4899", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                    <span style={{ fontWeight: "600", fontSize: "0.78rem", color: isLight ? "#0f172a" : "#f1f5f9" }}>Analyzing code structure and correctness...</span>
                   </div>
                 ) : aiReview ? (
-                  <div style={{ background: isLight ? "#ffffff" : "#080c14", border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, borderRadius: "8px", padding: "14px", fontSize: "0.84rem", lineHeight: "1.6" }}>
-                    <AIContentRenderer content={aiReview.review} />
+                  <div style={{ background: isLight ? "#ffffff" : "#080c14", border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, borderRadius: "6px", padding: "12px", fontSize: "0.78rem", lineHeight: "1.5" }}>
+                    <AIContentRenderer content={aiReview.review} compact />
                   </div>
                 ) : (
-                  <div style={{ padding: "2.5rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", background: "rgba(236, 72, 153, 0.03)", border: "1px dashed rgba(236, 72, 153, 0.2)", borderRadius: "8px" }}>
-                    <Brain size={26} color="#ec4899" />
+                  <div style={{ padding: "2rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "8px", background: "rgba(236, 72, 153, 0.03)", border: "1px dashed rgba(236, 72, 153, 0.2)", borderRadius: "6px" }}>
+                    <Brain size={22} color="#ec4899" />
                     <div>
-                      <strong style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.92rem" }}>Deep AI Code Review</strong>
-                      <p style={{ margin: "4px 0 0 0", color: "#94a3b8", fontSize: "0.78rem" }}>
+                      <strong style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.82rem" }}>Deep AI Code Review</strong>
+                      <p style={{ margin: "3px 0 0 0", color: "#94a3b8", fontSize: "0.72rem" }}>
                         Click below to get instant feedback on time complexity, potential bugs, and optimization paths.
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={fetchAIReview}
-                      style={{ background: "linear-gradient(135deg, #ec4899 0%, #db2777 100%)", border: "none", borderRadius: "7px", color: "#fff", fontWeight: "bold", fontSize: "0.8rem", padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
+                      style={{ background: "linear-gradient(135deg, #ec4899 0%, #db2777 100%)", border: "none", borderRadius: "6px", color: "#fff", fontWeight: "bold", fontSize: "0.74rem", padding: "6px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: "5px" }}
                     >
-                      <Sparkles size={14} />
+                      <Sparkles size={12} />
                       Analyze Current Solution
                     </button>
                   </div>
