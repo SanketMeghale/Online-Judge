@@ -300,7 +300,7 @@ export default function ProgressPage() {
       )}
 
       {/* ── 2. TOP STAT CARDS ────────────────────────────────────────── */}
-      <div className="progress-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "10px" }}>
+      <div className="progress-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: "10px" }}>
         {/* Card 1: Problems Solved */}
         <StatCard
           icon={<CheckCircle2 size={15} style={{ color: "#10b981" }} />}

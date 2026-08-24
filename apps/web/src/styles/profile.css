@@ -576,7 +576,8 @@
   }
 
   .prof-stats-ribbon {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
 
   .prof-middle-grid {
@@ -584,54 +585,123 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
   .profile-page-root {
-    padding: 12px 0 28px;
+    padding: 10px 6px 32px;
+    gap: 10px;
   }
 
   .prof-hero-card {
     grid-template-columns: 1fr;
     padding: 14px 12px;
+    gap: 12px;
   }
 
   .prof-avatar-wrap {
     width: fit-content;
   }
 
-  .prof-stats-ribbon,
-  .prof-activity-grid,
-  .prof-diff-summary {
-    grid-template-columns: 1fr;
+  .prof-identity-content {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .prof-identity-top {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .prof-user-name {
+    font-size: 1.15rem !important;
+    overflow-wrap: anywhere;
+  }
+
+  .prof-meta-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.68rem;
+    line-height: 1.4;
+  }
+
+  .prof-level-capsule {
+    min-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+  }
+
+  .prof-level-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .prof-secondary-action {
+    justify-content: center;
+    width: 100%;
+    padding: 5px 8px;
+    font-size: 0.72rem;
+  }
+
+  .prof-stats-ribbon {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .prof-stat-card {
+    padding: 8px 10px;
+    gap: 8px;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .prof-stat-info {
+    min-width: 0;
+  }
+
+  .prof-stat-val {
+    font-size: 1rem;
+    overflow-wrap: anywhere;
   }
 
   .prof-glass-panel,
   .prof-submissions-panel {
     padding: 12px 10px;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .prof-panel-head,
   .prof-mentor-banner {
     align-items: flex-start;
     flex-direction: column;
+    gap: 8px;
   }
 
-  .prof-identity-content,
-  .prof-identity-top,
-  .prof-badges-strip,
-  .prof-glass-panel,
-  .prof-submissions-panel {
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  .prof-user-name,
-  .prof-email-text,
-  .prof-meta-line {
-    overflow-wrap: anywhere;
+  .prof-diff-summary {
+    grid-template-columns: 1fr;
+    gap: 6px;
   }
 
   .prof-badges-strip {
     flex-wrap: wrap;
+    gap: 5px;
+  }
+}
+
+@media (max-width: 400px) {
+  .prof-stats-ribbon {
+    grid-template-columns: 1fr;
+  }
+
+  .prof-level-actions {
+    grid-template-columns: 1fr;
   }
 }
 

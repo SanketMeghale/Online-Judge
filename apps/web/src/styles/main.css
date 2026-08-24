@@ -4282,12 +4282,17 @@ canvas {
     z-index: 990 !important;
   }
 
-  .content-shell.content-shell-workspace {
+  .content-shell.content-shell-workspace,
+  .ai-coach-page-container,
+  .company-sheets-container,
+  .company-detail-container,
+  .mock-studio-root {
     height: auto !important;
     max-height: none !important;
-    overflow-y: auto !important;
+    min-height: auto !important;
+    overflow-y: visible !important;
     overflow-x: hidden !important;
-    padding: 8px 8px 36px !important;
+    padding: 6px 6px 36px !important;
   }
 
   .responsive-page-header {

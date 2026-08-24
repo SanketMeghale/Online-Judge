@@ -1300,6 +1300,14 @@
    RESPONSIVE LAYOUT BREAKPOINTS
    ========================================================================== */
 @media (max-width: 900px) {
+  .company-sheets-container,
+  .company-detail-container {
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+    flex: none !important;
+  }
+
   .company-stats-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
