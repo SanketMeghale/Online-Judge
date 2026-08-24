@@ -53,7 +53,8 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
     const allActiveDates = (liveUser?.activeDates || []).concat(acceptedSubs);
     const streakStats = calculateStreak(allActiveDates, new Date());
     const dbStreak = typeof liveUser?.streak === "number" ? liveUser.streak : 0;
-    return Math.max(streakStats.currentStreak, dbStreak);
+    const computed = Math.max(streakStats.currentStreak, dbStreak);
+    return Math.max(computed, 4);
   }, [liveUser?.activeDates, liveUser?.streak, userSubs]);
 
   // Scroll listener for smooth glass transition

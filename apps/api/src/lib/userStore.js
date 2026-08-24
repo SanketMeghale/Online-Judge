@@ -20,12 +20,17 @@ function createDemoUsers() {
     timezone: "UTC-5 (Eastern Time)",
     ranking: 120,
     xp: 850,
-    streak: 3,
-    bestStreak: 7,
+    streak: 4,
+    bestStreak: 8,
     badges: ["New Challenger"],
     solvedProblemIds: ["two-sum", "valid-parentheses"],
     attemptedProblemIds: ["two-sum", "valid-parentheses"],
-    activeDates: [formatDateKey(new Date())],
+    activeDates: [
+      formatDateKey(new Date(Date.now() - 3 * 86400000)),
+      formatDateKey(new Date(Date.now() - 2 * 86400000)),
+      formatDateKey(new Date(Date.now() - 86400000)),
+      formatDateKey(new Date())
+    ],
     stats: {
       totalSubmissions: 10,
       acceptedSubmissions: 8,
