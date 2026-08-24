@@ -175,13 +175,13 @@ function ProblemDetailsInner() {
     };
   }, [isResizing, splitRatio]);
 
-  // Vertical Resizing between Code Editor and Bottom Execution Panel (Default: 58% Editor / 42% Exec)
+  // Vertical Resizing between Code Editor and Bottom Execution Panel (Default: 52% Editor / 48% Exec)
   const [execSplitRatio, setExecSplitRatio] = useState(() => {
     try {
       const saved = Number(localStorage.getItem("judgo-exec-split-ratio"));
-      return Number.isFinite(saved) && saved >= 0.25 && saved <= 0.85 ? saved : 0.58;
+      return Number.isFinite(saved) && saved >= 0.25 && saved <= 0.72 ? saved : 0.52;
     } catch {
-      return 0.58;
+      return 0.52;
     }
   });
   const [isVerticalResizing, setIsVerticalResizing] = useState(false);
@@ -201,8 +201,9 @@ function ProblemDetailsInner() {
       if (!rect.height) return;
 
       const offset = e.clientY - rect.top;
-      const minRatio = Math.max(0.2, 160 / rect.height);
-      const maxRatio = Math.min(0.85, 1 - (120 / rect.height));
+      // Clamp: Editor min 180px, Exec panel min 220px
+      const minRatio = Math.max(0.22, 180 / rect.height);
+      const maxRatio = Math.min(0.72, 1 - (220 / rect.height));
       const nextRatio = Math.min(maxRatio, Math.max(minRatio, offset / rect.height));
       setExecSplitRatio(nextRatio);
 
@@ -515,7 +516,7 @@ function ProblemDetailsInner() {
             type="button"
             onClick={() => {
               setSplitRatio(0.45);
-              setExecSplitRatio(0.58);
+              setExecSplitRatio(0.52);
             }}
             title="Reset workspace layout split to default"
             style={{
@@ -1074,7 +1075,10 @@ function ProblemDetailsInner() {
           {/* Top Code Editor Area */}
           <div
             className="judgo-ide-editor-wrapper"
-            style={{ height: `calc(${execSplitRatio * 100}% - 4px)` }}
+            style={{
+              flex: `0 0 calc(${execSplitRatio * 100}% - 4px)`,
+              height: `calc(${execSplitRatio * 100}% - 4px)`
+            }}
           >
             <CodeEditor
               code={code}
@@ -1101,11 +1105,8 @@ function ProblemDetailsInner() {
             </span>
           </div>
 
-          {/* Bottom Execution Panel Attached to Editor */}
-          <div
-            className="judgo-ide-exec-panel"
-            style={{ height: `calc(${(1 - execSplitRatio) * 100}% - 4px)` }}
-          >
+          {/* Bottom Execution Panel Attached to Editor - uses full remaining height */}
+          <div className="judgo-ide-exec-panel">
             {/* Execution Panel Header Tabs */}
             <div className="judgo-ide-exec-nav">
               <div className="judgo-ide-exec-tabs">
