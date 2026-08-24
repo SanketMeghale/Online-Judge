@@ -397,10 +397,16 @@
 .company-sheet-page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
   width: 100%;
   max-width: 1380px;
   margin: 0 auto;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 2px;
 }
 
 /* Detail Hero */

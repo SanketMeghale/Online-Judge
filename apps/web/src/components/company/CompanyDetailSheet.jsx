@@ -167,7 +167,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
   }
 
   return (
-    <div className="company-sheet-page">
+    <div className="company-sheet-page" data-lenis-prevent="true">
       {/* 1. TOP HERO SECTION */}
       <div className="company-detail-hero">
         <div className="company-detail-top-bar">

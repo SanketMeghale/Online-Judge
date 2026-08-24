@@ -27,7 +27,13 @@ export function useSmoothScroll() {
             Boolean(node.closest?.(".problem-detail-page-container")) ||
             Boolean(node.closest?.(".problem-workspace-pane")) ||
             Boolean(node.closest?.(".console-results-panel")) ||
-            Boolean(node.closest?.(".ai-mentor-chat-scroll")))
+            Boolean(node.closest?.(".ai-mentor-chat-scroll")) ||
+            Boolean(node.closest?.(".ai-coach-page-container")) ||
+            Boolean(node.closest?.(".company-sheets-container")) ||
+            Boolean(node.closest?.(".company-sheet-page")) ||
+            Boolean(node.closest?.(".mock-studio-root")) ||
+            Boolean(node.closest?.(".mock-launcher-card")) ||
+            Boolean(node.closest?.(".mock-chat-scroll")))
       });
 
       let animationFrameId;

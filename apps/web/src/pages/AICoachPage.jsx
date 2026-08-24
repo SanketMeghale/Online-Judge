@@ -461,6 +461,7 @@ export default function AICoachPage() {
   return (
     <div
       className="ai-coach-page-container"
+      data-lenis-prevent="true"
       style={{
         display: "flex",
         flexDirection: "column",
