@@ -47,16 +47,7 @@ export default function RecommendedProblem({
           <Compass size={16} style={{ color: "#38bdf8" }} />
           <span>Recommended for you</span>
         </h3>
-        <span
-          style={{
-            fontSize: "0.72rem",
-            color: "#38bdf8",
-            background: "rgba(56, 189, 248, 0.1)",
-            padding: "2px 8px",
-            borderRadius: "4px",
-            fontWeight: "700"
-          }}
-        >
+        <span className="rec-targeted-chip">
           Targeted
         </span>
       </div>
@@ -68,19 +59,17 @@ export default function RecommendedProblem({
             <h4>{probTitle}</h4>
           </div>
           <span className="continue-topic">{probTopic}</span>
-          <span style={{ fontSize: "0.74rem", color: "var(--dash-text-muted)", marginTop: "2px" }}>
+          <span className="rec-reason-text">
             {probReason}
           </span>
         </div>
 
         <Link
           to={`/problems/${probId}`}
-          className="dash-btn-secondary"
+          className="dash-btn-secondary rec-solve-btn"
           style={{
             padding: "8px 14px",
             fontSize: "0.82rem",
-            borderColor: "rgba(56, 189, 248, 0.35)",
-            color: "#38bdf8",
             whiteSpace: "nowrap"
           }}
         >

@@ -93,7 +93,7 @@ export default function ActivityTimeline({ submissions = [], loading = false }) 
                   className="activity-item-name"
                   style={{ textDecoration: "none", color: "inherit" }}
                 >
-                  <span style={{ fontWeight: "600", color: item.isAC ? "#34d399" : "#f87171", marginRight: "4px" }}>
+                  <span className={`activity-status-label ${item.isAC ? "activity-status-ac" : "activity-status-fail"}`} style={{ fontWeight: "600", marginRight: "4px" }}>
                     {item.status}:
                   </span>
                   <span style={{ textTransform: "capitalize" }}>{item.title}</span>

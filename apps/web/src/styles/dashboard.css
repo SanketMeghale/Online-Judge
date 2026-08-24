@@ -1209,6 +1209,68 @@
   gap: 12px;
 }
 
+.ai-coach-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.ai-coach-icon-box {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: rgba(124, 58, 237, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c084fc;
+}
+
+.ai-coach-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: #c084fc;
+  background: rgba(124, 58, 237, 0.15);
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.rec-targeted-chip {
+  font-size: 0.72rem;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.rec-reason-text {
+  font-size: 0.74rem;
+  color: var(--dash-text-muted);
+  margin-top: 2px;
+}
+
+.rec-solve-btn {
+  border-color: rgba(56, 189, 248, 0.35);
+  color: #38bdf8;
+}
+
+.activity-status-label {
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.activity-status-ac {
+  color: #34d399;
+}
+
+.activity-status-fail {
+  color: #f87171;
+}
+
 .ai-coach-card {
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(15, 22, 40, 0.95) 100%);
   border: 1px solid rgba(124, 58, 237, 0.2);
@@ -1567,13 +1629,178 @@
   color: #475569;
 }
 
-[data-theme="light"] .ai-coach-card {
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.06) 0%, rgba(255, 255, 255, 0.95) 100%);
-  border: 1px solid rgba(124, 58, 237, 0.2);
+[data-theme="light"] .dash-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .dash-card-title {
+  color: #0f172a;
+}
+
+[data-theme="light"] .dash-card-link {
+  color: #6366f1;
+}
+
+[data-theme="light"] .dash-card-link:hover {
+  color: #4f46e5;
+}
+
+/* Continue Card & Recommended Card Body Strips in Light Theme */
+[data-theme="light"] .continue-card-body {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .continue-card-body:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .continue-title-row h4 {
+  color: #0f172a;
+}
+
+[data-theme="light"] .continue-topic {
+  color: #64748b;
+}
+
+[data-theme="light"] .diff-easy {
+  color: #059669;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="light"] .diff-medium {
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+[data-theme="light"] .diff-hard {
+  color: #dc2626;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+/* Recent Activity Items in Light Theme */
+[data-theme="light"] .activity-item-row {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .activity-item-row:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+[data-theme="light"] .activity-item-name {
+  color: #0f172a;
+}
+
+[data-theme="light"] .activity-item-xp {
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.1);
+}
+
+[data-theme="light"] .activity-item-time {
+  color: #64748b;
+}
+
+[data-theme="light"] .activity-status-ac {
+  color: #059669 !important;
+}
+
+[data-theme="light"] .activity-status-fail {
+  color: #dc2626 !important;
+}
+
+/* Recommended Problem in Light Theme */
+[data-theme="light"] .rec-targeted-chip {
+  color: #0284c7;
+  background: rgba(2, 132, 199, 0.1);
+}
+
+[data-theme="light"] .rec-reason-text {
+  color: #64748b;
+}
+
+[data-theme="light"] .rec-solve-btn {
+  border: 1px solid rgba(2, 132, 199, 0.35);
+  color: #0284c7;
+  background: rgba(2, 132, 199, 0.05);
+}
+
+[data-theme="light"] .rec-solve-btn:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+}
+
+/* Judgo Intelligence Card in Light Theme */
+[data-theme="light"] .ai-coach-card {
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.06) 0%, #ffffff 100%);
+  border: 1px solid rgba(124, 58, 237, 0.25);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .ai-coach-title {
+  color: #0f172a;
+}
+
+[data-theme="light"] .ai-coach-icon-box {
+  background: rgba(124, 58, 237, 0.12);
+  color: #7c3aed;
+}
+
+[data-theme="light"] .ai-coach-tag {
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.1);
 }
 
 [data-theme="light"] .ai-coach-quote {
   color: #334155;
+}
+
+[data-theme="light"] .ai-coach-btn {
+  background: #7c3aed;
+  color: #ffffff;
+  border-color: #7c3aed;
+  box-shadow: 0 1px 3px rgba(124, 58, 237, 0.25);
+}
+
+[data-theme="light"] .ai-coach-btn:hover {
+  background: #6d28d9;
+  color: #ffffff;
+  border-color: #6d28d9;
+}
+
+/* Contest Card Countdown & Elements in Light Theme */
+[data-theme="light"] .contest-name {
+  color: #0f172a;
+}
+
+[data-theme="light"] .countdown-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .countdown-num {
+  color: #d97706;
+}
+
+[data-theme="light"] .countdown-unit {
+  color: #64748b;
+}
+
+[data-theme="light"] .goal-remaining-pill {
+  color: #475569;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+[data-theme="light"] .goal-action-link {
+  border-top-color: #e2e8f0;
 }
 

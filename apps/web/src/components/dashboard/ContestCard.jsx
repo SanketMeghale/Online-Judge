@@ -184,7 +184,7 @@ export default function ContestCard({
         </div>
 
         <div className="contest-meta">
-          <h4 className="contest-name" style={{ fontSize: "0.92rem", fontWeight: "700", color: "#f8fafc", marginBottom: "3px" }}>
+          <h4 className="contest-name" style={{ fontSize: "0.92rem", fontWeight: "700", marginBottom: "3px" }}>
             {contest.title}
           </h4>
           <span className="contest-sub" style={{ fontSize: "0.76rem", color: "var(--dash-text-muted)", display: "block" }}>
