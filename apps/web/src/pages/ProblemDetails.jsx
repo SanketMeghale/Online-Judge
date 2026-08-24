@@ -175,13 +175,13 @@ function ProblemDetailsInner() {
     };
   }, [isResizing, splitRatio]);
 
-  // Vertical Resizing between Code Editor and Bottom Execution Panel (Default: 52% Editor / 48% Exec)
+  // Vertical Resizing between Code Editor and Bottom Execution Panel (Default: 70% Editor / 30% Exec)
   const [execSplitRatio, setExecSplitRatio] = useState(() => {
     try {
       const saved = Number(localStorage.getItem("judgo-exec-split-ratio"));
-      return Number.isFinite(saved) && saved >= 0.25 && saved <= 0.72 ? saved : 0.52;
+      return Number.isFinite(saved) && saved >= 0.30 && saved <= 0.85 ? saved : 0.70;
     } catch {
-      return 0.52;
+      return 0.70;
     }
   });
   const [isVerticalResizing, setIsVerticalResizing] = useState(false);
@@ -201,9 +201,9 @@ function ProblemDetailsInner() {
       if (!rect.height) return;
 
       const offset = e.clientY - rect.top;
-      // Clamp: Editor min 180px, Exec panel min 220px
-      const minRatio = Math.max(0.22, 180 / rect.height);
-      const maxRatio = Math.min(0.72, 1 - (220 / rect.height));
+      // Clamp: Code editor min 300px, Execution panel min 180px
+      const minRatio = Math.max(0.25, 300 / rect.height);
+      const maxRatio = Math.min(0.85, 1 - (180 / rect.height));
       const nextRatio = Math.min(maxRatio, Math.max(minRatio, offset / rect.height));
       setExecSplitRatio(nextRatio);
 
@@ -516,7 +516,7 @@ function ProblemDetailsInner() {
             type="button"
             onClick={() => {
               setSplitRatio(0.45);
-              setExecSplitRatio(0.52);
+              setExecSplitRatio(0.70);
             }}
             title="Reset workspace layout split to default"
             style={{

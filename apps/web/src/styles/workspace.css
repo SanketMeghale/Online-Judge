@@ -263,7 +263,8 @@
 .judgo-ide-editor-wrapper {
   display: flex;
   flex-direction: column;
-  min-height: 160px;
+  min-height: 300px;
+  min-width: 0;
   overflow: hidden;
   position: relative;
   width: 100%;
@@ -273,7 +274,7 @@
 /* Horizontal Draggable Divider between Code Editor and Execution Panel */
 .judgo-ide-v-divider {
   align-items: center;
-  cursor: row-resize;
+  cursor: ns-resize;
   display: flex;
   flex-shrink: 0;
   height: 8px;
@@ -284,6 +285,7 @@
   user-select: none;
   width: 100%;
   z-index: 15;
+  background: transparent;
 }
 
 .judgo-ide-v-divider::before {
@@ -312,10 +314,10 @@
   display: flex;
   height: 12px;
   justify-content: center;
-  opacity: 0;
+  opacity: 0.7;
   pointer-events: none;
   position: absolute;
-  transition: opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  transition: opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
   width: 28px;
   z-index: 2;
 }
@@ -325,6 +327,7 @@
   border-color: var(--ws-splitter-hover);
   color: var(--ws-splitter-hover);
   opacity: 1;
+  transform: scale(1.1);
 }
 
 /* Bottom Execution Panel Attached to Editor - uses full remaining height */
@@ -337,7 +340,7 @@
   flex-direction: column;
   height: auto;
   max-height: 100%;
-  min-height: 220px;
+  min-height: 180px;
   min-width: 0;
   overflow: hidden;
   position: relative;
