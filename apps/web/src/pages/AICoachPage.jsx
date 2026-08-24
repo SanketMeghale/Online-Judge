@@ -254,28 +254,6 @@ export default function AICoachPage() {
     }
   }, [messages, isTyping, activeTab]);
 
-  // Enable two-finger touchpad / trackpad scrolling explicitly for AI mentor chat container
-  useEffect(() => {
-    if (activeTab !== "mentor") return;
-    const el = chatScrollRef.current;
-    if (!el) return;
-
-    const onWheel = (e) => {
-      const canScrollUp = el.scrollTop > 0 && e.deltaY < 0;
-      const canScrollDown = Math.ceil(el.scrollTop + el.clientHeight) < el.scrollHeight && e.deltaY > 0;
-      if (canScrollUp || canScrollDown) {
-        el.scrollTop += e.deltaY;
-        if (e.cancelable) e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => {
-      el.removeEventListener("wheel", onWheel);
-    };
-  }, [activeTab]);
-
   // Pre-fill latest submission code for Code Review tab if available
   useEffect(() => {
     if (!codeReviewSnippet && currentUserId) {
@@ -927,7 +905,11 @@ export default function AICoachPage() {
         )}
 
         {/* TAB 2: AI MOCK INTERVIEW STUDIO */}
-        {activeTab === "interview" && <MockInterviewStudio />}
+        {activeTab === "interview" && (
+          <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }}>
+            <MockInterviewStudio />
+          </div>
+        )}
 
         {/* TAB 3: WEAK TOPICS COMPLETE BREAKDOWN */}
         {activeTab === "weak" && (
@@ -940,9 +922,11 @@ export default function AICoachPage() {
               display: "flex",
               flexDirection: "column",
               gap: "8px",
-              height: "calc(100vh - 160px)",
-              minHeight: "440px",
-              overflowY: "auto"
+              flex: 1,
+              minHeight: 0,
+              overflowY: "auto",
+              overscrollBehavior: "contain",
+              WebkitOverflowScrolling: "touch"
             }}
           >
             <div>
@@ -1006,16 +990,18 @@ export default function AICoachPage() {
 
         {/* TAB 4: COMPANY INTERVIEW SHEETS */}
         {activeTab === "companies" && (
-          selectedCompanySheetId ? (
-            <CompanyDetailSheet
-              companyId={selectedCompanySheetId}
-              onBack={() => setSelectedCompanySheetId(null)}
-            />
-          ) : (
-            <CompanySheetsDashboard
-              onSelectCompany={(companyId) => setSelectedCompanySheetId(companyId)}
-            />
-          )
+          <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }}>
+            {selectedCompanySheetId ? (
+              <CompanyDetailSheet
+                companyId={selectedCompanySheetId}
+                onBack={() => setSelectedCompanySheetId(null)}
+              />
+            ) : (
+              <CompanySheetsDashboard
+                onSelectCompany={(companyId) => setSelectedCompanySheetId(companyId)}
+              />
+            )}
+          </div>
         )}
       </div>
     </div>

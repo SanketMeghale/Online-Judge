@@ -11,6 +11,12 @@
   margin: 0 auto;
   color: #f1f5f9;
   font-family: inherit;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 2px;
 }
 
 /* Header & Search Bar */
@@ -25,6 +31,7 @@
   position: relative;
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
 }
 
 .company-sheets-hero::before {
@@ -71,14 +78,15 @@
   align-items: center;
   gap: 6px;
   background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0 8px;
   height: 28px;
   border-radius: 6px;
   flex: 1 1 220px;
   max-width: 360px;
   transition: all 0.2s ease;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .company-search-box:focus-within {
@@ -86,17 +94,23 @@
   box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15);
 }
 
-.company-search-box input {
-  background: transparent;
-  border: none;
-  color: #f8fafc;
-  font-size: 0.74rem;
-  width: 100%;
-  outline: none;
+.company-search-box input,
+[data-theme="light"] .company-search-box input {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+  font-size: 0.74rem !important;
+  border-radius: 0 !important;
+  color: #f8fafc !important;
 }
 
 .company-search-box input::placeholder {
-  color: #64748b;
+  color: #64748b !important;
 }
 
 .company-category-pills {
@@ -907,6 +921,70 @@
 }
 
 [data-theme="light"] .company-card-title p {
+  color: #64748b;
+}
+
+[data-theme="light"] .company-search-box {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+[data-theme="light"] .company-search-box:focus-within {
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15) !important;
+}
+
+[data-theme="light"] .company-search-box input {
+  color: #0f172a !important;
+}
+
+[data-theme="light"] .company-search-box input::placeholder {
+  color: #94a3b8 !important;
+}
+
+[data-theme="light"] .company-cat-btn {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+
+[data-theme="light"] .company-cat-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+[data-theme="light"] .company-cat-btn.active {
+  background: rgba(124, 58, 237, 0.12);
+  border-color: rgba(124, 58, 237, 0.4);
+  color: #7c3aed;
+}
+
+[data-theme="light"] .company-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .company-card:hover {
+  border-color: #c4b5fd;
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.12);
+}
+
+[data-theme="light"] .company-card-title-wrap h3 {
+  color: #0f172a;
+}
+
+[data-theme="light"] .company-progress-stats .solved-text {
+  color: #475569;
+}
+
+[data-theme="light"] .company-progress-bar-bg {
+  background: #e2e8f0;
+}
+
+[data-theme="light"] .company-topic-pill {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
   color: #64748b;
 }
 
