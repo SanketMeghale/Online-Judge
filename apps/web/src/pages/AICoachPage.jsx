@@ -486,11 +486,11 @@ export default function AICoachPage() {
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "8px",
+        gap: "6px",
         width: "100%",
         maxWidth: "1360px",
         margin: "0 auto",
-        padding: "10px 16px 12px 16px",
+        padding: "6px 12px 8px 12px",
         height: "100%",
         maxHeight: "100%",
         minHeight: 0,
@@ -499,19 +499,19 @@ export default function AICoachPage() {
         flex: 1
       }}
     >
-      {/* 1. PRIMARY WORKSPACE NAVIGATION TABS (WITH ALWAYS-VIBRANT COLORFUL ICONS) */}
+      {/* 1. PRIMARY WORKSPACE NAVIGATION TABS */}
       <nav
         className="ai-mentor-tabs"
         style={{
           display: "inline-flex",
           alignItems: "center",
-          gap: "4px",
+          gap: "3px",
           background: isLight ? "rgba(241, 245, 249, 0.85)" : "rgba(15, 23, 42, 0.7)",
           border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-          borderRadius: "12px",
-          padding: "4px 5px",
+          borderRadius: "8px",
+          padding: "3px 4px",
           width: "fit-content",
-          boxShadow: isLight ? "0 1px 3px rgba(0, 0, 0, 0.03)" : "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+          boxShadow: isLight ? "0 1px 2px rgba(0, 0, 0, 0.03)" : "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
           flexShrink: 0
@@ -567,13 +567,13 @@ export default function AICoachPage() {
                 position: "relative",
                 display: "inline-flex",
                 alignItems: "center",
-                gap: "8px",
-                padding: "7px 14px",
-                borderRadius: "8px",
+                gap: "6px",
+                padding: "4px 10px",
+                borderRadius: "6px",
                 border: "none",
                 background: "transparent",
                 color: isActive ? (isLight ? "#0f172a" : "#f8fafc") : (isLight ? "#64748b" : "#94a3b8"),
-                fontSize: "0.84rem",
+                fontSize: "0.74rem",
                 fontWeight: isActive ? "700" : "500",
                 cursor: "pointer",
                 transition: "all 0.15s ease",
@@ -589,23 +589,23 @@ export default function AICoachPage() {
                     position: "absolute",
                     inset: 0,
                     background: isLight ? "#ffffff" : "#1e293b",
-                    borderRadius: "8px",
+                    borderRadius: "6px",
                     boxShadow: isLight
-                      ? "0 2px 8px rgba(0, 0, 0, 0.07), 0 1px 2px rgba(0, 0, 0, 0.04)"
-                      : "0 2px 10px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08)",
+                      ? "0 1px 4px rgba(0, 0, 0, 0.06)"
+                      : "0 2px 8px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.08)",
                     zIndex: 1
                   }}
                 />
               )}
 
-              {/* Colorful Icon Badge Chip (Always Vibrant in All States) */}
+              {/* Colorful Icon Badge Chip */}
               <div
                 style={{
                   position: "relative",
                   zIndex: 2,
-                  width: "22px",
-                  height: "22px",
-                  borderRadius: "6px",
+                  width: "18px",
+                  height: "18px",
+                  borderRadius: "4px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -615,7 +615,7 @@ export default function AICoachPage() {
                   transition: "all 0.15s ease"
                 }}
               >
-                <Icon size={14} style={{ color: tab.color }} />
+                <Icon size={11} style={{ color: tab.color }} />
               </div>
 
               {/* Tab Title */}
@@ -627,9 +627,9 @@ export default function AICoachPage() {
                   style={{
                     position: "relative",
                     zIndex: 2,
-                    fontSize: "0.62rem",
+                    fontSize: "0.58rem",
                     fontWeight: "700",
-                    padding: "1px 6px",
+                    padding: "1px 5px",
                     borderRadius: "999px",
                     background: isLight ? "rgba(16, 185, 129, 0.15)" : "rgba(16, 185, 129, 0.25)",
                     color: "#10b981",
@@ -653,7 +653,7 @@ export default function AICoachPage() {
             style={{
               background: isLight ? "#ffffff" : "#0d111a",
               border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: "12px",
+              borderRadius: "10px",
               display: "flex",
               flexDirection: "column",
               height: "100%",
@@ -671,18 +671,18 @@ export default function AICoachPage() {
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",
-                padding: "10px 16px",
+                padding: "6px 12px",
                 borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
                 background: isLight ? "#f8fafc" : "#090d16",
                 flexShrink: 0
               }}
             >
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Sparkles size={16} style={{ color: "#a855f7" }} />
-                  <span style={{ fontSize: "0.92rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Sparkles size={13} style={{ color: "#a855f7" }} />
+                  <span style={{ fontSize: "0.80rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc" }}>
                     Judgo AI Mentor
                   </span>
-                  <span style={{ fontSize: "0.68rem", color: isLight ? "#64748b" : "#94a3b8" }}>· Session active</span>
+                  <span style={{ fontSize: "0.64rem", color: isLight ? "#64748b" : "#94a3b8" }}>· Session active</span>
                 </div>
 
                 <button
@@ -692,21 +692,21 @@ export default function AICoachPage() {
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: "5px",
+                    gap: "4px",
                     background: "transparent",
                     border: "none",
                     color: isLight ? "#64748b" : "#94a3b8",
-                    fontSize: "0.78rem",
+                    fontSize: "0.70rem",
                     fontWeight: "500",
                     cursor: "pointer",
-                    padding: "4px 8px",
-                    borderRadius: "6px",
+                    padding: "2px 6px",
+                    borderRadius: "4px",
                     transition: "color 0.15s ease"
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = "#f87171")}
                   onMouseLeave={(e) => (e.currentTarget.style.color = isLight ? "#64748b" : "#94a3b8")}
                 >
-                  <Trash2 size={13} />
+                  <Trash2 size={11} />
                   <span>Clear Chat</span>
                 </button>
               </div>
@@ -721,10 +721,10 @@ export default function AICoachPage() {
                   overflowY: "auto",
                   overscrollBehavior: "contain",
                   WebkitOverflowScrolling: "touch",
-                  padding: "16px",
+                  padding: "10px 14px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "14px"
+                  gap: "8px"
                 }}
               >
                 {messages.map((msg) => {
@@ -735,7 +735,7 @@ export default function AICoachPage() {
                       style={{
                         display: "flex",
                         alignItems: "flex-start",
-                        gap: "10px",
+                        gap: "8px",
                         alignSelf: isAi ? "flex-start" : "flex-end",
                         maxWidth: isAi ? "96%" : "85%",
                         width: isAi ? "100%" : "auto"
@@ -744,9 +744,9 @@ export default function AICoachPage() {
                       {isAi && (
                         <div
                           style={{
-                            width: "28px",
-                            height: "28px",
-                            borderRadius: "8px",
+                            width: "22px",
+                            height: "22px",
+                            borderRadius: "6px",
                             background: isLight ? "rgba(124, 58, 237, 0.1)" : "rgba(124, 58, 237, 0.15)",
                             border: "1px solid rgba(124, 58, 237, 0.3)",
                             display: "flex",
@@ -757,20 +757,20 @@ export default function AICoachPage() {
                             marginTop: "2px"
                           }}
                         >
-                          <Bot size={16} />
+                          <Bot size={12} />
                         </div>
                       )}
 
-                      <div style={{ display: "flex", flexDirection: "column", gap: "4px", width: "100%" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "2px", width: "100%" }}>
                         <div
                           style={{
                             background: isAi ? (isLight ? "#f8fafc" : "#131b2e") : "linear-gradient(135deg, #4338ca 0%, #3730a3 100%)",
                             border: isAi ? (isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)") : "1px solid rgba(99, 102, 241, 0.3)",
-                            borderRadius: isAi ? "4px 12px 12px 12px" : "12px 12px 4px 12px",
-                            padding: "12px 16px",
+                            borderRadius: isAi ? "4px 10px 10px 10px" : "10px 10px 4px 10px",
+                            padding: "8px 12px",
                             color: isAi ? (isLight ? "#0f172a" : "#f8fafc") : "#ffffff",
-                            fontSize: "0.88rem",
-                            lineHeight: "1.5"
+                            fontSize: "0.80rem",
+                            lineHeight: "1.45"
                           }}
                         >
                           <AIContentRenderer content={msg.text} isUser={!isAi} />
@@ -780,14 +780,14 @@ export default function AICoachPage() {
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: "4px",
-                            fontSize: "0.68rem",
+                            gap: "3px",
+                            fontSize: "0.64rem",
                             color: isLight ? "#64748b" : "#64748b",
                             alignSelf: isAi ? "flex-start" : "flex-end"
                           }}
                         >
                           <span>{msg.time}</span>
-                          {!isAi && <CheckCheck size={12} style={{ color: "#818cf8" }} />}
+                          {!isAi && <CheckCheck size={11} style={{ color: "#818cf8" }} />}
                         </div>
                       </div>
                     </div>
@@ -800,10 +800,10 @@ export default function AICoachPage() {
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "8px",
+                      gap: "6px",
                       flexWrap: "wrap",
-                      marginLeft: "38px",
-                      marginTop: "4px"
+                      marginLeft: "30px",
+                      marginTop: "2px"
                     }}
                   >
                     {quickActions.map((action) => (
@@ -814,13 +814,13 @@ export default function AICoachPage() {
                         style={{
                           display: "inline-flex",
                           alignItems: "center",
-                          gap: "6px",
+                          gap: "4px",
                           background: isLight ? "#f8fafc" : "#080c14",
                           border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-                          borderRadius: "6px",
-                          padding: "6px 12px",
+                          borderRadius: "5px",
+                          padding: "4px 8px",
                           color: isLight ? "#334155" : "#cbd5e1",
-                          fontSize: "0.78rem",
+                          fontSize: "0.70rem",
                           fontWeight: "500",
                           cursor: "pointer",
                           transition: "all 0.15s ease"
@@ -844,23 +844,23 @@ export default function AICoachPage() {
 
                 {/* TYPING INDICATOR */}
                 {isTyping && (
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", marginLeft: "38px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "30px" }}>
                     <div
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
-                        gap: "6px",
+                        gap: "5px",
                         background: isLight ? "#f1f5f9" : "#131b2e",
                         border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-                        borderRadius: "8px",
-                        padding: "6px 12px",
-                        fontSize: "0.76rem",
+                        borderRadius: "6px",
+                        padding: "4px 8px",
+                        fontSize: "0.70rem",
                         color: isLight ? "#475569" : "#94a3b8"
                       }}
                     >
-                      <Bot size={13} style={{ color: "#c084fc" }} />
+                      <Bot size={11} style={{ color: "#c084fc" }} />
                       <span>Judgo AI is analyzing</span>
-                      <span className="animate-pulse" style={{ letterSpacing: "2px", fontWeight: "bold" }}>•••</span>
+                      <span className="animate-pulse" style={{ letterSpacing: "1px", fontWeight: "bold" }}>•••</span>
                     </div>
                   </div>
                 )}
@@ -876,8 +876,8 @@ export default function AICoachPage() {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "10px",
-                  padding: "10px 16px",
+                  gap: "8px",
+                  padding: "6px 12px",
                   borderTop: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
                   background: isLight ? "#f8fafc" : "#090d16",
                   flexShrink: 0
@@ -892,10 +892,10 @@ export default function AICoachPage() {
                     flex: 1,
                     background: isLight ? "#ffffff" : "rgba(255, 255, 255, 0.04)",
                     border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255, 255, 255, 0.08)",
-                    borderRadius: "8px",
-                    padding: "9px 14px",
+                    borderRadius: "6px",
+                    padding: "6px 10px",
                     color: isLight ? "#0f172a" : "#f8fafc",
-                    fontSize: "0.85rem",
+                    fontSize: "0.76rem",
                     outline: "none",
                     transition: "border-color 0.15s ease"
                   }}
@@ -911,8 +911,8 @@ export default function AICoachPage() {
                     border: "none",
                     color: "#ffffff",
                     cursor: inputVal.trim() && !isTyping ? "pointer" : "default",
-                    padding: "8px 14px",
-                    borderRadius: "8px",
+                    padding: "6px 10px",
+                    borderRadius: "6px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -920,7 +920,7 @@ export default function AICoachPage() {
                     transition: "all 0.15s ease"
                   }}
                 >
-                  <Send size={15} />
+                  <Send size={13} />
                 </button>
               </form>
             </div>
@@ -935,22 +935,22 @@ export default function AICoachPage() {
             style={{
               background: isLight ? "#ffffff" : "#0d111a",
               border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: "12px",
-              padding: "24px",
+              borderRadius: "10px",
+              padding: "16px",
               display: "flex",
               flexDirection: "column",
-              gap: "16px",
-              height: "calc(100vh - 200px)",
-              minHeight: "520px",
+              gap: "12px",
+              height: "calc(100vh - 160px)",
+              minHeight: "480px",
               overflowY: "auto"
             }}
           >
             <div>
-              <h2 style={{ fontSize: "1.1rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc", margin: 0 }}>Comprehensive Topic Mastery Profile</h2>
-              <p style={{ fontSize: "0.82rem", color: isLight ? "#475569" : "#94a3b8", margin: "4px 0 0 0" }}>Live analytics computed from your actual accepted and attempted submissions across all algorithmic tracks.</p>
+              <h2 style={{ fontSize: "0.95rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc", margin: 0 }}>Comprehensive Topic Mastery Profile</h2>
+              <p style={{ fontSize: "0.74rem", color: isLight ? "#475569" : "#94a3b8", margin: "2px 0 0 0" }}>Live analytics computed from your actual accepted and attempted submissions across all algorithmic tracks.</p>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "14px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "10px" }}>
               {(coachProfile?.allTopics || [
                 { topic: "Dynamic Programming", accuracy: 0, solvedCount: 0, totalInTopic: 4 },
                 { topic: "Graphs", accuracy: 0, solvedCount: 0, totalInTopic: 3 },
@@ -959,17 +959,17 @@ export default function AICoachPage() {
                 { topic: "Sliding Window", accuracy: 0, solvedCount: 0, totalInTopic: 3 },
                 { topic: "Arrays & Hash Tables", accuracy: 0, solvedCount: 0, totalInTopic: 4 }
               ]).map((t) => (
-                <div key={t.topic} style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "10px", padding: "16px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div key={t.topic} style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "8px", padding: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <strong style={{ fontSize: "0.92rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc" }}>{t.topic}</strong>
-                    <span style={{ fontSize: "0.84rem", fontWeight: "800", color: t.accuracy < 50 ? "#dc2626" : t.accuracy < 75 ? "#d97706" : "#059669" }}>
+                    <strong style={{ fontSize: "0.80rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc" }}>{t.topic}</strong>
+                    <span style={{ fontSize: "0.76rem", fontWeight: "800", color: t.accuracy < 50 ? "#dc2626" : t.accuracy < 75 ? "#d97706" : "#059669" }}>
                       {t.accuracy}%
                     </span>
                   </div>
-                  <span style={{ fontSize: "0.74rem", color: isLight ? "#64748b" : "#64748b" }}>
+                  <span style={{ fontSize: "0.68rem", color: isLight ? "#64748b" : "#64748b" }}>
                     {t.solvedCount || 0} / {t.totalInTopic || 3} challenges solved
                   </span>
-                  <div style={{ width: "100%", height: "6px", background: isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
+                  <div style={{ width: "100%", height: "4px", background: isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
                     <div
                       style={{
                         height: "100%",
@@ -985,9 +985,9 @@ export default function AICoachPage() {
                       marginTop: "auto",
                       background: isLight ? "rgba(124, 58, 237, 0.1)" : "rgba(124, 58, 237, 0.12)",
                       color: isLight ? "#6d28d9" : "#c084fc",
-                      borderRadius: "6px",
-                      padding: "6px 12px",
-                      fontSize: "0.76rem",
+                      borderRadius: "5px",
+                      padding: "4px 8px",
+                      fontSize: "0.70rem",
                       fontWeight: "600",
                       textDecoration: "none",
                       display: "flex",
@@ -996,7 +996,7 @@ export default function AICoachPage() {
                     }}
                   >
                     <span>Practice {t.topic}</span>
-                    <ChevronRight size={13} />
+                    <ChevronRight size={11} />
                   </Link>
                 </div>
               ))}
