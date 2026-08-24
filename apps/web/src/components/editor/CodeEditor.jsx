@@ -135,7 +135,8 @@ export default function CodeEditor({
   onReset,
   starterCode,
   isRunning = false,
-  isSubmitting = false
+  isSubmitting = false,
+  onScrollToExec
 }) {
   const currentCode = code !== undefined ? code : value || "";
   const handleCodeUpdate = onCodeChange || onChange || (() => {});
@@ -825,11 +826,37 @@ export default function CodeEditor({
 
       {/* Editor Status Bar */}
       <div className="editor-status" style={{ background: themePalette.gutterBg, padding: "4px 14px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center", color: "#64748b", fontSize: "0.78rem" }}>
-        <div style={{ display: "flex", gap: "12px" }}>
+        <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           <span>Ln {linesCount}, Col 1</span>
           <span>Tab: {tabSize}</span>
           <span>Size: {fontSize}px</span>
         </div>
+
+        {onScrollToExec && (
+          <button
+            type="button"
+            onClick={onScrollToExec}
+            title="Scroll down to Testcases and Execution Results"
+            style={{
+              background: isLight ? "rgba(99, 102, 241, 0.08)" : "rgba(99, 102, 241, 0.15)",
+              border: `1px solid ${isLight ? "rgba(99, 102, 241, 0.2)" : "rgba(99, 102, 241, 0.35)"}`,
+              borderRadius: "5px",
+              color: isLight ? "#4f46e5" : "#a5b4fc",
+              fontSize: "0.72rem",
+              fontWeight: "600",
+              padding: "2px 8px",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              transition: "all 0.15s ease"
+            }}
+          >
+            <span>Console / Testcases</span>
+            <ChevronDown size={12} />
+          </button>
+        )}
+
         <div style={{ display: "flex", alignItems: "center", gap: "6px", color: currentLangObj.color }}>
           <span>{currentLangObj.name}</span>
           <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: currentLangObj.color }} />

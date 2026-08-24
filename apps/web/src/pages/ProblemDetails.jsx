@@ -176,95 +176,21 @@ function ProblemDetailsInner() {
     };
   }, [isResizing, splitRatio]);
 
-  // Bottom Execution Panel Expansion state (Default: collapsed so Code Editor takes 100% full height)
-  const [isExecExpanded, setIsExecExpanded] = useState(() => {
-    try {
-      const saved = localStorage.getItem("judgo-exec-expanded");
-      return saved === "true";
-    } catch {
-      return false;
-    }
-  });
+  // Refs for 100% Code Editor and scrollable Execution Panel below it
+  const editorWrapperRef = useRef(null);
+  const execPanelRef = useRef(null);
 
-  const handleExecTabClick = useCallback((tabKey) => {
-    if (activeExecTab === tabKey && isExecExpanded) {
-      setIsExecExpanded(false);
-      try {
-        localStorage.setItem("judgo-exec-expanded", "false");
-      } catch {}
-    } else {
-      setActiveExecTab(tabKey);
-      setIsExecExpanded(true);
-      try {
-        localStorage.setItem("judgo-exec-expanded", "true");
-      } catch {}
+  const scrollToExec = useCallback(() => {
+    if (execPanelRef.current) {
+      execPanelRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, [activeExecTab, isExecExpanded]);
-
-  const toggleExecExpanded = useCallback(() => {
-    setIsExecExpanded((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem("judgo-exec-expanded", String(next));
-      } catch {}
-      return next;
-    });
   }, []);
 
-  // Vertical Resizing between Code Editor and Bottom Execution Panel (Default: 70% Editor / 30% Exec)
-  const [execSplitRatio, setExecSplitRatio] = useState(() => {
-    try {
-      const saved = Number(localStorage.getItem("judgo-exec-split-ratio"));
-      return Number.isFinite(saved) && saved >= 0.30 && saved <= 0.85 ? saved : 0.70;
-    } catch {
-      return 0.70;
+  const scrollToEditor = useCallback(() => {
+    if (editorWrapperRef.current) {
+      editorWrapperRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  });
-  const [isVerticalResizing, setIsVerticalResizing] = useState(false);
-  const rightPaneRef = useRef(null);
-
-  const startVerticalResizing = useCallback((e) => {
-    e.preventDefault();
-    setIsVerticalResizing(true);
   }, []);
-
-  useEffect(() => {
-    if (!isVerticalResizing) return;
-
-    function handlePointerMove(e) {
-      if (!rightPaneRef.current) return;
-      const rect = rightPaneRef.current.getBoundingClientRect();
-      if (!rect.height) return;
-
-      const offset = e.clientY - rect.top;
-      // Clamp: Code editor min 260px, Execution panel min 160px
-      const minRatio = Math.max(0.25, 260 / rect.height);
-      const maxRatio = Math.min(0.85, 1 - (160 / rect.height));
-      const nextRatio = Math.min(maxRatio, Math.max(minRatio, offset / rect.height));
-      setExecSplitRatio(nextRatio);
-
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new Event("resize"));
-      }
-    }
-
-    function handlePointerUp() {
-      setIsVerticalResizing(false);
-      try {
-        localStorage.setItem("judgo-exec-split-ratio", String(execSplitRatio));
-      } catch {}
-    }
-
-    window.addEventListener("pointermove", handlePointerMove);
-    window.addEventListener("pointerup", handlePointerUp);
-    window.addEventListener("pointercancel", handlePointerUp);
-
-    return () => {
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", handlePointerUp);
-      window.removeEventListener("pointercancel", handlePointerUp);
-    };
-  }, [isVerticalResizing, execSplitRatio]);
 
   const fetchAIHint = async (level = 1) => {
     setIsHintLoading(true);
@@ -441,10 +367,9 @@ function ProblemDetailsInner() {
 
     setIsRunning(true);
     setError("");
-    // Automatically switch execution panel on the right to Test Result tab and expand
+    // Automatically switch execution panel on the right to Test Result tab and scroll down
     setActiveExecTab("testResult");
-    setIsExecExpanded(true);
-    try { localStorage.setItem("judgo-exec-expanded", "true"); } catch {}
+    scrollToExec();
 
     const stdinToPass = activeExecTab === "custom" ? customInput : "";
 
@@ -481,10 +406,9 @@ function ProblemDetailsInner() {
 
     setIsSubmitting(true);
     setError("");
-    // Automatically switch execution panel on the right to Test Result tab and expand
+    // Automatically switch execution panel on the right to Test Result tab and scroll down
     setActiveExecTab("testResult");
-    setIsExecExpanded(true);
-    try { localStorage.setItem("judgo-exec-expanded", "true"); } catch {}
+    scrollToExec();
 
     try {
       const nextResult = await submitSolution({
@@ -1106,20 +1030,16 @@ function ProblemDetailsInner() {
         </div>
 
         {/* ===================================================================
-            RIGHT PANE: 100% Code Editor + Attached Bottom Execution Panel
+            RIGHT PANE: 100% Code Editor (Top) + Execution Panel (Below on Scroll)
             =================================================================== */}
         <div
           ref={rightPaneRef}
           className="judgo-ide-right-pane"
         >
-          {/* Top Code Editor Area: Takes 100% when collapsed, or resizable height when expanded */}
+          {/* Top Code Editor Area (Occupies 100% full height of right view) */}
           <div
+            ref={editorWrapperRef}
             className="judgo-ide-editor-wrapper"
-            style={{
-              flex: isExecExpanded ? `0 0 calc(${execSplitRatio * 100}% - 4px)` : "1 1 auto",
-              height: isExecExpanded ? `calc(${execSplitRatio * 100}% - 4px)` : "100%",
-              minHeight: isExecExpanded ? "220px" : "0"
-            }}
           >
             <CodeEditor
               code={code}
@@ -1132,55 +1052,26 @@ function ProblemDetailsInner() {
               starterCode={getStarterForLanguage(problemWithStatus, language)}
               isRunning={isRunning}
               isSubmitting={isSubmitting}
+              onScrollToExec={scrollToExec}
             />
           </div>
 
-          {/* Draggable Vertical Divider between Code Editor and Execution Panel (Visible when expanded) */}
-          {isExecExpanded && (
-            <div
-              className={`judgo-ide-v-divider${isVerticalResizing ? " is-active" : ""}`}
-              onPointerDown={startVerticalResizing}
-              title="Drag to resize Code Editor and Execution panel vertically (ns-resize)"
-            >
-              <span className="judgo-ide-v-divider-handle">
-                <GripHorizontal size={12} />
-              </span>
-            </div>
-          )}
-
-          {/* Bottom Execution Panel Attached to Editor */}
+          {/* Bottom Execution Panel - Always rendered directly below Code Editor */}
           <div
-            className={`judgo-ide-exec-panel ${isExecExpanded ? "is-expanded" : "is-collapsed"}`}
-            style={{
-              flex: isExecExpanded ? "1 1 auto" : "0 0 36px",
-              height: isExecExpanded ? "auto" : "36px",
-              minHeight: isExecExpanded ? "180px" : "36px",
-              maxHeight: isExecExpanded ? "100%" : "36px"
-            }}
+            ref={execPanelRef}
+            className="judgo-ide-exec-panel"
           >
             {/* Execution Panel Header Tabs */}
-            <div
-              className="judgo-ide-exec-nav"
-              onClick={() => {
-                if (!isExecExpanded) {
-                  setIsExecExpanded(true);
-                  try { localStorage.setItem("judgo-exec-expanded", "true"); } catch {}
-                }
-              }}
-              style={{ cursor: isExecExpanded ? "default" : "pointer" }}
-            >
+            <div className="judgo-ide-exec-nav">
               <div className="judgo-ide-exec-tabs">
                 {/* Exec Tab 1: Testcases */}
                 <button
                   type="button"
-                  className={`judgo-ide-exec-tab-btn${activeExecTab === "testcases" && isExecExpanded ? " is-active" : ""}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleExecTabClick("testcases");
-                  }}
+                  className={`judgo-ide-exec-tab-btn${activeExecTab === "testcases" ? " is-active" : ""}`}
+                  onClick={() => setActiveExecTab("testcases")}
                   style={{
-                    borderBottomColor: activeExecTab === "testcases" && isExecExpanded ? "#06b6d4" : "transparent",
-                    color: activeExecTab === "testcases" && isExecExpanded ? (isLight ? "#0891b2" : "#22d3ee") : undefined
+                    borderBottomColor: activeExecTab === "testcases" ? "#06b6d4" : "transparent",
+                    color: activeExecTab === "testcases" ? (isLight ? "#0891b2" : "#22d3ee") : undefined
                   }}
                 >
                   <Layers size={14} style={{ color: "#06b6d4" }} />
@@ -1190,13 +1081,10 @@ function ProblemDetailsInner() {
                 {/* Exec Tab 2: Custom Input */}
                 <button
                   type="button"
-                  className={`judgo-ide-exec-tab-btn${activeExecTab === "custom" && isExecExpanded ? " is-active" : ""}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleExecTabClick("custom");
-                  }}
+                  className={`judgo-ide-exec-tab-btn${activeExecTab === "custom" ? " is-active" : ""}`}
+                  onClick={() => setActiveExecTab("custom")}
                   style={{
-                    borderBottomColor: activeExecTab === "custom" && isExecExpanded ? "#8b5cf6" : "transparent",
+                    borderBottomColor: activeExecTab === "custom" ? "#8b5cf6" : "transparent",
                     color: activeExecTab === "custom" ? (isLight ? "#7c3aed" : "#a78bfa") : undefined
                   }}
                 >
@@ -1207,14 +1095,11 @@ function ProblemDetailsInner() {
                 {/* Exec Tab 3: Test Result */}
                 <button
                   type="button"
-                  className={`judgo-ide-exec-tab-btn${activeExecTab === "testResult" && isExecExpanded ? " is-active" : ""}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleExecTabClick("testResult");
-                  }}
+                  className={`judgo-ide-exec-tab-btn${activeExecTab === "testResult" ? " is-active" : ""}`}
+                  onClick={() => setActiveExecTab("testResult")}
                   style={{
-                    borderBottomColor: activeExecTab === "testResult" && isExecExpanded ? "#16a34a" : "transparent",
-                    color: activeExecTab === "testResult" && isExecExpanded ? (isLight ? "#15803d" : "#4ade80") : undefined
+                    borderBottomColor: activeExecTab === "testResult" ? "#16a34a" : "transparent",
+                    color: activeExecTab === "testResult" ? (isLight ? "#15803d" : "#4ade80") : undefined
                   }}
                 >
                   <Zap size={14} style={{ color: "#16a34a", fill: "#16a34a" }} />
@@ -1238,14 +1123,11 @@ function ProblemDetailsInner() {
                 {/* Exec Tab 4: Submissions */}
                 <button
                   type="button"
-                  className={`judgo-ide-exec-tab-btn${activeExecTab === "submissions" && isExecExpanded ? " is-active" : ""}`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleExecTabClick("submissions");
-                  }}
+                  className={`judgo-ide-exec-tab-btn${activeExecTab === "submissions" ? " is-active" : ""}`}
+                  onClick={() => setActiveExecTab("submissions")}
                   style={{
-                    borderBottomColor: activeExecTab === "submissions" && isExecExpanded ? "#ea580c" : "transparent",
-                    color: activeExecTab === "submissions" && isExecExpanded ? (isLight ? "#c2410c" : "#fb923c") : undefined
+                    borderBottomColor: activeExecTab === "submissions" ? "#ea580c" : "transparent",
+                    color: activeExecTab === "submissions" ? (isLight ? "#c2410c" : "#fb923c") : undefined
                   }}
                 >
                   <History size={14} style={{ color: "#f97316" }} />
@@ -1267,15 +1149,12 @@ function ProblemDetailsInner() {
                 </button>
               </div>
 
-              {/* Right Action: Expand/Collapse Toggle Button */}
+              {/* Right Action: Quick Jump to Editor */}
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleExecExpanded();
-                  }}
-                  title={isExecExpanded ? "Collapse execution panel (100% Code Editor)" : "Expand execution panel"}
+                  onClick={scrollToEditor}
+                  title="Scroll back up to Code Editor"
                   style={{
                     background: isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.06)",
                     border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255, 255, 255, 0.1)"}`,
@@ -1283,7 +1162,7 @@ function ProblemDetailsInner() {
                     color: isLight ? "#475569" : "#94a3b8",
                     fontSize: "0.72rem",
                     fontWeight: "600",
-                    padding: "2px 8px",
+                    padding: "3px 8px",
                     cursor: "pointer",
                     display: "inline-flex",
                     alignItems: "center",
@@ -1291,15 +1170,14 @@ function ProblemDetailsInner() {
                     transition: "all 0.15s ease"
                   }}
                 >
-                  {isExecExpanded ? <ChevronDown size={13} /> : <ChevronUp size={13} />}
-                  <span>{isExecExpanded ? "Collapse" : "Console"}</span>
+                  <ChevronUp size={13} />
+                  <span>Top / Editor</span>
                 </button>
               </div>
             </div>
 
-            {/* Execution Panel Content Body (Visible when expanded) */}
-            {isExecExpanded && (
-              <div className="judgo-ide-exec-body">
+            {/* Execution Panel Content Body - Always Rendered */}
+            <div className="judgo-ide-exec-body">
               {/* ---------------------------------------------------------------
                   EXEC TAB 1: TESTCASES
                   --------------------------------------------------------------- */}
@@ -1672,7 +1550,6 @@ function ProblemDetailsInner() {
                 </div>
               )}
             </div>
-          )}
           </div>
         </div>
       </div>
