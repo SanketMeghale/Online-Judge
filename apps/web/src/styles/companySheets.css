@@ -146,8 +146,8 @@
 /* Company Grid */
 .company-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 12px;
 }
 
 @media (max-width: 640px) {
@@ -208,112 +208,157 @@
   .company-card,
   .company-detail-card,
   .company-ai-assistant-card {
-    padding: 10px 12px;
+    padding: 14px 16px;
   }
 }
 
-/* Modern Compact Company Card Block */
+/* Modern Premium Developer Card Block */
 .company-card {
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.35) 0%, rgba(15, 23, 42, 0.6) 100%);
+  background: rgba(15, 23, 42, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
-  padding: 10px 12px;
+  border-radius: 16px;
+  padding: 15px 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 8px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  gap: 12px;
+  min-height: 175px;
+  box-sizing: border-box;
+  transition: all 180ms cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
 }
 
 .company-card:hover {
   transform: translateY(-2px);
-  border-color: rgba(124, 58, 237, 0.4);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3), 0 0 10px rgba(124, 58, 237, 0.12);
+  border-color: rgba(124, 58, 237, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32), 0 0 0 1px rgba(124, 58, 237, 0.15);
 }
 
+.company-card:hover .company-view-action .view-arrow {
+  transform: translateX(3px);
+}
+
+/* 1. Header Row */
 .company-card-top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
 }
 
 .company-card-brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  min-width: 0;
 }
 
 .company-card-logo-wrap {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
-.company-card-title-wrap h3 {
-  font-size: 0.82rem;
+.company-card-title-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.company-card-title-wrap .company-name {
+  font-size: 1.08rem;
   font-weight: 700;
   margin: 0;
   color: #f8fafc;
-  line-height: 1.2;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .company-card-category {
-  font-size: 0.62rem;
+  font-size: 0.72rem;
   color: #94a3b8;
   font-weight: 500;
+  margin-top: 1px;
 }
 
 .company-diff-badge {
-  font-size: 0.58rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
   font-weight: 700;
-  padding: 1.5px 5px;
-  border-radius: 4px;
+  padding: 2.5px 7px;
+  border-radius: 6px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+
+.company-diff-badge .diff-icon {
+  flex-shrink: 0;
 }
 
 .company-diff-badge.hard {
   background: rgba(239, 68, 68, 0.12);
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
 .company-diff-badge.medium-hard,
 .company-diff-badge.medium {
   background: rgba(245, 158, 11, 0.12);
   color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
 .company-diff-badge.easy-medium,
 .company-diff-badge.easy {
   background: rgba(16, 185, 129, 0.12);
   color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
-/* Card Progress Section */
+/* 2. Progress Row */
 .company-card-progress {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 5px;
+  margin: 2px 0;
 }
 
 .company-progress-stats {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.66rem;
+  font-size: 0.76rem;
+}
+
+.company-progress-stats .solved-stat-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.company-progress-stats .check-icon {
+  color: #a855f7;
+  flex-shrink: 0;
+}
+
+.company-progress-stats .check-icon.completed {
+  color: #10b981;
 }
 
 .company-progress-stats .solved-text {
@@ -321,15 +366,30 @@
   font-weight: 600;
 }
 
+.company-progress-stats .completed-badge {
+  font-size: 0.60rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
 .company-progress-stats .percent-text {
   color: #c084fc;
   font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.company-progress-stats .percent-text.completed {
+  color: #34d399;
 }
 
 .company-progress-bar-bg {
   width: 100%;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.06);
+  height: 4px;
+  background: rgba(255, 255, 255, 0.07);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -341,53 +401,74 @@
   transition: width 0.4s ease;
 }
 
-/* Card Footer: Topics & View Action */
+.company-progress-bar-fill.completed {
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+}
+
+/* 3. Footer: Topics & View Sheet Action */
 .company-card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 6px;
-  margin-top: 2px;
+  gap: 8px;
+  margin-top: auto;
 }
 
 .company-card-topics {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   flex-wrap: wrap;
   flex: 1;
+  min-width: 0;
 }
 
 .company-topic-pill {
-  font-size: 0.60rem;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  color: #94a3b8;
-  padding: 1px 4px;
-  border-radius: 3px;
-}
-
-.company-view-btn {
-  padding: 2px 8px;
-  border-radius: 4px;
-  background: rgba(124, 58, 237, 0.12);
-  border: 1px solid rgba(124, 58, 237, 0.3);
-  color: #c084fc;
-  font-size: 0.66rem;
-  font-weight: 700;
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 4px;
-  transition: all 0.15s ease;
+  font-size: 0.68rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.company-topic-pill .topic-prefix {
+  color: #a855f7;
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+.company-topic-pill.topic-more {
+  color: #c084fc;
+  font-weight: 700;
+  background: rgba(124, 58, 237, 0.1);
+  border-color: rgba(124, 58, 237, 0.25);
+}
+
+.company-view-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #c084fc;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: color 180ms ease;
   flex-shrink: 0;
 }
 
-.company-view-btn:hover {
-  background: #7c3aed;
-  color: #ffffff;
-  border-color: #7c3aed;
+.company-view-action:hover {
+  color: #e9d5ff;
+}
+
+.company-view-action .view-arrow {
+  transition: transform 180ms ease;
 }
 
 /* ==========================================================================
@@ -973,11 +1054,21 @@
 
 [data-theme="light"] .company-card:hover {
   border-color: #c4b5fd;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.12);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.12);
 }
 
-[data-theme="light"] .company-card-title-wrap h3 {
+[data-theme="light"] .company-card-logo-wrap {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .company-card-title-wrap .company-name {
   color: #0f172a;
+}
+
+[data-theme="light"] .company-card-category {
+  color: #64748b;
 }
 
 [data-theme="light"] .company-progress-stats .solved-text {
@@ -992,6 +1083,20 @@
   background: #f1f5f9;
   border-color: #e2e8f0;
   color: #64748b;
+}
+
+[data-theme="light"] .company-topic-pill.topic-more {
+  background: rgba(124, 58, 237, 0.08);
+  border-color: rgba(124, 58, 237, 0.2);
+  color: #7c3aed;
+}
+
+[data-theme="light"] .company-view-action {
+  color: #7c3aed;
+}
+
+[data-theme="light"] .company-view-action:hover {
+  color: #6d28d9;
 }
 
 [data-theme="light"] .company-detail-card,
