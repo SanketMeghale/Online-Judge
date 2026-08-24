@@ -12,11 +12,7 @@ export default function AppLayout({ children }) {
   const location = useLocation();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  const isFullHeightWorkspace =
-    location.pathname.startsWith("/ai-coach") ||
-    location.pathname.startsWith("/interviewer") ||
-    location.pathname.startsWith("/companies") ||
-    location.pathname.startsWith("/problems/");
+  const isFullHeightWorkspace = location.pathname.startsWith("/problems/");
 
   return (
     <div className="app">
@@ -31,7 +27,7 @@ export default function AppLayout({ children }) {
           <div
             key={location.pathname}
             className="page-enter-fade"
-            style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", minHeight: 0 }}
+            style={{ width: "100%", minHeight: "100%", display: "flex", flexDirection: "column" }}
           >
             <ErrorBoundary>
               {children || <Outlet />}

@@ -824,6 +824,11 @@
     grid-template-columns: minmax(0, 1fr) !important;
   }
 
+  .mock-company-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px;
+  }
+
   .mock-chat-message {
     max-width: 100%;
   }
@@ -838,6 +843,8 @@
   .mock-tab-row {
     max-width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
 }
 

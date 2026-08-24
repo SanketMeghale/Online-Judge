@@ -4269,12 +4269,16 @@ canvas {
     min-width: 250px !important;
     max-width: 250px !important;
     z-index: 999 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8) !important;
-    transition: left 0.26s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    transition: left 0.26s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.26s !important;
   }
 
   .sidebar.sidebar-modern.sidebar-mobile-open {
     left: 0 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
   }
 
   .mobile-sidebar-backdrop {

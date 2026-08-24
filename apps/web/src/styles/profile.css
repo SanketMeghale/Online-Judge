@@ -695,7 +695,7 @@
   }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 600px) {
   .prof-stats-ribbon {
     grid-template-columns: 1fr;
   }

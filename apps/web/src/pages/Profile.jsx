@@ -423,7 +423,7 @@ export default function Profile() {
         {/* User Identity Details */}
         <div className="prof-identity-content">
           <div className="prof-identity-top">
-            <h1 className="prof-user-name" style={{ color: isLight ? "#0f172a" : "#f8fafc" }}>
+            <h1 className="prof-user-name" style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "clamp(1.15rem, 3.5vw, 1.45rem)", wordBreak: "break-word", overflowWrap: "anywhere" }}>
               {name}
             </h1>
             <span className="prof-tier-badge">
@@ -454,23 +454,18 @@ export default function Profile() {
             )}
           </div>
 
-          <div className="prof-meta-line">
+          <div className="prof-meta-line" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px 10px" }}>
             <span className="prof-handle-chip">@{username || "developer"}</span>
-            <span>•</span>
-            <span className="prof-email-text" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-              <Mail size={12} /> {email || "authenticated@judgo.dev"}
+            <span className="prof-email-text" style={{ display: "inline-flex", alignItems: "center", gap: "4px", minWidth: 0, wordBreak: "break-all" }}>
+              <Mail size={12} style={{ flexShrink: 0 }} /> {email || "authenticated@judgo.dev"}
             </span>
-            <span>•</span>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-              <Calendar size={12} /> Joined {joinDate}
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" }}>
+              <Calendar size={12} style={{ flexShrink: 0 }} /> Joined {joinDate}
             </span>
             {location && (
-              <>
-                <span>•</span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
-                  <MapPin size={12} /> {location}
-                </span>
-              </>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap" }}>
+                <MapPin size={12} style={{ flexShrink: 0 }} /> {location}
+              </span>
             )}
           </div>
 
@@ -480,13 +475,16 @@ export default function Profile() {
             color: isLight ? "#475569" : "#94a3b8",
             margin: "4px 0 6px",
             lineHeight: 1.4,
-            maxWidth: "680px"
+            maxWidth: "680px",
+            wordBreak: "break-word",
+            overflowWrap: "anywhere",
+            whiteSpace: "normal"
           }}>
             {bio}
           </p>
 
           {/* Social Links & Badges */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", marginTop: "2px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginTop: "2px" }}>
             {github && (
               <a
                 href={github.startsWith("http") ? github : `https://github.com/${github}`}
@@ -619,7 +617,13 @@ export default function Profile() {
         alignItems: "center",
         gap: "4px",
         borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-        paddingBottom: "3px"
+        paddingBottom: "3px",
+        overflowX: "auto",
+        WebkitOverflowScrolling: "touch",
+        scrollbarWidth: "none",
+        flexWrap: "nowrap",
+        maxWidth: "100%",
+        width: "100%"
       }}>
         {[
           { id: "overview", label: "Overview & Analytics", icon: Compass },
@@ -646,7 +650,9 @@ export default function Profile() {
                 fontSize: "0.78rem",
                 fontWeight: active ? "700" : "600",
                 cursor: "pointer",
-                transition: "all 0.15s ease"
+                transition: "all 0.15s ease",
+                flexShrink: 0,
+                whiteSpace: "nowrap"
               }}
             >
               <Icon size={13} />

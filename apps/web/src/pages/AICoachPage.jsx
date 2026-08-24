@@ -465,16 +465,13 @@ export default function AICoachPage() {
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: "6px",
+        gap: "10px",
         width: "100%",
         maxWidth: "1360px",
         margin: "0 auto",
-        padding: "6px 12px 8px 12px",
-        height: "100%",
-        maxHeight: "100%",
-        minHeight: 0,
+        padding: "8px 12px 32px 12px",
+        minHeight: "100%",
         boxSizing: "border-box",
-        overflow: "hidden",
         flex: 1
       }}
     >
@@ -629,7 +626,7 @@ export default function AICoachPage() {
       </nav>
 
       {/* 2. MAIN WORKSPACE */}
-      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", width: "100%" }}>
         {/* TAB 1: AI MENTOR (FULL-WIDTH CHAT STUDIO) */}
         {activeTab === "mentor" && (
           <div
@@ -640,9 +637,9 @@ export default function AICoachPage() {
               borderRadius: "10px",
               display: "flex",
               flexDirection: "column",
-              height: "100%",
-              maxHeight: "100%",
-              minHeight: 0,
+              minHeight: "520px",
+              height: "calc(100dvh - 170px)",
+              maxHeight: "850px",
               flex: 1,
               boxShadow: isLight ? "0 1px 3px rgba(0, 0, 0, 0.04)" : "0 4px 20px rgba(0, 0, 0, 0.25)",
               overflow: "hidden",
@@ -912,7 +909,7 @@ export default function AICoachPage() {
 
         {/* TAB 2: AI MOCK INTERVIEW STUDIO */}
         {activeTab === "interview" && (
-          <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }}>
+          <div style={{ width: "100%", display: "flex", flexDirection: "column" }}>
             <MockInterviewStudio />
           </div>
         )}
@@ -924,15 +921,11 @@ export default function AICoachPage() {
               background: isLight ? "#ffffff" : "#0d111a",
               border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
               borderRadius: "8px",
-              padding: "10px 14px",
+              padding: "12px 16px",
               display: "flex",
               flexDirection: "column",
-              gap: "8px",
-              flex: 1,
-              minHeight: 0,
-              overflowY: "auto",
-              overscrollBehavior: "contain",
-              WebkitOverflowScrolling: "touch"
+              gap: "10px",
+              width: "100%"
             }}
           >
             <div>
