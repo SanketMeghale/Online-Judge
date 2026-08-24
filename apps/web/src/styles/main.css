@@ -484,6 +484,21 @@ a {
   color: #0b1220;
 }
 
+.judgo-wordmark-svg {
+  display: block;
+  overflow: visible;
+}
+
+.judgo-wordmark-rest {
+  stroke: #f8fafc;
+  transition: stroke 0.15s ease;
+}
+
+[data-theme="light"] .judgo-wordmark-rest {
+  stroke: #0b1220;
+}
+
+
 
 .search-pill {
   background: rgba(20, 27, 62, 0.86);

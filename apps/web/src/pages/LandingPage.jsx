@@ -282,7 +282,7 @@ export default function LandingPage() {
         <header className="lp-navbar">
           <div className="lp-nav-inner">
             <Link to="/" className="lp-brand" style={{ textDecoration: "none" }}>
-              <JudgoLogo size={30} textSize="1.32rem" showDivider={true} animated={true} />
+              <JudgoLogo size={30} wordmarkHeight={19} showDivider={true} animated={true} />
             </Link>
 
             <nav className="lp-nav-links">
@@ -759,7 +759,7 @@ export default function LandingPage() {
           <div className="footer-inner">
             <div>
               <Link to="/" className="lp-brand" style={{ marginBottom: "12px", display: "inline-flex", textDecoration: "none" }}>
-                <JudgoLogo size={28} textSize="1.25rem" showDivider={true} animated={false} />
+                <JudgoLogo size={28} wordmarkHeight={18} showDivider={true} animated={false} />
               </Link>
               <p className="footer-brand-p">
                 The next-generation AI-powered online judge and competitive programming arena for ambitious developers.

@@ -136,7 +136,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
             title="Judgo Coding Platform"
             style={{ textDecoration: "none", cursor: "pointer", display: "inline-flex" }}
           >
-            <JudgoLogo size={28} textSize="1.24rem" showDivider={true} animated={true} />
+            <JudgoLogo size={28} wordmarkHeight={18} showDivider={true} animated={true} />
           </Link>
         </div>
 

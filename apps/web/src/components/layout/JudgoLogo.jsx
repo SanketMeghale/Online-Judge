@@ -6,8 +6,6 @@ import { motion } from "framer-motion";
  * - Left shield bracket: Vibrant Purple/Violet
  * - Right shield bracket: Electric Blue/Cyan
  * - Center code brackets: `< / >`
- * - Subtle vertical divider: `|`
- * - Wordmark: Vibrant Purple `J` + High-contrast `udgo`
  */
 export function JudgoShieldIcon({ size = 28, className = "" }) {
   const gradientId = "judgoBrandShieldGrad";
@@ -87,11 +85,84 @@ export function JudgoShieldIcon({ size = 28, className = "" }) {
 }
 
 /**
+ * Razor-sharp Vector JUDGO Wordmark matching exact squircle geometric reference:
+ * - J: Violet/purple with distinct horizontal base bar
+ * - U, D, G, O: Modern squircle tech geometry
+ */
+export function JudgoWordmark({ height = 20, className = "" }) {
+  const purpleGradId = "judgoWordmarkPurpleGrad";
+
+  return (
+    <svg
+      height={height}
+      viewBox="0 0 138 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={`judgo-wordmark-svg ${className}`.trim()}
+      style={{ display: "block", height: `${height}px`, width: "auto", flexShrink: 0 }}
+      aria-label="Judgo"
+    >
+      <defs>
+        <linearGradient id={purpleGradId} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#a855f7" />
+          <stop offset="100%" stopColor="#7c3aed" />
+        </linearGradient>
+      </defs>
+
+      {/* Letter 'J' with distinct horizontal bottom tail */}
+      <path
+        d="M 2 22 L 14 22 C 17.5 22 19 20 19 16.5 L 19 2"
+        stroke={`url(#${purpleGradId})`}
+        strokeWidth="3.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Letter 'U' */}
+      <path
+        d="M 29 2 L 29 16.5 C 29 20 31 22 34.5 22 L 42.5 22 C 46 22 48 20 48 16.5 L 48 2"
+        className="judgo-wordmark-rest"
+        strokeWidth="3.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Letter 'D' */}
+      <path
+        d="M 58 22 L 58 2 L 67 2 C 73.5 2 77 5.5 77 12 C 77 18.5 73.5 22 67 22 Z"
+        className="judgo-wordmark-rest"
+        strokeWidth="3.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Letter 'G' */}
+      <path
+        d="M 106 6 C 106 3 103 2 99.5 2 L 91.5 2 C 87.5 2 85.5 4 85.5 8 L 85.5 16 C 85.5 20 87.5 22 91.5 22 L 99.5 22 C 103.5 22 106 20 106 16 L 106 12 L 95.5 12"
+        className="judgo-wordmark-rest"
+        strokeWidth="3.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+
+      {/* Letter 'O' */}
+      <path
+        d="M 120 2 L 129 2 C 133 2 135 4 135 8 L 135 16 C 135 20 133 22 129 22 L 120 22 C 116 22 114 20 114 16 L 114 8 C 114 4 116 2 120 2 Z"
+        className="judgo-wordmark-rest"
+        strokeWidth="3.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/**
  * Complete Judgo Brand Component with Icon + Divider + Wordmark
  */
 export function JudgoLogo({
   size = 28,
-  textSize = "1.22rem",
+  wordmarkHeight = 20,
   showDivider = true,
   showText = true,
   animated = false,
@@ -123,10 +194,7 @@ export function JudgoLogo({
       )}
 
       {showText && (
-        <span className="judgo-brand-text" style={{ fontSize: textSize }}>
-          <span className="judgo-brand-j">J</span>
-          <span className="judgo-brand-rest">udgo</span>
-        </span>
+        <JudgoWordmark height={wordmarkHeight} />
       )}
     </div>
   );

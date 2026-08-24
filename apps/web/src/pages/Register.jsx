@@ -175,7 +175,7 @@ export default function Register() {
       {/* Mobile Branding Header */}
       <div className="auth-mobile-header">
         <Link to="/" style={{ textDecoration: "none", display: "inline-flex" }}>
-          <JudgoLogo size={32} textSize="1.35rem" showDivider={true} animated={true} />
+          <JudgoLogo size={32} wordmarkHeight={20} showDivider={true} animated={true} />
         </Link>
       </div>
 

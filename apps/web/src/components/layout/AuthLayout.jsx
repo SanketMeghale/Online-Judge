@@ -71,7 +71,7 @@ export default function AuthLayout() {
         >
           {/* Logo and Brand Name */}
           <Link className="auth-brand-badge" to="/" style={{ textDecoration: "none", marginBottom: "18px" }}>
-            <JudgoLogo size={36} textSize="1.6rem" showDivider={true} animated={true} />
+            <JudgoLogo size={36} wordmarkHeight={24} showDivider={true} animated={true} />
           </Link>
 
           {/* Headline and Subtitle */}
