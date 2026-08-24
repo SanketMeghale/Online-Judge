@@ -60,43 +60,40 @@ export default function Profile() {
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Edit form state
-  const [editForm, setEditForm] = useState({
-    name: "",
-    username: "",
-    bio: "",
-    avatarUrl: "",
-    location: "",
-    github: "",
-    linkedin: "",
-    website: ""
-  });
+  const [editForm, setEditForm] = useState(() => ({
+    name: liveUser.displayName || liveUser.name || "",
+    username: liveUser.username || "",
+    bio: liveUser.bio || "",
+    avatarUrl: liveUser.photoURL || liveUser.avatarUrl || "",
+    location: liveUser.location || "",
+    github: liveUser.github || "",
+    linkedin: liveUser.linkedin || "",
+    website: liveUser.website || ""
+  }));
 
   // Current User ID
   const currentUserId = user?.id || user?._id || "";
   const liveUser = { ...(currentUserId ? getUserById(currentUserId) : {}), ...(user || {}) };
 
-  // Initialize edit form when user loads
-  useEffect(() => {
-    if (liveUser && Object.keys(liveUser).length > 0) {
-      setEditForm({
-        name: liveUser.displayName || liveUser.name || "",
-        username: liveUser.username || "",
-        bio: liveUser.bio || "",
-        avatarUrl: liveUser.photoURL || liveUser.avatarUrl || "",
-        location: liveUser.location || "",
-        github: liveUser.github || "",
-        linkedin: liveUser.linkedin || "",
-        website: liveUser.website || ""
-      });
-    }
-  }, [liveUser]);
+  const handleOpenEditModal = () => {
+    setEditForm({
+      name: liveUser.displayName || liveUser.name || "",
+      username: liveUser.username || "",
+      bio: liveUser.bio || "",
+      avatarUrl: liveUser.photoURL || liveUser.avatarUrl || "",
+      location: liveUser.location || "",
+      github: liveUser.github || "",
+      linkedin: liveUser.linkedin || "",
+      website: liveUser.website || ""
+    });
+    setIsEditModalOpen(true);
+  };
 
   // Fetch remote stats on mount
   const fetchLiveDashboard = async () => {
     setIsSyncing(true);
     try {
-      if (syncBackendData) await syncBackendData();
-      const [dashRes, progRes] = await Promise.allSettled([
+      const [dashRes] = await Promise.allSettled([
         api.getDashboard(),
         api.getProgress("30d")
       ]);
@@ -562,7 +559,7 @@ export default function Profile() {
           <div className="prof-level-actions">
             <button
               type="button"
-              onClick={() => setIsEditModalOpen(true)}
+              onClick={handleOpenEditModal}
               className="prof-secondary-action"
               style={{ background: isLight ? "#ffffff" : "#111827", color: isLight ? "#334155" : "#e2e8f0" }}
             >

@@ -21,12 +21,18 @@ export default function AppLayout({ children }) {
   useEffect(() => {
     try {
       const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
+      let localPrefs = {};
+      if (stored) {
+        try {
+          localPrefs = JSON.parse(stored);
+        } catch {}
+      }
       const rawTheme = localStorage.getItem("judgo_theme");
       const mergedPrefs = {
-        theme: rawTheme || user?.preferences?.theme || localPrefs.theme || "dark",
-        accentColor: user?.preferences?.accentColor || localPrefs.accentColor || "indigo",
-        density: user?.preferences?.density || localPrefs.density || "comfortable",
-        compactMode: user?.preferences?.compactMode ?? localPrefs.compactMode ?? false
+        theme: rawTheme || user?.preferences?.theme || localPrefs?.theme || "dark",
+        accentColor: user?.preferences?.accentColor || localPrefs?.accentColor || "indigo",
+        density: user?.preferences?.density || localPrefs?.density || "comfortable",
+        compactMode: user?.preferences?.compactMode ?? localPrefs?.compactMode ?? false
       };
       applyThemeAndAppearance(mergedPrefs);
     } catch {}

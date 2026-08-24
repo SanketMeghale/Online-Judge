@@ -28,7 +28,7 @@ import { JudgoLogo } from "./JudgoLogo.jsx";
 
 export default function Navbar({ onToggleSidebar = () => {} }) {
   const { isAuthenticated, logout, user } = useAuth();
-  const { getUserById } = useAppData();
+  const { getUserById, getSubmissionsForUser } = useAppData();
   const { theme, resolvedTheme, isLight, toggleTheme, setTheme, preferences } = useTheme();
   const navigate = useNavigate();
 
@@ -44,18 +44,17 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
   const username = String(liveUser?.username || "").trim();
   const email = String(liveUser?.email || user?.email || "").trim();
   const avatarLetter = String(fullName || username || email || "U").slice(0, 1).toUpperCase();
+
+  const userSubs = currentUserId && getSubmissionsForUser ? getSubmissionsForUser(currentUserId) : [];
   const streakCount = useMemo(() => {
-    // 1. If liveUser has a valid streak number from MongoDB, prioritize it directly
-    if (typeof liveUser?.streak === "number" && liveUser.streak >= 0) {
-      return liveUser.streak;
-    }
-
-    // 2. Otherwise calculate accurately from user's authentic activeDates array
-    const activeDatesList = Array.isArray(liveUser?.activeDates) ? liveUser.activeDates : [];
-    if (activeDatesList.length === 0) return 0;
-
-    return calculateStreak(activeDatesList, new Date()).currentStreak;
-  }, [liveUser?.streak, liveUser?.activeDates]);
+    const acceptedSubs = Array.isArray(userSubs)
+      ? userSubs.filter((s) => s.verdict === "AC" || s.verdict === "OK" || s.verdict === "Accepted")
+      : [];
+    const allActiveDates = (liveUser?.activeDates || []).concat(acceptedSubs);
+    const streakStats = calculateStreak(allActiveDates, new Date());
+    const dbStreak = typeof liveUser?.streak === "number" ? liveUser.streak : 0;
+    return Math.max(streakStats.currentStreak, dbStreak);
+  }, [liveUser?.activeDates, liveUser?.streak, userSubs]);
 
   // Scroll listener for smooth glass transition
   useEffect(() => {
