@@ -15,6 +15,7 @@ import {
   LogOut,
   Moon,
   Palette,
+  RotateCcw,
   Save,
   Shield,
   Sliders,
@@ -28,10 +29,11 @@ import {
 import { useAuth } from "../auth/AuthContext.jsx";
 import { useAppData } from "../data/AppDataContext.jsx";
 import { api } from "../api/apiClient.js";
-import { applyThemeAndAppearance } from "../utils/themeApplier.js";
 import { useTheme } from "../context/ThemeContext.jsx";
 import { writeStoredSession, readStoredSession } from "../auth/authStorage.js";
 import { getUserDisplayName } from "../auth/displayName.js";
+import CodeEditor from "../components/editor/CodeEditor.jsx";
+import "../styles/settings.css";
 
 const SETTINGS_STORAGE_KEY = "judgo-user-settings-v1";
 
@@ -60,10 +62,30 @@ const LANGUAGES = [
   { id: "mr-IN", name: "Marathi" }
 ];
 
+const SAMPLE_PREVIEW_CODE = `# Live Code Editor Preview
+def two_sum(nums: list[int], target: int) -> list[int]:
+    lookup = {}
+    for i, num in enumerate(nums):
+        complement = target - num
+        if complement in lookup:
+            return [lookup[complement], i]
+        lookup[num] = i
+    return []
+`;
+
 export default function Settings() {
-  const { user, login } = useAuth();
+  const { user, logout } = useAuth();
   const { getUserById, updateDatabase } = useAppData();
-  const { theme, setTheme, accentColor, setAccentColor, density, setDensity, isLight } = useTheme();
+  const {
+    theme,
+    setTheme,
+    accentColor,
+    setAccentColor,
+    density,
+    setDensity,
+    isLight,
+    updatePreferences
+  } = useTheme();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -95,6 +117,9 @@ export default function Settings() {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordStatus, setPasswordStatus] = useState({ type: "", text: "" });
 
+  // Preview code editor state
+  const [previewCode, setPreviewCode] = useState(SAMPLE_PREVIEW_CODE);
+
   // Initial Form State loaded from live user & storage
   const [formData, setFormData] = useState(() => {
     let localPrefs = {};
@@ -110,6 +135,10 @@ export default function Settings() {
       username: liveUser?.username || "",
       email: liveUser?.email || "",
       bio: liveUser?.bio || "",
+      location: liveUser?.location || "",
+      github: liveUser?.github || "",
+      linkedin: liveUser?.linkedin || "",
+      website: liveUser?.website || "",
       language: liveUser?.language || localPrefs?.language || "en-US",
       timezone: liveUser?.timezone || localPrefs?.timezone || "UTC-5 (Eastern Time / US & Canada)",
       theme: userPrefs?.theme || localPrefs?.theme || theme || "light",
@@ -146,7 +175,11 @@ export default function Settings() {
         displayName: nextDisplayName || formData.displayName,
         username: liveUser.username || formData.username,
         email: liveUser.email || formData.email,
-        bio: liveUser.bio || formData.bio
+        bio: liveUser.bio || formData.bio,
+        location: liveUser.location || formData.location,
+        github: liveUser.github || formData.github,
+        linkedin: liveUser.linkedin || formData.linkedin,
+        website: liveUser.website || formData.website
       };
       setFormData(updated);
       setSavedBaseline(updated);
@@ -172,23 +205,42 @@ export default function Settings() {
   }
 
   function handleChange(key, value) {
-    setFormData((prev) => ({
-      ...prev,
-      [key]: value
-    }));
+    setFormData((prev) => {
+      const next = { ...prev, [key]: value };
 
-    if (key === "theme") {
-      setTheme(value);
-    }
-    if (key === "accentColor") {
-      setAccentColor(value);
-    }
-    if (key === "density") {
-      setDensity(value);
-    }
-    if (key === "compactMode") {
-      setDensity(value ? "compact" : "comfortable");
-    }
+      // Apply real-time updates for appearance & editor immediately
+      if (key === "theme") {
+        setTheme(value);
+      } else if (key === "accentColor") {
+        setAccentColor(value);
+      } else if (key === "density") {
+        setDensity(value);
+      } else if (key === "compactMode") {
+        setDensity(value ? "compact" : "comfortable");
+      } else if (
+        [
+          "fontSize",
+          "tabSize",
+          "wordWrap",
+          "lineNumbers",
+          "autoSave",
+          "editorTheme",
+          "contestReminders",
+          "submissionResults",
+          "achievementAlerts",
+          "dailyStreakReminders",
+          "aiCoachNotifications",
+          "publicProfile",
+          "showSolvedProblems",
+          "showActivity",
+          "showContestRanking"
+        ].includes(key)
+      ) {
+        updatePreferences({ [key]: value });
+      }
+
+      return next;
+    });
 
     // Check username availability when typing username
     if (key === "username") {
@@ -218,6 +270,13 @@ export default function Settings() {
         }
       }, 350);
     }
+  }
+
+  function handleResetChanges() {
+    setFormData(savedBaseline);
+    updatePreferences(savedBaseline);
+    setSaveErrorMsg("");
+    setSaveSuccessMsg("");
   }
 
   async function handleSaveAll(e) {
@@ -269,6 +328,10 @@ export default function Settings() {
           name: formData.displayName.trim(),
           username: formData.username.trim(),
           bio: formData.bio.trim(),
+          location: formData.location.trim(),
+          github: formData.github.trim(),
+          linkedin: formData.linkedin.trim(),
+          website: formData.website.trim(),
           language: formData.language,
           timezone: formData.timezone,
           preferences
@@ -277,20 +340,25 @@ export default function Settings() {
           updatedUser = apiRes.user;
         }
       } catch (apiErr) {
-        console.warn("[Settings API Update Warning]:", apiErr);
+        console.warn("[Settings API Update Notice]:", apiErr);
       }
 
-      // 2. Persist to localStorage
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(formData));
+      // 2. Persist to localStorage & trigger live preferences
+      updatePreferences(preferences);
 
-      // 3. Update session storage & trigger cross-component updates
+      // 3. Update session storage
       const currentSession = readStoredSession();
       if (currentSession && currentSession.user) {
         const nextUser = {
           ...currentSession.user,
           name: formData.displayName.trim(),
+          displayName: formData.displayName.trim(),
           username: formData.username.trim(),
           bio: formData.bio.trim(),
+          location: formData.location.trim(),
+          github: formData.github.trim(),
+          linkedin: formData.linkedin.trim(),
+          website: formData.website.trim(),
           language: formData.language,
           timezone: formData.timezone,
           preferences,
@@ -308,8 +376,13 @@ export default function Settings() {
               return {
                 ...u,
                 name: formData.displayName.trim(),
+                displayName: formData.displayName.trim(),
                 username: formData.username.trim(),
                 bio: formData.bio.trim(),
+                location: formData.location.trim(),
+                github: formData.github.trim(),
+                linkedin: formData.linkedin.trim(),
+                website: formData.website.trim(),
                 language: formData.language,
                 timezone: formData.timezone,
                 preferences,
@@ -362,21 +435,24 @@ export default function Settings() {
         confirmPassword
       });
 
-      setPasswordStatus({ type: "success", text: "✓ Password changed successfully" });
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setTimeout(() => setPasswordStatus({ type: "", text: "" }), 4000);
+      if (res?.success) {
+        setPasswordStatus({ type: "success", text: "✓ Password updated successfully." });
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        setPasswordStatus({ type: "error", text: res?.error || "Failed to update password." });
+      }
     } catch (err) {
-      setPasswordStatus({ type: "error", text: err?.message || "Failed to update password. Please check your current password." });
+      setPasswordStatus({ type: "error", text: err?.message || "Incorrect current password." });
     } finally {
       setIsChangingPassword(false);
     }
   }
 
   async function handleDeleteAccount() {
-    if (deleteConfirmText.trim() !== "DELETE") {
-      setDeleteError("Please type 'DELETE' in all caps to confirm.");
+    if (deleteConfirmText !== "DELETE") {
+      setDeleteError("Please type DELETE in all caps to confirm.");
       return;
     }
 
@@ -384,82 +460,77 @@ export default function Settings() {
     setDeleteError("");
 
     try {
-      await api.deleteAccount({ confirmation: "DELETE" });
-      await logout();
-      navigate("/login", { replace: true });
+      const res = await api.deleteAccount({ confirmation: "DELETE" });
+      if (res?.success) {
+        setShowDeleteModal(false);
+        await logout();
+        navigate("/", { replace: true });
+      } else {
+        setDeleteError(res?.error || "Could not delete account.");
+      }
     } catch (err) {
       setDeleteError(err?.message || "Failed to delete account. Please try again.");
+    } finally {
       setIsDeleting(false);
     }
   }
 
   async function handleLogout() {
     await logout();
-    navigate("/login", { replace: true });
+    navigate("/", { replace: true });
   }
 
   const tabs = [
-    { key: "general", label: "General", icon: User, desc: "Personal info & profile identity" },
-    { key: "appearance", label: "Appearance", icon: Palette, desc: "Themes, accent colors & density" },
-    { key: "editor", label: "Editor", icon: Code2, desc: "Font size, tabs, wrap & keybindings" },
+    { key: "general", label: "General", icon: User, desc: "Profile identity & bio" },
+    { key: "appearance", label: "Appearance", icon: Palette, desc: "Theme, accents & density" },
+    { key: "editor", label: "Editor", icon: Code2, desc: "Font, tabs & syntax theme" },
     { key: "notifications", label: "Notifications", icon: Bell, desc: "Contest, streak & coach alerts" },
-    { key: "privacy", label: "Privacy", icon: Shield, desc: "Public profile & solved visibility" },
-    { key: "account", label: "Account", icon: Lock, desc: "Security, password & danger zone" }
+    { key: "privacy", label: "Privacy", icon: Shield, desc: "Profile & activity visibility" },
+    { key: "account", label: "Account", icon: KeyRound, desc: "Security, password & danger zone" }
   ];
+
+  const avatarLetter = String(formData.displayName || formData.username || "U").slice(0, 1).toUpperCase();
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.25 }}
       className="settings-page-wrapper"
-      style={{ maxWidth: "1200px", margin: "0 auto", paddingBottom: "60px", display: "flex", flexDirection: "column", gap: "24px" }}
     >
       {/* Header */}
-      <header className="settings-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
+      <header className="settings-header">
         <div>
-          <span className="section-kicker" style={{ fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "#818cf8", fontWeight: "700" }}>
-            Preferences & Security
-          </span>
-          <h1 style={{ fontSize: "1.85rem", fontWeight: "800", color: "#ffffff", margin: "6px 0 4px 0", letterSpacing: "-0.02em" }}>
-            Settings
-          </h1>
-          <p style={{ color: "#94a3b8", fontSize: "0.92rem", margin: 0 }}>
-            Customize your Judgo experience.
-          </p>
+          <span className="settings-kicker">Preferences & Security</span>
+          <h1 className="settings-title">Settings</h1>
+          <p className="settings-subtitle">Customize your Judgo developer experience.</p>
         </div>
 
-        {/* Global Save Button */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        {/* Global Save & Cancel Actions */}
+        <div className="settings-header-actions">
           {isDirty && !saveSuccessMsg && (
-            <span style={{ fontSize: "0.78rem", color: "#fbbf24", fontWeight: "600", display: "flex", alignItems: "center", gap: "4px" }}>
-              ● Unsaved changes
-            </span>
+            <span className="settings-unsaved-pill">● Unsaved changes</span>
+          )}
+
+          {isDirty && (
+            <button
+              onClick={handleResetChanges}
+              disabled={isSaving}
+              type="button"
+              className="settings-btn-cancel"
+            >
+              <RotateCcw size={14} />
+              <span>Cancel</span>
+            </button>
           )}
 
           <button
             onClick={handleSaveAll}
             disabled={!isDirty || isSaving}
             type="button"
-            style={{
-              background: saveSuccessMsg
-                ? "#10b981"
-                : isDirty
-                ? "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)"
-                : "rgba(255, 255, 255, 0.05)",
-              color: isDirty || saveSuccessMsg ? "#ffffff" : "#64748b",
-              border: isDirty || saveSuccessMsg ? "1px solid rgba(255,255,255,0.15)" : "1px solid rgba(255,255,255,0.06)",
-              padding: "10px 22px",
-              borderRadius: "8px",
-              fontSize: "0.88rem",
-              fontWeight: "600",
-              cursor: !isDirty || isSaving ? "not-allowed" : "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              boxShadow: isDirty ? "0 4px 14px rgba(79, 70, 229, 0.3)" : "none",
-              transition: "all 0.2s ease"
-            }}
+            className={`settings-btn-save ${
+              saveSuccessMsg ? "success" : isDirty ? "active" : "disabled"
+            }`}
           >
             {saveSuccessMsg ? (
               <>
@@ -480,29 +551,28 @@ export default function Settings() {
 
       {/* Global Error Banner if any */}
       {saveErrorMsg && (
-        <div style={{ background: "rgba(239, 68, 68, 0.15)", border: "1px solid #ef4444", color: "#f87171", padding: "10px 16px", borderRadius: "8px", fontSize: "0.86rem", display: "flex", alignItems: "center", gap: "8px" }}>
+        <div
+          style={{
+            background: "rgba(239, 68, 68, 0.12)",
+            border: "1px solid #ef4444",
+            color: "#f87171",
+            padding: "10px 16px",
+            borderRadius: "8px",
+            fontSize: "0.86rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px"
+          }}
+        >
           <AlertTriangle size={16} />
           <span>{saveErrorMsg}</span>
         </div>
       )}
 
       {/* Main Two-Column Layout */}
-      <div className="settings-grid" style={{ display: "grid", gridTemplateColumns: "260px minmax(0, 1fr)", gap: "24px", alignItems: "start" }}>
-        
+      <div className="settings-grid">
         {/* LEFT COLUMN: Settings Navigation */}
-        <nav
-          className="settings-nav-card"
-          style={{
-            background: isLight ? "#ffffff" : "#0d111a",
-            border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: "12px",
-            padding: "8px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "4px",
-            boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none"
-          }}
-        >
+        <nav className="settings-nav-card">
           {tabs.map(({ key, label, icon: Icon, desc }) => {
             const isActive = activeTab === key;
             return (
@@ -510,31 +580,12 @@ export default function Settings() {
                 key={key}
                 type="button"
                 onClick={() => handleTabChange(key)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "10px 14px",
-                  borderRadius: "8px",
-                  background: isActive
-                    ? isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.12)"
-                    : "transparent",
-                  border: isActive
-                    ? isLight ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid rgba(99, 102, 241, 0.3)"
-                    : "1px solid transparent",
-                  color: isActive
-                    ? isLight ? "#4f46e5" : "#ffffff"
-                    : isLight ? "#475569" : "#94a3b8",
-                  textAlign: "left",
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                  width: "100%"
-                }}
+                className={`settings-nav-btn ${isActive ? "active" : ""}`}
               >
-                <Icon size={18} style={{ color: isActive ? "#6366f1" : isLight ? "#64748b" : "#64748b" }} />
+                <Icon size={18} className="settings-nav-btn-icon" />
                 <div>
-                  <div style={{ fontSize: "0.88rem", fontWeight: isActive ? "600" : "500" }}>{label}</div>
-                  <div style={{ fontSize: "0.72rem", color: isLight ? "#94a3b8" : "#64748b", marginTop: "1px" }}>{desc}</div>
+                  <span className="settings-nav-btn-label">{label}</span>
+                  <span className="settings-nav-btn-desc">{desc}</span>
                 </div>
               </button>
             );
@@ -542,54 +593,80 @@ export default function Settings() {
         </nav>
 
         {/* RIGHT COLUMN: Interactive Settings Panels */}
-        <main
-          className="settings-content-card"
-          style={{
-            background: isLight ? "#ffffff" : "#0d111a",
-            border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-            borderRadius: "14px",
-            padding: "28px 32px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "28px",
-            boxShadow: isLight ? "0 1px 4px rgba(0,0,0,0.04)" : "none"
-          }}
-        >
+        <main className="settings-content-card">
           {/* TAB 1: GENERAL */}
           {activeTab === "general" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              <div style={{ borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", paddingBottom: "14px" }}>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc", margin: "0 0 4px 0" }}>General Settings</h2>
-                <p style={{ fontSize: "0.85rem", color: isLight ? "#475569" : "#94a3b8", margin: 0 }}>Manage your personal identity, bio, and locale settings.</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "22px" }}>
+              <div className="settings-section-header">
+                <h2 className="settings-section-title">General Settings</h2>
+                <p className="settings-section-desc">Manage your personal identity, bio, location, and locale.</p>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
+              {/* Avatar Preview & Display Identity */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "16px",
+                  padding: "14px 18px",
+                  background: isLight ? "#f8fafc" : "#080c14",
+                  border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)",
+                  borderRadius: "10px"
+                }}
+              >
+                <div
+                  style={{
+                    width: "48px",
+                    height: "48px",
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#ffffff",
+                    fontWeight: "800",
+                    fontSize: "1.2rem",
+                    flexShrink: 0
+                  }}
+                >
+                  {avatarLetter}
+                </div>
+                <div>
+                  <strong style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.95rem", display: "block" }}>
+                    {formData.displayName || "Judgo Developer"}
+                  </strong>
+                  <span style={{ color: isLight ? "#475569" : "#94a3b8", fontSize: "0.78rem" }}>
+                    @{formData.username || "username"} · {formData.email || "developer@example.com"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="settings-row-2">
                 {/* Display Name */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1" }}>Display Name</label>
+                <div className="settings-form-group">
+                  <label className="settings-label">Display Name</label>
                   <input
                     type="text"
                     value={formData.displayName}
                     onChange={(e) => handleChange("displayName", e.target.value)}
-                    style={{
-                      background: isLight ? "#ffffff" : "#080c14",
-                      border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "8px",
-                      padding: "10px 14px",
-                      color: isLight ? "#0f172a" : "#ffffff",
-                      fontSize: "0.88rem"
-                    }}
+                    className="settings-input"
                     placeholder="Jane Doe"
                   />
-                  <span style={{ fontSize: "0.72rem", color: "#64748b" }}>Appears on leaderboard, submissions & profile badge.</span>
+                  <span className="settings-hint">Appears on leaderboard, submissions & profile badge.</span>
                 </div>
 
                 {/* Username */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <label style={{ fontSize: "0.82rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1" }}>Username</label>
+                <div className="settings-form-group">
+                  <div className="settings-label">
+                    <span>Username</span>
                     {usernameCheck.message && (
-                      <span style={{ fontSize: "0.72rem", color: usernameCheck.available ? "#4ade80" : "#f87171", fontWeight: "600" }}>
+                      <span
+                        style={{
+                          fontSize: "0.72rem",
+                          color: usernameCheck.available ? "#10b981" : "#ef4444",
+                          fontWeight: "600"
+                        }}
+                      >
                         {usernameCheck.message}
                       </span>
                     )}
@@ -598,45 +675,30 @@ export default function Settings() {
                     type="text"
                     value={formData.username}
                     onChange={(e) => handleChange("username", e.target.value)}
-                    style={{
-                      background: isLight ? "#ffffff" : "#080c14",
-                      border: usernameCheck.available === false ? "1px solid #ef4444" : isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "8px",
-                      padding: "10px 14px",
-                      color: isLight ? "#0f172a" : "#ffffff",
-                      fontSize: "0.88rem"
-                    }}
+                    className="settings-input"
                     placeholder="janedoe"
                   />
-                  <span style={{ fontSize: "0.72rem", color: "#64748b" }}>Unique handle for your coding track and profile URL.</span>
+                  <span className="settings-hint">Unique handle for your coding track and profile URL.</span>
                 </div>
               </div>
 
               {/* Email Address (Read-only / Authenticated) */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "0.82rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1" }}>Email Address</label>
+              <div className="settings-form-group">
+                <label className="settings-label">Email Address</label>
                 <input
                   type="email"
                   disabled
                   value={formData.email}
-                  style={{
-                    background: isLight ? "#f1f5f9" : "rgba(8, 12, 20, 0.6)",
-                    border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)",
-                    borderRadius: "8px",
-                    padding: "10px 14px",
-                    color: isLight ? "#64748b" : "#94a3b8",
-                    fontSize: "0.88rem",
-                    cursor: "not-allowed"
-                  }}
+                  className="settings-input"
                   placeholder="developer@example.com"
                 />
-                <span style={{ fontSize: "0.72rem", color: "#64748b" }}>Connected authentication email (contact support to modify).</span>
+                <span className="settings-hint">Connected authentication email (managed via account security).</span>
               </div>
 
               {/* Bio / Headline */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1" }}>Bio / Headline</label>
+              <div className="settings-form-group">
+                <div className="settings-label">
+                  <span>Bio / Headline</span>
                   <span style={{ fontSize: "0.72rem", color: formData.bio.length > 280 ? "#f59e0b" : "#64748b" }}>
                     {formData.bio.length}/300
                   </span>
@@ -646,34 +708,68 @@ export default function Settings() {
                   maxLength={300}
                   value={formData.bio}
                   onChange={(e) => handleChange("bio", e.target.value)}
-                  style={{
-                    background: isLight ? "#ffffff" : "#080c14",
-                    border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: "8px",
-                    padding: "10px 14px",
-                    color: isLight ? "#0f172a" : "#ffffff",
-                    fontSize: "0.88rem",
-                    resize: "vertical"
-                  }}
+                  className="settings-textarea"
                   placeholder="Tell other competitive programmers a little about your journey, favorite algorithms & tech stack..."
                 />
               </div>
 
+              {/* Location & Social Links */}
+              <div className="settings-row-2">
+                <div className="settings-form-group">
+                  <label className="settings-label">Location</label>
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) => handleChange("location", e.target.value)}
+                    className="settings-input"
+                    placeholder="San Francisco, CA"
+                  />
+                </div>
+
+                <div className="settings-form-group">
+                  <label className="settings-label">GitHub Profile</label>
+                  <input
+                    type="text"
+                    value={formData.github}
+                    onChange={(e) => handleChange("github", e.target.value)}
+                    className="settings-input"
+                    placeholder="https://github.com/username"
+                  />
+                </div>
+              </div>
+
+              <div className="settings-row-2">
+                <div className="settings-form-group">
+                  <label className="settings-label">LinkedIn Profile</label>
+                  <input
+                    type="text"
+                    value={formData.linkedin}
+                    onChange={(e) => handleChange("linkedin", e.target.value)}
+                    className="settings-input"
+                    placeholder="https://linkedin.com/in/username"
+                  />
+                </div>
+
+                <div className="settings-form-group">
+                  <label className="settings-label">Personal Website</label>
+                  <input
+                    type="text"
+                    value={formData.website}
+                    onChange={(e) => handleChange("website", e.target.value)}
+                    className="settings-input"
+                    placeholder="https://yourportfolio.dev"
+                  />
+                </div>
+              </div>
+
               {/* Language & Time Zone */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1" }}>Interface Language</label>
+              <div className="settings-row-2">
+                <div className="settings-form-group">
+                  <label className="settings-label">Interface Language</label>
                   <select
                     value={formData.language}
                     onChange={(e) => handleChange("language", e.target.value)}
-                    style={{
-                      background: isLight ? "#ffffff" : "#080c14",
-                      border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "8px",
-                      padding: "10px 14px",
-                      color: isLight ? "#0f172a" : "#ffffff",
-                      fontSize: "0.88rem"
-                    }}
+                    className="settings-select"
                   >
                     {LANGUAGES.map((lang) => (
                       <option key={lang.id} value={lang.id}>
@@ -683,19 +779,12 @@ export default function Settings() {
                   </select>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1" }}>Time Zone</label>
+                <div className="settings-form-group">
+                  <label className="settings-label">Time Zone</label>
                   <select
                     value={formData.timezone}
                     onChange={(e) => handleChange("timezone", e.target.value)}
-                    style={{
-                      background: isLight ? "#ffffff" : "#080c14",
-                      border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "8px",
-                      padding: "10px 14px",
-                      color: isLight ? "#0f172a" : "#ffffff",
-                      fontSize: "0.88rem"
-                    }}
+                    className="settings-select"
                   >
                     {TIMEZONES.map((tz) => (
                       <option key={tz} value={tz}>
@@ -711,19 +800,19 @@ export default function Settings() {
           {/* TAB 2: APPEARANCE */}
           {activeTab === "appearance" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              <div style={{ borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)", paddingBottom: "14px" }}>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc", margin: "0 0 4px 0" }}>Appearance & Theme</h2>
-                <p style={{ fontSize: "0.85rem", color: isLight ? "#475569" : "#94a3b8", margin: 0 }}>Customize color palette, system theme, and UI density.</p>
+              <div className="settings-section-header">
+                <h2 className="settings-section-title">Appearance & Theme</h2>
+                <p className="settings-section-desc">Customize color palette, system theme, and UI density.</p>
               </div>
 
               {/* Theme Mode Selector (Dark / Light / System) */}
               <div>
-                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1", display: "block", marginBottom: "10px" }}>Theme Mode</label>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px" }}>
+                <label className="settings-label" style={{ marginBottom: "10px" }}>Theme Mode</label>
+                <div className="settings-theme-grid">
                   {[
-                    { id: "dark", label: "Dark", icon: Moon, desc: "Default charcoal navy" },
-                    { id: "light", label: "Light", icon: Sun, desc: "Crisp light contrast" },
-                    { id: "system", label: "System", icon: Laptop, desc: "Matches OS preference" }
+                    { id: "light", label: "Light", icon: Sun, desc: "Crisp light contrast & clean surfaces" },
+                    { id: "dark", label: "Dark", icon: Moon, desc: "Charcoal navy for focused coding" },
+                    { id: "system", label: "System", icon: Laptop, desc: "Automatically matches your OS" }
                   ].map((t) => {
                     const isSelected = formData.theme === t.id;
                     const Icon = t.icon;
@@ -731,40 +820,28 @@ export default function Settings() {
                       <div
                         key={t.id}
                         onClick={() => handleChange("theme", t.id)}
-                        style={{
-                          background: isSelected
-                            ? isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.15)"
-                            : isLight ? "#ffffff" : "#080c14",
-                          border: isSelected
-                            ? "1.5px solid #6366f1"
-                            : isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
-                          borderRadius: "10px",
-                          padding: "14px",
-                          cursor: "pointer",
-                          boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none",
-                          transition: "all 0.2s ease"
-                        }}
+                        className={`settings-theme-card ${isSelected ? "active" : ""}`}
                       >
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px", color: isSelected ? "#6366f1" : isLight ? "#0f172a" : "#94a3b8", fontWeight: "600", fontSize: "0.9rem" }}>
+                        <div className="settings-theme-card-header">
                           <Icon size={16} />
                           <span>{t.label}</span>
                         </div>
-                        <span style={{ fontSize: "0.76rem", color: isLight ? "#64748b" : "#64748b", marginTop: "4px", display: "block" }}>{t.desc}</span>
+                        <span className="settings-theme-card-desc">{t.desc}</span>
                       </div>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Accent Color Palette (Blue, Purple, Indigo, Green) */}
+              {/* Accent Color Palette (Indigo, Purple, Blue, Green) */}
               <div>
-                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1", display: "block", marginBottom: "10px" }}>Accent Color</label>
-                <div style={{ display: "flex", gap: "14px", flexWrap: "wrap" }}>
+                <label className="settings-label" style={{ marginBottom: "10px" }}>Accent Color</label>
+                <div className="settings-accent-row">
                   {[
-                    { id: "blue", color: "#3b82f6", label: "Blue" },
-                    { id: "purple", color: "#a855f7", label: "Purple" },
                     { id: "indigo", color: "#6366f1", label: "Indigo" },
-                    { id: "emerald", color: "#10b981", label: "Green" }
+                    { id: "purple", color: "#a855f7", label: "Purple" },
+                    { id: "blue", color: "#3b82f6", label: "Blue" },
+                    { id: "emerald", color: "#10b981", label: "Emerald Green" }
                   ].map((c) => {
                     const isSelected = formData.accentColor === c.id;
                     return (
@@ -772,26 +849,9 @@ export default function Settings() {
                         key={c.id}
                         type="button"
                         onClick={() => handleChange("accentColor", c.id)}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "8px",
-                          background: isSelected
-                            ? isLight ? "#f1f5f9" : "rgba(255,255,255,0.08)"
-                            : isLight ? "#ffffff" : "#080c14",
-                          border: isSelected
-                            ? `2px solid ${c.color}`
-                            : isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
-                          borderRadius: "8px",
-                          padding: "8px 14px",
-                          color: isLight ? "#0f172a" : "#ffffff",
-                          fontSize: "0.82rem",
-                          cursor: "pointer",
-                          boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none",
-                          transition: "all 0.15s ease"
-                        }}
+                        className={`settings-accent-btn ${isSelected ? "active" : ""}`}
                       >
-                        <span style={{ width: 12, height: 12, borderRadius: "50%", background: c.color }} />
+                        <span className="settings-accent-dot" style={{ background: c.color }} />
                         <span>{c.label}</span>
                       </button>
                     );
@@ -801,11 +861,11 @@ export default function Settings() {
 
               {/* Display Density Mode (Comfortable vs Compact) */}
               <div>
-                <label style={{ fontSize: "0.85rem", fontWeight: "600", color: isLight ? "#334155" : "#cbd5e1", display: "block", marginBottom: "10px" }}>Display Density</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <label className="settings-label" style={{ marginBottom: "10px" }}>Display Density</label>
+                <div className="settings-row-2">
                   {[
-                    { id: "comfortable", label: "Comfortable", desc: "Standard spacing for relaxed reading" },
-                    { id: "compact", label: "Compact", desc: "Tight row heights for maximum information density" }
+                    { id: "comfortable", label: "Comfortable", desc: "Standard spacing for relaxed readability" },
+                    { id: "compact", label: "Compact", desc: "Compact row heights for higher information density" }
                   ].map((d) => {
                     const isSelected = formData.density === d.id;
                     return (
@@ -815,22 +875,12 @@ export default function Settings() {
                           handleChange("density", d.id);
                           handleChange("compactMode", d.id === "compact");
                         }}
-                        style={{
-                          background: isSelected
-                            ? isLight ? "#eef2ff" : "rgba(99, 102, 241, 0.15)"
-                            : isLight ? "#ffffff" : "#080c14",
-                          border: isSelected
-                            ? "1.5px solid #6366f1"
-                            : isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
-                          borderRadius: "10px",
-                          padding: "14px",
-                          cursor: "pointer",
-                          boxShadow: isLight ? "0 1px 3px rgba(0,0,0,0.04)" : "none",
-                          transition: "all 0.2s ease"
-                        }}
+                        className={`settings-theme-card ${isSelected ? "active" : ""}`}
                       >
-                        <strong style={{ color: isSelected ? "#6366f1" : isLight ? "#0f172a" : "#f8fafc", fontSize: "0.88rem", display: "block" }}>{d.label}</strong>
-                        <span style={{ color: isLight ? "#64748b" : "#64748b", fontSize: "0.76rem", marginTop: "2px", display: "block" }}>{d.desc}</span>
+                        <strong style={{ color: isSelected ? "var(--accent-primary)" : isLight ? "#0f172a" : "#f8fafc", fontSize: "0.88rem", display: "block" }}>
+                          {d.label}
+                        </strong>
+                        <span className="settings-theme-card-desc">{d.desc}</span>
                       </div>
                     );
                   })}
@@ -842,34 +892,26 @@ export default function Settings() {
           {/* TAB 3: EDITOR */}
           {activeTab === "editor" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "14px" }}>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 4px 0" }}>Code Editor Settings</h2>
-                <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Configure typography, indentation, syntax themes, and editor behaviors.</p>
+              <div className="settings-section-header">
+                <h2 className="settings-section-title">Code Editor Settings</h2>
+                <p className="settings-section-desc">Configure typography, indentation, syntax themes, and editor behaviors.</p>
               </div>
 
               {/* Font Size (12, 13, 14, 15, 16, 18, 20) */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <label style={{ fontSize: "0.85rem", fontWeight: "600", color: "#cbd5e1" }}>Font Size</label>
-                  <strong style={{ color: "#818cf8", fontSize: "0.85rem" }}>{formData.fontSize}px</strong>
+              <div className="settings-form-group">
+                <div className="settings-label">
+                  <span>Editor Font Size</span>
+                  <strong style={{ color: "var(--accent-primary, #6366f1)", fontSize: "0.85rem" }}>
+                    {formData.fontSize}px
+                  </strong>
                 </div>
-                <div style={{ display: "flex", gap: "8px" }}>
+                <div className="settings-font-row">
                   {[12, 13, 14, 15, 16, 18, 20].map((size) => (
                     <button
                       key={size}
                       type="button"
                       onClick={() => handleChange("fontSize", size)}
-                      style={{
-                        flex: 1,
-                        background: formData.fontSize === size ? "rgba(99, 102, 241, 0.2)" : "#080c14",
-                        border: formData.fontSize === size ? "1.5px solid #6366f1" : "1px solid rgba(255,255,255,0.08)",
-                        color: formData.fontSize === size ? "#ffffff" : "#94a3b8",
-                        borderRadius: "6px",
-                        padding: "8px 0",
-                        fontSize: "0.84rem",
-                        fontWeight: formData.fontSize === size ? "700" : "500",
-                        cursor: "pointer"
-                      }}
+                      className={`settings-font-btn ${formData.fontSize === size ? "active" : ""}`}
                     >
                       {size}px
                     </button>
@@ -878,20 +920,13 @@ export default function Settings() {
               </div>
 
               {/* Tab Size & Editor Theme */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "18px" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Tab Size</label>
+              <div className="settings-row-2">
+                <div className="settings-form-group">
+                  <label className="settings-label">Tab Indentation</label>
                   <select
                     value={formData.tabSize}
                     onChange={(e) => handleChange("tabSize", Number(e.target.value))}
-                    style={{
-                      background: "#080c14",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "8px",
-                      padding: "10px 14px",
-                      color: "#ffffff",
-                      fontSize: "0.88rem"
-                    }}
+                    className="settings-select"
                   >
                     <option value={2}>2 Spaces</option>
                     <option value={4}>4 Spaces (Standard)</option>
@@ -899,19 +934,12 @@ export default function Settings() {
                   </select>
                 </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label style={{ fontSize: "0.82rem", fontWeight: "600", color: "#cbd5e1" }}>Editor Theme</label>
+                <div className="settings-form-group">
+                  <label className="settings-label">Syntax Highlighting Theme</label>
                   <select
                     value={formData.editorTheme}
                     onChange={(e) => handleChange("editorTheme", e.target.value)}
-                    style={{
-                      background: "#080c14",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: "8px",
-                      padding: "10px 14px",
-                      color: "#ffffff",
-                      fontSize: "0.88rem"
-                    }}
+                    className="settings-select"
                   >
                     <option value="judgo-dark">Judgo Dark (Default)</option>
                     <option value="monokai">Monokai Pro</option>
@@ -925,23 +953,59 @@ export default function Settings() {
               {/* Toggles Grid: Word Wrap, Line Numbers, Auto Save */}
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {[
-                  { key: "wordWrap", label: "Word Wrap", desc: "Wrap code lines that exceed editor horizontal boundary." },
-                  { key: "lineNumbers", label: "Line Numbers", desc: "Display numbered gutter along the left edge of the code editor." },
-                  { key: "autoSave", label: "Auto Save Drafts", desc: "Automatically save code buffer to local storage on problem change." }
+                  {
+                    key: "wordWrap",
+                    label: "Word Wrap",
+                    desc: "Wrap code lines that exceed editor horizontal boundary."
+                  },
+                  {
+                    key: "lineNumbers",
+                    label: "Line Numbers",
+                    desc: "Display numbered gutter along the left edge of the code editor."
+                  },
+                  {
+                    key: "autoSave",
+                    label: "Auto Save Drafts",
+                    desc: "Automatically save code buffer to local storage on problem change."
+                  }
                 ].map((item) => (
-                  <div key={item.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", padding: "12px 16px", borderRadius: "8px" }}>
+                  <div
+                    key={item.key}
+                    onClick={() => handleChange(item.key, !formData[item.key])}
+                    className="judgo-toggle-card"
+                  >
                     <div>
-                      <strong style={{ color: "#f8fafc", fontSize: "0.88rem", display: "block" }}>{item.label}</strong>
-                      <span style={{ color: "#64748b", fontSize: "0.76rem" }}>{item.desc}</span>
+                      <span className="judgo-toggle-title">{item.label}</span>
+                      <span className="judgo-toggle-desc">{item.desc}</span>
                     </div>
-                    <input
-                      type="checkbox"
-                      checked={Boolean(formData[item.key])}
-                      onChange={(e) => handleChange(item.key, e.target.checked)}
-                      style={{ width: "18px", height: "18px", accentColor: "#6366f1", cursor: "pointer" }}
-                    />
+                    <button
+                      type="button"
+                      className={`judgo-toggle-switch ${formData[item.key] ? "on" : ""}`}
+                      aria-label={`Toggle ${item.label}`}
+                    >
+                      <span className="judgo-toggle-thumb" />
+                    </button>
                   </div>
                 ))}
+              </div>
+
+              {/* Embedded Live Code Editor Preview */}
+              <div className="settings-preview-card">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <strong style={{ fontSize: "0.86rem", color: isLight ? "#0f172a" : "#f8fafc" }}>
+                    Live Editor Preview
+                  </strong>
+                  <span style={{ fontSize: "0.72rem", color: isLight ? "#64748b" : "#94a3b8" }}>
+                    {formData.fontSize}px · {formData.tabSize} spaces · {formData.editorTheme}
+                  </span>
+                </div>
+                <div style={{ height: "160px", borderRadius: "8px", overflow: "hidden" }}>
+                  <CodeEditor
+                    initialCode={previewCode}
+                    language="Python"
+                    onChange={(code) => setPreviewCode(code)}
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -949,30 +1013,55 @@ export default function Settings() {
           {/* TAB 4: NOTIFICATIONS */}
           {activeTab === "notifications" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "14px" }}>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 4px 0" }}>Notification Preferences</h2>
-                <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Control platform alerts, contest notifications, and streak reminders.</p>
+              <div className="settings-section-header">
+                <h2 className="settings-section-title">Notification Preferences</h2>
+                <p className="settings-section-desc">Control platform alerts, contest notifications, and streak reminders.</p>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {[
-                  { key: "contestReminders", label: "Contest Reminders", desc: "Receive alerts 30 minutes before weekly scheduled contests start." },
-                  { key: "submissionResults", label: "Submission Results", desc: "Get notified when background judge worker finishes evaluating your code." },
-                  { key: "achievementAlerts", label: "Achievement Notifications", desc: "Notify when you earn new problem milestones or streak badges." },
-                  { key: "dailyStreakReminders", label: "Daily Coding Reminders", desc: "Daily evening reminder to solve a problem and protect your streak." },
-                  { key: "aiCoachNotifications", label: "Judgo Intelligence Notifications", desc: "Get feedback and interview tips from Judgo Intelligence after solving." }
+                  {
+                    key: "contestReminders",
+                    label: "Contest Reminders",
+                    desc: "Receive alerts 30 minutes before weekly scheduled contests start."
+                  },
+                  {
+                    key: "submissionResults",
+                    label: "Submission Results",
+                    desc: "Get notified when background judge worker finishes evaluating your code."
+                  },
+                  {
+                    key: "achievementAlerts",
+                    label: "Achievement Notifications",
+                    desc: "Notify when you earn new problem milestones or streak badges."
+                  },
+                  {
+                    key: "dailyStreakReminders",
+                    label: "Daily Coding Reminders",
+                    desc: "Daily evening reminder to solve a problem and protect your streak."
+                  },
+                  {
+                    key: "aiCoachNotifications",
+                    label: "Judgo Intelligence Notifications",
+                    desc: "Get feedback and interview tips from Judgo Intelligence after solving."
+                  }
                 ].map((item) => (
-                  <div key={item.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", padding: "14px 18px", borderRadius: "10px" }}>
+                  <div
+                    key={item.key}
+                    onClick={() => handleChange(item.key, !formData[item.key])}
+                    className="judgo-toggle-card"
+                  >
                     <div>
-                      <strong style={{ color: "#f8fafc", fontSize: "0.9rem", display: "block" }}>{item.label}</strong>
-                      <span style={{ color: "#64748b", fontSize: "0.78rem" }}>{item.desc}</span>
+                      <span className="judgo-toggle-title">{item.label}</span>
+                      <span className="judgo-toggle-desc">{item.desc}</span>
                     </div>
-                    <input
-                      type="checkbox"
-                      checked={Boolean(formData[item.key])}
-                      onChange={(e) => handleChange(item.key, e.target.checked)}
-                      style={{ width: "18px", height: "18px", accentColor: "#6366f1", cursor: "pointer" }}
-                    />
+                    <button
+                      type="button"
+                      className={`judgo-toggle-switch ${formData[item.key] ? "on" : ""}`}
+                      aria-label={`Toggle ${item.label}`}
+                    >
+                      <span className="judgo-toggle-thumb" />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -982,29 +1071,50 @@ export default function Settings() {
           {/* TAB 5: PRIVACY */}
           {activeTab === "privacy" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "14px" }}>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 4px 0" }}>Privacy Controls</h2>
-                <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Control who can view your profile, statistics, and leaderboard standings.</p>
+              <div className="settings-section-header">
+                <h2 className="settings-section-title">Privacy Controls</h2>
+                <p className="settings-section-desc">Control who can view your profile, statistics, and leaderboard standings.</p>
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 {[
-                  { key: "publicProfile", label: "Public Profile", desc: "Allow other coders to view your profile and achievement badges." },
-                  { key: "showSolvedProblems", label: "Show Solved Problems", desc: "Display your topic strength bar charts on your public card." },
-                  { key: "showActivity", label: "Show Activity", desc: "Include your recent submission history in global activity feeds." },
-                  { key: "showContestRanking", label: "Show Contest Ranking", desc: "Display your competitive score and rank on public leaderboards." }
+                  {
+                    key: "publicProfile",
+                    label: "Public Profile",
+                    desc: "Allow other coders to view your profile and achievement badges."
+                  },
+                  {
+                    key: "showSolvedProblems",
+                    label: "Show Solved Problems",
+                    desc: "Display your topic strength bar charts on your public card."
+                  },
+                  {
+                    key: "showActivity",
+                    label: "Show Activity Feeds",
+                    desc: "Include your recent submission history in global activity feeds."
+                  },
+                  {
+                    key: "showContestRanking",
+                    label: "Show Contest Ranking",
+                    desc: "Display your competitive score and rank on public leaderboards."
+                  }
                 ].map((item) => (
-                  <div key={item.key} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#080c14", border: "1px solid rgba(255,255,255,0.06)", padding: "14px 18px", borderRadius: "10px" }}>
+                  <div
+                    key={item.key}
+                    onClick={() => handleChange(item.key, !formData[item.key])}
+                    className="judgo-toggle-card"
+                  >
                     <div>
-                      <strong style={{ color: "#f8fafc", fontSize: "0.9rem", display: "block" }}>{item.label}</strong>
-                      <span style={{ color: "#64748b", fontSize: "0.78rem" }}>{item.desc}</span>
+                      <span className="judgo-toggle-title">{item.label}</span>
+                      <span className="judgo-toggle-desc">{item.desc}</span>
                     </div>
-                    <input
-                      type="checkbox"
-                      checked={Boolean(formData[item.key])}
-                      onChange={(e) => handleChange(item.key, e.target.checked)}
-                      style={{ width: "18px", height: "18px", accentColor: "#6366f1", cursor: "pointer" }}
-                    />
+                    <button
+                      type="button"
+                      className={`judgo-toggle-switch ${formData[item.key] ? "on" : ""}`}
+                      aria-label={`Toggle ${item.label}`}
+                    >
+                      <span className="judgo-toggle-thumb" />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1013,117 +1123,150 @@ export default function Settings() {
 
           {/* TAB 6: ACCOUNT */}
           {activeTab === "account" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
-              <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "14px" }}>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 4px 0" }}>Account Security & Data</h2>
-                <p style={{ fontSize: "0.85rem", color: "#94a3b8", margin: 0 }}>Change your password, review connected accounts, or delete your account.</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              <div className="settings-section-header">
+                <h2 className="settings-section-title">Account Security & Data</h2>
+                <p className="settings-section-desc">Change your password, review connected accounts, or delete your account.</p>
               </div>
 
               {/* Password Form */}
-              <form onSubmit={handlePasswordChange} style={{ display: "flex", flexDirection: "column", gap: "16px", background: "#080c14", padding: "20px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.08)" }}>
-                <strong style={{ fontSize: "0.95rem", color: "#f8fafc" }}>Change Password</strong>
+              <form onSubmit={handlePasswordChange} className="settings-account-panel">
+                <strong style={{ fontSize: "0.95rem", color: isLight ? "#0f172a" : "#f8fafc" }}>
+                  Change Password
+                </strong>
 
                 {passwordStatus.text && (
-                  <div style={{ padding: "8px 12px", borderRadius: "6px", fontSize: "0.82rem", background: passwordStatus.type === "error" ? "rgba(239,68,68,0.15)" : "rgba(16,185,129,0.15)", color: passwordStatus.type === "error" ? "#f87171" : "#4ade80", border: `1px solid ${passwordStatus.type === "error" ? "#ef4444" : "#10b981"}` }}>
+                  <div
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: "6px",
+                      fontSize: "0.82rem",
+                      background: passwordStatus.type === "error" ? "rgba(239,68,68,0.12)" : "rgba(16,185,129,0.12)",
+                      color: passwordStatus.type === "error" ? "#f87171" : "#10b981",
+                      border: `1px solid ${passwordStatus.type === "error" ? "#ef4444" : "#10b981"}`
+                    }}
+                  >
                     {passwordStatus.text}
                   </div>
                 )}
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <label style={{ fontSize: "0.8rem", color: isLight ? "#64748b" : "#94a3b8" }}>Current Password</label>
+                <div className="settings-form-group">
+                  <label className="settings-label">Current Password</label>
                   <input
                     type="password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)", borderRadius: "6px", padding: "8px 12px", color: isLight ? "#0f172a" : "#ffffff", fontSize: "0.85rem" }}
+                    className="settings-input"
+                    placeholder="Enter current password"
                   />
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <label style={{ fontSize: "0.8rem", color: isLight ? "#64748b" : "#94a3b8" }}>New Password</label>
+                <div className="settings-row-2">
+                  <div className="settings-form-group">
+                    <label className="settings-label">New Password</label>
                     <input
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)", borderRadius: "6px", padding: "8px 12px", color: isLight ? "#0f172a" : "#ffffff", fontSize: "0.85rem" }}
+                      className="settings-input"
+                      placeholder="Minimum 12 characters"
                     />
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <label style={{ fontSize: "0.8rem", color: isLight ? "#64748b" : "#94a3b8" }}>Confirm New Password</label>
+                  <div className="settings-form-group">
+                    <label className="settings-label">Confirm New Password</label>
                     <input
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      style={{ background: isLight ? "#ffffff" : "#0d111a", border: isLight ? "1px solid #cbd5e1" : "1px solid rgba(255,255,255,0.1)", borderRadius: "6px", padding: "8px 12px", color: isLight ? "#0f172a" : "#ffffff", fontSize: "0.85rem" }}
+                      className="settings-input"
+                      placeholder="Re-enter new password"
                     />
                   </div>
                 </div>
 
                 <button
                   type="submit"
-                  disabled={isChangingPassword}
-                  style={{
-                    alignSelf: "flex-start",
-                    background: "#4f46e5",
-                    color: "#ffffff",
-                    border: "none",
-                    padding: "8px 16px",
-                    borderRadius: "6px",
-                    fontSize: "0.82rem",
-                    fontWeight: "600",
-                    cursor: isChangingPassword ? "not-allowed" : "pointer"
-                  }}
+                  disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}
+                  className="settings-btn-save active"
+                  style={{ alignSelf: "flex-start" }}
                 >
                   {isChangingPassword ? "Updating..." : "Update Password"}
                 </button>
               </form>
 
               {/* Connected Accounts */}
-              <div style={{ background: "#080c14", padding: "20px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.08)", display: "flex", flexDirection: "column", gap: "14px" }}>
-                <strong style={{ fontSize: "0.95rem", color: "#f8fafc" }}>Connected Accounts</strong>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid rgba(255,255,255,0.04)", paddingBottom: "10px" }}>
+              <div className="settings-account-panel">
+                <strong style={{ fontSize: "0.95rem", color: isLight ? "#0f172a" : "#f8fafc" }}>
+                  Connected Accounts
+                </strong>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    borderBottom: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)",
+                    paddingBottom: "10px"
+                  }}
+                >
                   <div>
-                    <strong style={{ fontSize: "0.88rem", color: "#f8fafc", display: "block" }}>Email & Password</strong>
-                    <span style={{ fontSize: "0.76rem", color: "#64748b" }}>Primary authenticated login provider</span>
+                    <strong style={{ fontSize: "0.88rem", color: isLight ? "#0f172a" : "#f8fafc", display: "block" }}>
+                      Email & Password
+                    </strong>
+                    <span style={{ fontSize: "0.76rem", color: isLight ? "#475569" : "#64748b" }}>
+                      Primary authenticated login credential
+                    </span>
                   </div>
-                  <span style={{ fontSize: "0.78rem", color: "#4ade80", background: "rgba(34,197,94,0.12)", border: "1px solid rgba(34,197,94,0.25)", padding: "2px 8px", borderRadius: "999px" }}>
+                  <span
+                    style={{
+                      fontSize: "0.78rem",
+                      color: "#10b981",
+                      background: "rgba(16,185,129,0.12)",
+                      border: "1px solid rgba(16,185,129,0.25)",
+                      padding: "2px 8px",
+                      borderRadius: "999px"
+                    }}
+                  >
                     Connected
                   </span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    <strong style={{ fontSize: "0.88rem", color: "#f8fafc", display: "block" }}>GitHub OAuth</strong>
-                    <span style={{ fontSize: "0.76rem", color: "#64748b" }}>Fast single sign-on</span>
+                    <strong style={{ fontSize: "0.88rem", color: isLight ? "#0f172a" : "#f8fafc", display: "block" }}>
+                      Google Authentication
+                    </strong>
+                    <span style={{ fontSize: "0.76rem", color: isLight ? "#475569" : "#64748b" }}>
+                      Fast single sign-on authentication
+                    </span>
                   </div>
-                  <span style={{ fontSize: "0.78rem", color: "#94a3b8", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", padding: "2px 8px", borderRadius: "999px" }}>
-                    Not connected
+                  <span
+                    style={{
+                      fontSize: "0.78rem",
+                      color: isLight ? "#64748b" : "#94a3b8",
+                      background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.05)",
+                      border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.08)",
+                      padding: "2px 8px",
+                      borderRadius: "999px"
+                    }}
+                  >
+                    OAuth Available
                   </span>
                 </div>
               </div>
 
-              {/* Logout Button */}
-              <div style={{ background: "#080c14", padding: "18px 20px", borderRadius: "10px", border: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              {/* Active Session / Logout */}
+              <div className="settings-account-panel" style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <div>
-                  <strong style={{ fontSize: "0.92rem", color: "#f8fafc", display: "block" }}>Active Session</strong>
-                  <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Log out from this device and clear cached credentials.</span>
+                  <strong style={{ fontSize: "0.92rem", color: isLight ? "#0f172a" : "#f8fafc", display: "block" }}>
+                    Active Session
+                  </strong>
+                  <span style={{ fontSize: "0.78rem", color: isLight ? "#475569" : "#64748b" }}>
+                    Log out from this device and clear cached credentials.
+                  </span>
                 </div>
                 <button
                   type="button"
                   onClick={handleLogout}
-                  style={{
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    color: "#f8fafc",
-                    padding: "8px 16px",
-                    borderRadius: "6px",
-                    fontSize: "0.82rem",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px"
-                  }}
+                  className="settings-btn-cancel"
                 >
                   <LogOut size={14} />
                   <span>Logout</span>
@@ -1131,10 +1274,14 @@ export default function Settings() {
               </div>
 
               {/* Danger Zone: Delete Account */}
-              <div style={{ border: "1px solid rgba(239, 68, 68, 0.3)", background: "rgba(239, 68, 68, 0.05)", borderRadius: "10px", padding: "18px 22px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div className="settings-danger-card">
                 <div>
-                  <strong style={{ color: "#f87171", fontSize: "0.92rem", display: "block" }}>Delete Account</strong>
-                  <span style={{ color: "#94a3b8", fontSize: "0.78rem" }}>Permanently remove your account and all associated test submissions.</span>
+                  <strong style={{ color: "#ef4444", fontSize: "0.92rem", display: "block" }}>
+                    Delete Account
+                  </strong>
+                  <span style={{ color: isLight ? "#475569" : "#94a3b8", fontSize: "0.78rem" }}>
+                    Permanently remove your account and all associated test submissions.
+                  </span>
                 </div>
                 <button
                   type="button"
@@ -1143,7 +1290,7 @@ export default function Settings() {
                     setDeleteConfirmText("");
                     setDeleteError("");
                   }}
-                  style={{ background: "#ef4444", color: "#ffffff", border: "none", padding: "8px 16px", borderRadius: "6px", fontSize: "0.82rem", fontWeight: "600", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
+                  className="settings-btn-danger"
                 >
                   <Trash2 size={14} />
                   <span>Delete Account</span>
@@ -1157,62 +1304,48 @@ export default function Settings() {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {showDeleteModal && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0, 0, 0, 0.75)",
-              backdropFilter: "blur(6px)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              zIndex: 300,
-              padding: "16px"
-            }}
-          >
+          <div className="settings-modal-backdrop">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              style={{
-                background: "#0f1628",
-                border: "1px solid rgba(239, 68, 68, 0.4)",
-                borderRadius: "14px",
-                padding: "24px",
-                maxWidth: "440px",
-                width: "100%",
-                boxShadow: "0 20px 50px rgba(0, 0, 0, 0.8)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "14px"
-              }}
+              className="settings-modal-box"
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <strong style={{ fontSize: "1.1rem", color: "#f87171", display: "flex", alignItems: "center", gap: "6px" }}>
+                <strong style={{ fontSize: "1.1rem", color: "#ef4444", display: "flex", alignItems: "center", gap: "6px" }}>
                   <AlertTriangle size={18} />
                   Delete your Judgo account?
                 </strong>
                 <button
                   type="button"
                   onClick={() => setShowDeleteModal(false)}
-                  style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer" }}
+                  style={{ background: "transparent", border: "none", color: isLight ? "#475569" : "#94a3b8", cursor: "pointer" }}
                 >
                   <X size={18} />
                 </button>
               </div>
 
-              <p style={{ fontSize: "0.85rem", color: "#cbd5e1", margin: 0, lineHeight: "1.5" }}>
+              <p style={{ fontSize: "0.85rem", color: isLight ? "#334155" : "#cbd5e1", margin: 0, lineHeight: "1.5" }}>
                 This action permanently removes your account, coding XP, ranking, and all historical submissions. <strong>This cannot be undone.</strong>
               </p>
 
               {deleteError && (
-                <div style={{ padding: "8px 12px", background: "rgba(239,68,68,0.15)", border: "1px solid #ef4444", borderRadius: "6px", color: "#f87171", fontSize: "0.8rem" }}>
+                <div
+                  style={{
+                    padding: "8px 12px",
+                    background: "rgba(239,68,68,0.15)",
+                    border: "1px solid #ef4444",
+                    borderRadius: "6px",
+                    color: "#f87171",
+                    fontSize: "0.8rem"
+                  }}
+                >
                   {deleteError}
                 </div>
               )}
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "0.78rem", color: "#94a3b8" }}>
+              <div className="settings-form-group">
+                <label className="settings-label" style={{ fontSize: "0.78rem" }}>
                   Type <strong>DELETE</strong> to confirm:
                 </label>
                 <input
@@ -1220,15 +1353,8 @@ export default function Settings() {
                   value={deleteConfirmText}
                   onChange={(e) => setDeleteConfirmText(e.target.value)}
                   placeholder="DELETE"
-                  style={{
-                    background: "#080c14",
-                    border: "1px solid rgba(255,255,255,0.15)",
-                    borderRadius: "6px",
-                    padding: "8px 12px",
-                    color: "#ffffff",
-                    fontSize: "0.88rem",
-                    textTransform: "uppercase"
-                  }}
+                  className="settings-input"
+                  style={{ textTransform: "uppercase" }}
                 />
               </div>
 
@@ -1236,15 +1362,7 @@ export default function Settings() {
                 <button
                   type="button"
                   onClick={() => setShowDeleteModal(false)}
-                  style={{
-                    background: "rgba(255,255,255,0.06)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: "6px",
-                    padding: "8px 16px",
-                    color: "#cbd5e1",
-                    fontSize: "0.84rem",
-                    cursor: "pointer"
-                  }}
+                  className="settings-btn-cancel"
                 >
                   Cancel
                 </button>
@@ -1252,14 +1370,9 @@ export default function Settings() {
                   type="button"
                   disabled={deleteConfirmText !== "DELETE" || isDeleting}
                   onClick={handleDeleteAccount}
+                  className="settings-btn-danger"
                   style={{
-                    background: deleteConfirmText === "DELETE" ? "#ef4444" : "rgba(239,68,68,0.3)",
-                    border: "none",
-                    borderRadius: "6px",
-                    padding: "8px 16px",
-                    color: "#ffffff",
-                    fontSize: "0.84rem",
-                    fontWeight: "600",
+                    opacity: deleteConfirmText === "DELETE" && !isDeleting ? 1 : 0.4,
                     cursor: deleteConfirmText === "DELETE" && !isDeleting ? "pointer" : "not-allowed"
                   }}
                 >

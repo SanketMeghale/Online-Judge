@@ -190,14 +190,25 @@ export default function CodeEditor({
         if (stored) setEditorSettings(JSON.parse(stored));
       } catch {}
     }
+
+    function handleCustomSettingsUpdate(event) {
+      if (event?.detail) {
+        setEditorSettings((prev) => ({ ...prev, ...event.detail }));
+      }
+    }
+
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    window.addEventListener("judgo-settings-updated", handleCustomSettingsUpdate);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("judgo-settings-updated", handleCustomSettingsUpdate);
+    };
   }, []);
 
   const fontSize = editorSettings.fontSize || 14;
   const tabSize = editorSettings.tabSize || (String(language).toLowerCase().includes("python") ? 4 : 2);
   const wordWrap = editorSettings.wordWrap !== false;
-  const showLineNumbers = editorSettings.showLineNumbers !== false;
+  const showLineNumbers = editorSettings.lineNumbers !== false && editorSettings.showLineNumbers !== false;
   
   const configuredTheme = editorSettings.editorTheme;
   const currentEditorTheme = configuredTheme

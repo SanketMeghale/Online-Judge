@@ -20,6 +20,7 @@ import {
   HelpCircle,
   Layers,
   List,
+  Lock,
   Mail,
   MapPin,
   Medal,
@@ -427,6 +428,24 @@ export default function Profile() {
             <span className="prof-tier-badge">
               <Sparkles size={12} /> Level {currentLevel} {xp >= 2000 ? "Grandmaster" : xp >= 1000 ? "Expert Coder" : "Competitive Coder"}
             </span>
+            {liveUser?.preferences?.publicProfile === false && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  fontSize: "0.72rem",
+                  color: isLight ? "#d97706" : "#f59e0b",
+                  background: isLight ? "rgba(245, 158, 11, 0.12)" : "rgba(245, 158, 11, 0.15)",
+                  border: "1px solid rgba(245, 158, 11, 0.3)",
+                  padding: "2px 8px",
+                  borderRadius: "999px",
+                  fontWeight: "600"
+                }}
+              >
+                <Lock size={10} /> Private Profile
+              </span>
+            )}
             {isSyncing && (
               <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "0.7rem", color: "#6366f1" }}>
                 <RefreshCw size={11} className="spin-fast" /> Syncing

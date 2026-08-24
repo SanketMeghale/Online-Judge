@@ -1,4 +1,4 @@
-const ACCENT_COLORS = {
+export const ACCENT_COLORS = {
   indigo: {
     primary: "#6366f1",
     hover: "#4f46e5",
@@ -48,9 +48,39 @@ export function applyThemeAndAppearance(preferences = {}) {
     body.classList.add(`theme-${resolvedTheme}`);
   }
 
-  // 2. Set Theme CSS Custom Variables
+  // 2. Accent Color Palette
+  const accentKey = preferences.accentColor || "indigo";
+  const palette = ACCENT_COLORS[accentKey] || ACCENT_COLORS.indigo;
+
+  root.setAttribute("data-accent", accentKey);
+  root.style.setProperty("--accent", palette.primary);
+  root.style.setProperty("--accent-primary", palette.primary);
+  root.style.setProperty("--accent-hover", palette.hover);
+  root.style.setProperty("--accent-glow", palette.glow);
+  root.style.setProperty("--accent-tint", palette.tint);
+  root.style.setProperty("--dash-accent-primary", palette.primary);
+  root.style.setProperty("--dash-accent-hover", palette.hover);
+  root.style.setProperty("--dash-accent-glow", palette.glow);
+  root.style.setProperty("--dash-accent-tint", palette.tint);
+
+  // 3. Set Theme CSS Custom Variables (WCAG AAA High Contrast)
   if (resolvedTheme === "light") {
-    // Light Theme Palette
+    // Light Theme Semantic Palette
+    root.style.setProperty("--background", "#f8fafc");
+    root.style.setProperty("--surface", "#ffffff");
+    root.style.setProperty("--surface-secondary", "#f1f5f9");
+    root.style.setProperty("--surface-hover", "#f1f5f9");
+    root.style.setProperty("--text-primary", "#0f172a");
+    root.style.setProperty("--text-secondary", "#475569");
+    root.style.setProperty("--text-muted", "#64748b");
+    root.style.setProperty("--border", "#e2e8f0");
+    root.style.setProperty("--border-strong", "#cbd5e1");
+    root.style.setProperty("--success", "#059669");
+    root.style.setProperty("--warning", "#d97706");
+    root.style.setProperty("--danger", "#dc2626");
+    root.style.setProperty("--info", "#0284c7");
+
+    // Legacy component tokens
     root.style.setProperty("--bg-app", "#f8fafc");
     root.style.setProperty("--bg-base", "#f1f5f9");
     root.style.setProperty("--bg-surface", "#ffffff");
@@ -69,9 +99,6 @@ export function applyThemeAndAppearance(preferences = {}) {
     root.style.setProperty("--border-input", "#cbd5e1");
     root.style.setProperty("--border-focus", "rgba(99, 102, 241, 0.5)");
 
-    root.style.setProperty("--text-primary", "#0f172a");
-    root.style.setProperty("--text-secondary", "#475569");
-    root.style.setProperty("--text-muted", "#64748b");
     root.style.setProperty("--text-heading", "#0f172a");
     root.style.setProperty("--text-on-card", "#334155");
 
@@ -90,7 +117,22 @@ export function applyThemeAndAppearance(preferences = {}) {
     root.style.setProperty("--dash-text-secondary", "#475569");
     root.style.setProperty("--dash-text-muted", "#64748b");
   } else {
-    // Dark Theme Palette
+    // Dark Theme Semantic Palette
+    root.style.setProperty("--background", "#050a18");
+    root.style.setProperty("--surface", "#0d111a");
+    root.style.setProperty("--surface-secondary", "#111827");
+    root.style.setProperty("--surface-hover", "#131b2e");
+    root.style.setProperty("--text-primary", "#f8fafc");
+    root.style.setProperty("--text-secondary", "#94a3b8");
+    root.style.setProperty("--text-muted", "#64748b");
+    root.style.setProperty("--border", "rgba(255, 255, 255, 0.08)");
+    root.style.setProperty("--border-strong", "rgba(255, 255, 255, 0.16)");
+    root.style.setProperty("--success", "#10b981");
+    root.style.setProperty("--warning", "#f59e0b");
+    root.style.setProperty("--danger", "#ef4444");
+    root.style.setProperty("--info", "#3b82f6");
+
+    // Legacy component tokens
     root.style.setProperty("--bg-app", "#050a18");
     root.style.setProperty("--bg-base", "#030814");
     root.style.setProperty("--bg-surface", "#080c14");
@@ -109,9 +151,6 @@ export function applyThemeAndAppearance(preferences = {}) {
     root.style.setProperty("--border-input", "rgba(255, 255, 255, 0.12)");
     root.style.setProperty("--border-focus", "rgba(124, 58, 237, 0.4)");
 
-    root.style.setProperty("--text-primary", "#f8fafc");
-    root.style.setProperty("--text-secondary", "#94a3b8");
-    root.style.setProperty("--text-muted", "#64748b");
     root.style.setProperty("--text-heading", "#ffffff");
     root.style.setProperty("--text-on-card", "#cbd5e1");
 
@@ -131,17 +170,6 @@ export function applyThemeAndAppearance(preferences = {}) {
     root.style.setProperty("--dash-text-muted", "#64748b");
   }
 
-  // 3. Accent Color
-  const accentKey = preferences.accentColor || "indigo";
-  const palette = ACCENT_COLORS[accentKey] || ACCENT_COLORS.indigo;
-
-  root.style.setProperty("--dash-accent-primary", palette.primary);
-  root.style.setProperty("--dash-accent-hover", palette.hover);
-  root.style.setProperty("--dash-accent-glow", palette.glow);
-  root.style.setProperty("--dash-accent-tint", palette.tint);
-  root.style.setProperty("--accent-primary", palette.primary);
-  root.style.setProperty("--accent-hover", palette.hover);
-
   // 4. Density Mode
   const isCompact = preferences.compactMode || preferences.density === "compact";
   root.setAttribute("data-density", isCompact ? "compact" : "comfortable");
@@ -153,4 +181,16 @@ export function applyThemeAndAppearance(preferences = {}) {
     root.style.setProperty("--dash-padding-card", "20px 24px");
     root.style.setProperty("--table-cell-padding", "16px 16px");
   }
+
+  // 5. Broadcast real-time preferences update event to all active components
+  try {
+    window.dispatchEvent(
+      new CustomEvent("judgo-settings-updated", {
+        detail: {
+          ...preferences,
+          resolvedTheme
+        }
+      })
+    );
+  } catch {}
 }

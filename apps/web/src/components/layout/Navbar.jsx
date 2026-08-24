@@ -29,9 +29,8 @@ import { JudgoLogo } from "./JudgoLogo.jsx";
 export default function Navbar({ onToggleSidebar = () => {} }) {
   const { isAuthenticated, logout, user } = useAuth();
   const { getUserById } = useAppData();
-  const { theme, resolvedTheme, isLight, toggleTheme, setTheme } = useTheme();
+  const { theme, resolvedTheme, isLight, toggleTheme, setTheme, preferences } = useTheme();
   const navigate = useNavigate();
-  const location = useLocation();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -241,80 +240,150 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
 
               {/* 3. Notifications Bell */}
               <div className="nav-notification-wrap" style={{ position: "relative" }}>
-                <button
-                  className="nav-notification-button"
-                  type="button"
-                  onClick={() => {
-                    setNotifOpen((prev) => !prev);
-                    setDropdownOpen(false);
-                  }}
-                  style={{
-                    background: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.04)",
-                    border: isLight ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(255, 255, 255, 0.08)",
-                    borderRadius: "7px",
-                    width: "32px",
-                    height: "32px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: isLight ? "#475569" : "#94a3b8",
-                    cursor: "pointer",
-                    position: "relative",
-                    flexShrink: 0
-                  }}
-                >
-                  <Bell size={15} />
-                  <span
-                    style={{
-                      position: "absolute",
-                      top: "6px",
-                      right: "6px",
-                      width: "5px",
-                      height: "5px",
-                      borderRadius: "50%",
-                      background: "#3b82f6"
-                    }}
-                  />
-                </button>
+                {(() => {
+                  const notifPrefs = preferences || user?.preferences || {};
+                  const allNotifications = [
+                    {
+                      id: "sub-1",
+                      type: "submissionResults",
+                      title: "✓ Solution Accepted",
+                      desc: "Valid Parentheses passed all test cases.",
+                      color: "#10b981"
+                    },
+                    {
+                      id: "contest-1",
+                      type: "contestReminders",
+                      title: "🏆 Weekly Contest",
+                      desc: "Algorithm Sprint 42 starts in 2 days.",
+                      color: "#f59e0b"
+                    },
+                    {
+                      id: "achieve-1",
+                      type: "achievementAlerts",
+                      title: "⭐ 7-Day Streak Milestone",
+                      desc: "You unlocked the Consistent Coder badge!",
+                      color: "#818cf8"
+                    },
+                    {
+                      id: "coach-1",
+                      type: "aiCoachNotifications",
+                      title: "⚡ Judgo Intelligence Tip",
+                      desc: "Try solving 2 DP problems to boost graph mastery.",
+                      color: "#06b6d4"
+                    }
+                  ];
+                  const activeNotifications = allNotifications.filter(
+                    (n) => notifPrefs[n.type] !== false
+                  );
 
-                <AnimatePresence>
-                  {notifOpen && (
-                    <motion.div
-                      className="nav-notification-menu"
-                      initial={{ opacity: 0, scale: 0.95, y: -6 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: -6 }}
-                      transition={{ duration: 0.15 }}
-                      style={{
-                        position: "absolute",
-                        top: "calc(100% + 8px)",
-                        right: 0,
-                        width: "280px",
-                        background: isLight ? "#ffffff" : "#0d111a",
-                        border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.1)",
-                        borderRadius: "12px",
-                        boxShadow: isLight ? "0 10px 30px rgba(0, 0, 0, 0.1)" : "0 14px 35px rgba(0, 0, 0, 0.55)",
-                        padding: "12px",
-                        zIndex: 200
-                      }}
-                    >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                        <strong style={{ fontSize: "0.85rem", color: isLight ? "#0f172a" : "#f8fafc" }}>Notifications</strong>
-                        <span style={{ fontSize: "0.72rem", color: "#818cf8", cursor: "pointer" }}>Mark all read</span>
-                      </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "0.78rem" }}>
-                        <div style={{ padding: "8px 10px", background: isLight ? "#f8fafc" : "rgba(255,255,255,0.03)", border: isLight ? "1px solid #e2e8f0" : "none", borderRadius: "8px" }}>
-                          <span style={{ color: "#10b981", fontWeight: "600" }}>✓ Solution Accepted</span>
-                          <p style={{ margin: "2px 0 0 0", color: isLight ? "#475569" : "#94a3b8" }}>Valid Parentheses passed all test cases.</p>
-                        </div>
-                        <div style={{ padding: "8px 10px", background: isLight ? "#f8fafc" : "rgba(255,255,255,0.03)", border: isLight ? "1px solid #e2e8f0" : "none", borderRadius: "8px" }}>
-                          <span style={{ color: "#f59e0b", fontWeight: "600" }}>🏆 Weekly Contest</span>
-                          <p style={{ margin: "2px 0 0 0", color: isLight ? "#475569" : "#94a3b8" }}>Algorithm Sprint 42 starts in 2 days.</p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                  return (
+                    <>
+                      <button
+                        className="nav-notification-button"
+                        type="button"
+                        onClick={() => {
+                          setNotifOpen((prev) => !prev);
+                          setDropdownOpen(false);
+                        }}
+                        style={{
+                          background: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.04)",
+                          border: isLight ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(255, 255, 255, 0.08)",
+                          borderRadius: "7px",
+                          width: "32px",
+                          height: "32px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: isLight ? "#475569" : "#94a3b8",
+                          cursor: "pointer",
+                          position: "relative",
+                          flexShrink: 0
+                        }}
+                      >
+                        <Bell size={15} />
+                        {activeNotifications.length > 0 && (
+                          <span
+                            style={{
+                              position: "absolute",
+                              top: "6px",
+                              right: "6px",
+                              width: "5px",
+                              height: "5px",
+                              borderRadius: "50%",
+                              background: "#3b82f6"
+                            }}
+                          />
+                        )}
+                      </button>
+
+                      <AnimatePresence>
+                        {notifOpen && (
+                          <motion.div
+                            className="nav-notification-menu"
+                            initial={{ opacity: 0, scale: 0.95, y: -6 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: -6 }}
+                            transition={{ duration: 0.15 }}
+                            style={{
+                              position: "absolute",
+                              top: "calc(100% + 8px)",
+                              right: 0,
+                              width: "300px",
+                              background: isLight ? "#ffffff" : "#0d111a",
+                              border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.1)",
+                              borderRadius: "12px",
+                              boxShadow: isLight ? "0 10px 30px rgba(0, 0, 0, 0.1)" : "0 14px 35px rgba(0, 0, 0, 0.55)",
+                              padding: "14px",
+                              zIndex: 200
+                            }}
+                          >
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                              <strong style={{ fontSize: "0.85rem", color: isLight ? "#0f172a" : "#f8fafc" }}>Notifications</strong>
+                              <Link
+                                to="/settings?tab=notifications"
+                                onClick={() => setNotifOpen(false)}
+                                style={{ fontSize: "0.72rem", color: "var(--accent-primary, #6366f1)", textDecoration: "none", fontWeight: "600" }}
+                              >
+                                Manage
+                              </Link>
+                            </div>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "0.78rem" }}>
+                              {activeNotifications.length > 0 ? (
+                                activeNotifications.map((item) => (
+                                  <div
+                                    key={item.id}
+                                    style={{
+                                      padding: "8px 10px",
+                                      background: isLight ? "#f8fafc" : "rgba(255,255,255,0.03)",
+                                      border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255,255,255,0.06)",
+                                      borderRadius: "8px"
+                                    }}
+                                  >
+                                    <span style={{ color: item.color, fontWeight: "600" }}>{item.title}</span>
+                                    <p style={{ margin: "2px 0 0 0", color: isLight ? "#475569" : "#94a3b8", lineHeight: "1.4" }}>
+                                      {item.desc}
+                                    </p>
+                                  </div>
+                                ))
+                              ) : (
+                                <div style={{ padding: "16px 8px", textAlign: "center", color: isLight ? "#64748b" : "#94a3b8" }}>
+                                  <p style={{ margin: 0, fontSize: "0.8rem" }}>All notifications muted by preferences.</p>
+                                  <Link
+                                    to="/settings?tab=notifications"
+                                    onClick={() => setNotifOpen(false)}
+                                    style={{ fontSize: "0.76rem", color: "var(--accent-primary, #6366f1)", marginTop: "4px", display: "inline-block" }}
+                                  >
+                                    Adjust notification preferences →
+                                  </Link>
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* 3. Top-Right Profile Pill: [Avatar] [User Name] [Chevron ▾] */}

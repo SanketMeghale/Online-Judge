@@ -5,20 +5,46 @@ import { useAuth } from "../auth/AuthContext.jsx";
 const SETTINGS_STORAGE_KEY = "judgo-user-settings-v1";
 const THEME_STORAGE_KEY = "judgo_theme";
 
+const DEFAULT_PREFERENCES = {
+  theme: "light",
+  accentColor: "indigo",
+  density: "comfortable",
+  compactMode: false,
+  fontSize: 14,
+  tabSize: 4,
+  wordWrap: true,
+  lineNumbers: true,
+  autoSave: true,
+  editorTheme: "judgo-dark",
+  contestReminders: true,
+  submissionResults: true,
+  achievementAlerts: true,
+  dailyStreakReminders: true,
+  aiCoachNotifications: true,
+  publicProfile: true,
+  showSolvedProblems: true,
+  showActivity: true,
+  showContestRanking: true
+};
+
 const ThemeContext = createContext({
-  theme: "dark",
-  resolvedTheme: "dark",
+  theme: "light",
+  resolvedTheme: "light",
+  isLight: true,
+  isDark: false,
   setTheme: () => {},
   toggleTheme: () => {},
   accentColor: "indigo",
   setAccentColor: () => {},
   density: "comfortable",
-  setDensity: () => {}
+  setDensity: () => {},
+  preferences: DEFAULT_PREFERENCES,
+  updatePreferences: () => {}
 });
 
 function getInitialPreferences() {
   if (typeof window === "undefined") {
-    return { theme: "dark", accentColor: "indigo", density: "comfortable", compactMode: false };
+    return DEFAULT_PREFERENCES;
   }
 
   try {
@@ -26,14 +52,21 @@ function getInitialPreferences() {
     const storedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
     const parsedSettings = storedSettings ? JSON.parse(storedSettings) : {};
 
-    const theme = rawTheme || parsedSettings.theme || "dark";
+    const theme = rawTheme || parsedSettings.theme || "light";
     const accentColor = parsedSettings.accentColor || "indigo";
     const density = parsedSettings.density || (parsedSettings.compactMode ? "compact" : "comfortable");
     const compactMode = Boolean(parsedSettings.compactMode || density === "compact");
 
-    return { theme, accentColor, density, compactMode };
+    return {
+      ...DEFAULT_PREFERENCES,
+      ...parsedSettings,
+      theme,
+      accentColor,
+      density,
+      compactMode
+    };
   } catch {
-    return { theme: "dark", accentColor: "indigo", density: "comfortable", compactMode: false };
+    return DEFAULT_PREFERENCES;
   }
 }
 
@@ -67,10 +100,11 @@ export function ThemeProvider({ children }) {
 
   // Sync with logged-in user profile preferences if available
   useEffect(() => {
-    if (user?.preferences?.theme) {
+    if (user?.preferences) {
       setPreferences((prev) => {
         const next = {
           ...prev,
+          ...user.preferences,
           theme: user.preferences.theme || prev.theme,
           accentColor: user.preferences.accentColor || prev.accentColor,
           density: user.preferences.density || prev.density,
@@ -97,53 +131,48 @@ export function ThemeProvider({ children }) {
     return () => mediaQuery.removeEventListener("change", handler);
   }, [preferences]);
 
-  const setTheme = useCallback((themeMode) => {
-    setPreferences((prev) => {
-      const next = { ...prev, theme: themeMode };
-      try {
-        localStorage.setItem(THEME_STORAGE_KEY, themeMode);
-        const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
-        const parsed = stored ? JSON.parse(stored) : {};
-        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ ...parsed, theme: themeMode }));
-      } catch {}
-      applyCurrentPreferences(next);
-      return next;
-    });
-  }, [applyCurrentPreferences]);
+  const updatePreferences = useCallback(
+    (newPrefs) => {
+      setPreferences((prev) => {
+        const next = { ...prev, ...newPrefs };
+        try {
+          if (newPrefs.theme) {
+            localStorage.setItem(THEME_STORAGE_KEY, newPrefs.theme);
+          }
+          localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(next));
+        } catch {}
+        applyCurrentPreferences(next);
+        return next;
+      });
+    },
+    [applyCurrentPreferences]
+  );
+
+  const setTheme = useCallback(
+    (themeMode) => {
+      updatePreferences({ theme: themeMode });
+    },
+    [updatePreferences]
+  );
 
   const toggleTheme = useCallback(() => {
     setTheme(resolvedTheme === "dark" ? "light" : "dark");
   }, [resolvedTheme, setTheme]);
 
-  const setAccentColor = useCallback((color) => {
-    setPreferences((prev) => {
-      const next = { ...prev, accentColor: color };
-      try {
-        const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
-        const parsed = stored ? JSON.parse(stored) : {};
-        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({ ...parsed, accentColor: color }));
-      } catch {}
-      applyCurrentPreferences(next);
-      return next;
-    });
-  }, [applyCurrentPreferences]);
+  const setAccentColor = useCallback(
+    (color) => {
+      updatePreferences({ accentColor: color });
+    },
+    [updatePreferences]
+  );
 
-  const setDensity = useCallback((densityMode) => {
-    setPreferences((prev) => {
+  const setDensity = useCallback(
+    (densityMode) => {
       const isCompact = densityMode === "compact";
-      const next = { ...prev, density: densityMode, compactMode: isCompact };
-      try {
-        const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
-        const parsed = stored ? JSON.parse(stored) : {};
-        localStorage.setItem(
-          SETTINGS_STORAGE_KEY,
-          JSON.stringify({ ...parsed, density: densityMode, compactMode: isCompact })
-        );
-      } catch {}
-      applyCurrentPreferences(next);
-      return next;
-    });
-  }, [applyCurrentPreferences]);
+      updatePreferences({ density: densityMode, compactMode: isCompact });
+    },
+    [updatePreferences]
+  );
 
   return (
     <ThemeContext.Provider
@@ -158,7 +187,8 @@ export function ThemeProvider({ children }) {
         setAccentColor,
         density: preferences.density,
         setDensity,
-        preferences
+        preferences,
+        updatePreferences
       }}
     >
       {children}
