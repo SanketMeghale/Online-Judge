@@ -59,32 +59,32 @@ export default function Profile() {
   const [remoteStats, setRemoteStats] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Edit form state
-  const [editForm, setEditForm] = useState(() => ({
-    name: liveUser.displayName || liveUser.name || "",
-    username: liveUser.username || "",
-    bio: liveUser.bio || "",
-    avatarUrl: liveUser.photoURL || liveUser.avatarUrl || "",
-    location: liveUser.location || "",
-    github: liveUser.github || "",
-    linkedin: liveUser.linkedin || "",
-    website: liveUser.website || ""
-  }));
-
-  // Current User ID
+  // Current User ID & Live User
   const currentUserId = user?.id || user?._id || "";
   const liveUser = { ...(currentUserId ? getUserById(currentUserId) : {}), ...(user || {}) };
 
+  // Edit form state
+  const [editForm, setEditForm] = useState(() => ({
+    name: liveUser?.displayName || liveUser?.name || "",
+    username: liveUser?.username || "",
+    bio: liveUser?.bio || "",
+    avatarUrl: liveUser?.photoURL || liveUser?.avatarUrl || "",
+    location: liveUser?.location || "",
+    github: liveUser?.github || "",
+    linkedin: liveUser?.linkedin || "",
+    website: liveUser?.website || ""
+  }));
+
   const handleOpenEditModal = () => {
     setEditForm({
-      name: liveUser.displayName || liveUser.name || "",
-      username: liveUser.username || "",
-      bio: liveUser.bio || "",
-      avatarUrl: liveUser.photoURL || liveUser.avatarUrl || "",
-      location: liveUser.location || "",
-      github: liveUser.github || "",
-      linkedin: liveUser.linkedin || "",
-      website: liveUser.website || ""
+      name: liveUser?.displayName || liveUser?.name || "",
+      username: liveUser?.username || "",
+      bio: liveUser?.bio || "",
+      avatarUrl: liveUser?.photoURL || liveUser?.avatarUrl || "",
+      location: liveUser?.location || "",
+      github: liveUser?.github || "",
+      linkedin: liveUser?.linkedin || "",
+      website: liveUser?.website || ""
     });
     setIsEditModalOpen(true);
   };
