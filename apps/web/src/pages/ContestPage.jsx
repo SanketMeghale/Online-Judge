@@ -209,11 +209,11 @@ export default function ContestPage() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28 }}
-      style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "14px", paddingBottom: "32px" }}
+      style={{ width: "100%", maxWidth: "100%", display: "flex", flexDirection: "column", gap: "14px", paddingBottom: "32px" }}
     >
       {/* ── HEADER & RATING WIDGET ────────────────────────────────────── */}
-      <div className="responsive-page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap", flex: "1 1 auto", maxWidth: "720px" }}>
+      <div className="responsive-page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", width: "100%" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "24px", flexWrap: "wrap", flex: "1 1 auto" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "2px" }}>
               <Swords size={15} style={{ color: "#a855f7" }} />
@@ -392,7 +392,7 @@ export default function ContestPage() {
       </div>
 
       {/* ── MAIN CONTENT GRID: CARDS + SIDEBAR LEADERBOARD ───────────── */}
-      <div className="contest-main-grid" style={{ display: "grid", gridTemplateColumns: "1fr 290px", gap: "14px", alignItems: "start" }}>
+      <div className="contest-main-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 300px", gap: "16px", alignItems: "start", width: "100%" }}>
 
         {/* LEFT: CONTEST CARDS LIST */}
         <div style={{ display: "flex", flexDirection: "column", gap: "9px" }}>

@@ -55,7 +55,7 @@ export default function LeaderboardPage() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "16px", paddingBottom: "40px" }}
+      style={{ width: "100%", maxWidth: "100%", display: "flex", flexDirection: "column", gap: "16px", paddingBottom: "40px" }}
     >
       {/* ── HEADER ──────────────────────────────────────────────────── */}
       <div className="responsive-page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>

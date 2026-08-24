@@ -650,10 +650,17 @@ kbd {
 .content-shell {
   flex: 1;
   min-width: 0;
-  padding: 24px 32px 60px;
-  max-width: 1600px;
-  margin: 0 auto;
+  padding: 16px 24px 48px;
+  max-width: 100%;
   width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 1920px) {
+  .content-shell {
+    max-width: 1800px;
+    margin: 0 auto;
+  }
 }
 
 .content-shell.content-shell-workspace {
@@ -832,15 +839,11 @@ kbd {
   text-align: center;
 }
 
-.content-shell {
-  min-width: 0;
-  padding: 16px 16px 24px 32px;
-}
-
 .judge-dashboard {
   display: grid;
   gap: 14px;
-  max-width: 1228px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .hero-card,
@@ -2056,7 +2059,8 @@ textarea.code-editor {
 .problems-page {
   display: grid;
   gap: 12px;
-  max-width: 1120px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .compact-header {
@@ -2189,7 +2193,8 @@ textarea.code-editor {
 .profile-page {
   display: grid;
   gap: 12px;
-  max-width: 1180px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .profile-hero,
@@ -2488,7 +2493,8 @@ textarea.code-editor {
 .page-stack {
   display: grid;
   gap: 12px;
-  max-width: 1180px;
+  width: 100%;
+  max-width: 100%;
 }
 
 .admin-grid {
@@ -2978,7 +2984,8 @@ textarea.code-editor {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  max-width: 1228px;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Hero Challenge Banner */
@@ -4573,8 +4580,8 @@ canvas {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  max-width: 1280px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
   padding-bottom: 40px;
 }
 

@@ -242,7 +242,7 @@ export default function ProgressPage() {
   return (
     <div
       className="progress-page responsive-page"
-      style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "12px", paddingBottom: "24px" }}
+      style={{ width: "100%", maxWidth: "100%", display: "flex", flexDirection: "column", gap: "14px", paddingBottom: "32px" }}
     >
       {/* ── 1. HEADER & DATE RANGE FILTER ──────────────────────────────── */}
       <div className="responsive-page-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
@@ -297,7 +297,7 @@ export default function ProgressPage() {
       )}
 
       {/* ── 2. TOP STAT CARDS ────────────────────────────────────────── */}
-      <div className="progress-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(160px, 100%), 1fr))", gap: "10px" }}>
+      <div className="progress-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(190px, 100%), 1fr))", gap: "12px", width: "100%" }}>
         {/* Card 1: Problems Solved */}
         <StatCard
           icon={<CheckCircle2 size={15} style={{ color: "#10b981" }} />}
@@ -355,7 +355,7 @@ export default function ProgressPage() {
       </div>
 
       {/* ── 3. MAIN CONTENT 2 COLUMNS: DIFFICULTY & ACTIVITY GRID ────── */}
-      <div className="progress-main-grid" style={{ display: "grid", gridTemplateColumns: "260px 1fr", gap: "12px", alignItems: "start" }}>
+      <div className="progress-main-grid" style={{ display: "grid", gridTemplateColumns: "280px minmax(0, 1fr)", gap: "14px", alignItems: "start", width: "100%" }}>
 
         {/* LEFT COLUMN: DIFFICULTY BREAKDOWN */}
         <div style={{

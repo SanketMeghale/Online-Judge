@@ -246,7 +246,7 @@ export default function ContestArenaPage() {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "calc(100vh - 80px)", gap: "12px", maxWidth: "1400px", margin: "0 auto" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "calc(100vh - 80px)", gap: "12px", width: "100%", maxWidth: "100%", paddingBottom: "32px" }}>
 
       {/* ── ARENA TOP HEADER BAR ─────────────────────────────────────── */}
       <header style={{

@@ -79,7 +79,7 @@ export default function ContestResultsPage() {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      style={{ maxWidth: "1100px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "16px", paddingBottom: "40px" }}
+      style={{ width: "100%", maxWidth: "100%", display: "flex", flexDirection: "column", gap: "16px", paddingBottom: "40px" }}
     >
       {/* Top Header Bar */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>

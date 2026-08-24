@@ -7,7 +7,7 @@ export default function CompanyDetailPage() {
   const navigate = useNavigate();
 
   return (
-    <div style={{ padding: "20px 24px 48px", maxWidth: "1400px", margin: "0 auto" }}>
+    <div style={{ width: "100%", maxWidth: "100%", padding: "0 0 32px 0" }}>
       <CompanyDetailSheet
         companyId={companyId || "google"}
         onBack={() => navigate("/ai-coach?tab=companies")}
