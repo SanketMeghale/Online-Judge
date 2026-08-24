@@ -10,6 +10,7 @@ import {
   Code2,
   FileText,
   FlaskConical,
+  GripHorizontal,
   GripVertical,
   History,
   Info,
@@ -86,11 +87,11 @@ function ProblemDetailsInner() {
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Left Navigation Active Tab: "description" | "solutions" | "submissions" | "testResult" | "testcases"
+  // TOP Problem Navigation Tabs (LEFT): "description" | "testcases" | "solutions" | "aiReview"
   const [activeLeftTab, setActiveLeftTab] = useState("description");
 
-  // Testcase sub-navigation: "testcases" | "custom"
-  const [testcaseSubTab, setTestcaseSubTab] = useState("testcases");
+  // BOTTOM Execution Navigation Tabs (RIGHT): "testcases" | "custom" | "testResult" | "submissions"
+  const [activeExecTab, setActiveExecTab] = useState("testcases");
   const [selectedCaseIndex, setSelectedCaseIndex] = useState(0);
   const [customInput, setCustomInput] = useState("");
 
@@ -120,7 +121,7 @@ function ProblemDetailsInner() {
     });
   }
 
-  // Two-Pane Resizing State (Default: 45% Left / 55% Right)
+  // Two-Pane Horizontal Resizing State (Default: 45% Left / 55% Right)
   const [splitRatio, setSplitRatio] = useState(() => {
     try {
       const saved = Number(localStorage.getItem("judgo-problem-pane-ratio"));
@@ -146,9 +147,8 @@ function ProblemDetailsInner() {
       if (!rect.width) return;
 
       const offset = e.clientX - rect.left;
-      // Clamp: Left >= 320px, Right >= 450px
       const minRatio = Math.max(0.2, 320 / rect.width);
-      const maxRatio = Math.min(0.8, 1 - (450 / rect.width));
+      const maxRatio = Math.min(0.8, 1 - (400 / rect.width));
       const nextRatio = Math.min(maxRatio, Math.max(minRatio, offset / rect.width));
       setSplitRatio(nextRatio);
 
@@ -174,6 +174,60 @@ function ProblemDetailsInner() {
       window.removeEventListener("pointercancel", handlePointerUp);
     };
   }, [isResizing, splitRatio]);
+
+  // Vertical Resizing between Code Editor and Bottom Execution Panel (Default: 58% Editor / 42% Exec)
+  const [execSplitRatio, setExecSplitRatio] = useState(() => {
+    try {
+      const saved = Number(localStorage.getItem("judgo-exec-split-ratio"));
+      return Number.isFinite(saved) && saved >= 0.25 && saved <= 0.85 ? saved : 0.58;
+    } catch {
+      return 0.58;
+    }
+  });
+  const [isVerticalResizing, setIsVerticalResizing] = useState(false);
+  const rightPaneRef = useRef(null);
+
+  const startVerticalResizing = useCallback((e) => {
+    e.preventDefault();
+    setIsVerticalResizing(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isVerticalResizing) return;
+
+    function handlePointerMove(e) {
+      if (!rightPaneRef.current) return;
+      const rect = rightPaneRef.current.getBoundingClientRect();
+      if (!rect.height) return;
+
+      const offset = e.clientY - rect.top;
+      const minRatio = Math.max(0.2, 160 / rect.height);
+      const maxRatio = Math.min(0.85, 1 - (120 / rect.height));
+      const nextRatio = Math.min(maxRatio, Math.max(minRatio, offset / rect.height));
+      setExecSplitRatio(nextRatio);
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("resize"));
+      }
+    }
+
+    function handlePointerUp() {
+      setIsVerticalResizing(false);
+      try {
+        localStorage.setItem("judgo-exec-split-ratio", String(execSplitRatio));
+      } catch {}
+    }
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    window.addEventListener("pointercancel", handlePointerUp);
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+      window.removeEventListener("pointercancel", handlePointerUp);
+    };
+  }, [isVerticalResizing, execSplitRatio]);
 
   const fetchAIHint = async (level = 1) => {
     setIsHintLoading(true);
@@ -350,10 +404,10 @@ function ProblemDetailsInner() {
 
     setIsRunning(true);
     setError("");
-    // Automatically switch to Test Result tab to show execution results
-    setActiveLeftTab("testResult");
+    // Automatically switch execution panel on the right to Test Result tab
+    setActiveExecTab("testResult");
 
-    const stdinToPass = testcaseSubTab === "custom" ? customInput : "";
+    const stdinToPass = activeExecTab === "custom" ? customInput : "";
 
     try {
       const nextResult = await runSolution({
@@ -388,8 +442,8 @@ function ProblemDetailsInner() {
 
     setIsSubmitting(true);
     setError("");
-    // Automatically switch to Test Result tab to show submission verdict
-    setActiveLeftTab("testResult");
+    // Automatically switch execution panel on the right to Test Result tab
+    setActiveExecTab("testResult");
 
     try {
       const nextResult = await submitSolution({
@@ -459,8 +513,11 @@ function ProblemDetailsInner() {
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <button
             type="button"
-            onClick={() => setSplitRatio(0.45)}
-            title="Reset pane split to default 45% / 55%"
+            onClick={() => {
+              setSplitRatio(0.45);
+              setExecSplitRatio(0.58);
+            }}
+            title="Reset workspace layout split to default"
             style={{
               background: "transparent",
               border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`,
@@ -475,7 +532,7 @@ function ProblemDetailsInner() {
               gap: "4px"
             }}
           >
-            <RotateCcw size={11} /> Reset Split
+            <RotateCcw size={11} /> Reset Layout
           </button>
         </div>
       </div>
@@ -486,13 +543,13 @@ function ProblemDetailsInner() {
         className={`judgo-ide-split${isResizing ? " is-resizing" : ""}`}
       >
         {/* ===================================================================
-            LEFT PANE: Problem Workspace (Description | Solutions | Submissions | Test Result | Testcases)
+            LEFT PANE: Problem Information (Description | Testcases | Solutions | AI Review)
             =================================================================== */}
         <div
           className="judgo-ide-left-pane"
           style={{ width: `calc(${splitRatio * 100}% - 5px)` }}
         >
-          {/* Top Navigation Bar: Single Horizontal Row */}
+          {/* Top Problem Navigation: Single Compact Horizontal Row */}
           <div className="judgo-ide-nav-bar">
             <div className="judgo-ide-nav-tabs">
               {/* Tab 1: Description */}
@@ -509,7 +566,21 @@ function ProblemDetailsInner() {
                 <span>Description</span>
               </button>
 
-              {/* Tab 2: Solutions */}
+              {/* Tab 2: Testcases */}
+              <button
+                type="button"
+                className={`judgo-ide-tab-btn${activeLeftTab === "testcases" ? " is-active" : ""}`}
+                onClick={() => setActiveLeftTab("testcases")}
+                style={{
+                  borderBottomColor: activeLeftTab === "testcases" ? "#06b6d4" : "transparent",
+                  color: activeLeftTab === "testcases" ? (isLight ? "#0891b2" : "#22d3ee") : undefined
+                }}
+              >
+                <Layers size={15} style={{ color: "#06b6d4" }} />
+                <span>Testcases</span>
+              </button>
+
+              {/* Tab 3: Solutions */}
               <button
                 type="button"
                 className={`judgo-ide-tab-btn${activeLeftTab === "solutions" ? " is-active" : ""}`}
@@ -524,78 +595,27 @@ function ProblemDetailsInner() {
                   color: activeLeftTab === "solutions" ? (isLight ? "#7e22ce" : "#c084fc") : undefined
                 }}
               >
-                <FlaskConical size={15} style={{ color: "#a855f7" }} />
+                <Lightbulb size={15} style={{ color: "#9333ea" }} />
                 <span>Solutions</span>
               </button>
 
-              {/* Tab 3: Submissions */}
+              {/* Tab 4: AI Review */}
               <button
                 type="button"
-                className={`judgo-ide-tab-btn${activeLeftTab === "submissions" ? " is-active" : ""}`}
-                onClick={() => setActiveLeftTab("submissions")}
+                className={`judgo-ide-tab-btn${activeLeftTab === "aiReview" ? " is-active" : ""}`}
+                onClick={() => {
+                  setActiveLeftTab("aiReview");
+                  if (!aiReview) {
+                    fetchAIReview();
+                  }
+                }}
                 style={{
-                  borderBottomColor: activeLeftTab === "submissions" ? "#ea580c" : "transparent",
-                  color: activeLeftTab === "submissions" ? (isLight ? "#c2410c" : "#fb923c") : undefined
+                  borderBottomColor: activeLeftTab === "aiReview" ? "#ec4899" : "transparent",
+                  color: activeLeftTab === "aiReview" ? (isLight ? "#db2777" : "#f472b6") : undefined
                 }}
               >
-                <History size={15} style={{ color: "#f97316" }} />
-                <span>Submissions</span>
-                {userSubmissions.length > 0 && (
-                  <span
-                    style={{
-                      fontSize: "0.7rem",
-                      fontWeight: "800",
-                      background: "rgba(249, 115, 22, 0.12)",
-                      color: "#ea580c",
-                      padding: "1px 5px",
-                      borderRadius: "99px"
-                    }}
-                  >
-                    {userSubmissions.length}
-                  </span>
-                )}
-              </button>
-
-              {/* Tab 4: Test Result */}
-              <button
-                type="button"
-                className={`judgo-ide-tab-btn${activeLeftTab === "testResult" ? " is-active" : ""}`}
-                onClick={() => setActiveLeftTab("testResult")}
-                style={{
-                  borderBottomColor: activeLeftTab === "testResult" ? "#16a34a" : "transparent",
-                  color: activeLeftTab === "testResult" ? (isLight ? "#15803d" : "#4ade80") : undefined
-                }}
-              >
-                <Zap size={15} style={{ color: "#16a34a", fill: "#16a34a" }} />
-                <span>Test Result</span>
-                {displayVerdict && (
-                  <span
-                    style={{
-                      fontSize: "0.68rem",
-                      fontWeight: "800",
-                      color: displayVerdict === "AC" ? "#16a34a" : "#ef4444",
-                      background: displayVerdict === "AC" ? "rgba(22, 163, 74, 0.12)" : "rgba(239, 68, 68, 0.12)",
-                      padding: "1px 5px",
-                      borderRadius: "4px"
-                    }}
-                  >
-                    {displayVerdict}
-                  </span>
-                )}
-              </button>
-
-              {/* Tab 5: Testcases */}
-              <button
-                type="button"
-                className={`judgo-ide-tab-btn${activeLeftTab === "testcases" ? " is-active" : ""}`}
-                onClick={() => setActiveLeftTab("testcases")}
-                style={{
-                  borderBottomColor: activeLeftTab === "testcases" ? "#06b6d4" : "transparent",
-                  color: activeLeftTab === "testcases" ? (isLight ? "#0891b2" : "#22d3ee") : undefined
-                }}
-              >
-                <Layers size={15} style={{ color: "#06b6d4" }} />
-                <span>Testcases</span>
+                <Sparkles size={15} style={{ color: "#ec4899" }} />
+                <span>AI Review</span>
               </button>
             </div>
 
@@ -646,7 +666,7 @@ function ProblemDetailsInner() {
           {/* Active Tab Content Area (Scrolls Independently) */}
           <div className="judgo-ide-tab-content">
             {/* ---------------------------------------------------------------
-                TAB 1: DESCRIPTION
+                LEFT TAB 1: DESCRIPTION
                 --------------------------------------------------------------- */}
             {activeLeftTab === "description" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -853,19 +873,67 @@ function ProblemDetailsInner() {
             )}
 
             {/* ---------------------------------------------------------------
-                TAB 2: SOLUTIONS & COMPLEXITY BREAKDOWN
+                LEFT TAB 2: TESTCASES OVERVIEW
+                --------------------------------------------------------------- */}
+            {activeLeftTab === "testcases" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, paddingBottom: "8px" }}>
+                  <strong style={{ fontSize: "0.88rem", color: isLight ? "#0f172a" : "#f8fafc" }}>
+                    Sample Problem Testcases
+                  </strong>
+                  <span style={{ fontSize: "0.74rem", color: isLight ? "#64748b" : "#8b9bb4" }}>
+                    {problemWithStatus.examples.length} testcase specifications
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {problemWithStatus.examples.map((tc, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        background: isLight ? "#f8fafc" : "#080c14",
+                        border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`,
+                        borderRadius: "8px",
+                        padding: "10px 12px"
+                      }}
+                    >
+                      <span style={{ fontSize: "0.78rem", fontWeight: "700", color: "#06b6d4", display: "inline-block", marginBottom: "6px" }}>
+                        Case {idx + 1}
+                      </span>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                        <div>
+                          <small style={{ color: isLight ? "#64748b" : "#94a3b8", fontSize: "0.72rem", fontWeight: "600" }}>Input:</small>
+                          <pre style={{ margin: "2px 0 0", padding: "6px 8px", background: isLight ? "#ffffff" : "#0f1628", borderRadius: "5px", fontSize: "0.78rem", fontFamily: "monospace", color: isLight ? "#0f172a" : "#f1f5f9" }}>
+                            {formatDisplayValue(tc.input)}
+                          </pre>
+                        </div>
+                        <div>
+                          <small style={{ color: isLight ? "#64748b" : "#94a3b8", fontSize: "0.72rem", fontWeight: "600" }}>Expected Output:</small>
+                          <pre style={{ margin: "2px 0 0", padding: "6px 8px", background: isLight ? "#ffffff" : "#0f1628", borderRadius: "5px", fontSize: "0.78rem", fontFamily: "monospace", color: "#16a34a" }}>
+                            {formatDisplayValue(tc.output)}
+                          </pre>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ---------------------------------------------------------------
+                LEFT TAB 3: SOLUTIONS & EDITORIAL
                 --------------------------------------------------------------- */}
             {activeLeftTab === "solutions" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                 <div style={{ background: isLight ? "#f5f3ff" : "rgba(120, 80, 255, 0.1)", border: `1px solid ${isLight ? "#ddd6fe" : "rgba(120, 80, 255, 0.3)"}`, borderRadius: "8px", padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <Brain size={18} color="#c084fc" />
+                    <Lightbulb size={18} color="#c084fc" />
                     <div>
                       <strong style={{ fontSize: "0.9rem", color: isLight ? "#0f172a" : "#f8fafc" }}>
                         Algorithmic Solutions & Complexity
                       </strong>
                       <span style={{ display: "block", fontSize: "0.74rem", color: isLight ? "#64748b" : "#94a3b8" }}>
-                        Mathematical Big-O bounds and optimal pattern explanations
+                        Optimal patterns, invariants, and Big-O complexity bounds
                       </span>
                     </div>
                   </div>
@@ -911,264 +979,239 @@ function ProblemDetailsInner() {
             )}
 
             {/* ---------------------------------------------------------------
-                TAB 3: SUBMISSIONS HISTORY
+                LEFT TAB 4: AI REVIEW & MENTOR
                 --------------------------------------------------------------- */}
-            {activeLeftTab === "submissions" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <h3 style={{ fontSize: "0.88rem", fontWeight: "700", color: isLight ? "#0f172a" : "#fff", margin: 0 }}>
-                  Submission History ({userSubmissions.length})
-                </h3>
-
-                {userSubmissions.length === 0 ? (
-                  <div style={{ padding: "3rem", textAlign: "center", color: "#64748b", border: `1px dashed ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, borderRadius: "8px" }}>
-                    <History size={24} style={{ marginBottom: "6px", opacity: 0.6 }} />
-                    <p style={{ margin: 0, fontSize: "0.82rem" }}>You have not submitted any solutions for this problem yet.</p>
-                  </div>
-                ) : (
-                  <div style={{ overflowX: "auto" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
-                      <thead>
-                        <tr style={{ borderBottom: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, textAlign: "left", color: "#64748b" }}>
-                          <th style={{ padding: "8px 6px" }}>Status</th>
-                          <th style={{ padding: "8px 6px" }}>Language</th>
-                          <th style={{ padding: "8px 6px" }}>Runtime</th>
-                          <th style={{ padding: "8px 6px" }}>Memory</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {userSubmissions.map((sub, idx) => (
-                          <tr key={sub?.id || sub?.submissionId || idx} style={{ borderBottom: `1px solid ${isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)"}` }}>
-                            <td style={{ padding: "8px 6px", fontWeight: "bold", color: sub?.verdict === "AC" ? "#16a34a" : "#ef4444" }}>
-                              {formatDisplayValue(sub?.verdict, "AC")}
-                            </td>
-                            <td style={{ padding: "8px 6px", color: isLight ? "#334155" : "#cbd5e1" }}>{formatDisplayValue(sub?.language, "python")}</td>
-                            <td style={{ padding: "8px 6px", color: isLight ? "#334155" : "#cbd5e1" }}>{formatDisplayValue(sub?.runtime, "—")}</td>
-                            <td style={{ padding: "8px 6px", color: isLight ? "#334155" : "#cbd5e1" }}>{formatDisplayValue(sub?.memory, "—")}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ---------------------------------------------------------------
-                TAB 4: TEST RESULT (Verdict, Case Diffs, Diagnostics)
-                --------------------------------------------------------------- */}
-            {activeLeftTab === "testResult" && (
+            {activeLeftTab === "aiReview" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {isRunning || isSubmitting || isProcessingResult ? (
-                  <div style={{ padding: "3rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: "#8b9bb4" }}>
-                    <div className="spinner" style={{ width: 30, height: 30, border: "3px solid #333", borderTopColor: "#6366f1", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                    <div style={{ textAlign: "center" }}>
-                      <strong style={{ fontSize: "0.95rem", color: isLight ? "#0f172a" : "#f8fafc", display: "block" }}>
-                        {result?.statusText || (isSubmitting ? "Evaluating in Disposable Sandbox..." : "Running Testcases...")}
+                <div style={{ background: isLight ? "#fdf2f8" : "rgba(236, 72, 153, 0.08)", border: `1px solid ${isLight ? "#fbcfe8" : "rgba(236, 72, 153, 0.25)"}`, borderRadius: "8px", padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Sparkles size={18} color="#ec4899" />
+                    <div>
+                      <strong style={{ fontSize: "0.9rem", color: isLight ? "#831843" : "#f472b6" }}>
+                        AI Code Review & Mentor
                       </strong>
-                      <div style={{ marginTop: "6px", display: "flex", flexDirection: "column", gap: "3px", fontSize: "0.78rem", color: "#94a3b8" }}>
-                        <span>Worker state: {result?.status || "RUNNING"}</span>
-                        <span>Evaluation runs in a secure, isolated sandbox.</span>
-                      </div>
-                    </div>
-                  </div>
-                ) : result ? (
-                  <div className="compact-result-view">
-                    {/* Verdict Card */}
-                    <div className={`result-verdict-card ${displayVerdict === "AC" ? "is-accepted" : "is-error"}`}>
-                      <div className="result-verdict-main">
-                        <span className="result-verdict-icon" aria-hidden="true">
-                          {displayVerdict === "AC" ? (
-                            <CheckCircle2 size={26} />
-                          ) : displayVerdict === "CE" ? (
-                            <AlertTriangle size={26} />
-                          ) : (
-                            <XCircle size={26} />
-                          )}
-                        </span>
-                        <div>
-                          <strong className="result-verdict-title">
-                            {displayVerdict === "AC"
-                              ? "Accepted"
-                              : displayVerdict === "CE"
-                              ? "Compilation Error"
-                              : displayVerdict === "WA"
-                              ? "Wrong Answer"
-                              : displayVerdict === "TLE"
-                              ? "Time Limit Exceeded"
-                              : displayVerdict === "RE"
-                              ? "Runtime Error"
-                              : displayVerdict === "SYSTEM_ERROR"
-                              ? "System Error"
-                              : displayStatusText}
-                          </strong>
-                          <span className="result-verdict-subtitle">
-                            {displayVerdict === "AC"
-                              ? `Your solution passed all ${totalCasesNum} test cases.`
-                              : displayVerdict === "CE"
-                              ? "The compiler rejected this code."
-                              : displayVerdict === "TLE"
-                              ? "Time Limit Exceeded on one or more testcases."
-                              : displayVerdict === "RE"
-                              ? "Program terminated unexpectedly during execution."
-                              : displayVerdict === "SYSTEM_ERROR"
-                              ? "The sandbox service encountered an issue."
-                              : `Passed ${passedCountNum} of ${totalCasesNum} test cases.`}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="result-verdict-metrics">
-                        <div>
-                          <Clock3 size={15} />
-                          <span><strong>{displayRuntime}</strong><small>Runtime</small></span>
-                        </div>
-                        <div>
-                          <MemoryStick size={15} />
-                          <span><strong>{displayMemory}</strong><small>Memory</small></span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Test Case Diffs / Results List */}
-                    {resultCases.length ? (
-                      <section className="result-testcases-card">
-                        <header>
-                          <strong>Test Cases</strong>
-                          <span className={displayVerdict === "AC" ? "is-passed" : "is-failed"}>
-                            <CheckCircle2 size={13} />
-                            {resultCases.filter((testCase) => testCase?.passed).length} / {resultCases.length} passed
-                          </span>
-                        </header>
-
-                        <div className="result-testcase-list">
-                          {resultCases.map((testCase, index) => {
-                            const passed = Boolean(testCase?.passed);
-                            const expanded = expandedResultCaseIndex === index;
-                            return (
-                              <div className={`result-testcase-row${passed ? " is-passed" : " is-failed"}`} key={testCase?.id || index}>
-                                <button
-                                  type="button"
-                                  aria-expanded={expanded}
-                                  onClick={() => setExpandedResultCaseIndex(expanded ? null : index)}
-                                >
-                                  {passed ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-                                  <span>Test Case {index + 1}</span>
-                                  <strong>{passed ? "Passed" : formatDisplayValue(testCase?.verdict, "Failed")}</strong>
-                                  <ChevronDown size={14} className={expanded ? "is-expanded" : ""} />
-                                </button>
-
-                                {expanded && (
-                                  <div className="result-testcase-details">
-                                    <div>
-                                      <span>Input</span>
-                                      <pre>{formatDisplayValue(testCase?.input, "No input")}</pre>
-                                    </div>
-                                    <div>
-                                      <span>Expected</span>
-                                      <pre>{formatDisplayValue(testCase?.expectedOutput, "Not provided")}</pre>
-                                    </div>
-                                    <div>
-                                      <span>Your output</span>
-                                      <pre>{formatDisplayValue(testCase?.actualOutput || testCase?.stdout, "No output")}</pre>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </section>
-                    ) : (
-                      <div className="result-diagnostic-card">
-                        <strong>Diagnostic</strong>
-                        <pre>
-                          {formatDisplayValue(
-                            result.compileOutput || result.stderr || result.compiler?.stderr || result.diagnostic || result.statusText,
-                            "No diagnostic details were returned."
-                          )}
-                        </pre>
-                      </div>
-                    )}
-
-                    <div className="result-complexity-row">
-                      <div><Brain size={15} /><strong>Complexity</strong></div>
-                      <span>
-                        <strong>{result.complexity?.time || "Unavailable"}</strong> time
-                        <i>•</i>
-                        <strong>{result.complexity?.space || "Unavailable"}</strong> space
+                      <span style={{ display: "block", fontSize: "0.74rem", color: isLight ? "#9d174d" : "#cbd5e1" }}>
+                        Live analysis of code quality, invariants, and edge case safety
                       </span>
                     </div>
                   </div>
-                ) : (
-                  <div style={{ padding: "3rem", textAlign: "center", color: "#64748b", border: `1px dashed ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, borderRadius: "8px" }}>
-                    <Zap size={24} style={{ marginBottom: "6px", opacity: 0.6 }} />
-                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", fontWeight: "600", color: isLight ? "#0f172a" : "#f1f5f9" }}>
-                      No Execution Results Yet
-                    </p>
-                    <span style={{ fontSize: "0.78rem" }}>
-                      Click <strong>Run</strong> or <strong>Submit</strong> in the code editor to execute testcases and view results here.
-                    </span>
-                  </div>
-                )}
-
-                {error && <p className="form-error" style={{ color: "#ef4444", marginTop: "8px", fontSize: "0.8rem" }}>{formatDisplayValue(error)}</p>}
-              </div>
-            )}
-
-            {/* ---------------------------------------------------------------
-                TAB 5: TESTCASES (Cases + Custom Input)
-                --------------------------------------------------------------- */}
-            {activeLeftTab === "testcases" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {/* Sub-Navigation Toggle: Testcases | Custom Input */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, paddingBottom: "8px" }}>
-                  <div style={{ display: "flex", gap: "4px", background: isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)", padding: "2px", borderRadius: "6px" }}>
-                    <button
-                      type="button"
-                      onClick={() => setTestcaseSubTab("testcases")}
-                      style={{
-                        background: testcaseSubTab === "testcases" ? (isLight ? "#ffffff" : "#1e293b") : "transparent",
-                        border: testcaseSubTab === "testcases" ? `1px solid ${isLight ? "#cbd5e1" : "rgba(255,255,255,0.12)"}` : "1px solid transparent",
-                        color: testcaseSubTab === "testcases" ? (isLight ? "#0f172a" : "#f8fafc") : "#64748b",
-                        fontSize: "0.74rem",
-                        fontWeight: "700",
-                        padding: "3px 9px",
-                        borderRadius: "5px",
-                        cursor: "pointer",
-                        transition: "all 0.15s ease"
-                      }}
-                    >
-                      Testcases
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTestcaseSubTab("custom")}
-                      style={{
-                        background: testcaseSubTab === "custom" ? (isLight ? "#ffffff" : "#1e293b") : "transparent",
-                        border: testcaseSubTab === "custom" ? `1px solid ${isLight ? "#cbd5e1" : "rgba(255,255,255,0.12)"}` : "1px solid transparent",
-                        color: testcaseSubTab === "custom" ? (isLight ? "#0f172a" : "#f8fafc") : "#64748b",
-                        fontSize: "0.74rem",
-                        fontWeight: "700",
-                        padding: "3px 9px",
-                        borderRadius: "5px",
-                        cursor: "pointer",
-                        transition: "all 0.15s ease"
-                      }}
-                    >
-                      Custom Input
-                    </button>
-                  </div>
-
-                  <span style={{ fontSize: "0.74rem", color: isLight ? "#64748b" : "#8b9bb4" }}>
-                    {problemWithStatus.examples.length} sample cases
-                  </span>
+                  <button
+                    type="button"
+                    onClick={fetchAIReview}
+                    disabled={isReviewLoading}
+                    style={{
+                      background: "linear-gradient(135deg, #ec4899 0%, #db2777 100%)",
+                      border: "none",
+                      borderRadius: "6px",
+                      color: "#fff",
+                      fontSize: "0.74rem",
+                      fontWeight: "bold",
+                      padding: "5px 12px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px"
+                    }}
+                  >
+                    <Sparkles size={12} />
+                    {isReviewLoading ? "Analyzing..." : "Review My Code"}
+                  </button>
                 </div>
 
-                {testcaseSubTab === "testcases" ? (
-                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                    {/* Case Selector Buttons: Case 1 | Case 2 | Case 3 | + */}
-                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
-                      {problemWithStatus.examples.map((_, idx) => (
+                {isReviewLoading ? (
+                  <div style={{ padding: "3rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.75rem", color: "#ec4899" }}>
+                    <div className="spinner" style={{ width: 28, height: 28, border: "3px solid rgba(236, 72, 153, 0.2)", borderTopColor: "#ec4899", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                    <span style={{ fontWeight: "600", fontSize: "0.85rem", color: isLight ? "#0f172a" : "#f1f5f9" }}>Analyzing code structure and correctness...</span>
+                  </div>
+                ) : aiReview ? (
+                  <div style={{ background: isLight ? "#ffffff" : "#080c14", border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, borderRadius: "8px", padding: "14px", fontSize: "0.84rem", lineHeight: "1.6" }}>
+                    <AIContentRenderer content={aiReview.review} />
+                  </div>
+                ) : (
+                  <div style={{ padding: "2.5rem", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", background: "rgba(236, 72, 153, 0.03)", border: "1px dashed rgba(236, 72, 153, 0.2)", borderRadius: "8px" }}>
+                    <Brain size={26} color="#ec4899" />
+                    <div>
+                      <strong style={{ color: isLight ? "#0f172a" : "#f8fafc", fontSize: "0.92rem" }}>Deep AI Code Review</strong>
+                      <p style={{ margin: "4px 0 0 0", color: "#94a3b8", fontSize: "0.78rem" }}>
+                        Click below to get instant feedback on time complexity, potential bugs, and optimization paths.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={fetchAIReview}
+                      style={{ background: "linear-gradient(135deg, #ec4899 0%, #db2777 100%)", border: "none", borderRadius: "7px", color: "#fff", fontWeight: "bold", fontSize: "0.8rem", padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
+                    >
+                      <Sparkles size={14} />
+                      Analyze Current Solution
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ===================================================================
+            DRAGGABLE HORIZONTAL SPLIT DIVIDER (Left / Right)
+            =================================================================== */}
+        <div
+          className={`judgo-ide-divider${isResizing ? " is-active" : ""}`}
+          onPointerDown={startResizing}
+          title="Drag to resize Problem panel and Code workspace"
+        >
+          <span className="judgo-ide-divider-handle">
+            <GripVertical size={11} />
+          </span>
+        </div>
+
+        {/* ===================================================================
+            RIGHT PANE: Code Editor (Top) + Attached Execution Panel (Bottom)
+            =================================================================== */}
+        <div
+          ref={rightPaneRef}
+          className="judgo-ide-right-pane"
+        >
+          {/* Top Code Editor Area */}
+          <div
+            className="judgo-ide-editor-wrapper"
+            style={{ height: `calc(${execSplitRatio * 100}% - 4px)` }}
+          >
+            <CodeEditor
+              code={code}
+              language={language}
+              onCodeChange={handleCodeChange}
+              onLanguageChange={handleLanguageChange}
+              onRun={handleRun}
+              onSubmit={handleSubmit}
+              onReset={handleResetCode}
+              starterCode={getStarterForLanguage(problemWithStatus, language)}
+              isRunning={isRunning}
+              isSubmitting={isSubmitting}
+            />
+          </div>
+
+          {/* Draggable Vertical Divider between Code Editor and Execution Panel */}
+          <div
+            className={`judgo-ide-v-divider${isVerticalResizing ? " is-active" : ""}`}
+            onPointerDown={startVerticalResizing}
+            title="Drag to resize Code Editor and Execution panel vertically"
+          >
+            <span className="judgo-ide-v-divider-handle">
+              <GripHorizontal size={11} />
+            </span>
+          </div>
+
+          {/* Bottom Execution Panel Attached to Editor */}
+          <div
+            className="judgo-ide-exec-panel"
+            style={{ height: `calc(${(1 - execSplitRatio) * 100}% - 4px)` }}
+          >
+            {/* Execution Panel Header Tabs */}
+            <div className="judgo-ide-exec-nav">
+              <div className="judgo-ide-exec-tabs">
+                {/* Exec Tab 1: Testcases */}
+                <button
+                  type="button"
+                  className={`judgo-ide-exec-tab-btn${activeExecTab === "testcases" ? " is-active" : ""}`}
+                  onClick={() => setActiveExecTab("testcases")}
+                  style={{
+                    borderBottomColor: activeExecTab === "testcases" ? "#06b6d4" : "transparent",
+                    color: activeExecTab === "testcases" ? (isLight ? "#0891b2" : "#22d3ee") : undefined
+                  }}
+                >
+                  <Layers size={14} style={{ color: "#06b6d4" }} />
+                  <span>Testcases</span>
+                </button>
+
+                {/* Exec Tab 2: Custom Input */}
+                <button
+                  type="button"
+                  className={`judgo-ide-exec-tab-btn${activeExecTab === "custom" ? " is-active" : ""}`}
+                  onClick={() => setActiveExecTab("custom")}
+                  style={{
+                    borderBottomColor: activeExecTab === "custom" ? "#8b5cf6" : "transparent",
+                    color: activeExecTab === "custom" ? (isLight ? "#7c3aed" : "#a78bfa") : undefined
+                  }}
+                >
+                  <Sliders size={14} style={{ color: "#8b5cf6" }} />
+                  <span>Custom Input</span>
+                </button>
+
+                {/* Exec Tab 3: Test Result */}
+                <button
+                  type="button"
+                  className={`judgo-ide-exec-tab-btn${activeExecTab === "testResult" ? " is-active" : ""}`}
+                  onClick={() => setActiveExecTab("testResult")}
+                  style={{
+                    borderBottomColor: activeExecTab === "testResult" ? "#16a34a" : "transparent",
+                    color: activeExecTab === "testResult" ? (isLight ? "#15803d" : "#4ade80") : undefined
+                  }}
+                >
+                  <Zap size={14} style={{ color: "#16a34a", fill: "#16a34a" }} />
+                  <span>Test Result</span>
+                  {displayVerdict && (
+                    <span
+                      style={{
+                        fontSize: "0.66rem",
+                        fontWeight: "800",
+                        color: displayVerdict === "AC" ? "#16a34a" : "#ef4444",
+                        background: displayVerdict === "AC" ? "rgba(22, 163, 74, 0.12)" : "rgba(239, 68, 68, 0.12)",
+                        padding: "1px 5px",
+                        borderRadius: "4px"
+                      }}
+                    >
+                      {displayVerdict}
+                    </span>
+                  )}
+                </button>
+
+                {/* Exec Tab 4: Submissions */}
+                <button
+                  type="button"
+                  className={`judgo-ide-exec-tab-btn${activeExecTab === "submissions" ? " is-active" : ""}`}
+                  onClick={() => setActiveExecTab("submissions")}
+                  style={{
+                    borderBottomColor: activeExecTab === "submissions" ? "#ea580c" : "transparent",
+                    color: activeExecTab === "submissions" ? (isLight ? "#c2410c" : "#fb923c") : undefined
+                  }}
+                >
+                  <History size={14} style={{ color: "#f97316" }} />
+                  <span>Submissions</span>
+                  {userSubmissions.length > 0 && (
+                    <span
+                      style={{
+                        fontSize: "0.66rem",
+                        fontWeight: "800",
+                        background: "rgba(249, 115, 22, 0.12)",
+                        color: "#ea580c",
+                        padding: "1px 5px",
+                        borderRadius: "99px"
+                      }}
+                    >
+                      {userSubmissions.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Status / Quick Note */}
+              <span style={{ fontSize: "0.72rem", color: isLight ? "#94a3b8" : "#64748b", paddingRight: "6px" }}>
+                {problemWithStatus.examples.length} sample cases
+              </span>
+            </div>
+
+            {/* Execution Panel Content Body */}
+            <div className="judgo-ide-exec-body">
+              {/* ---------------------------------------------------------------
+                  EXEC TAB 1: TESTCASES
+                  --------------------------------------------------------------- */}
+              {activeExecTab === "testcases" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {/* Case Selector Buttons */}
+                  <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+                    {problemWithStatus.examples.map((_, idx) => {
+                      const casePassed = resultCases[idx]?.passed;
+                      return (
                         <button
                           key={idx}
                           type="button"
@@ -1184,8 +1227,8 @@ function ProblemDetailsInner() {
                               ? isLight ? "#0891b2" : "#22d3ee"
                               : isLight ? "#475569" : "#cbd5e1",
                             borderRadius: "6px",
-                            padding: "4px 11px",
-                            fontSize: "0.76rem",
+                            padding: "3px 9px",
+                            fontSize: "0.74rem",
                             fontWeight: "700",
                             cursor: "pointer",
                             display: "inline-flex",
@@ -1198,139 +1241,340 @@ function ProblemDetailsInner() {
                               width: "6px",
                               height: "6px",
                               borderRadius: "50%",
-                              background: selectedCaseIndex === idx ? "#06b6d4" : "#64748b"
+                              background: casePassed !== undefined ? (casePassed ? "#16a34a" : "#ef4444") : (selectedCaseIndex === idx ? "#06b6d4" : "#64748b")
                             }}
                           />
                           Case {idx + 1}
                         </button>
-                      ))}
+                      );
+                    })}
 
-                      <button
-                        type="button"
-                        onClick={() => setTestcaseSubTab("custom")}
-                        title="Add custom input"
-                        style={{
-                          background: isLight ? "#f8fafc" : "#0d111a",
-                          border: `1px dashed ${isLight ? "#cbd5e1" : "rgba(255,255,255,0.15)"}`,
-                          color: isLight ? "#64748b" : "#94a3b8",
-                          borderRadius: "6px",
-                          padding: "4px 8px",
-                          fontSize: "0.76rem",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          cursor: "pointer"
-                        }}
-                      >
-                        <Plus size={13} style={{ color: "#06b6d4" }} />
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveExecTab("custom")}
+                      title="Switch to custom input"
+                      style={{
+                        background: isLight ? "#f8fafc" : "#0d111a",
+                        border: `1px dashed ${isLight ? "#cbd5e1" : "rgba(255,255,255,0.15)"}`,
+                        color: isLight ? "#64748b" : "#94a3b8",
+                        borderRadius: "6px",
+                        padding: "3px 8px",
+                        fontSize: "0.74rem",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "3px",
+                        cursor: "pointer"
+                      }}
+                    >
+                      <Plus size={12} style={{ color: "#06b6d4" }} />
+                      <span>Custom</span>
+                    </button>
+                  </div>
 
-                    {/* Active Selected Case Details */}
-                    {problemWithStatus.examples[selectedCaseIndex] && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {/* Active Selected Case Details */}
+                  {problemWithStatus.examples[selectedCaseIndex] && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <div>
+                        <span style={{ fontSize: "0.74rem", fontWeight: "700", color: isLight ? "#0284c7" : "#38bdf8", display: "flex", alignItems: "center", gap: "4px" }}>
+                          <span>📥</span> Input
+                        </span>
+                        <pre
+                          style={{
+                            background: isLight ? "#f8fafc" : "#080c14",
+                            border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`,
+                            padding: "8px 10px",
+                            borderRadius: "6px",
+                            fontSize: "0.78rem",
+                            margin: "3px 0 0 0",
+                            color: isLight ? "#0f172a" : "#f1f5f9",
+                            fontFamily: "monospace",
+                            whiteSpace: "pre-wrap"
+                          }}
+                        >
+                          {formatDisplayValue(problemWithStatus.examples[selectedCaseIndex].input)}
+                        </pre>
+                      </div>
+
+                      <div>
+                        <span style={{ fontSize: "0.74rem", fontWeight: "700", color: isLight ? "#16a34a" : "#4ade80", display: "flex", alignItems: "center", gap: "4px" }}>
+                          <span>📤</span> Expected Output
+                        </span>
+                        <pre
+                          style={{
+                            background: isLight ? "#f8fafc" : "#080c14",
+                            border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`,
+                            padding: "8px 10px",
+                            borderRadius: "6px",
+                            fontSize: "0.78rem",
+                            margin: "3px 0 0 0",
+                            color: isLight ? "#0f172a" : "#f1f5f9",
+                            fontFamily: "monospace",
+                            whiteSpace: "pre-wrap"
+                          }}
+                        >
+                          {formatDisplayValue(problemWithStatus.examples[selectedCaseIndex].output)}
+                        </pre>
+                      </div>
+
+                      {resultCases[selectedCaseIndex] && (
                         <div>
-                          <span style={{ fontSize: "0.76rem", fontWeight: "700", color: isLight ? "#0284c7" : "#38bdf8", display: "flex", alignItems: "center", gap: "4px" }}>
-                            <span>📥</span> Input
+                          <span style={{ fontSize: "0.74rem", fontWeight: "700", color: resultCases[selectedCaseIndex]?.passed ? "#16a34a" : "#ef4444", display: "flex", alignItems: "center", gap: "4px" }}>
+                            <span>{resultCases[selectedCaseIndex]?.passed ? "✓" : "✕"}</span> Your Output ({resultCases[selectedCaseIndex]?.passed ? "Passed" : "Failed"})
                           </span>
                           <pre
                             style={{
                               background: isLight ? "#f8fafc" : "#080c14",
-                              border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`,
-                              padding: "10px 12px",
+                              border: `1px solid ${resultCases[selectedCaseIndex]?.passed ? "rgba(22,163,74,0.3)" : "rgba(239,68,68,0.3)"}`,
+                              padding: "8px 10px",
                               borderRadius: "6px",
-                              fontSize: "0.82rem",
-                              margin: "4px 0 0 0",
-                              color: isLight ? "#0f172a" : "#f1f5f9",
+                              fontSize: "0.78rem",
+                              margin: "3px 0 0 0",
+                              color: resultCases[selectedCaseIndex]?.passed ? "#16a34a" : "#ef4444",
                               fontFamily: "monospace",
                               whiteSpace: "pre-wrap"
                             }}
                           >
-                            {formatDisplayValue(problemWithStatus.examples[selectedCaseIndex].input)}
+                            {formatDisplayValue(resultCases[selectedCaseIndex]?.actualOutput || resultCases[selectedCaseIndex]?.stdout || "No output")}
                           </pre>
                         </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
-                        <div>
-                          <span style={{ fontSize: "0.76rem", fontWeight: "700", color: isLight ? "#16a34a" : "#4ade80", display: "flex", alignItems: "center", gap: "4px" }}>
-                            <span>📤</span> Expected Output
+              {/* ---------------------------------------------------------------
+                  EXEC TAB 2: CUSTOM INPUT
+                  --------------------------------------------------------------- */}
+              {activeExecTab === "custom" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontSize: "0.74rem", color: isLight ? "#7c3aed" : "#a78bfa", fontWeight: "700", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <span>⚙️</span> Custom STDIN
+                    </span>
+                    <span style={{ fontSize: "0.70rem", color: isLight ? "#94a3b8" : "#64748b" }}>
+                      Supplied to your code when clicking "Run"
+                    </span>
+                  </div>
+                  <textarea
+                    style={{
+                      width: "100%",
+                      height: "100px",
+                      background: isLight ? "#f8fafc" : "#080c14",
+                      color: isLight ? "#0f172a" : "#eee",
+                      border: `1px solid ${isLight ? "#cbd5e1" : "rgba(255,255,255,0.1)"}`,
+                      borderRadius: "6px",
+                      padding: "8px 10px",
+                      fontFamily: "monospace",
+                      fontSize: "0.80rem",
+                      resize: "vertical",
+                      boxSizing: "border-box"
+                    }}
+                    placeholder="Enter custom input arguments here..."
+                    value={customInput}
+                    onChange={(e) => setCustomInput(e.target.value)}
+                  />
+                </div>
+              )}
+
+              {/* ---------------------------------------------------------------
+                  EXEC TAB 3: TEST RESULT
+                  --------------------------------------------------------------- */}
+              {activeExecTab === "testResult" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {isRunning || isSubmitting || isProcessingResult ? (
+                    <div style={{ padding: "2rem", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "0.5rem", color: "#8b9bb4" }}>
+                      <div className="spinner" style={{ width: 26, height: 26, border: "3px solid #333", borderTopColor: "#6366f1", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                      <div style={{ textAlign: "center" }}>
+                        <strong style={{ fontSize: "0.88rem", color: isLight ? "#0f172a" : "#f8fafc", display: "block" }}>
+                          {result?.statusText || (isSubmitting ? "Evaluating in Disposable Sandbox..." : "Executing Solution...")}
+                        </strong>
+                        <span style={{ fontSize: "0.74rem", color: "#94a3b8", marginTop: "2px", display: "block" }}>
+                          Running tests against sandbox worker...
+                        </span>
+                      </div>
+                    </div>
+                  ) : result ? (
+                    <div className="compact-result-view" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                      {/* Verdict Card */}
+                      <div className={`result-verdict-card ${displayVerdict === "AC" ? "is-accepted" : "is-error"}`}>
+                        <div className="result-verdict-main">
+                          <span className="result-verdict-icon" aria-hidden="true">
+                            {displayVerdict === "AC" ? (
+                              <CheckCircle2 size={22} />
+                            ) : displayVerdict === "CE" ? (
+                              <AlertTriangle size={22} />
+                            ) : (
+                              <XCircle size={22} />
+                            )}
                           </span>
-                          <pre
-                            style={{
-                              background: isLight ? "#f8fafc" : "#080c14",
-                              border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`,
-                              padding: "10px 12px",
-                              borderRadius: "6px",
-                              fontSize: "0.82rem",
-                              margin: "4px 0 0 0",
-                              color: isLight ? "#0f172a" : "#f1f5f9",
-                              fontFamily: "monospace",
-                              whiteSpace: "pre-wrap"
-                            }}
-                          >
-                            {formatDisplayValue(problemWithStatus.examples[selectedCaseIndex].output)}
-                          </pre>
+                          <div>
+                            <strong className="result-verdict-title">
+                              {displayVerdict === "AC"
+                                ? "Accepted"
+                                : displayVerdict === "CE"
+                                ? "Compilation Error"
+                                : displayVerdict === "WA"
+                                ? "Wrong Answer"
+                                : displayVerdict === "TLE"
+                                ? "Time Limit Exceeded"
+                                : displayVerdict === "RE"
+                                ? "Runtime Error"
+                                : displayVerdict === "SYSTEM_ERROR"
+                                ? "System Error"
+                                : displayStatusText}
+                            </strong>
+                            <span className="result-verdict-subtitle">
+                              {displayVerdict === "AC"
+                                ? `Your solution passed all ${totalCasesNum} test cases.`
+                                : displayVerdict === "CE"
+                                ? "The compiler rejected this code."
+                                : displayVerdict === "TLE"
+                                ? "Time Limit Exceeded on one or more testcases."
+                                : displayVerdict === "RE"
+                                ? "Program terminated unexpectedly during execution."
+                                : displayVerdict === "SYSTEM_ERROR"
+                                ? "The sandbox service encountered an issue."
+                                : `Passed ${passedCountNum} of ${totalCasesNum} test cases.`}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="result-verdict-metrics">
+                          <div>
+                            <Clock3 size={14} />
+                            <span><strong>{displayRuntime}</strong><small>Runtime</small></span>
+                          </div>
+                          <div>
+                            <MemoryStick size={14} />
+                            <span><strong>{displayMemory}</strong><small>Memory</small></span>
+                          </div>
                         </div>
                       </div>
-                    )}
+
+                      {/* Test Case Diffs / Results List */}
+                      {resultCases.length ? (
+                        <section className="result-testcases-card">
+                          <header>
+                            <strong>Test Cases</strong>
+                            <span className={displayVerdict === "AC" ? "is-passed" : "is-failed"}>
+                              <CheckCircle2 size={13} />
+                              {resultCases.filter((testCase) => testCase?.passed).length} / {resultCases.length} passed
+                            </span>
+                          </header>
+
+                          <div className="result-testcase-list">
+                            {resultCases.map((testCase, index) => {
+                              const passed = Boolean(testCase?.passed);
+                              const expanded = expandedResultCaseIndex === index;
+                              return (
+                                <div className={`result-testcase-row${passed ? " is-passed" : " is-failed"}`} key={testCase?.id || index}>
+                                  <button
+                                    type="button"
+                                    aria-expanded={expanded}
+                                    onClick={() => setExpandedResultCaseIndex(expanded ? null : index)}
+                                  >
+                                    {passed ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
+                                    <span>Case {index + 1}</span>
+                                    <strong>{passed ? "Passed" : formatDisplayValue(testCase?.verdict, "Failed")}</strong>
+                                    <ChevronDown size={13} className={expanded ? "is-expanded" : ""} />
+                                  </button>
+
+                                  {expanded && (
+                                    <div className="result-testcase-details">
+                                      <div>
+                                        <span>Input</span>
+                                        <pre>{formatDisplayValue(testCase?.input, "No input")}</pre>
+                                      </div>
+                                      <div>
+                                        <span>Expected</span>
+                                        <pre>{formatDisplayValue(testCase?.expectedOutput, "Not provided")}</pre>
+                                      </div>
+                                      <div>
+                                        <span>Your output</span>
+                                        <pre>{formatDisplayValue(testCase?.actualOutput || testCase?.stdout, "No output")}</pre>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </section>
+                      ) : (
+                        <div className="result-diagnostic-card">
+                          <strong>Diagnostic Output</strong>
+                          <pre>
+                            {formatDisplayValue(
+                              result.compileOutput || result.stderr || result.compiler?.stderr || result.diagnostic || result.statusText,
+                              "No diagnostic details were returned."
+                            )}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div style={{ padding: "2rem", textAlign: "center", color: "#64748b", border: `1px dashed ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, borderRadius: "6px" }}>
+                      <Zap size={22} style={{ marginBottom: "4px", opacity: 0.6 }} />
+                      <p style={{ margin: "0 0 2px 0", fontSize: "0.82rem", fontWeight: "600", color: isLight ? "#0f172a" : "#f1f5f9" }}>
+                        No Execution Results Yet
+                      </p>
+                      <span style={{ fontSize: "0.74rem" }}>
+                        Click <strong>Run</strong> or <strong>Submit</strong> above to execute testcases and view results here.
+                      </span>
+                    </div>
+                  )}
+
+                  {error && <p className="form-error" style={{ color: "#ef4444", marginTop: "4px", fontSize: "0.78rem" }}>{formatDisplayValue(error)}</p>}
+                </div>
+              )}
+
+              {/* ---------------------------------------------------------------
+                  EXEC TAB 4: SUBMISSIONS
+                  --------------------------------------------------------------- */}
+              {activeExecTab === "submissions" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <h3 style={{ fontSize: "0.82rem", fontWeight: "700", color: isLight ? "#0f172a" : "#fff", margin: 0 }}>
+                      Submission History ({userSubmissions.length})
+                    </h3>
                   </div>
-                ) : (
-                  /* Custom Input Textarea */
-                  <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <span style={{ fontSize: "0.76rem", color: isLight ? "#0284c7" : "#38bdf8", fontWeight: "bold", display: "flex", alignItems: "center", gap: "4px" }}>
-                      <span>⚙️</span> Custom STDIN (Used on Run)
-                    </span>
-                    <textarea
-                      style={{
-                        width: "100%",
-                        height: "140px",
-                        background: isLight ? "#f8fafc" : "#080c14",
-                        color: isLight ? "#0f172a" : "#eee",
-                        border: `1px solid ${isLight ? "#cbd5e1" : "rgba(255,255,255,0.1)"}`,
-                        borderRadius: "8px",
-                        padding: "10px 12px",
-                        fontFamily: "monospace",
-                        fontSize: "0.84rem",
-                        resize: "vertical"
-                      }}
-                      placeholder="Enter custom input lines here..."
-                      value={customInput}
-                      onChange={(e) => setCustomInput(e.target.value)}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
+
+                  {userSubmissions.length === 0 ? (
+                    <div style={{ padding: "2rem", textAlign: "center", color: "#64748b", border: `1px dashed ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, borderRadius: "6px" }}>
+                      <History size={22} style={{ marginBottom: "4px", opacity: 0.6 }} />
+                      <p style={{ margin: 0, fontSize: "0.78rem" }}>No submissions recorded for this problem yet.</p>
+                    </div>
+                  ) : (
+                    <div style={{ overflowX: "auto" }}>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.78rem" }}>
+                        <thead>
+                          <tr style={{ borderBottom: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`, textAlign: "left", color: "#64748b" }}>
+                            <th style={{ padding: "6px 6px" }}>Status</th>
+                            <th style={{ padding: "6px 6px" }}>Language</th>
+                            <th style={{ padding: "6px 6px" }}>Runtime</th>
+                            <th style={{ padding: "6px 6px" }}>Memory</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {userSubmissions.map((sub, idx) => (
+                            <tr key={sub?.id || sub?.submissionId || idx} style={{ borderBottom: `1px solid ${isLight ? "#f1f5f9" : "rgba(255,255,255,0.04)"}` }}>
+                              <td style={{ padding: "6px 6px", fontWeight: "bold", color: sub?.verdict === "AC" ? "#16a34a" : "#ef4444" }}>
+                                {formatDisplayValue(sub?.verdict, "AC")}
+                              </td>
+                              <td style={{ padding: "6px 6px", color: isLight ? "#334155" : "#cbd5e1" }}>{formatDisplayValue(sub?.language, "python")}</td>
+                              <td style={{ padding: "6px 6px", color: isLight ? "#334155" : "#cbd5e1" }}>{formatDisplayValue(sub?.runtime, "—")}</td>
+                              <td style={{ padding: "6px 6px", color: isLight ? "#334155" : "#cbd5e1" }}>{formatDisplayValue(sub?.memory, "—")}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-
-        {/* ===================================================================
-            DRAGGABLE DIVIDER (10px Hit Area with col-resize)
-            =================================================================== */}
-        <div
-          className={`judgo-ide-divider${isResizing ? " is-active" : ""}`}
-          onPointerDown={startResizing}
-          title="Drag to resize Problem workspace and Code editor"
-        >
-          <span className="judgo-ide-divider-handle">
-            <GripVertical size={11} />
-          </span>
-        </div>
-
-        {/* ===================================================================
-            RIGHT PANE: Code Editor (Permanently Visible)
-            =================================================================== */}
-        <div className="judgo-ide-right-pane">
-          <CodeEditor
-            code={code}
-            language={language}
-            onCodeChange={handleCodeChange}
-            onLanguageChange={handleLanguageChange}
-            onRun={handleRun}
-            onSubmit={handleSubmit}
-            onReset={handleResetCode}
-            starterCode={getStarterForLanguage(problemWithStatus, language)}
-            isRunning={isRunning}
-            isSubmitting={isSubmitting}
-          />
         </div>
       </div>
     </div>

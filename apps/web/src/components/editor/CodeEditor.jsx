@@ -744,7 +744,7 @@ export default function CodeEditor({
       </div>
 
       {/* Editor Body with Dynamic Line Numbers, Font Size & Theme */}
-      <div style={{ display: "flex", flex: 1, minHeight: "380px", background: themePalette.bg, position: "relative" }}>
+      <div style={{ display: "flex", flex: 1, minHeight: 0, height: "100%", background: themePalette.bg, position: "relative", overflow: "hidden" }}>
         {/* Line Numbers Column (Conditionally Rendered by showLineNumbers setting) */}
         {showLineNumbers && (
           <div
@@ -758,7 +758,8 @@ export default function CodeEditor({
               userSelect: "none",
               textAlign: "right",
               borderRight: `1px solid ${themePalette.gutterBorder}`,
-              minWidth: "44px"
+              minWidth: "44px",
+              overflowY: "hidden"
             }}
           >
             {Array.from({ length: Math.max(8, linesCount) }, (_, i) => (
@@ -768,7 +769,7 @@ export default function CodeEditor({
         )}
 
         {/* Textarea Editor & Syntax Highlight Container */}
-        <div style={{ position: "relative", flex: 1, minHeight: "380px" }}>
+        <div style={{ position: "relative", flex: 1, minHeight: 0, height: "100%", overflow: "hidden" }}>
           {/* Syntax Highlighted View (Behind) */}
           <pre
             ref={preRef}
