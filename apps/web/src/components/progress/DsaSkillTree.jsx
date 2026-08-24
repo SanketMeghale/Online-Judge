@@ -376,11 +376,7 @@ export default function DsaSkillTree({ topicProficiency = [] }) {
 
         {/* Central Master Node (Compact & Radiant) */}
         <div className="dsa-central-node-wrapper">
-          <motion.div
-            className="dsa-central-node"
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          >
+          <div className="dsa-central-node">
             {/* Ambient Background Glow */}
             <div
               className="dsa-central-glow"
@@ -425,7 +421,7 @@ export default function DsaSkillTree({ topicProficiency = [] }) {
               <span className="dsa-central-label">DSA Mastery</span>
               <span className="dsa-central-sublabel">Overall</span>
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* 3. Multi-Tier Hierarchical Tree Structure */}
@@ -504,11 +500,9 @@ function renderCompactTopicNode(topic, hoveredTopic, setHoveredTopic, navigate) 
   const isHovered = hoveredTopic?.id === topic.id;
 
   return (
-    <motion.div
+    <div
       key={topic.id}
       className={`dsa-compact-topic-node ${tierInfo.accentClass} ${isHovered ? "is-hovered" : ""}`}
-      whileHover={{ y: -3, scale: 1.02 }}
-      transition={{ duration: 0.15 }}
       onClick={() => navigate(`/problems?topic=${encodeURIComponent(topic.name)}`)}
       onMouseEnter={() => setHoveredTopic(topic)}
       onMouseLeave={() => setHoveredTopic(null)}
@@ -621,6 +615,6 @@ function renderCompactTopicNode(topic, hoveredTopic, setHoveredTopic, navigate) 
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }

@@ -52,13 +52,7 @@ export default function DashboardHero({
   }, [dailyUrl, navigate]);
 
   return (
-    <motion.section
-      initial={prefersReducedMotion ? false : { opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="dash-hero"
-      aria-label="Welcome section"
-    >
+    <section className="dash-hero" aria-label="Welcome section">
       <div className="dash-hero-bg" aria-hidden="true">
         <div className="dash-hero-grid" />
         <div className="dash-hero-radial" />
@@ -66,43 +60,23 @@ export default function DashboardHero({
 
       <div className="dash-hero-layout">
         <div className="dash-hero-left">
-          <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.05 }}
-            className="dash-hero-badge"
-          >
+          <div className="dash-hero-badge">
             <span className="dash-badge-dot" aria-hidden="true" />
             <span>YOUR CODING ARENA</span>
-          </motion.div>
+          </div>
 
-          <motion.h1
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="dash-hero-title"
-          >
+          <h1 className="dash-hero-title">
             <span>{timeGreeting}, </span>
             <span className="dash-user-name">{displayName}.</span>
             <span className="dash-wave"> 👋</span>
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            initial={prefersReducedMotion ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.35, delay: 0.18 }}
-            className="dash-hero-sub"
-          >
+          <p className="dash-hero-sub">
             Pick up where you left off or solve today's challenge.
-          </motion.p>
+          </p>
         </div>
 
-        <motion.div
-          initial={prefersReducedMotion ? false : { opacity: 0, x: 8 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3, delay: 0.15 }}
-          className="dash-hero-actions"
-        >
+        <div className="dash-hero-actions">
           <Link
             to={continueUrl}
             className="dash-btn-primary"
@@ -124,8 +98,8 @@ export default function DashboardHero({
             )}
             <span>{isDailySolved ? "Daily solved" : "Daily challenge"}</span>
           </Link>
-        </motion.div>
+        </div>
       </div>
-    </motion.section>
+    </section>
   );
 }

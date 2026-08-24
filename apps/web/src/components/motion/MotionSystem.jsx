@@ -34,16 +34,9 @@ const pageVariants = {
 
 export function AnimatedPage({ children, className = "", style = {} }) {
   return (
-    <motion.div
-      variants={pageVariants}
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      className={`animated-page ${className}`}
-      style={{ width: "100%", ...style }}
-    >
+    <div className={`animated-page ${className}`} style={{ width: "100%", ...style }}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -59,27 +52,16 @@ export function AnimatedCard({
   delay = 0
 }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-20px" }}
-      transition={{ duration: 0.45, delay, ease: [0.16, 1, 0.3, 1] }}
-      whileHover={{
-        y: -4,
-        boxShadow: `0 16px 36px rgba(0, 0, 0, 0.5), 0 0 25px ${glowColor}`,
-        borderColor: "rgba(120, 80, 255, 0.45)"
-      }}
-      whileTap={onClick ? { scale: 0.985 } : undefined}
+    <div
       onClick={onClick}
       className={`card-glow-interactive ${className}`}
       style={{
         borderRadius: "14px",
-        transition: "border-color 0.25s ease, background-color 0.25s ease",
         ...style
       }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -98,13 +80,10 @@ export function AnimatedButton({
   icon: Icon
 }) {
   return (
-    <motion.button
+    <button
       type={type}
       onClick={onClick}
       disabled={disabled || isLoading}
-      whileHover={!disabled && !isLoading ? { scale: 1.025, translateY: -1 } : undefined}
-      whileTap={!disabled && !isLoading ? { scale: 0.965 } : undefined}
-      transition={{ type: "spring", stiffness: 450, damping: 25 }}
       className={`btn-animated-glow ${className}`}
       style={{
         cursor: disabled || isLoading ? "not-allowed" : "pointer",
@@ -127,7 +106,7 @@ export function AnimatedButton({
           {children}
         </>
       )}
-    </motion.button>
+    </button>
   );
 }
 
@@ -201,17 +180,9 @@ const sectionVariants = {
 
 export function AnimatedSection({ children, className = "", style = {}, id }) {
   return (
-    <motion.section
-      id={id}
-      variants={sectionVariants}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-40px" }}
-      className={className}
-      style={style}
-    >
+    <section id={id} className={className} style={style}>
       {children}
-    </motion.section>
+    </section>
   );
 }
 

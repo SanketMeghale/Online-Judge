@@ -240,11 +240,8 @@ export default function ProgressPage() {
   const topicProficiency = data?.topicProficiency || [];
 
   return (
-    <motion.div
+    <div
       className="progress-page responsive-page"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
       style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "12px", paddingBottom: "24px" }}
     >
       {/* ── 1. HEADER & DATE RANGE FILTER ──────────────────────────────── */}
@@ -398,7 +395,7 @@ export default function ProgressPage() {
       {/* ── 4. DSA SKILL TREE SECTION ───────────────────────────── */}
       <DsaSkillTree topicProficiency={topicProficiency} />
 
-    </motion.div>
+    </div>
   );
 }
 

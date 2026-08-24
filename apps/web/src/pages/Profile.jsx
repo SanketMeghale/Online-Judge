@@ -394,10 +394,7 @@ export default function Profile() {
       {/* ==================================================================
           1. HERO HEADER WITH USER IDENTITY, BIO & LEVELING CAPSULE
           ================================================================== */}
-      <motion.section
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+      <section
         className="prof-hero-card"
         style={{
           background: isLight ? "#ffffff" : "#0d111a",
@@ -573,17 +570,12 @@ export default function Profile() {
             </button>
           </div>
         </div>
-      </motion.section>
+      </section>
 
       {/* ==================================================================
           2. CORE STATS RIBBON (4 Metric Cards)
           ================================================================== */}
-      <motion.section
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.08 }}
-        className="prof-stats-ribbon"
-      >
+      <section className="prof-stats-ribbon">
         {profileStats.map(({ label, value, subtext, icon: Icon, tone }) => (
           <article
             className="prof-stat-card"
@@ -607,7 +599,7 @@ export default function Profile() {
             </div>
           </article>
         ))}
-      </motion.section>
+      </section>
 
       {/* ==================================================================
           3. INTERACTIVE NAVIGATION TABS

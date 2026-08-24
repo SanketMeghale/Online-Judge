@@ -82,11 +82,8 @@ export default function SubmissionBreakdown({
                   <span className="count">{acceptedCount} ({acPct}%)</span>
                 </div>
                 <div className="thin-progress-track">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    whileInView={{ width: `${acPct}%` }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                  <div
+                    style={{ width: `${acPct}%`, transition: "width 0.6s ease" }}
                     className="thin-progress-fill fill-green"
                   />
                 </div>
@@ -102,11 +99,8 @@ export default function SubmissionBreakdown({
                   <span className="count">{waCount} ({waPct}%)</span>
                 </div>
                 <div className="thin-progress-track">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    whileInView={{ width: `${waPct}%` }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                  <div
+                    style={{ width: `${waPct}%`, transition: "width 0.6s ease" }}
                     className="thin-progress-fill fill-red"
                   />
                 </div>
@@ -122,11 +116,8 @@ export default function SubmissionBreakdown({
                   <span className="count">{otherCount} ({otherPct}%)</span>
                 </div>
                 <div className="thin-progress-track">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    whileInView={{ width: `${otherPct}%` }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                  <div
+                    style={{ width: `${otherPct}%`, transition: "width 0.6s ease" }}
                     className="thin-progress-fill fill-amber"
                   />
                 </div>
