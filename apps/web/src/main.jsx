@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import React, { Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./auth/AuthContext.jsx";
@@ -9,46 +9,61 @@ import AuthLayout from "./components/layout/AuthLayout.jsx";
 import AdminLayout from "./components/admin/AdminLayout.jsx";
 import { AppDataProvider } from "./data/AppDataContext.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
+import { lazyWithRetry } from "./utils/lazyWithRetry.js";
 
-// Standard User Pages
-const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
-const LandingPage = lazy(() => import("./pages/LandingPage.jsx"));
-const AICoachPage = lazy(() => import("./pages/AICoachPage.jsx"));
-const ContestPage = lazy(() => import("./pages/ContestPage.jsx"));
-const ContestArenaPage = lazy(() => import("./pages/ContestArenaPage.jsx"));
-const ContestResultsPage = lazy(() => import("./pages/ContestResultsPage.jsx"));
-const FeaturePage = lazy(() => import("./pages/FeaturePage.jsx"));
-const LeaderboardPage = lazy(() => import("./pages/LeaderboardPage.jsx"));
-const Login = lazy(() => import("./pages/Login.jsx"));
-const ProblemDetails = lazy(() => import("./pages/ProblemDetails.jsx"));
-const ProblemsList = lazy(() => import("./pages/ProblemsList.jsx"));
-const Profile = lazy(() => import("./pages/Profile.jsx"));
-const ProgressPage = lazy(() => import("./pages/ProgressPage.jsx"));
-const Register = lazy(() => import("./pages/Register.jsx"));
-const ForgotPassword = lazy(() => import("./pages/ForgotPassword.jsx"));
-const Settings = lazy(() => import("./pages/Settings.jsx"));
-const SubmissionHistoryPage = lazy(() => import("./pages/SubmissionHistoryPage.jsx"));
-const CompanyDetailPage = lazy(() => import("./pages/CompanyDetailPage.jsx"));
+// Standard User Pages with Auto-Retry
+const Dashboard = lazyWithRetry(() => import("./pages/Dashboard.jsx"));
+const LandingPage = lazyWithRetry(() => import("./pages/LandingPage.jsx"));
+const AICoachPage = lazyWithRetry(() => import("./pages/AICoachPage.jsx"));
+const ContestPage = lazyWithRetry(() => import("./pages/ContestPage.jsx"));
+const ContestArenaPage = lazyWithRetry(() => import("./pages/ContestArenaPage.jsx"));
+const ContestResultsPage = lazyWithRetry(() => import("./pages/ContestResultsPage.jsx"));
+const FeaturePage = lazyWithRetry(() => import("./pages/FeaturePage.jsx"));
+const LeaderboardPage = lazyWithRetry(() => import("./pages/LeaderboardPage.jsx"));
+const Login = lazyWithRetry(() => import("./pages/Login.jsx"));
+const ProblemDetails = lazyWithRetry(() => import("./pages/ProblemDetails.jsx"));
+const ProblemsList = lazyWithRetry(() => import("./pages/ProblemsList.jsx"));
+const Profile = lazyWithRetry(() => import("./pages/Profile.jsx"));
+const ProgressPage = lazyWithRetry(() => import("./pages/ProgressPage.jsx"));
+const Register = lazyWithRetry(() => import("./pages/Register.jsx"));
+const ForgotPassword = lazyWithRetry(() => import("./pages/ForgotPassword.jsx"));
+const Settings = lazyWithRetry(() => import("./pages/Settings.jsx"));
+const SubmissionHistoryPage = lazyWithRetry(() => import("./pages/SubmissionHistoryPage.jsx"));
+const CompanyDetailPage = lazyWithRetry(() => import("./pages/CompanyDetailPage.jsx"));
 
-// Admin Panel Pages
-const AdminLogin = lazy(() => import("./pages/admin/AdminLogin.jsx"));
-const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard.jsx"));
-const AdminUsers = lazy(() => import("./pages/admin/AdminUsers.jsx"));
-const AdminProblems = lazy(() => import("./pages/admin/AdminProblems.jsx"));
-const AdminTopics = lazy(() => import("./pages/admin/AdminTopics.jsx"));
-const AdminTestCases = lazy(() => import("./pages/admin/AdminTestCases.jsx"));
-const AdminSubmissions = lazy(() => import("./pages/admin/AdminSubmissions.jsx"));
-const AdminContests = lazy(() => import("./pages/admin/AdminContests.jsx"));
-const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics.jsx"));
-const AdminReports = lazy(() => import("./pages/admin/AdminReports.jsx"));
-const AdminAICoach = lazy(() => import("./pages/admin/AdminAICoach.jsx"));
-const AdminCompanies = lazy(() => import("./pages/admin/AdminCompanies.jsx"));
-const AdminAuditLogs = lazy(() => import("./pages/admin/AdminAuditLogs.jsx"));
-const AdminSettings = lazy(() => import("./pages/admin/AdminSettings.jsx"));
+// Admin Panel Pages with Auto-Retry
+const AdminLogin = lazyWithRetry(() => import("./pages/admin/AdminLogin.jsx"));
+const AdminDashboard = lazyWithRetry(() => import("./pages/admin/AdminDashboard.jsx"));
+const AdminUsers = lazyWithRetry(() => import("./pages/admin/AdminUsers.jsx"));
+const AdminProblems = lazyWithRetry(() => import("./pages/admin/AdminProblems.jsx"));
+const AdminTopics = lazyWithRetry(() => import("./pages/admin/AdminTopics.jsx"));
+const AdminTestCases = lazyWithRetry(() => import("./pages/admin/AdminTestCases.jsx"));
+const AdminSubmissions = lazyWithRetry(() => import("./pages/admin/AdminSubmissions.jsx"));
+const AdminContests = lazyWithRetry(() => import("./pages/admin/AdminContests.jsx"));
+const AdminAnalytics = lazyWithRetry(() => import("./pages/admin/AdminAnalytics.jsx"));
+const AdminReports = lazyWithRetry(() => import("./pages/admin/AdminReports.jsx"));
+const AdminAICoach = lazyWithRetry(() => import("./pages/admin/AdminAICoach.jsx"));
+const AdminCompanies = lazyWithRetry(() => import("./pages/admin/AdminCompanies.jsx"));
+const AdminAuditLogs = lazyWithRetry(() => import("./pages/admin/AdminAuditLogs.jsx"));
+const AdminSettings = lazyWithRetry(() => import("./pages/admin/AdminSettings.jsx"));
 
 import "./styles/main.css";
 
 import { ErrorBoundary } from "./components/common/ErrorBoundary.jsx";
+
+// Vite Preload Error Handler for version deployments
+window.addEventListener("vite:preloadError", (event) => {
+  console.warn("[Vite Preload Error] New version detected, reloading...", event);
+  try {
+    const reloaded = sessionStorage.getItem("vite-preload-reloaded");
+    if (!reloaded) {
+      sessionStorage.setItem("vite-preload-reloaded", "true");
+      window.location.reload();
+    }
+  } catch {
+    window.location.reload();
+  }
+});
 
 // Global error handlers for diagnostics
 window.onerror = (...args) => {
