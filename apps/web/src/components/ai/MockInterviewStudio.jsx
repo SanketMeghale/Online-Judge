@@ -1266,8 +1266,8 @@ export default function MockInterviewStudio() {
 
         <div className="mock-launcher-head">
           <div className="mock-launcher-title-group">
-            <h2>AI Technical Mock Interview Studio</h2>
-            <p>
+            <h2 style={{ fontSize: "1.05rem", margin: 0 }}>AI Technical Mock Interview Studio</h2>
+            <p style={{ fontSize: "0.74rem", margin: "2px 0 0 0" }}>
               Simulate realistic high-stakes FAANG technical rounds with live interviewer interaction, automated code evaluation, and hiring committee scorecards.
             </p>
           </div>
@@ -1275,34 +1275,36 @@ export default function MockInterviewStudio() {
 
         {/* 1. Target Company Selection */}
         <div className="mock-setup-section">
-          <span className="mock-setup-label">
-            <Building2 size={14} style={{ color: "#a78bfa" }} />
+          <span className="mock-setup-label" style={{ fontSize: "0.72rem" }}>
+            <Building2 size={12} style={{ color: "#a78bfa" }} />
             1. Select Target Company
           </span>
-          <div className="mock-company-grid">
+          <div className="mock-company-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(88px, 1fr))", gap: "6px" }}>
             {COMPANIES.map((c) => (
               <button
                 key={c.id}
                 type="button"
                 className={`mock-company-btn ${selectedCompany === c.id ? "selected" : ""}`}
                 onClick={() => setSelectedCompany(c.id)}
+                style={{ padding: "6px 4px", gap: "4px" }}
               >
                 <div
                   style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "6px",
+                    width: "20px",
+                    height: "20px",
+                    borderRadius: "4px",
                     background: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.06)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     fontWeight: "800",
+                    fontSize: "0.70rem",
                     color: c.color
                   }}
                 >
                   {c.name.slice(0, 1)}
                 </div>
-                <span>{c.name}</span>
+                <span style={{ fontSize: "0.70rem" }}>{c.name}</span>
               </button>
             ))}
           </div>
@@ -1310,19 +1312,20 @@ export default function MockInterviewStudio() {
 
         {/* 2. Track Selection */}
         <div className="mock-setup-section">
-          <span className="mock-setup-label">
-            <Compass size={14} style={{ color: "#38bdf8" }} />
+          <span className="mock-setup-label" style={{ fontSize: "0.72rem" }}>
+            <Compass size={12} style={{ color: "#38bdf8" }} />
             2. Choose Interview Track
           </span>
-          <div className="mock-track-row">
+          <div className="mock-track-row" style={{ gap: "6px" }}>
             {TRACKS.map((t) => (
               <div
                 key={t.id}
                 className={`mock-track-card ${selectedTrack === t.id ? "selected" : ""}`}
                 onClick={() => setSelectedTrack(t.id)}
+                style={{ padding: "8px 10px", gap: "2px" }}
               >
-                <strong>{t.title}</strong>
-                <span>{t.desc}</span>
+                <strong style={{ fontSize: "0.76rem" }}>{t.title}</strong>
+                <span style={{ fontSize: "0.66rem", lineHeight: "1.25" }}>{t.desc}</span>
               </div>
             ))}
           </div>
@@ -1330,11 +1333,11 @@ export default function MockInterviewStudio() {
 
         {/* 3. Difficulty Level */}
         <div className="mock-setup-section">
-          <span className="mock-setup-label">
-            <Zap size={14} style={{ color: "#fbbf24" }} />
+          <span className="mock-setup-label" style={{ fontSize: "0.72rem" }}>
+            <Zap size={12} style={{ color: "#fbbf24" }} />
             3. Experience Level
           </span>
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
             {DIFFICULTIES.map((d) => (
               <button
                 key={d}
@@ -1350,12 +1353,12 @@ export default function MockInterviewStudio() {
                   color: selectedDiff === d
                     ? (isLight ? "#4f46e5" : "#c4b5fd")
                     : (isLight ? "#334155" : "#94a3b8"),
-                  padding: "8px 16px",
-                  borderRadius: "8px",
-                  fontSize: "0.82rem",
+                  padding: "4px 10px",
+                  borderRadius: "6px",
+                  fontSize: "0.70rem",
                   fontWeight: "700",
                   cursor: "pointer",
-                  transition: "all 0.2s ease"
+                  transition: "all 0.15s ease"
                 }}
               >
                 {d}
@@ -1365,15 +1368,15 @@ export default function MockInterviewStudio() {
         </div>
 
         {/* Launch CTA Row */}
-        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center", marginTop: "2px" }}>
           <button
             type="button"
             className="mock-start-btn"
-            style={{ flex: "1 1 260px" }}
+            style={{ flex: "1 1 220px", padding: "8px 14px", fontSize: "0.78rem" }}
             onClick={handleStartInterview}
             disabled={sessionLoading}
           >
-            <Play size={16} />
+            <Play size={13} />
             <span>{sessionLoading ? "Initializing Mock Studio..." : `Start ${selectedCompany} Technical Interview →`}</span>
           </button>
 
@@ -1385,18 +1388,18 @@ export default function MockInterviewStudio() {
               background: isLight ? "rgba(99, 102, 241, 0.08)" : "rgba(120, 80, 255, 0.08)",
               border: isLight ? "1px solid rgba(99, 102, 241, 0.25)" : "1px solid rgba(120, 80, 255, 0.25)",
               color: isLight ? "#4f46e5" : "#c4b5fd",
-              borderRadius: "10px",
-              padding: "13px 20px",
-              fontSize: "0.86rem",
+              borderRadius: "8px",
+              padding: "8px 14px",
+              fontSize: "0.74rem",
               fontWeight: "700",
               cursor: "pointer",
               display: "inline-flex",
               alignItems: "center",
-              gap: "8px",
-              transition: "all 0.2s ease"
+              gap: "6px",
+              transition: "all 0.15s ease"
             }}
           >
-            <BarChart3 size={16} />
+            <BarChart3 size={13} />
             <span>{loadingEvaluation ? "Analyzing Real Submissions..." : "📊 View Real-Time Hiring Evaluation"}</span>
           </button>
         </div>

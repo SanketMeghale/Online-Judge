@@ -90,16 +90,16 @@ export function CompanySheetsDashboard({ onSelectCompany }) {
       {/* 1. HERO HEADER */}
       <div className="company-sheets-hero">
         <div className="company-hero-title-group">
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <Building2 size={24} color="#a855f7" />
-            <h1>Company Interview Sheets</h1>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Building2 size={16} color="#a855f7" />
+            <h1 style={{ margin: 0 }}>Company Interview Sheets</h1>
             <span
               style={{
-                fontSize: "0.72rem",
+                fontSize: "0.60rem",
                 background: "rgba(124, 58, 237, 0.18)",
                 color: "#c084fc",
                 border: "1px solid rgba(124, 58, 237, 0.3)",
-                padding: "2px 8px",
+                padding: "1px 6px",
                 borderRadius: "999px",
                 fontWeight: "700"
               }}
@@ -115,7 +115,7 @@ export function CompanySheetsDashboard({ onSelectCompany }) {
         {/* 2. SEARCH & FILTER CONTROLS */}
         <div className="company-controls-row">
           <div className="company-search-box">
-            <Search size={16} color="#94a3b8" />
+            <Search size={13} color="#94a3b8" />
             <input
               type="text"
               placeholder="Search companies, topics, or roles..."

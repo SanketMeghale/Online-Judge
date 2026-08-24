@@ -18,42 +18,42 @@ export function CompanyCard({ company, onViewSheet }) {
   const diffClass = (difficulty || "Medium").toLowerCase().replace(/\s+/g, "-");
 
   return (
-    <div className="company-card">
-      <div>
-        <div className="company-card-top">
-          <div className="company-card-brand">
-            <div className="company-card-logo-wrap">
-              <CompanyLogo name={name} size={30} />
-            </div>
-            <div className="company-card-title-wrap">
-              <h3>{name}</h3>
-              <span className="company-card-category">{category}</span>
-            </div>
+    <div className="company-card" onClick={() => onViewSheet(id || slug)}>
+      <div className="company-card-top">
+        <div className="company-card-brand">
+          <div className="company-card-logo-wrap">
+            <CompanyLogo name={name} size={20} />
           </div>
-          <span className={`company-diff-badge ${diffClass}`}>
-            {difficulty}
+          <div className="company-card-title-wrap">
+            <h3>{name}</h3>
+            <span className="company-card-category">{category}</span>
+          </div>
+        </div>
+        <span className={`company-diff-badge ${diffClass}`}>
+          {difficulty}
+        </span>
+      </div>
+
+      {/* Dynamic Progress Indicator */}
+      <div className="company-card-progress">
+        <div className="company-progress-stats">
+          <span className="solved-text">
+            {solvedCount} / {totalProblems} Solved
           </span>
+          <span className="percent-text">{completionPercentage}%</span>
         </div>
-
-        {/* Dynamic Progress Indicator */}
-        <div className="company-card-progress" style={{ marginTop: "16px" }}>
-          <div className="company-progress-stats">
-            <span className="solved-text">
-              {solvedCount} / {totalProblems} Solved
-            </span>
-            <span className="percent-text">{completionPercentage}%</span>
-          </div>
-          <div className="company-progress-bar-bg">
-            <div
-              className="company-progress-bar-fill"
-              style={{ width: `${Math.min(100, Math.max(0, completionPercentage))}%` }}
-            />
-          </div>
+        <div className="company-progress-bar-bg">
+          <div
+            className="company-progress-bar-fill"
+            style={{ width: `${Math.min(100, Math.max(0, completionPercentage))}%` }}
+          />
         </div>
+      </div>
 
-        {/* Frequently Asked Topics */}
+      {/* Frequently Asked Topics & View Action Row */}
+      <div className="company-card-footer">
         {frequentTopics && frequentTopics.length > 0 && (
-          <div className="company-card-topics" style={{ marginTop: "14px" }}>
+          <div className="company-card-topics">
             {frequentTopics.slice(0, 3).map((topic, i) => (
               <span key={i} className="company-topic-pill">
                 {topic}
@@ -66,16 +66,19 @@ export function CompanyCard({ company, onViewSheet }) {
             )}
           </div>
         )}
-      </div>
 
-      <button
-        type="button"
-        className="company-view-btn"
-        onClick={() => onViewSheet(id || slug)}
-      >
-        <span>View Sheet</span>
-        <ArrowRight size={15} />
-      </button>
+        <button
+          type="button"
+          className="company-view-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewSheet(id || slug);
+          }}
+        >
+          <span>View Sheet</span>
+          <ArrowRight size={11} />
+        </button>
+      </div>
     </div>
   );
 }

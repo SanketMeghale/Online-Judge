@@ -5,7 +5,7 @@
 .company-sheets-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 10px;
   width: 100%;
   max-width: 1380px;
   margin: 0 auto;
@@ -17,14 +17,14 @@
 .company-sheets-hero {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   background: linear-gradient(180deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.7) 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 16px;
-  padding: 24px 28px;
+  border-radius: 10px;
+  padding: 10px 14px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .company-sheets-hero::before {
@@ -32,18 +32,18 @@
   position: absolute;
   top: -80px;
   right: -80px;
-  width: 240px;
-  height: 240px;
+  width: 200px;
+  height: 200px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(124, 58, 237, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.12) 0%, transparent 70%);
   pointer-events: none;
 }
 
 .company-hero-title-group h1 {
-  font-size: 1.6rem;
+  font-size: 1.05rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
-  margin: 0 0 6px 0;
+  letter-spacing: -0.015em;
+  margin: 0;
   background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -51,9 +51,9 @@
 
 .company-hero-title-group p {
   color: #94a3b8;
-  font-size: 0.92rem;
-  margin: 0;
-  line-height: 1.5;
+  font-size: 0.74rem;
+  margin: 2px 0 0 0;
+  line-height: 1.35;
 }
 
 /* Filter & Search Controls */
@@ -61,34 +61,36 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 8px;
   flex-wrap: wrap;
-  margin-top: 6px;
+  margin-top: 2px;
 }
 
 .company-search-box {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 10px 16px;
-  border-radius: 10px;
-  flex: 1 1 280px;
-  max-width: 440px;
+  padding: 3px 8px;
+  height: 28px;
+  border-radius: 6px;
+  flex: 1 1 220px;
+  max-width: 360px;
   transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .company-search-box:focus-within {
   border-color: rgba(124, 58, 237, 0.6);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15);
 }
 
 .company-search-box input {
   background: transparent;
   border: none;
   color: #f8fafc;
-  font-size: 0.88rem;
+  font-size: 0.74rem;
   width: 100%;
   outline: none;
 }
@@ -100,7 +102,7 @@
 .company-category-pills {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   flex-wrap: wrap;
 }
 
@@ -108,12 +110,12 @@
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #94a3b8;
-  padding: 7px 14px;
-  border-radius: 999px;
-  font-size: 0.8rem;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.68rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
 .company-cat-btn:hover {
@@ -130,8 +132,8 @@
 /* Company Grid */
 .company-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 8px;
 }
 
 @media (max-width: 640px) {
@@ -146,17 +148,17 @@
   }
 
   .company-sheets-container {
-    gap: 14px;
+    gap: 8px;
   }
 
   .company-sheets-hero,
   .company-detail-hero {
-    border-radius: 12px;
-    padding: 18px 15px;
+    border-radius: 8px;
+    padding: 10px 12px;
   }
 
   .company-hero-title-group h1 {
-    font-size: 1.35rem;
+    font-size: 0.95rem;
   }
 
   .company-controls-row {
@@ -174,7 +176,7 @@
     flex-wrap: nowrap;
     max-width: 100%;
     overflow-x: auto;
-    padding-bottom: 4px;
+    padding-bottom: 2px;
   }
 
   .company-cat-btn {
@@ -192,57 +194,49 @@
   .company-card,
   .company-detail-card,
   .company-ai-assistant-card {
-    padding: 16px;
-  }
-
-  .company-ai-chat-input-row {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .company-ai-chat-input-row button {
-    justify-content: center;
-    min-height: 42px;
+    padding: 10px 12px;
   }
 }
 
+/* Modern Compact Company Card Block */
 .company-card {
-  background: linear-gradient(180deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 14px;
-  padding: 20px;
+  background: linear-gradient(180deg, rgba(30, 41, 59, 0.35) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 16px;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .company-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(124, 58, 237, 0.35);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 16px rgba(124, 58, 237, 0.1);
+  transform: translateY(-2px);
+  border-color: rgba(124, 58, 237, 0.4);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3), 0 0 10px rgba(124, 58, 237, 0.12);
 }
 
 .company-card-top {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
 }
 
 .company-card-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .company-card-logo-wrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
@@ -252,25 +246,26 @@
 }
 
 .company-card-title-wrap h3 {
-  font-size: 1.05rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  margin: 0 0 3px 0;
+  margin: 0;
   color: #f8fafc;
+  line-height: 1.2;
 }
 
 .company-card-category {
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   color: #94a3b8;
   font-weight: 500;
 }
 
 .company-diff-badge {
-  font-size: 0.72rem;
+  font-size: 0.58rem;
   font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 6px;
+  padding: 1.5px 5px;
+  border-radius: 4px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
 }
 
 .company-diff-badge.hard {
@@ -297,14 +292,14 @@
 .company-card-progress {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 3px;
 }
 
 .company-progress-stats {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.8rem;
+  font-size: 0.66rem;
 }
 
 .company-progress-stats .solved-text {
@@ -319,7 +314,7 @@
 
 .company-progress-bar-bg {
   width: 100%;
-  height: 6px;
+  height: 3px;
   background: rgba(255, 255, 255, 0.06);
   border-radius: 999px;
   overflow: hidden;
@@ -332,45 +327,53 @@
   transition: width 0.4s ease;
 }
 
-/* Frequent Topics Badges */
+/* Card Footer: Topics & View Action */
+.company-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 2px;
+}
+
 .company-card-topics {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 3px;
   flex-wrap: wrap;
+  flex: 1;
 }
 
 .company-topic-pill {
-  font-size: 0.7rem;
+  font-size: 0.60rem;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   color: #94a3b8;
-  padding: 2px 7px;
-  border-radius: 4px;
+  padding: 1px 4px;
+  border-radius: 3px;
 }
 
 .company-view-btn {
-  width: 100%;
-  padding: 9px 16px;
-  border-radius: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
   background: rgba(124, 58, 237, 0.12);
   border: 1px solid rgba(124, 58, 237, 0.3);
   color: #c084fc;
-  font-size: 0.84rem;
+  font-size: 0.66rem;
   font-weight: 700;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  transition: all 0.2s ease;
+  gap: 4px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .company-view-btn:hover {
   background: #7c3aed;
   color: #ffffff;
   border-color: #7c3aed;
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);
 }
 
 /* ==========================================================================

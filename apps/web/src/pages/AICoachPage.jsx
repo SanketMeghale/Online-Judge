@@ -935,22 +935,22 @@ export default function AICoachPage() {
             style={{
               background: isLight ? "#ffffff" : "#0d111a",
               border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-              borderRadius: "10px",
-              padding: "16px",
+              borderRadius: "8px",
+              padding: "10px 14px",
               display: "flex",
               flexDirection: "column",
-              gap: "12px",
+              gap: "8px",
               height: "calc(100vh - 160px)",
-              minHeight: "480px",
+              minHeight: "440px",
               overflowY: "auto"
             }}
           >
             <div>
-              <h2 style={{ fontSize: "0.95rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc", margin: 0 }}>Comprehensive Topic Mastery Profile</h2>
-              <p style={{ fontSize: "0.74rem", color: isLight ? "#475569" : "#94a3b8", margin: "2px 0 0 0" }}>Live analytics computed from your actual accepted and attempted submissions across all algorithmic tracks.</p>
+              <h2 style={{ fontSize: "0.88rem", fontWeight: "800", color: isLight ? "#0f172a" : "#f8fafc", margin: 0 }}>Comprehensive Topic Mastery Profile</h2>
+              <p style={{ fontSize: "0.68rem", color: isLight ? "#475569" : "#94a3b8", margin: "1px 0 0 0" }}>Live analytics computed from your actual accepted and attempted submissions across all algorithmic tracks.</p>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "10px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: "6px" }}>
               {(coachProfile?.allTopics || [
                 { topic: "Dynamic Programming", accuracy: 0, solvedCount: 0, totalInTopic: 4 },
                 { topic: "Graphs", accuracy: 0, solvedCount: 0, totalInTopic: 3 },
@@ -959,17 +959,17 @@ export default function AICoachPage() {
                 { topic: "Sliding Window", accuracy: 0, solvedCount: 0, totalInTopic: 3 },
                 { topic: "Arrays & Hash Tables", accuracy: 0, solvedCount: 0, totalInTopic: 4 }
               ]).map((t) => (
-                <div key={t.topic} style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "8px", padding: "12px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div key={t.topic} style={{ background: isLight ? "#f8fafc" : "#080c14", border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)", borderRadius: "6px", padding: "8px 10px", display: "flex", flexDirection: "column", gap: "5px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <strong style={{ fontSize: "0.80rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc" }}>{t.topic}</strong>
-                    <span style={{ fontSize: "0.76rem", fontWeight: "800", color: t.accuracy < 50 ? "#dc2626" : t.accuracy < 75 ? "#d97706" : "#059669" }}>
+                    <strong style={{ fontSize: "0.76rem", fontWeight: "700", color: isLight ? "#0f172a" : "#f8fafc" }}>{t.topic}</strong>
+                    <span style={{ fontSize: "0.72rem", fontWeight: "800", color: t.accuracy < 50 ? "#dc2626" : t.accuracy < 75 ? "#d97706" : "#059669" }}>
                       {t.accuracy}%
                     </span>
                   </div>
-                  <span style={{ fontSize: "0.68rem", color: isLight ? "#64748b" : "#64748b" }}>
-                    {t.solvedCount || 0} / {t.totalInTopic || 3} challenges solved
+                  <span style={{ fontSize: "0.64rem", color: isLight ? "#64748b" : "#64748b" }}>
+                    {t.solvedCount || 0} / {t.totalInTopic || 3} solved
                   </span>
-                  <div style={{ width: "100%", height: "4px", background: isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
+                  <div style={{ width: "100%", height: "3px", background: isLight ? "rgba(0, 0, 0, 0.06)" : "rgba(255, 255, 255, 0.06)", borderRadius: "999px", overflow: "hidden" }}>
                     <div
                       style={{
                         height: "100%",
@@ -983,11 +983,11 @@ export default function AICoachPage() {
                     to={`/problems?topic=${encodeURIComponent(t.topic.split(" ")[0])}`}
                     style={{
                       marginTop: "auto",
-                      background: isLight ? "rgba(124, 58, 237, 0.1)" : "rgba(124, 58, 237, 0.12)",
+                      background: isLight ? "rgba(124, 58, 237, 0.08)" : "rgba(124, 58, 237, 0.10)",
                       color: isLight ? "#6d28d9" : "#c084fc",
-                      borderRadius: "5px",
-                      padding: "4px 8px",
-                      fontSize: "0.70rem",
+                      borderRadius: "4px",
+                      padding: "3px 6px",
+                      fontSize: "0.66rem",
                       fontWeight: "600",
                       textDecoration: "none",
                       display: "flex",
@@ -996,7 +996,7 @@ export default function AICoachPage() {
                     }}
                   >
                     <span>Practice {t.topic}</span>
-                    <ChevronRight size={11} />
+                    <ChevronRight size={10} />
                   </Link>
                 </div>
               ))}
