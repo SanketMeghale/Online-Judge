@@ -30,6 +30,7 @@ import {
   ExternalLink,
   ChevronDown
 } from "lucide-react";
+import { JudgoLogo } from "../components/layout/JudgoLogo.jsx";
 import "../styles/landing.css";
 
 // Statistics Data
@@ -280,11 +281,8 @@ export default function LandingPage() {
             ========================================================== */}
         <header className="lp-navbar">
           <div className="lp-nav-inner">
-            <Link to="/" className="lp-brand">
-              <span className="lp-brand-logo">
-                <img src="/logo.png" alt="Judgo Logo" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
-              </span>
-              <span>Judgo</span>
+            <Link to="/" className="lp-brand" style={{ textDecoration: "none" }}>
+              <JudgoLogo size={30} textSize="1.32rem" showDivider={true} animated={true} />
             </Link>
 
             <nav className="lp-nav-links">
@@ -760,11 +758,8 @@ export default function LandingPage() {
         <footer className="lp-footer">
           <div className="footer-inner">
             <div>
-              <Link to="/" className="lp-brand" style={{ marginBottom: "12px", display: "inline-flex" }}>
-                <span className="lp-brand-logo">
-                  <img src="/logo.png" alt="Judgo Logo" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
-                </span>
-                <span>Judgo</span>
+              <Link to="/" className="lp-brand" style={{ marginBottom: "12px", display: "inline-flex", textDecoration: "none" }}>
+                <JudgoLogo size={28} textSize="1.25rem" showDivider={true} animated={false} />
               </Link>
               <p className="footer-brand-p">
                 The next-generation AI-powered online judge and competitive programming arena for ambitious developers.

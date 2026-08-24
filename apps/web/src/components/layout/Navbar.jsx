@@ -24,6 +24,7 @@ import { useAppData } from "../../data/AppDataContext.jsx";
 import { calculateStreak } from "../../data/appData.js";
 import { useTheme } from "../../context/ThemeContext.jsx";
 import CommandPalette from "../dashboard/CommandPalette.jsx";
+import { JudgoLogo } from "./JudgoLogo.jsx";
 
 export default function Navbar({ onToggleSidebar = () => {} }) {
   const { isAuthenticated, logout, user } = useAuth();
@@ -133,33 +134,9 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
               navigate("/admin/login");
             }}
             title="Judgo Coding Platform"
-            style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none", cursor: "pointer" }}
+            style={{ textDecoration: "none", cursor: "pointer", display: "inline-flex" }}
           >
-            <motion.div
-              whileHover={{ scale: 1.08, rotate: 6 }}
-              whileTap={{ scale: 0.94 }}
-              animate={{ y: [0, -2, 0] }}
-              transition={{
-                y: { duration: 3.5, repeat: Infinity, ease: "easeInOut" },
-                scale: { duration: 0.2 },
-                rotate: { duration: 0.2 }
-              }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                filter: "drop-shadow(0 2px 8px rgba(100, 80, 255, 0.6))"
-              }}
-            >
-              <img
-                src="/logo.png"
-                alt="Judgo Logo"
-                style={{ width: "28px", height: "28px", objectFit: "contain", display: "block", background: "transparent" }}
-              />
-            </motion.div>
-            <span style={{ fontSize: "1.1rem", fontWeight: "800", letterSpacing: "-0.02em", color: isLight ? "#0f172a" : "#ffffff" }}>
-              Judgo
-            </span>
+            <JudgoLogo size={28} textSize="1.24rem" showDivider={true} animated={true} />
           </Link>
         </div>
 

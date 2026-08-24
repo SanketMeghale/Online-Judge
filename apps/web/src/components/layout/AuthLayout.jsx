@@ -13,6 +13,7 @@ import {
   Trophy,
   Zap
 } from "lucide-react";
+import { JudgoLogo } from "./JudgoLogo.jsx";
 
 export default function AuthLayout() {
   const location = useLocation();
@@ -69,14 +70,8 @@ export default function AuthLayout() {
           className="auth-left-branding"
         >
           {/* Logo and Brand Name */}
-          <Link className="auth-brand-badge" to="/">
-            <motion.div
-              whileHover={{ rotate: 8, scale: 1.06 }}
-              className="auth-logo-box"
-            >
-              <img src="/logo.png" alt="Judgo Logo" />
-            </motion.div>
-            <span className="auth-brand-name">Judgo</span>
+          <Link className="auth-brand-badge" to="/" style={{ textDecoration: "none", marginBottom: "18px" }}>
+            <JudgoLogo size={36} textSize="1.6rem" showDivider={true} animated={true} />
           </Link>
 
           {/* Headline and Subtitle */}

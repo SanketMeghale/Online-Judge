@@ -14,6 +14,7 @@ import {
   User
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext.jsx";
+import { JudgoLogo } from "../components/layout/JudgoLogo.jsx";
 
 export default function Login() {
   const { login, loginGoogle, loginGitHub } = useAuth();
@@ -115,11 +116,8 @@ export default function Login() {
     <div className={`auth-glass-panel ${error ? "verdict-shake-wa" : ""}`}>
       {/* Mobile Branding Header */}
       <div className="auth-mobile-header">
-        <Link to="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
-          <div className="auth-logo-box" style={{ width: "44px", height: "44px" }}>
-            <img src="/logo.png" alt="Judgo Logo" />
-          </div>
-          <span className="auth-brand-name" style={{ fontSize: "1.25rem" }}>Judgo</span>
+        <Link to="/" style={{ textDecoration: "none", display: "inline-flex" }}>
+          <JudgoLogo size={32} textSize="1.35rem" showDivider={true} animated={true} />
         </Link>
       </div>
 

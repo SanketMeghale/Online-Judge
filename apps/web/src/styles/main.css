@@ -424,6 +424,67 @@ a {
   padding: 4px;
 }
 
+/* ==========================================================================
+   JUDGO BRAND LOGO & WORDMARK (EXACT IMAGE SPECIFICATION)
+   ========================================================================== */
+
+.judgo-brand-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  user-select: none;
+}
+
+.judgo-brand-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.judgo-brand-logo:hover .judgo-brand-icon-wrap {
+  transform: scale(1.06);
+}
+
+.judgo-brand-divider {
+  width: 1px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.16);
+  flex-shrink: 0;
+}
+
+[data-theme="light"] .judgo-brand-divider {
+  background: #e2e8f0;
+}
+
+.judgo-brand-text {
+  font-family: inherit;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  display: inline-flex;
+  align-items: baseline;
+  line-height: 1;
+}
+
+.judgo-brand-j {
+  color: #7c3aed;
+  font-weight: 850;
+}
+
+.judgo-brand-rest {
+  color: #f8fafc;
+  font-weight: 800;
+  transition: color 0.15s ease;
+}
+
+[data-theme="light"] .judgo-brand-rest {
+  color: #0b1220;
+}
+
+
 .search-pill {
   background: rgba(20, 27, 62, 0.86);
   border: 1px solid #23315e;

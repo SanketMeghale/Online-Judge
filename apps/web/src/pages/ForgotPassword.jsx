@@ -9,6 +9,7 @@ import {
   RotateCcw,
   Sparkles
 } from "lucide-react";
+import { JudgoLogo } from "../components/layout/JudgoLogo.jsx";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -66,11 +67,8 @@ export default function ForgotPassword() {
     <div className="auth-glass-panel">
       {/* Mobile Branding Header */}
       <div className="auth-mobile-header">
-        <Link to="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
-          <div className="auth-logo-box" style={{ width: "44px", height: "44px" }}>
-            <img src="/logo.png" alt="Judgo Logo" />
-          </div>
-          <span className="auth-brand-name" style={{ fontSize: "1.25rem" }}>Judgo</span>
+        <Link to="/" style={{ textDecoration: "none", display: "inline-flex" }}>
+          <JudgoLogo size={32} textSize="1.35rem" showDivider={true} animated={true} />
         </Link>
       </div>
 

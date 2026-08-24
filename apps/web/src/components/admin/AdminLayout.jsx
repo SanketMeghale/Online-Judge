@@ -94,7 +94,9 @@ export default function AdminLayout() {
               <ShieldCheck size={18} color="#fff" />
             </div>
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <span style={{ fontSize: "0.98rem", fontWeight: "800", letterSpacing: "-0.01em" }}>Judgo</span>
+              <span style={{ fontSize: "0.98rem", fontWeight: "800", letterSpacing: "-0.01em", display: "inline-flex", alignItems: "baseline" }}>
+                <span style={{ color: "#a855f7" }}>J</span>udgo
+              </span>
               <span style={{ fontSize: "0.65rem", color: "#94a3b8" }}>Control Center</span>
             </div>
           </Link>
