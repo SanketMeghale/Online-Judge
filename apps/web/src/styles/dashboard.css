@@ -1402,6 +1402,16 @@
     min-height: 460px !important;
     max-height: none !important;
     flex: none !important;
+    overflow: visible !important;
+    touch-action: pan-y !important;
+  }
+
+  .ai-mentor-chat-scroll {
+    overflow-y: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    touch-action: pan-y !important;
+    overscroll-behavior: auto !important;
   }
 }
 

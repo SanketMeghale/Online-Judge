@@ -762,11 +762,7 @@ export default function MockInterviewStudio() {
 
     return (
       <div className="mock-studio-root">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="mock-scorecard-card"
-        >
+        <div className="mock-scorecard-card">
           {/* Header */}
           <div className="mock-scorecard-hero">
             <div className="mock-scorecard-badge-wrap">
@@ -1074,7 +1070,7 @@ export default function MockInterviewStudio() {
               </div>
             </>
           )}
-        </motion.div>
+        </div>
       </div>
     );
   }

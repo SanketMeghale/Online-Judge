@@ -461,7 +461,6 @@ export default function AICoachPage() {
   return (
     <div
       className="ai-coach-page-container"
-      data-lenis-prevent="true"
       style={{
         display: "flex",
         flexDirection: "column",
@@ -472,7 +471,8 @@ export default function AICoachPage() {
         padding: "8px 12px 32px 12px",
         minHeight: "100%",
         boxSizing: "border-box",
-        flex: 1
+        flex: 1,
+        touchAction: "pan-y"
       }}
     >
       {/* 1. PRIMARY WORKSPACE NAVIGATION TABS */}
@@ -626,7 +626,7 @@ export default function AICoachPage() {
       </nav>
 
       {/* 2. MAIN WORKSPACE */}
-      <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", width: "100%" }}>
+      <div style={{ flex: 1, minHeight: "100%", height: "auto", overflow: "visible", display: "flex", flexDirection: "column", width: "100%" }}>
         {/* TAB 1: AI MENTOR (FULL-WIDTH CHAT STUDIO) */}
         {activeTab === "mentor" && (
           <div
@@ -643,7 +643,8 @@ export default function AICoachPage() {
               flex: 1,
               boxShadow: isLight ? "0 1px 3px rgba(0, 0, 0, 0.04)" : "0 4px 20px rgba(0, 0, 0, 0.25)",
               overflow: "hidden",
-              width: "100%"
+              width: "100%",
+              touchAction: "pan-y"
             }}
           >
             {/* CHAT TOP BAR */}
@@ -700,8 +701,9 @@ export default function AICoachPage() {
                   flex: 1,
                   minHeight: 0,
                   overflowY: "auto",
-                  overscrollBehavior: "contain",
+                  overscrollBehavior: "auto",
                   WebkitOverflowScrolling: "touch",
+                  touchAction: "pan-y",
                   padding: "10px 14px",
                   display: "flex",
                   flexDirection: "column",
@@ -989,7 +991,7 @@ export default function AICoachPage() {
 
         {/* TAB 4: COMPANY INTERVIEW SHEETS */}
         {activeTab === "companies" && (
-          <div style={{ flex: 1, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }}>
+          <div style={{ flex: 1, minHeight: "100%", height: "auto", overflow: "visible", display: "flex", flexDirection: "column" }}>
             {selectedCompanySheetId ? (
               <CompanyDetailSheet
                 companyId={selectedCompanySheetId}

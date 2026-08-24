@@ -86,7 +86,7 @@ export function CompanySheetsDashboard({ onSelectCompany }) {
   }, [companies]);
 
   return (
-    <div className="company-sheets-container" data-lenis-prevent="true">
+    <div className="company-sheets-container">
       {/* 1. HERO HEADER */}
       <div className="company-sheets-hero">
         <div className="company-hero-title-group">

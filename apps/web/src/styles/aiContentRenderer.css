@@ -13,6 +13,7 @@
   flex-direction: column;
   gap: 0.45rem;
   width: 100%;
+  touch-action: pan-y;
 }
 
 .judgo-ai-content.compact {
@@ -178,6 +179,8 @@
   margin: 0;
   padding: 8px 10px;
   overflow-x: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.76rem;
   line-height: 1.42;
@@ -196,6 +199,8 @@
 .judgo-ai-table-wrapper {
   width: 100%;
   overflow-x: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   margin: 0.35rem 0;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -276,7 +281,9 @@
 .judgo-ai-content .katex-display {
   margin: 0.35rem 0;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   padding: 2px 0;
 }
 

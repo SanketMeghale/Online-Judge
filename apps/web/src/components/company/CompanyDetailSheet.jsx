@@ -172,7 +172,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
   const diffClass = (company.difficulty || "Medium").toLowerCase().replace(/\s+/g, "-");
 
   return (
-    <div className="company-sheet-page" data-lenis-prevent="true">
+    <div className="company-sheet-page">
       {/* 1. COMPACT HERO SECTION */}
       <div className="company-detail-hero">
         <div className="company-detail-top-bar">

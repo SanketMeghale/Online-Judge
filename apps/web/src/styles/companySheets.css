@@ -1213,6 +1213,9 @@
   padding: 10px 12px;
   max-height: 260px;
   overflow-y: auto;
+  overscroll-behavior-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   display: flex;
   flex-direction: column;
   gap: 8px;
