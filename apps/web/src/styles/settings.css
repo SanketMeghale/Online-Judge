@@ -736,19 +736,27 @@
 @media (max-width: 768px) {
   .settings-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .settings-nav-card {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 6px;
+    gap: 6px;
   }
 
   .settings-nav-btn {
-    flex-direction: column;
+    flex: 0 0 auto;
+    flex-direction: row;
     align-items: center;
-    text-align: center;
-    padding: 6px 4px;
+    text-align: left;
+    padding: 6px 12px;
+    width: auto;
+    white-space: nowrap;
   }
 
   .settings-nav-btn-desc {
@@ -756,7 +764,7 @@
   }
 
   .settings-content-card {
-    padding: 16px 14px;
+    padding: 14px 12px;
   }
 
   .settings-row-2 {
@@ -769,10 +777,6 @@
 }
 
 @media (max-width: 480px) {
-  .settings-nav-card {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
   .settings-font-row {
     flex-wrap: wrap;
   }

@@ -495,34 +495,79 @@
     max-height: none !important;
     overflow: visible !important;
     padding: 6px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .judgo-ide-top-bar {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+    height: auto !important;
+    min-height: 28px !important;
+  }
+
+  .judgo-bc-trail {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
   }
 
   .judgo-ide-split {
+    display: flex !important;
     flex-direction: column !important;
     height: auto !important;
     max-height: none !important;
     overflow: visible !important;
+    gap: 12px !important;
   }
 
   .judgo-ide-left-pane,
   .judgo-ide-right-pane {
     flex: none !important;
     height: auto !important;
-    margin-bottom: 10px !important;
+    margin-bottom: 0 !important;
     max-height: none !important;
     min-height: auto !important;
-    min-width: 100% !important;
+    min-width: 0 !important;
     width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .judgo-ide-nav-bar {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    height: 38px !important;
+    padding: 0 4px !important;
+  }
+
+  .judgo-ide-nav-tabs {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    min-width: 0 !important;
+  }
+
+  .judgo-ide-tab-btn {
+    flex-shrink: 0 !important;
+    padding: 0 10px !important;
+    font-size: 0.76rem !important;
   }
 
   .judgo-ide-editor-wrapper {
-    height: 420px !important;
-    min-height: 350px !important;
+    height: 380px !important;
+    min-height: 300px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .judgo-ide-exec-panel {
-    height: 380px !important;
-    min-height: 300px !important;
+    height: auto !important;
+    min-height: 260px !important;
+    max-height: none !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .judgo-ide-divider,
@@ -535,6 +580,14 @@
     height: auto !important;
     max-height: none !important;
     overflow-y: visible !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .judgo-ide-editor-wrapper {
+    height: 340px !important;
+    min-height: 280px !important;
   }
 }
 

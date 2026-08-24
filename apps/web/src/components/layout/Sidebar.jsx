@@ -85,7 +85,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
   const userHandle = String(liveUser?.username || liveUser?.email || "").trim();
   const avatarLetter = String(displayName || userHandle || "D").slice(0, 1).toUpperCase();
 
-  // Dashboard exception: expanded by default on Dashboard; collapsed icon rail (72px) on all other routes
+  // Dashboard exception: expanded by default on Dashboard; collapsed icon rail (60px) on all other routes
   const isDashboardRoute = location.pathname === "/dashboard" || location.pathname === "/";
   const [collapsed, setCollapsed] = useState(!isDashboardRoute);
   const [hoveredItem, setHoveredItem] = useState(null);
@@ -95,7 +95,8 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
     setCollapsed(!isDashboardRoute);
   }, [location.pathname, isDashboardRoute]);
 
-  const sidebarWidth = collapsed ? "60px" : "240px";
+  const isEffectiveCollapsed = collapsed && !mobileOpen;
+  const sidebarWidth = isEffectiveCollapsed ? "60px" : "240px";
 
   return (
     <>
@@ -113,14 +114,14 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
               inset: 0,
               background: "rgba(0, 0, 0, 0.7)",
               backdropFilter: "blur(4px)",
-              zIndex: 90
+              zIndex: 990
             }}
           />
         )}
       </AnimatePresence>
 
       <aside
-        className={`sidebar sidebar-modern ${collapsed ? "sidebar-collapsed" : ""} ${
+        className={`sidebar sidebar-modern ${isEffectiveCollapsed ? "sidebar-collapsed" : ""} ${
           mobileOpen ? "sidebar-mobile-open" : ""
         }`}
         style={{
@@ -138,8 +139,8 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
           transition:
             "width 220ms cubic-bezier(0.16, 1, 0.3, 1), min-width 220ms cubic-bezier(0.16, 1, 0.3, 1), max-width 220ms cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, border-color 0.15s ease",
           willChange: "width, min-width, max-width",
-          zIndex: 95,
-          padding: collapsed ? "8px 6px 10px" : "10px 10px 14px",
+          zIndex: mobileOpen ? 999 : 95,
+          padding: isEffectiveCollapsed ? "8px 6px 10px" : "10px 10px 14px",
           userSelect: "none",
           overflowX: "visible",
           overflowY: "auto",
@@ -153,16 +154,16 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
           className="sidebar-toggle-row"
           style={{
             display: "flex",
-            justifyContent: collapsed ? "center" : "space-between",
+            justifyContent: isEffectiveCollapsed ? "center" : "space-between",
             alignItems: "center",
-            padding: collapsed ? "0 0 6px" : "0 4px 6px",
+            padding: isEffectiveCollapsed ? "0 0 6px" : "0 4px 6px",
             borderBottom: isLight ? "1px solid #f1f5f9" : "1px solid rgba(255, 255, 255, 0.06)",
             marginBottom: "6px",
             minHeight: "28px",
             width: "100%"
           }}
         >
-          {!collapsed && (
+          {!isEffectiveCollapsed && (
             <span
               style={{
                 fontSize: "0.68rem",
@@ -207,7 +208,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: collapsed ? "4px" : "8px",
+            gap: isEffectiveCollapsed ? "4px" : "8px",
             flex: 1,
             width: "100%",
             scrollbarWidth: "none",
@@ -221,7 +222,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
               style={{ display: "flex", flexDirection: "column", gap: "2px", width: "100%" }}
             >
               {/* Category Header Label or Subtle Divider */}
-              {!collapsed ? (
+              {!isEffectiveCollapsed ? (
                 <span
                   style={{
                     fontSize: "0.64rem",
@@ -262,12 +263,12 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                         display: "flex",
                         alignItems: "center",
                         gap: "10px",
-                        padding: collapsed ? "0" : "6px 10px",
-                        width: collapsed ? "38px" : "100%",
-                        height: collapsed ? "36px" : "auto",
-                        margin: collapsed ? "0 auto" : "0",
-                        justifyContent: collapsed ? "center" : "flex-start",
-                        borderRadius: collapsed ? "8px" : "7px",
+                        padding: isEffectiveCollapsed ? "0" : "6px 10px",
+                        width: isEffectiveCollapsed ? "38px" : "100%",
+                        height: isEffectiveCollapsed ? "36px" : "auto",
+                        margin: isEffectiveCollapsed ? "0 auto" : "0",
+                        justifyContent: isEffectiveCollapsed ? "center" : "flex-start",
+                        borderRadius: isEffectiveCollapsed ? "8px" : "7px",
                         textDecoration: "none",
                         fontSize: "0.82rem",
                         fontWeight: active ? "600" : "500",
@@ -282,7 +283,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                         border: active
                           ? isLight ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid rgba(99, 102, 241, 0.32)"
                           : "1px solid transparent",
-                        boxShadow: active && collapsed
+                        boxShadow: active && isEffectiveCollapsed
                           ? "0 2px 6px rgba(99, 102, 241, 0.18)"
                           : "none",
                         position: "relative",
@@ -299,7 +300,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                         }}
                       />
 
-                      {!collapsed && (
+                      {!isEffectiveCollapsed && (
                         <span
                           style={{
                             whiteSpace: "nowrap",
@@ -312,7 +313,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
                       )}
 
                       {/* Active Accent Indicator for Expanded Mode */}
-                      {active && !collapsed && (
+                      {active && !isEffectiveCollapsed && (
                         <div
                           style={{
                             marginLeft: "auto",
@@ -327,7 +328,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
 
                     {/* Floating Tooltip when Collapsed */}
                     <AnimatePresence>
-                      {collapsed && hoveredItem === label && (
+                      {isEffectiveCollapsed && hoveredItem === label && (
                         <motion.div
                           initial={{ opacity: 0, x: 6, scale: 0.95 }}
                           animate={{ opacity: 1, x: 0, scale: 1 }}
@@ -377,7 +378,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
 
         {/* Footer Area: User Pro Card when Expanded, Mini Avatar Button when Collapsed */}
         <div style={{ marginTop: "auto", paddingTop: "6px", width: "100%" }}>
-          {!collapsed ? (
+          {!isEffectiveCollapsed ? (
             <div
               className="sidebar-pro-card"
               style={{

@@ -191,6 +191,30 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
 
         {/* Right: Streak + Notifications + Profile Area */}
         <div className="topbar-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {/* Mobile Search Icon Button */}
+          <button
+            type="button"
+            className="mobile-search-btn"
+            onClick={() => setPaletteOpen(true)}
+            title="Search problems (⌘K)"
+            aria-label="Search problems"
+            style={{
+              background: isLight ? "rgba(0, 0, 0, 0.04)" : "rgba(255, 255, 255, 0.04)",
+              border: isLight ? "1px solid rgba(0, 0, 0, 0.08)" : "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: "7px",
+              width: "32px",
+              height: "32px",
+              display: "none",
+              alignItems: "center",
+              justifyContent: "center",
+              color: isLight ? "#475569" : "#94a3b8",
+              cursor: "pointer",
+              flexShrink: 0
+            }}
+          >
+            <Search size={15} />
+          </button>
+
           {isAuthenticated ? (
             <>
               {/* 1. Streak Badge */}

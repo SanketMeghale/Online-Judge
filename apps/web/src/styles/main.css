@@ -4239,8 +4239,9 @@ canvas {
 @media (max-width: 960px) {
   .navbar.navbar-modern {
     display: flex !important;
-    gap: 10px !important;
-    height: 60px !important;
+    gap: 8px !important;
+    height: 56px !important;
+    min-height: 56px !important;
     justify-content: space-between !important;
     padding: 0 12px !important;
   }
@@ -4249,19 +4250,44 @@ canvas {
     display: none !important;
   }
 
+  .mobile-search-btn {
+    display: flex !important;
+  }
+
   .navbar-modern .topbar-right {
-    gap: 7px !important;
+    gap: 6px !important;
     min-width: 0;
   }
 
   .sidebar.sidebar-modern {
-    height: calc(100dvh - 60px) !important;
-    max-width: min(280px, 86vw);
-    top: 60px !important;
+    position: fixed !important;
+    left: -280px !important;
+    top: 56px !important;
+    bottom: 0 !important;
+    height: calc(100dvh - 56px) !important;
+    width: 250px !important;
+    min-width: 250px !important;
+    max-width: 250px !important;
+    z-index: 999 !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8) !important;
+    transition: left 0.26s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  .sidebar.sidebar-modern.sidebar-mobile-open {
+    left: 0 !important;
   }
 
   .mobile-sidebar-backdrop {
-    top: 60px !important;
+    top: 56px !important;
+    z-index: 990 !important;
+  }
+
+  .content-shell.content-shell-workspace {
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 8px 8px 36px !important;
   }
 
   .responsive-page-header {
@@ -4280,7 +4306,10 @@ canvas {
     max-width: 100%;
     overflow-x: auto;
     position: static !important;
-    scrollbar-width: thin;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px !important;
+    gap: 4px !important;
   }
 
   .settings-nav-card > button {
@@ -4312,29 +4341,27 @@ canvas {
 @media (max-width: 640px) {
   body {
     overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
   }
 
   .content-shell {
-    padding: 12px 12px 32px !important;
+    padding: 10px 10px 32px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .navbar.navbar-modern {
     gap: 6px !important;
-    padding: 0 9px !important;
+    padding: 0 8px !important;
+    height: 56px !important;
+    min-height: 56px !important;
   }
 
   .navbar-modern > div:first-child {
-    gap: 7px !important;
+    gap: 6px !important;
     min-width: 0;
-  }
-
-  .navbar-modern > div:first-child img {
-    height: 32px !important;
-    width: 32px !important;
-  }
-
-  .navbar-modern > div:first-child a {
-    gap: 7px !important;
   }
 
   .navbar-modern .topbar-right {
@@ -4343,16 +4370,17 @@ canvas {
 
   .streak-badge-pill {
     justify-content: center;
-    padding: 7px !important;
+    padding: 4px 8px !important;
+    height: 28px !important;
   }
 
   .streak-badge-pill > span {
-    display: none;
+    font-size: 0.72rem !important;
   }
 
   .nav-profile-button {
     gap: 0 !important;
-    padding: 3px !important;
+    padding: 2px !important;
   }
 
   .nav-profile-name,
@@ -4362,11 +4390,11 @@ canvas {
 
   .nav-notification-menu,
   .nav-profile-menu {
-    max-width: calc(100vw - 20px) !important;
+    max-width: calc(100vw - 16px) !important;
     position: fixed !important;
-    right: 10px !important;
-    top: 64px !important;
-    width: min(300px, calc(100vw - 20px)) !important;
+    right: 8px !important;
+    top: 58px !important;
+    width: min(290px, calc(100vw - 16px)) !important;
   }
 
   .responsive-page {
@@ -4377,6 +4405,7 @@ canvas {
 
   .responsive-page-header {
     flex-direction: column;
+    gap: 8px;
   }
 
   .responsive-page-header > * {
@@ -4387,7 +4416,7 @@ canvas {
   .page-header h1,
   .compact-header h1,
   .settings-header h1 {
-    font-size: 1.35rem !important;
+    font-size: 1.25rem !important;
     overflow-wrap: anywhere;
   }
 
@@ -4399,12 +4428,12 @@ canvas {
   .responsive-table-scroll table,
   .table-shell table,
   .admin-table {
-    min-width: 680px;
+    min-width: 580px;
   }
 
   .contest-live-banner {
     align-items: flex-start !important;
-    padding: 12px !important;
+    padding: 10px !important;
   }
 
   .contest-live-banner > div,
@@ -4420,6 +4449,8 @@ canvas {
 
   .settings-header {
     flex-direction: column;
+    align-items: stretch !important;
+    gap: 8px !important;
   }
 
   .settings-header > div:last-child,
@@ -4438,6 +4469,7 @@ canvas {
   .console-results-panel {
     max-width: 100%;
     min-width: 0;
+    box-sizing: border-box !important;
   }
 
   .problem-crumbs {
@@ -4445,29 +4477,24 @@ canvas {
     overflow-x: auto;
     padding-bottom: 3px;
     white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
   }
 
   .problem-title-header {
     align-items: flex-start !important;
     flex-direction: column;
+    gap: 6px;
   }
 
   .editor-toolbar,
   .console-tab-bar {
     max-width: 100%;
-  }
-
-  .result-testcase-row > button {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-  }
-
-  .result-testcase-row > button > svg:last-child {
-    display: none;
+    box-sizing: border-box;
   }
 
   .page-header,
   .compact-header {
-    padding: 16px;
+    padding: 12px;
   }
 }
 
@@ -4476,12 +4503,12 @@ canvas {
     display: none !important;
   }
 
-  .navbar-modern > div:first-child > a > span:last-child {
-    font-size: 1rem !important;
+  .streak-badge-pill > span {
+    display: none !important;
   }
 
   .auth-page {
-    padding: 16px 10px;
+    padding: 12px 8px;
   }
 
   .result-verdict-metrics {
@@ -4489,7 +4516,7 @@ canvas {
   }
 
   .result-verdict-metrics > div {
-    padding: 7px 0;
+    padding: 6px 0;
     width: 100%;
   }
 

@@ -482,14 +482,17 @@ export default function AICoachPage() {
       <nav
         className="ai-mentor-tabs"
         style={{
-          display: "inline-flex",
+          display: "flex",
           alignItems: "center",
           gap: "3px",
           background: isLight ? "rgba(241, 245, 249, 0.85)" : "rgba(15, 23, 42, 0.7)",
           border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
           borderRadius: "8px",
           padding: "3px 4px",
-          width: "fit-content",
+          maxWidth: "100%",
+          overflowX: "auto",
+          WebkitOverflowScrolling: "touch",
+          scrollbarWidth: "none",
           boxShadow: isLight ? "0 1px 2px rgba(0, 0, 0, 0.03)" : "inset 0 1px 0 rgba(255, 255, 255, 0.05)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
@@ -556,7 +559,9 @@ export default function AICoachPage() {
                 fontWeight: isActive ? "700" : "500",
                 cursor: "pointer",
                 transition: "all 0.15s ease",
-                userSelect: "none"
+                userSelect: "none",
+                flexShrink: 0,
+                whiteSpace: "nowrap"
               }}
             >
               {/* Smooth Floating Pill Background for Active State */}
