@@ -25,7 +25,9 @@ import {
   Check,
   AlertTriangle,
   Lock,
-  Unlock
+  Unlock,
+  BarChart3,
+  PieChart
 } from "lucide-react";
 import { CompanyLogo } from "./CompanyLogos.jsx";
 import { api } from "../../api/apiClient.js";
@@ -157,90 +159,112 @@ export function CompanyDetailSheet({ companyId, onBack }) {
 
   if (loading || !sheetData) {
     return (
-      <div className="company-sheet-page" style={{ padding: "40px 0", textAlign: "center" }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", color: "#c084fc", fontWeight: "700" }}>
-          <Sparkles className="animate-spin" size={20} />
+      <div className="company-sheet-page" style={{ padding: "30px 0", textAlign: "center" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", color: "#c084fc", fontWeight: "700", fontSize: "0.82rem" }}>
+          <Sparkles className="animate-spin" size={16} />
           <span>Generating Real-Time {companyId?.toUpperCase()} Preparation Sheet...</span>
         </div>
       </div>
     );
   }
 
+  const diffClass = (company.difficulty || "Medium").toLowerCase().replace(/\s+/g, "-");
+
   return (
     <div className="company-sheet-page" data-lenis-prevent="true">
-      {/* 1. TOP HERO SECTION */}
+      {/* 1. COMPACT HERO SECTION */}
       <div className="company-detail-hero">
         <div className="company-detail-top-bar">
           <button type="button" className="company-back-btn" onClick={onBack}>
-            <ArrowLeft size={16} />
-            <span>← Back to All Companies</span>
+            <ArrowLeft size={13} />
+            <span>Back to All Companies</span>
           </button>
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-            <span className="company-topic-pill" style={{ background: "rgba(124, 58, 237, 0.15)", color: "#c084fc" }}>
+          <div style={{ display: "flex", gap: "6px", alignItems: "center", flexWrap: "wrap" }}>
+            <span className="company-tier-badge">
               {company.tier || "Tier 1 Tech"}
             </span>
-            <span className={`company-diff-badge ${company.difficulty?.toLowerCase().replace(/\s+/g, "-")}`}>
-              {company.difficulty} Interview Bar
+            <span className={`company-diff-badge ${diffClass}`}>
+              <Zap size={11} className="diff-icon" />
+              <span>{company.difficulty} Interview Bar</span>
             </span>
           </div>
         </div>
 
         <div className="company-detail-brand">
           <div className="company-detail-logo-wrap">
-            <CompanyLogo name={company.name} size={38} />
+            <CompanyLogo name={company.name} size={26} />
           </div>
           <div className="company-detail-headings">
-            <h1>
-              {company.name}
-              <span style={{ fontSize: "1.05rem", fontWeight: "400", color: "#94a3b8" }}>
-                Interview Preparation Sheet
-              </span>
-            </h1>
-            <p>{company.description}</p>
+            <div className="company-title-row">
+              <h1 className="company-heading-name">{company.name}</h1>
+              <span className="company-heading-sub">Interview Preparation Sheet</span>
+            </div>
+            {company.description && (
+              <p className="company-desc-clamp">{company.description}</p>
+            )}
           </div>
         </div>
 
-        {/* Dynamic Top Stats Grid */}
+        {/* Dynamic Top 5-Stat Row */}
         <div className="company-stats-grid">
           <div className="company-stat-card">
-            <span className="stat-label">Total Problems</span>
+            <div className="stat-head">
+              <Layers size={13} color="#a855f7" />
+              <span className="stat-label">Total Problems</span>
+            </div>
             <span className="stat-val">{stats.totalProblems}</span>
             <span className="stat-sub">Curated for {company.name}</span>
           </div>
+
           <div className="company-stat-card">
-            <span className="stat-label">Solved by You</span>
+            <div className="stat-head">
+              <CheckCircle2 size={13} color="#10b981" />
+              <span className="stat-label">Solved by You</span>
+            </div>
             <span className="stat-val" style={{ color: "#34d399" }}>
               {stats.solvedCount}
             </span>
             <span className="stat-sub">{stats.attemptedCount} attempted</span>
           </div>
+
           <div className="company-stat-card">
-            <span className="stat-label">Accuracy Rate</span>
+            <div className="stat-head">
+              <TrendingUp size={13} color="#38bdf8" />
+              <span className="stat-label">Accuracy Rate</span>
+            </div>
             <span className="stat-val" style={{ color: "#38bdf8" }}>
               {stats.accuracy}%
             </span>
             <span className="stat-sub">On company problems</span>
           </div>
+
           <div className="company-stat-card">
-            <span className="stat-label">Sheet Completion</span>
+            <div className="stat-head">
+              <PieChart size={13} color="#c084fc" />
+              <span className="stat-label">Completion</span>
+            </div>
             <span className="stat-val" style={{ color: "#c084fc" }}>
               {stats.completionPercentage}%
             </span>
             <span className="stat-sub">Real user progress</span>
           </div>
+
           <div className="company-stat-card">
-            <span className="stat-label">Difficulty Depth</span>
-            <div style={{ display: "flex", gap: "8px", marginTop: "4px", fontSize: "0.78rem" }}>
-              <span style={{ color: "#34d399" }}>E: {stats.difficultyProgress?.easy?.solved}/{stats.difficultyProgress?.easy?.total}</span>
-              <span style={{ color: "#fbbf24" }}>M: {stats.difficultyProgress?.medium?.solved}/{stats.difficultyProgress?.medium?.total}</span>
-              <span style={{ color: "#f87171" }}>H: {stats.difficultyProgress?.hard?.solved}/{stats.difficultyProgress?.hard?.total}</span>
+            <div className="stat-head">
+              <BarChart3 size={13} color="#fbbf24" />
+              <span className="stat-label">Difficulty Depth</span>
             </div>
-            <span className="stat-sub">Easy / Med / Hard breakdown</span>
+            <div className="stat-diff-depth">
+              <span className="diff-e">E: {stats.difficultyProgress?.easy?.solved || 0}/{stats.difficultyProgress?.easy?.total || 0}</span>
+              <span className="diff-m">M: {stats.difficultyProgress?.medium?.solved || 0}/{stats.difficultyProgress?.medium?.total || 0}</span>
+              <span className="diff-h">H: {stats.difficultyProgress?.hard?.solved || 0}/{stats.difficultyProgress?.hard?.total || 0}</span>
+            </div>
+            <span className="stat-sub">Easy / Med / Hard</span>
           </div>
         </div>
       </div>
 
-      {/* 2. PERSONALIZED COMPANY READINESS */}
+      {/* 2. COMPACT PERSONALIZED COMPANY READINESS */}
       <div className="company-readiness-card">
         <div className="company-readiness-head">
           <div className="company-readiness-score-wrap">
@@ -248,32 +272,20 @@ export function CompanyDetailSheet({ companyId, onBack }) {
               {readiness.score}
             </div>
             <div>
-              <h3 style={{ margin: "0 0 2px 0", fontSize: "1.1rem", color: "#f8fafc" }}>
+              <h3 className="readiness-title">
                 Your {company.name} Interview Readiness
               </h3>
-              <p style={{ margin: 0, fontSize: "0.84rem", color: "#94a3b8" }}>
+              <p className="readiness-subtitle">
                 Calculated from your verified solve counts, submission accuracy, and difficulty distribution.
               </p>
             </div>
           </div>
           <button
             type="button"
+            className="company-launch-mock-btn"
             onClick={() => navigate("/interviewer?tab=interview")}
-            style={{
-              background: "rgba(124, 58, 237, 0.2)",
-              border: "1px solid rgba(124, 58, 237, 0.4)",
-              color: "#c084fc",
-              padding: "8px 16px",
-              borderRadius: "8px",
-              fontSize: "0.82rem",
-              fontWeight: "700",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px"
-            }}
           >
-            <Compass size={15} />
+            <Compass size={13} />
             <span>Launch Mock Interview →</span>
           </button>
         </div>
@@ -281,8 +293,8 @@ export function CompanyDetailSheet({ companyId, onBack }) {
         <div className="company-readiness-cols">
           <div className="company-readiness-box">
             <h4 style={{ color: "#34d399" }}>
-              <CheckCircle2 size={15} />
-              Strong Areas
+              <CheckCircle2 size={13} />
+              <span>Strong Areas</span>
             </h4>
             {readiness.strongTopics && readiness.strongTopics.length > 0 ? (
               <ul>
@@ -291,7 +303,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
                 ))}
               </ul>
             ) : (
-              <p style={{ fontSize: "0.8rem", color: "#64748b", margin: 0 }}>
+              <p className="readiness-empty">
                 Solve more problems in this sheet to establish strong domains.
               </p>
             )}
@@ -299,8 +311,8 @@ export function CompanyDetailSheet({ companyId, onBack }) {
 
           <div className="company-readiness-box">
             <h4 style={{ color: "#fbbf24" }}>
-              <AlertTriangle size={15} />
-              Priority Gaps & Needs Work
+              <AlertTriangle size={13} />
+              <span>Priority Gaps & Needs Work</span>
             </h4>
             {readiness.weakTopics && readiness.weakTopics.length > 0 ? (
               <ul>
@@ -309,7 +321,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
                 ))}
               </ul>
             ) : (
-              <p style={{ fontSize: "0.8rem", color: "#34d399", margin: 0 }}>
+              <p className="readiness-empty" style={{ color: "#34d399" }}>
                 No critical topic gaps detected!
               </p>
             )}
@@ -317,8 +329,8 @@ export function CompanyDetailSheet({ companyId, onBack }) {
 
           <div className="company-readiness-box">
             <h4 style={{ color: "#38bdf8" }}>
-              <Target size={15} />
-              Recommended Next Action
+              <Target size={13} />
+              <span>Recommended Next Action</span>
             </h4>
             <ul>
               {(readiness.recommendedNext || []).map((rec, i) => (
@@ -334,7 +346,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
       {/* 3. TOPIC BREAKDOWN */}
       <div className="company-topics-section">
         <div className="company-section-title">
-          <Layers size={18} color="#a855f7" />
+          <Layers size={15} color="#a855f7" />
           <span>{company.name} Specific Topic Breakdown</span>
         </div>
 
@@ -349,11 +361,11 @@ export function CompanyDetailSheet({ companyId, onBack }) {
               </div>
 
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", color: "#94a3b8", marginBottom: "4px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", color: "#94a3b8", marginBottom: "3px" }}>
                   <span>{t.userSolved} / {t.problemsAvailable} solved</span>
                   <span style={{ color: "#c084fc", fontWeight: "700" }}>{t.progressPercent}%</span>
                 </div>
-                <div className="company-progress-bar-bg" style={{ height: "5px" }}>
+                <div className="company-progress-bar-bg" style={{ height: "4px" }}>
                   <div
                     className="company-progress-bar-fill"
                     style={{ width: `${Math.min(100, Math.max(0, t.progressPercent))}%` }}
@@ -361,7 +373,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
                 </div>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.74rem", color: "#64748b" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.70rem", color: "#64748b" }}>
                 <span>Accuracy: {t.accuracy}%</span>
                 <button
                   type="button"
@@ -379,37 +391,28 @@ export function CompanyDetailSheet({ companyId, onBack }) {
       {/* 4. PROBLEM LIST TABLE */}
       <div className="company-problems-table-wrap">
         <div className="company-table-filter-bar">
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <FileCode size={18} color="#38bdf8" />
-            <strong style={{ fontSize: "0.96rem", color: "#f8fafc" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <FileCode size={15} color="#38bdf8" />
+            <strong style={{ fontSize: "0.88rem", color: "#f8fafc" }}>
               {company.name} Interview Problem List ({filteredProblems.length})
             </strong>
           </div>
 
-          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
-            <div className="company-search-box" style={{ padding: "6px 12px", minWidth: "180px" }}>
-              <Search size={14} color="#64748b" />
+          <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+            <div className="company-search-box">
+              <Search size={13} color="#64748b" />
               <input
                 type="text"
                 placeholder="Filter problem or tag..."
                 value={tableSearch}
                 onChange={(e) => setTableSearch(e.target.value)}
-                style={{ fontSize: "0.8rem" }}
               />
             </div>
 
             <select
               value={selectedDifficulty}
               onChange={(e) => setSelectedDifficulty(e.target.value)}
-              style={{
-                background: "rgba(15, 23, 42, 0.8)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                color: "#cbd5e1",
-                padding: "6px 10px",
-                borderRadius: "8px",
-                fontSize: "0.8rem",
-                outline: "none"
-              }}
+              className="company-filter-select"
             >
               <option value="all">All Difficulties</option>
               <option value="easy">Easy</option>
@@ -420,15 +423,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              style={{
-                background: "rgba(15, 23, 42, 0.8)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                color: "#cbd5e1",
-                padding: "6px 10px",
-                borderRadius: "8px",
-                fontSize: "0.8rem",
-                outline: "none"
-              }}
+              className="company-filter-select"
             >
               <option value="all">All Statuses</option>
               <option value="solved">Solved</option>
@@ -453,7 +448,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
             </thead>
             <tbody>
               {filteredProblems.map((prob) => {
-                const diffClass = prob.difficulty.toLowerCase();
+                const pDiffClass = prob.difficulty.toLowerCase();
                 const statusClass = prob.status.toLowerCase().replace(/\s+/g, "-");
 
                 return (
@@ -461,41 +456,41 @@ export function CompanyDetailSheet({ companyId, onBack }) {
                     <td>
                       <Link
                         to={`/problems/${prob.id}`}
-                        style={{ color: "#f8fafc", fontWeight: "600", textDecoration: "none" }}
+                        className="company-table-prob-link"
                       >
                         {prob.title}
                       </Link>
-                      <div style={{ display: "flex", gap: "4px", marginTop: "3px" }}>
+                      <div style={{ display: "flex", gap: "3px", marginTop: "2px" }}>
                         {(prob.interviewTags || []).slice(0, 2).map((t, idx) => (
-                          <span key={idx} className="company-topic-pill" style={{ fontSize: "0.65rem", padding: "1px 5px" }}>
+                          <span key={idx} className="company-topic-pill" style={{ fontSize: "0.62rem", padding: "1px 4px" }}>
                             {t}
                           </span>
                         ))}
                       </div>
                     </td>
                     <td>
-                      <span style={{ color: "#94a3b8" }}>{prob.topic}</span>
+                      <span style={{ color: "#94a3b8", fontSize: "0.76rem" }}>{prob.topic}</span>
                     </td>
                     <td>
-                      <span className={`company-diff-badge ${diffClass}`}>
+                      <span className={`company-diff-badge ${pDiffClass}`}>
                         {prob.difficulty}
                       </span>
                     </td>
                     <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: "2px", color: "#fbbf24" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "1px", color: "#fbbf24" }}>
                         {Array.from({ length: prob.companyFrequency || 5 }).map((_, i) => (
-                          <Star key={i} size={12} fill="#fbbf24" color="#fbbf24" />
+                          <Star key={i} size={10} fill="#fbbf24" color="#fbbf24" />
                         ))}
                       </div>
                     </td>
                     <td>
                       <span className={`company-status-badge ${statusClass}`}>
-                        {prob.status === "Solved" && <Check size={12} />}
-                        {prob.status === "Attempted" && <Clock size={12} />}
-                        {prob.status}
+                        {prob.status === "Solved" && <Check size={11} />}
+                        {prob.status === "Attempted" && <Clock size={11} />}
+                        <span>{prob.status}</span>
                       </span>
                     </td>
-                    <td style={{ fontSize: "0.78rem", color: "#64748b" }}>
+                    <td style={{ fontSize: "0.74rem", color: "#64748b" }}>
                       {prob.lastAttempt
                         ? new Date(prob.lastAttempt).toLocaleDateString()
                         : "Never"}
@@ -506,7 +501,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
                         className="company-table-action-btn"
                         onClick={() => navigate(`/problems/${prob.id}`)}
                       >
-                        <Play size={12} />
+                        <Play size={11} />
                         <span>{prob.status === "Solved" ? "Practice" : "Solve"}</span>
                       </button>
                     </td>
@@ -521,7 +516,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
       {/* 5. COMPANY-WISE PREPARATION ROADMAP */}
       <div className="company-roadmap-section">
         <div className="company-section-title">
-          <TrendingUp size={18} color="#34d399" />
+          <TrendingUp size={15} color="#34d399" />
           <span>Your {company.name} Preparation Roadmap</span>
         </div>
 
@@ -537,22 +532,22 @@ export function CompanyDetailSheet({ companyId, onBack }) {
                 className={`company-roadmap-card ${step.status.toLowerCase().replace(/\s+/g, "-")}`}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "0.75rem", fontWeight: "700", color: "#c084fc" }}>
+                  <span style={{ fontSize: "0.70rem", fontWeight: "700", color: "#c084fc" }}>
                     STEP {step.step}
                   </span>
-                  {isMastered && <CheckCircle2 size={16} color="#34d399" />}
-                  {isInProgress && <Unlock size={16} color="#c084fc" />}
-                  {isLocked && <Lock size={16} color="#64748b" />}
+                  {isMastered && <CheckCircle2 size={13} color="#34d399" />}
+                  {isInProgress && <Unlock size={13} color="#c084fc" />}
+                  {isLocked && <Lock size={13} color="#64748b" />}
                 </div>
 
-                <strong style={{ fontSize: "0.94rem", color: isLocked ? "#64748b" : "#f8fafc" }}>
+                <strong style={{ fontSize: "0.84rem", color: isLocked ? "#64748b" : "#f8fafc" }}>
                   {step.topic}
                 </strong>
-                <p style={{ fontSize: "0.76rem", color: "#94a3b8", margin: 0 }}>
+                <p style={{ fontSize: "0.72rem", color: "#94a3b8", margin: 0, lineHeight: 1.35 }}>
                   {step.description}
                 </p>
 
-                <div style={{ marginTop: "auto", paddingTop: "8px", fontSize: "0.74rem" }}>
+                <div style={{ marginTop: "auto", paddingTop: "4px", fontSize: "0.70rem" }}>
                   <span style={{ color: isMastered ? "#34d399" : isInProgress ? "#c084fc" : "#64748b", fontWeight: "600" }}>
                     {isMastered ? "✓ Mastered" : isInProgress ? "→ In Progress" : "🔒 Locked"}
                   </span>
@@ -563,15 +558,15 @@ export function CompanyDetailSheet({ companyId, onBack }) {
         </div>
       </div>
 
-      {/* 6. AI COMPANY COACH ("Ask AI about this company") */}
+      {/* 6. AI COMPANY COACH */}
       <div className="company-ai-coach-card">
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <Sparkles size={20} color="#c084fc" />
-          <h3 style={{ margin: 0, fontSize: "1.1rem", color: "#f8fafc" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <Sparkles size={16} color="#c084fc" />
+          <h3 style={{ margin: 0, fontSize: "0.96rem", color: "#f8fafc" }}>
             Ask Judgo Intelligence about {company.name}
           </h3>
         </div>
-        <p style={{ margin: 0, color: "#94a3b8", fontSize: "0.86rem" }}>
+        <p style={{ margin: 0, color: "#94a3b8", fontSize: "0.76rem" }}>
           Trained on real {company.name} hiring rubrics, recent interview logs, and your personal algorithmic gaps.
         </p>
 
@@ -599,14 +594,14 @@ export function CompanyDetailSheet({ companyId, onBack }) {
         {aiMessages.length > 0 && (
           <div
             style={{
-              maxHeight: "340px",
+              maxHeight: "260px",
               overflowY: "auto",
               display: "flex",
               flexDirection: "column",
-              gap: "12px",
+              gap: "8px",
               background: "rgba(0, 0, 0, 0.25)",
-              borderRadius: "10px",
-              padding: "16px"
+              borderRadius: "8px",
+              padding: "10px 12px"
             }}
           >
             {aiMessages.map((msg) => (
@@ -617,11 +612,11 @@ export function CompanyDetailSheet({ companyId, onBack }) {
                   maxWidth: "85%",
                   background: msg.role === "user" ? "rgba(124, 58, 237, 0.25)" : "rgba(30, 41, 59, 0.6)",
                   border: msg.role === "user" ? "1px solid rgba(124, 58, 237, 0.4)" : "1px solid rgba(255, 255, 255, 0.08)",
-                  borderRadius: "10px",
-                  padding: "12px 16px",
-                  fontSize: "0.86rem",
+                  borderRadius: "8px",
+                  padding: "8px 12px",
+                  fontSize: "0.78rem",
                   color: "#f1f5f9",
-                  lineHeight: 1.5,
+                  lineHeight: 1.45,
                   whiteSpace: "pre-wrap"
                 }}
               >
@@ -650,7 +645,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
             onClick={() => handleSendAIMessage()}
             disabled={aiLoading}
           >
-            <Send size={15} />
+            <Send size={13} />
             <span>{aiLoading ? "Thinking..." : "Ask Coach"}</span>
           </button>
         </div>
