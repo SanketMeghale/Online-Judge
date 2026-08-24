@@ -5,6 +5,7 @@ import {
   Brain,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   ChevronUp,
   Clock3,
@@ -17,16 +18,18 @@ import {
   Info,
   Layers,
   Lightbulb,
+  ListFilter,
   MemoryStick,
   Plus,
   RotateCcw,
+  Shuffle,
   Sliders,
   Sparkles,
   Terminal,
   XCircle,
   Zap
 } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { api } from "../api/apiClient.js";
 import { useAuth } from "../auth/AuthContext.jsx";
 import CodeEditor from "../components/editor/CodeEditor.jsx";
@@ -61,9 +64,26 @@ function ProblemDetailsInner() {
     submitSolution
   } = useAppData();
 
+  const navigate = useNavigate();
   const problem = getProblemById(problemId);
   const currentUserId = user?.id || user?._id || "guest_coder";
   const userProblems = getProblemsForUser(currentUserId);
+
+  const currentProblemIndex = useMemo(() => {
+    return userProblems.findIndex((p) => String(p.id) === String(problemId));
+  }, [userProblems, problemId]);
+
+  const prevProblem = currentProblemIndex > 0 ? userProblems[currentProblemIndex - 1] : null;
+  const nextProblem = currentProblemIndex >= 0 && currentProblemIndex < userProblems.length - 1 ? userProblems[currentProblemIndex + 1] : null;
+
+  const pickRandomProblem = useCallback(() => {
+    if (!userProblems.length) return;
+    const candidates = userProblems.filter((p) => String(p.id) !== String(problemId));
+    const target = candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : userProblems[0];
+    if (target?.id) {
+      navigate(`/problems/${target.id}`);
+    }
+  }, [userProblems, problemId, navigate]);
 
   const problemWithStatus = useMemo(() => {
     const p = userProblems.find((item) => item.id === problemId) ?? problem;
@@ -464,40 +484,71 @@ function ProblemDetailsInner() {
       className="judgo-ide-workspace"
       data-lenis-prevent="true"
     >
-      {/* Top Compact Breadcrumb Navigation Bar */}
+      {/* Top Compact Modern Breadcrumb Navigation Bar */}
       <div className="judgo-ide-top-bar">
-        <nav style={{ display: "flex", alignItems: "center", gap: "5px", color: isLight ? "#64748b" : "#8b9bb4", fontSize: "0.75rem" }}>
-          <Link to="/problems" style={{ color: isLight ? "#64748b" : "#8b9bb4", textDecoration: "none" }}>
-            Problems
+        <nav className="judgo-bc-trail">
+          <Link to="/problems" className="judgo-bc-pill" title="Back to Problems Arena">
+            <ListFilter size={11} />
+            <span>Problems</span>
           </Link>
-          <ChevronRight size={11} />
-          <span>{problemWithStatus.topic}</span>
-          <ChevronRight size={11} />
-          <strong style={{ color: isLight ? "#0f172a" : "#ffffff" }}>{problemWithStatus.title}</strong>
+          
+          <span className="judgo-bc-sep">/</span>
+
+          <Link
+            to={`/problems?topic=${encodeURIComponent(problemWithStatus.topic)}`}
+            className="judgo-bc-topic"
+            title={`Filter by ${problemWithStatus.topic}`}
+          >
+            {problemWithStatus.topic}
+          </Link>
+
+          <span className="judgo-bc-sep">/</span>
+
+          <span className="judgo-bc-current" title={problemWithStatus.title}>
+            {problemWithStatus.title}
+          </span>
         </nav>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+        <div className="judgo-top-actions">
+          {prevProblem ? (
+            <Link to={`/problems/${prevProblem.id}`} className="judgo-top-btn" title={`Previous Problem: ${prevProblem.title}`}>
+              <ChevronLeft size={12} />
+            </Link>
+          ) : (
+            <button type="button" disabled className="judgo-top-btn" title="No previous problem">
+              <ChevronLeft size={12} />
+            </button>
+          )}
+
           <button
             type="button"
-            onClick={() => {
-              setSplitRatio(0.45);
-            }}
-            title="Reset workspace layout split to default"
-            style={{
-              background: "transparent",
-              border: `1px solid ${isLight ? "#e2e8f0" : "rgba(255,255,255,0.08)"}`,
-              borderRadius: "5px",
-              color: isLight ? "#64748b" : "#94a3b8",
-              fontSize: "0.68rem",
-              fontWeight: "600",
-              padding: "1px 6px",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px"
-            }}
+            onClick={pickRandomProblem}
+            className="judgo-top-btn"
+            title="Pick a random problem"
           >
-            <RotateCcw size={10} /> Reset Layout
+            <Shuffle size={11} />
+          </button>
+
+          {nextProblem ? (
+            <Link to={`/problems/${nextProblem.id}`} className="judgo-top-btn" title={`Next Problem: ${nextProblem.title}`}>
+              <ChevronRight size={12} />
+            </Link>
+          ) : (
+            <button type="button" disabled className="judgo-top-btn" title="No next problem">
+              <ChevronRight size={12} />
+            </button>
+          )}
+
+          <div className="judgo-top-v-sep" />
+
+          <button
+            type="button"
+            onClick={() => setSplitRatio(0.45)}
+            title="Reset workspace layout split to default"
+            className="judgo-top-btn"
+          >
+            <RotateCcw size={10} />
+            <span>Reset</span>
           </button>
         </div>
       </div>
