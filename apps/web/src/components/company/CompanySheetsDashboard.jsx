@@ -91,19 +91,9 @@ export function CompanySheetsDashboard({ onSelectCompany }) {
       <div className="company-sheets-hero">
         <div className="company-hero-title-group">
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Building2 size={16} color="#a855f7" />
+            <Building2 size={16} className="stat-icon-purple" />
             <h1 style={{ margin: 0 }}>Company Interview Sheets</h1>
-            <span
-              style={{
-                fontSize: "0.60rem",
-                background: "rgba(124, 58, 237, 0.18)",
-                color: "#c084fc",
-                border: "1px solid rgba(124, 58, 237, 0.3)",
-                padding: "1px 6px",
-                borderRadius: "999px",
-                fontWeight: "700"
-              }}
-            >
+            <span className="company-hero-badge">
               18+ TOP TECH SHEETS
             </span>
           </div>

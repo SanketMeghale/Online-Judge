@@ -30,6 +30,7 @@ import {
   PieChart
 } from "lucide-react";
 import { CompanyLogo } from "./CompanyLogos.jsx";
+import { AIContentRenderer } from "../ai/AIContentRenderer.jsx";
 import { api } from "../../api/apiClient.js";
 import { useAuth } from "../../auth/AuthContext.jsx";
 import { useAppData } from "../../data/AppDataContext.jsx";
@@ -209,7 +210,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
         <div className="company-stats-grid">
           <div className="company-stat-card">
             <div className="stat-head">
-              <Layers size={13} color="#a855f7" />
+              <Layers size={13} className="stat-icon-purple" />
               <span className="stat-label">Total Problems</span>
             </div>
             <span className="stat-val">{stats.totalProblems}</span>
@@ -218,10 +219,10 @@ export function CompanyDetailSheet({ companyId, onBack }) {
 
           <div className="company-stat-card">
             <div className="stat-head">
-              <CheckCircle2 size={13} color="#10b981" />
+              <CheckCircle2 size={13} className="stat-icon-green" />
               <span className="stat-label">Solved by You</span>
             </div>
-            <span className="stat-val" style={{ color: "#34d399" }}>
+            <span className="stat-val stat-val-solved">
               {stats.solvedCount}
             </span>
             <span className="stat-sub">{stats.attemptedCount} attempted</span>
@@ -229,10 +230,10 @@ export function CompanyDetailSheet({ companyId, onBack }) {
 
           <div className="company-stat-card">
             <div className="stat-head">
-              <TrendingUp size={13} color="#38bdf8" />
+              <TrendingUp size={13} className="stat-icon-blue" />
               <span className="stat-label">Accuracy Rate</span>
             </div>
-            <span className="stat-val" style={{ color: "#38bdf8" }}>
+            <span className="stat-val stat-val-accuracy">
               {stats.accuracy}%
             </span>
             <span className="stat-sub">On company problems</span>
@@ -240,10 +241,10 @@ export function CompanyDetailSheet({ companyId, onBack }) {
 
           <div className="company-stat-card">
             <div className="stat-head">
-              <PieChart size={13} color="#c084fc" />
+              <PieChart size={13} className="stat-icon-purple" />
               <span className="stat-label">Completion</span>
             </div>
-            <span className="stat-val" style={{ color: "#c084fc" }}>
+            <span className="stat-val stat-val-completion">
               {stats.completionPercentage}%
             </span>
             <span className="stat-sub">Real user progress</span>
@@ -251,7 +252,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
 
           <div className="company-stat-card">
             <div className="stat-head">
-              <BarChart3 size={13} color="#fbbf24" />
+              <BarChart3 size={13} className="stat-icon-amber" />
               <span className="stat-label">Difficulty Depth</span>
             </div>
             <div className="stat-diff-depth">
@@ -292,7 +293,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
 
         <div className="company-readiness-cols">
           <div className="company-readiness-box">
-            <h4 style={{ color: "#34d399" }}>
+            <h4 className="readiness-box-head strong-head">
               <CheckCircle2 size={13} />
               <span>Strong Areas</span>
             </h4>
@@ -310,7 +311,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
           </div>
 
           <div className="company-readiness-box">
-            <h4 style={{ color: "#fbbf24" }}>
+            <h4 className="readiness-box-head weak-head">
               <AlertTriangle size={13} />
               <span>Priority Gaps & Needs Work</span>
             </h4>
@@ -321,20 +322,20 @@ export function CompanyDetailSheet({ companyId, onBack }) {
                 ))}
               </ul>
             ) : (
-              <p className="readiness-empty" style={{ color: "#34d399" }}>
+              <p className="readiness-empty" style={{ color: "#059669" }}>
                 No critical topic gaps detected!
               </p>
             )}
           </div>
 
           <div className="company-readiness-box">
-            <h4 style={{ color: "#38bdf8" }}>
+            <h4 className="readiness-box-head action-head">
               <Target size={13} />
               <span>Recommended Next Action</span>
             </h4>
             <ul>
               {(readiness.recommendedNext || []).map((rec, i) => (
-                <li key={i} style={{ color: "#93c5fd" }}>
+                <li key={i} className="readiness-action-item">
                   → {rec}
                 </li>
               ))}
@@ -346,7 +347,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
       {/* 3. TOPIC BREAKDOWN */}
       <div className="company-topics-section">
         <div className="company-section-title">
-          <Layers size={15} color="#a855f7" />
+          <Layers size={15} className="stat-icon-purple" />
           <span>{company.name} Specific Topic Breakdown</span>
         </div>
 
@@ -361,9 +362,9 @@ export function CompanyDetailSheet({ companyId, onBack }) {
               </div>
 
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", color: "#94a3b8", marginBottom: "3px" }}>
+                <div className="company-topic-stats">
                   <span>{t.userSolved} / {t.problemsAvailable} solved</span>
-                  <span style={{ color: "#c084fc", fontWeight: "700" }}>{t.progressPercent}%</span>
+                  <span className="topic-pct">{t.progressPercent}%</span>
                 </div>
                 <div className="company-progress-bar-bg" style={{ height: "4px" }}>
                   <div
@@ -373,8 +374,8 @@ export function CompanyDetailSheet({ companyId, onBack }) {
                 </div>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.70rem", color: "#64748b" }}>
-                <span>Accuracy: {t.accuracy}%</span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.70rem" }}>
+                <span style={{ color: "#64748b" }}>Accuracy: {t.accuracy}%</span>
                 <button
                   type="button"
                   className="company-topic-practice-btn"
@@ -392,8 +393,8 @@ export function CompanyDetailSheet({ companyId, onBack }) {
       <div className="company-problems-table-wrap">
         <div className="company-table-filter-bar">
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <FileCode size={15} color="#38bdf8" />
-            <strong style={{ fontSize: "0.88rem", color: "#f8fafc" }}>
+            <FileCode size={15} className="stat-icon-blue" />
+            <strong className="company-table-title">
               {company.name} Interview Problem List ({filteredProblems.length})
             </strong>
           </div>
@@ -469,7 +470,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
                       </div>
                     </td>
                     <td>
-                      <span style={{ color: "#94a3b8", fontSize: "0.76rem" }}>{prob.topic}</span>
+                      <span className="company-table-topic">{prob.topic}</span>
                     </td>
                     <td>
                       <span className={`company-diff-badge ${pDiffClass}`}>
@@ -490,7 +491,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
                         <span>{prob.status}</span>
                       </span>
                     </td>
-                    <td style={{ fontSize: "0.74rem", color: "#64748b" }}>
+                    <td className="company-table-last-attempt">
                       {prob.lastAttempt
                         ? new Date(prob.lastAttempt).toLocaleDateString()
                         : "Never"}
@@ -516,7 +517,7 @@ export function CompanyDetailSheet({ companyId, onBack }) {
       {/* 5. COMPANY-WISE PREPARATION ROADMAP */}
       <div className="company-roadmap-section">
         <div className="company-section-title">
-          <TrendingUp size={15} color="#34d399" />
+          <TrendingUp size={15} className="stat-icon-green" />
           <span>Your {company.name} Preparation Roadmap</span>
         </div>
 
@@ -532,23 +533,23 @@ export function CompanyDetailSheet({ companyId, onBack }) {
                 className={`company-roadmap-card ${step.status.toLowerCase().replace(/\s+/g, "-")}`}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "0.70rem", fontWeight: "700", color: "#c084fc" }}>
+                  <span className="company-roadmap-step">
                     STEP {step.step}
                   </span>
-                  {isMastered && <CheckCircle2 size={13} color="#34d399" />}
-                  {isInProgress && <Unlock size={13} color="#c084fc" />}
-                  {isLocked && <Lock size={13} color="#64748b" />}
+                  {isMastered && <CheckCircle2 size={13} className="roadmap-icon-mastered" />}
+                  {isInProgress && <Unlock size={13} className="roadmap-icon-progress" />}
+                  {isLocked && <Lock size={13} className="roadmap-icon-locked" />}
                 </div>
 
-                <strong style={{ fontSize: "0.84rem", color: isLocked ? "#64748b" : "#f8fafc" }}>
+                <strong className="company-roadmap-topic">
                   {step.topic}
                 </strong>
-                <p style={{ fontSize: "0.72rem", color: "#94a3b8", margin: 0, lineHeight: 1.35 }}>
+                <p className="company-roadmap-desc">
                   {step.description}
                 </p>
 
                 <div style={{ marginTop: "auto", paddingTop: "4px", fontSize: "0.70rem" }}>
-                  <span style={{ color: isMastered ? "#34d399" : isInProgress ? "#c084fc" : "#64748b", fontWeight: "600" }}>
+                  <span className={`company-roadmap-status-text ${step.status.toLowerCase().replace(/\s+/g, "-")}`}>
                     {isMastered ? "✓ Mastered" : isInProgress ? "→ In Progress" : "🔒 Locked"}
                   </span>
                 </div>
@@ -561,12 +562,12 @@ export function CompanyDetailSheet({ companyId, onBack }) {
       {/* 6. AI COMPANY COACH */}
       <div className="company-ai-coach-card">
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <Sparkles size={16} color="#c084fc" />
-          <h3 style={{ margin: 0, fontSize: "0.96rem", color: "#f8fafc" }}>
+          <Sparkles size={16} className="stat-icon-purple" />
+          <h3 className="company-ai-title">
             Ask Judgo Intelligence about {company.name}
           </h3>
         </div>
-        <p style={{ margin: 0, color: "#94a3b8", fontSize: "0.76rem" }}>
+        <p className="company-ai-desc">
           Trained on real {company.name} hiring rubrics, recent interview logs, and your personal algorithmic gaps.
         </p>
 
@@ -592,35 +593,17 @@ export function CompanyDetailSheet({ companyId, onBack }) {
 
         {/* Chat History */}
         {aiMessages.length > 0 && (
-          <div
-            style={{
-              maxHeight: "260px",
-              overflowY: "auto",
-              display: "flex",
-              flexDirection: "column",
-              gap: "8px",
-              background: "rgba(0, 0, 0, 0.25)",
-              borderRadius: "8px",
-              padding: "10px 12px"
-            }}
-          >
+          <div className="company-ai-chat-history">
             {aiMessages.map((msg) => (
               <div
                 key={msg.id}
-                style={{
-                  alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
-                  maxWidth: "85%",
-                  background: msg.role === "user" ? "rgba(124, 58, 237, 0.25)" : "rgba(30, 41, 59, 0.6)",
-                  border: msg.role === "user" ? "1px solid rgba(124, 58, 237, 0.4)" : "1px solid rgba(255, 255, 255, 0.08)",
-                  borderRadius: "8px",
-                  padding: "8px 12px",
-                  fontSize: "0.78rem",
-                  color: "#f1f5f9",
-                  lineHeight: 1.45,
-                  whiteSpace: "pre-wrap"
-                }}
+                className={`company-ai-msg ${msg.role}`}
               >
-                {msg.content}
+                {msg.role === "assistant" ? (
+                  <AIContentRenderer content={msg.content} compact />
+                ) : (
+                  <div className="company-ai-user-bubble">{msg.content}</div>
+                )}
               </div>
             ))}
           </div>

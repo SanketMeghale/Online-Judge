@@ -528,6 +528,17 @@
   color: #f8fafc;
 }
 
+.company-hero-badge {
+  font-size: 0.60rem;
+  background: rgba(124, 58, 237, 0.18);
+  color: #c084fc;
+  border: 1px solid rgba(124, 58, 237, 0.3);
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .company-tier-badge {
   background: rgba(124, 58, 237, 0.14);
   border: 1px solid rgba(124, 58, 237, 0.3);
@@ -638,6 +649,38 @@
   line-height: 1.2;
 }
 
+.stat-val-solved {
+  color: #34d399 !important;
+}
+
+.stat-val-accuracy {
+  color: #38bdf8 !important;
+}
+
+.stat-val-completion {
+  color: #c084fc !important;
+}
+
+.stat-icon-purple {
+  color: #a855f7;
+  flex-shrink: 0;
+}
+
+.stat-icon-green {
+  color: #10b981;
+  flex-shrink: 0;
+}
+
+.stat-icon-blue {
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.stat-icon-amber {
+  color: #fbbf24;
+  flex-shrink: 0;
+}
+
 .company-stat-card .stat-sub {
   font-size: 0.65rem;
   color: #64748b;
@@ -745,13 +788,29 @@
   gap: 5px;
 }
 
-.company-readiness-box h4 {
+.readiness-box-head {
   font-size: 0.74rem;
   font-weight: 700;
   margin: 0;
   display: flex;
   align-items: center;
   gap: 5px;
+}
+
+.readiness-box-head.strong-head {
+  color: #34d399;
+}
+
+.readiness-box-head.weak-head {
+  color: #fbbf24;
+}
+
+.readiness-box-head.action-head {
+  color: #38bdf8;
+}
+
+.readiness-action-item {
+  color: #93c5fd;
 }
 
 .company-readiness-box ul {
@@ -845,6 +904,19 @@
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
+.company-topic-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-bottom: 3px;
+}
+
+.company-topic-stats .topic-pct {
+  color: #c084fc;
+  font-weight: 700;
+}
+
 .company-topic-practice-btn {
   background: transparent;
   border: none;
@@ -879,6 +951,22 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.company-table-title {
+  font-size: 0.88rem;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.company-table-topic {
+  color: #94a3b8;
+  font-size: 0.76rem;
+}
+
+.company-table-last-attempt {
+  font-size: 0.74rem;
+  color: #64748b;
 }
 
 .company-filter-select {
@@ -1015,7 +1103,68 @@
 }
 
 .company-roadmap-card.locked {
-  opacity: 0.6;
+  background: rgba(15, 23, 42, 0.3);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  /* Do NOT use opacity: 0.6 which washes out text */
+}
+
+.company-roadmap-step {
+  font-size: 0.70rem;
+  font-weight: 700;
+  color: #c084fc;
+}
+
+.company-roadmap-topic {
+  font-size: 0.84rem;
+  color: #f8fafc;
+  line-height: 1.25;
+}
+
+.company-roadmap-card.locked .company-roadmap-topic {
+  color: #cbd5e1;
+}
+
+.company-roadmap-desc {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.company-roadmap-card.locked .company-roadmap-desc {
+  color: #94a3b8;
+}
+
+.company-roadmap-status-text {
+  font-weight: 600;
+  font-size: 0.70rem;
+}
+
+.company-roadmap-status-text.mastered {
+  color: #34d399;
+}
+
+.company-roadmap-status-text.in-progress {
+  color: #c084fc;
+}
+
+.company-roadmap-status-text.locked {
+  color: #94a3b8;
+}
+
+.roadmap-icon-mastered {
+  color: #34d399;
+  flex-shrink: 0;
+}
+
+.roadmap-icon-progress {
+  color: #c084fc;
+  flex-shrink: 0;
+}
+
+.roadmap-icon-locked {
+  color: #64748b;
+  flex-shrink: 0;
 }
 
 /* 6. AI Company Coach Box */
@@ -1027,6 +1176,19 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.company-ai-title {
+  margin: 0;
+  font-size: 0.96rem;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.company-ai-desc {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.76rem;
 }
 
 .company-ai-chips {
@@ -1050,6 +1212,48 @@
   background: rgba(124, 58, 237, 0.15);
   border-color: rgba(124, 58, 237, 0.35);
   color: #c084fc;
+}
+
+.company-ai-chat-history {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 10px 12px;
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.company-ai-msg {
+  display: flex;
+  flex-direction: column;
+}
+
+.company-ai-msg.user {
+  align-self: flex-end;
+  max-width: 85%;
+}
+
+.company-ai-msg.assistant {
+  align-self: flex-start;
+  max-width: 90%;
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.company-ai-user-bubble {
+  background: rgba(124, 58, 237, 0.25);
+  border: 1px solid rgba(124, 58, 237, 0.4);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  color: #f1f5f9;
+  line-height: 1.45;
+  white-space: pre-wrap;
 }
 
 .company-ai-chat-input-row {
@@ -1114,13 +1318,15 @@
 }
 
 /* ==========================================================================
-   LIGHT THEME OVERRIDES
+   LIGHT / BRIGHT THEME HIGH-CONTRAST ACCESSIBILITY OVERRIDES
    ========================================================================== */
+
 [data-theme="light"] .company-sheets-container,
 [data-theme="light"] .company-sheet-page {
   color: #0f172a;
 }
 
+/* 1. Dashboard Hero & Detail Hero */
 [data-theme="light"] .company-sheets-hero,
 [data-theme="light"] .company-detail-hero {
   background: #ffffff;
@@ -1136,9 +1342,27 @@
 }
 
 [data-theme="light"] .company-hero-title-group p,
-[data-theme="light"] .company-heading-sub,
-[data-theme="light"] .company-desc-clamp {
+[data-theme="light"] .company-heading-sub {
   color: #475569;
+}
+
+[data-theme="light"] .company-desc-clamp {
+  color: #334155;
+}
+
+[data-theme="light"] .company-back-btn {
+  color: #475569;
+}
+
+[data-theme="light"] .company-back-btn:hover {
+  color: #0f172a;
+}
+
+[data-theme="light"] .company-hero-badge,
+[data-theme="light"] .company-tier-badge {
+  background: rgba(124, 58, 237, 0.08);
+  color: #6d28d9;
+  border: 1px solid rgba(124, 58, 237, 0.25);
 }
 
 [data-theme="light"] .company-detail-logo-wrap {
@@ -1147,135 +1371,15 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-[data-theme="light"] .company-stat-card {
-  background: #f8fafc;
-  border-color: #e2e8f0;
-}
-
-[data-theme="light"] .company-stat-card .stat-label {
-  color: #64748b;
-}
-
-[data-theme="light"] .company-stat-card .stat-val {
-  color: #0f172a;
-}
-
-[data-theme="light"] .company-stat-card .stat-sub {
-  color: #94a3b8;
-}
-
-[data-theme="light"] .company-readiness-card {
-  background: #ffffff;
-  border-color: #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="light"] .readiness-title {
-  color: #0f172a;
-}
-
-[data-theme="light"] .readiness-subtitle {
-  color: #64748b;
-}
-
-[data-theme="light"] .company-readiness-box {
-  background: #f8fafc;
-  border-color: #e2e8f0;
-}
-
-[data-theme="light"] .company-readiness-box ul {
-  color: #334155;
-}
-
-[data-theme="light"] .company-section-title {
-  color: #0f172a;
-}
-
-[data-theme="light"] .company-topic-card {
-  background: #ffffff;
-  border-color: #e2e8f0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-}
-
-[data-theme="light"] .company-topic-card-head strong {
-  color: #0f172a;
-}
-
-[data-theme="light"] .company-problems-table-wrap {
-  background: #ffffff;
-  border-color: #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="light"] .company-table-filter-bar {
-  border-bottom-color: #e2e8f0;
-}
-
-[data-theme="light"] .company-filter-select {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  color: #0f172a;
-}
-
-[data-theme="light"] .company-problems-table th {
-  background: #f8fafc;
-  color: #64748b;
-  border-bottom-color: #e2e8f0;
-}
-
-[data-theme="light"] .company-problems-table td {
-  border-bottom-color: #f1f5f9;
-  color: #334155;
-}
-
-[data-theme="light"] .company-problems-table tr:hover td {
-  background: #f8fafc;
-}
-
-[data-theme="light"] .company-table-prob-link {
-  color: #0f172a;
-}
-
-[data-theme="light"] .company-roadmap-card {
-  background: #ffffff;
-  border-color: #e2e8f0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
-}
-
-[data-theme="light"] .company-roadmap-card strong {
-  color: #0f172a;
-}
-
-[data-theme="light"] .company-ai-coach-card {
-  background: #ffffff;
-  border-color: #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-[data-theme="light"] .company-ai-coach-card h3 {
-  color: #0f172a;
-}
-
-[data-theme="light"] .company-ai-chip {
-  background: #f1f5f9;
-  border-color: #e2e8f0;
-  color: #475569;
-}
-
-[data-theme="light"] .company-ai-chat-input-row input {
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
-  color: #0f172a;
-}
-
+/* 2. Controls & Search Box */
 [data-theme="light"] .company-search-box {
   background: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
 }
 
 [data-theme="light"] .company-search-box:focus-within {
-  border-color: #8b5cf6 !important;
-  box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.15) !important;
+  border-color: #7c3aed !important;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.15) !important;
 }
 
 [data-theme="light"] .company-search-box input {
@@ -1283,7 +1387,7 @@
 }
 
 [data-theme="light"] .company-search-box input::placeholder {
-  color: #94a3b8 !important;
+  color: #64748b !important;
 }
 
 [data-theme="light"] .company-cat-btn {
@@ -1298,11 +1402,13 @@
 }
 
 [data-theme="light"] .company-cat-btn.active {
-  background: rgba(124, 58, 237, 0.12);
+  background: rgba(124, 58, 237, 0.1);
   border-color: rgba(124, 58, 237, 0.4);
-  color: #7c3aed;
+  color: #6d28d9;
+  font-weight: 700;
 }
 
+/* 3. Company Card Grid (Dashboard) */
 [data-theme="light"] .company-card {
   background: #ffffff;
   border-color: #e2e8f0;
@@ -1325,11 +1431,39 @@
 }
 
 [data-theme="light"] .company-card-category {
-  color: #64748b;
+  color: #475569;
+}
+
+[data-theme="light"] .company-diff-badge.hard {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+[data-theme="light"] .company-diff-badge.medium-hard,
+[data-theme="light"] .company-diff-badge.medium {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+[data-theme="light"] .company-diff-badge.easy-medium,
+[data-theme="light"] .company-diff-badge.easy {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 [data-theme="light"] .company-progress-stats .solved-text {
-  color: #475569;
+  color: #334155;
+}
+
+[data-theme="light"] .company-progress-stats .percent-text {
+  color: #6d28d9;
+}
+
+[data-theme="light"] .company-progress-stats .percent-text.completed {
+  color: #059669;
 }
 
 [data-theme="light"] .company-progress-bar-bg {
@@ -1339,19 +1473,368 @@
 [data-theme="light"] .company-topic-pill {
   background: #f1f5f9;
   border-color: #e2e8f0;
-  color: #64748b;
+  color: #334155;
+}
+
+[data-theme="light"] .company-topic-pill .topic-prefix {
+  color: #7c3aed;
 }
 
 [data-theme="light"] .company-topic-pill.topic-more {
   background: rgba(124, 58, 237, 0.08);
-  border-color: rgba(124, 58, 237, 0.2);
-  color: #7c3aed;
+  border-color: rgba(124, 58, 237, 0.25);
+  color: #6d28d9;
 }
 
 [data-theme="light"] .company-view-action {
-  color: #7c3aed;
+  color: #6d28d9;
 }
 
 [data-theme="light"] .company-view-action:hover {
+  color: #4338ca;
+}
+
+/* 4. Detail Sheet: 5-Stats Grid */
+[data-theme="light"] .company-stat-card {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .company-stat-card .stat-label {
+  color: #475569;
+}
+
+[data-theme="light"] .company-stat-card .stat-val {
+  color: #0f172a;
+}
+
+[data-theme="light"] .stat-val-solved {
+  color: #059669 !important;
+}
+
+[data-theme="light"] .stat-val-accuracy {
+  color: #0284c7 !important;
+}
+
+[data-theme="light"] .stat-val-completion {
+  color: #6d28d9 !important;
+}
+
+[data-theme="light"] .stat-icon-purple {
+  color: #7c3aed;
+}
+
+[data-theme="light"] .stat-icon-green {
+  color: #059669;
+}
+
+[data-theme="light"] .stat-icon-blue {
+  color: #0284c7;
+}
+
+[data-theme="light"] .stat-icon-amber {
+  color: #d97706;
+}
+
+[data-theme="light"] .company-stat-card .stat-sub {
+  color: #64748b;
+}
+
+[data-theme="light"] .company-stat-card .diff-e { color: #059669; }
+[data-theme="light"] .company-stat-card .diff-m { color: #d97706; }
+[data-theme="light"] .company-stat-card .diff-h { color: #dc2626; }
+
+/* 5. Detail Sheet: Readiness Section */
+[data-theme="light"] .company-readiness-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .readiness-title {
+  color: #0f172a;
+}
+
+[data-theme="light"] .readiness-subtitle {
+  color: #475569;
+}
+
+[data-theme="light"] .company-readiness-circle {
+  background: rgba(124, 58, 237, 0.08);
+  border-color: #7c3aed;
   color: #6d28d9;
+}
+
+[data-theme="light"] .company-launch-mock-btn {
+  background: rgba(124, 58, 237, 0.08);
+  border-color: rgba(124, 58, 237, 0.35);
+  color: #6d28d9;
+}
+
+[data-theme="light"] .company-launch-mock-btn:hover {
+  background: #7c3aed;
+  color: #ffffff;
+  border-color: #7c3aed;
+}
+
+[data-theme="light"] .company-readiness-box {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .readiness-box-head.strong-head {
+  color: #059669;
+}
+
+[data-theme="light"] .readiness-box-head.weak-head {
+  color: #d97706;
+}
+
+[data-theme="light"] .readiness-box-head.action-head {
+  color: #0284c7;
+}
+
+[data-theme="light"] .readiness-action-item {
+  color: #0369a1;
+  font-weight: 500;
+}
+
+[data-theme="light"] .company-readiness-box ul {
+  color: #1e293b;
+}
+
+[data-theme="light"] .readiness-empty {
+  color: #475569;
+}
+
+/* 6. Detail Sheet: Topic Breakdown */
+[data-theme="light"] .company-section-title {
+  color: #0f172a;
+}
+
+[data-theme="light"] .company-topic-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .company-topic-card-head strong {
+  color: #0f172a;
+}
+
+[data-theme="light"] .company-topic-stats {
+  color: #475569;
+}
+
+[data-theme="light"] .company-topic-stats .topic-pct {
+  color: #6d28d9;
+}
+
+[data-theme="light"] .company-topic-practice-btn {
+  color: #6d28d9;
+}
+
+[data-theme="light"] .company-topic-practice-btn:hover {
+  color: #4338ca;
+}
+
+/* 7. Detail Sheet: Problem Table */
+[data-theme="light"] .company-problems-table-wrap {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .company-table-filter-bar {
+  border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] .company-table-title {
+  color: #0f172a;
+}
+
+[data-theme="light"] .company-table-topic {
+  color: #334155;
+}
+
+[data-theme="light"] .company-table-last-attempt {
+  color: #475569;
+}
+
+[data-theme="light"] .company-filter-select {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+[data-theme="light"] .company-problems-table th {
+  background: #f8fafc;
+  color: #475569;
+  border-bottom-color: #e2e8f0;
+}
+
+[data-theme="light"] .company-problems-table td {
+  border-bottom-color: #f1f5f9;
+  color: #1e293b;
+}
+
+[data-theme="light"] .company-problems-table tr:hover td {
+  background: #f8fafc;
+}
+
+[data-theme="light"] .company-table-prob-link {
+  color: #0f172a;
+}
+
+[data-theme="light"] .company-table-prob-link:hover {
+  color: #6d28d9;
+}
+
+[data-theme="light"] .company-status-badge.solved {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="light"] .company-status-badge.attempted {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+[data-theme="light"] .company-status-badge.not-started {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .company-table-action-btn {
+  background: rgba(124, 58, 237, 0.08);
+  border-color: rgba(124, 58, 237, 0.3);
+  color: #6d28d9;
+}
+
+[data-theme="light"] .company-table-action-btn:hover {
+  background: #7c3aed;
+  color: #ffffff;
+}
+
+/* 8. Detail Sheet: Roadmap Cards (High Contrast & Visible Locked Steps) */
+[data-theme="light"] .company-roadmap-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .company-roadmap-card.mastered {
+  background: rgba(16, 185, 129, 0.04);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+[data-theme="light"] .company-roadmap-card.in-progress {
+  background: rgba(124, 58, 237, 0.04);
+  border-color: rgba(124, 58, 237, 0.35);
+}
+
+[data-theme="light"] .company-roadmap-card.locked {
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+}
+
+[data-theme="light"] .company-roadmap-step {
+  color: #6d28d9;
+}
+
+[data-theme="light"] .company-roadmap-topic {
+  color: #0f172a;
+}
+
+[data-theme="light"] .company-roadmap-card.locked .company-roadmap-topic {
+  color: #1e293b;
+}
+
+[data-theme="light"] .company-roadmap-desc {
+  color: #475569;
+}
+
+[data-theme="light"] .company-roadmap-card.locked .company-roadmap-desc {
+  color: #64748b;
+}
+
+[data-theme="light"] .company-roadmap-status-text.mastered {
+  color: #059669;
+}
+
+[data-theme="light"] .company-roadmap-status-text.in-progress {
+  color: #6d28d9;
+}
+
+[data-theme="light"] .company-roadmap-status-text.locked {
+  color: #64748b;
+}
+
+[data-theme="light"] .roadmap-icon-mastered {
+  color: #059669;
+}
+
+[data-theme="light"] .roadmap-icon-progress {
+  color: #6d28d9;
+}
+
+[data-theme="light"] .roadmap-icon-locked {
+  color: #64748b;
+}
+
+/* 9. Detail Sheet: AI Assistant Coach Box */
+[data-theme="light"] .company-ai-coach-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .company-ai-title {
+  color: #0f172a;
+}
+
+[data-theme="light"] .company-ai-desc {
+  color: #475569;
+}
+
+[data-theme="light"] .company-ai-chip {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #334155;
+}
+
+[data-theme="light"] .company-ai-chip:hover {
+  background: rgba(124, 58, 237, 0.08);
+  border-color: rgba(124, 58, 237, 0.35);
+  color: #6d28d9;
+}
+
+[data-theme="light"] .company-ai-chat-history {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+[data-theme="light"] .company-ai-msg.assistant {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .company-ai-user-bubble {
+  background: #7c3aed;
+  border-color: #6d28d9;
+  color: #ffffff;
+}
+
+[data-theme="light"] .company-ai-chat-input-row input {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+}
+
+[data-theme="light"] .company-ai-chat-input-row input::placeholder {
+  color: #64748b;
 }
