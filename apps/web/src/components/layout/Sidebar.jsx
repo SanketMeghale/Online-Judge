@@ -80,7 +80,7 @@ export default function Sidebar({ mobileOpen = false, onCloseMobile = () => {} }
   const { isLight } = useTheme();
 
   const currentUserId = user?.id || user?._id || "";
-  const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
+  const liveUser = { ...(currentUserId ? getUserById(currentUserId) : {}), ...(user || {}) };
   const displayName = getUserDisplayName(liveUser);
   const userHandle = String(liveUser?.username || liveUser?.email || "").trim();
   const avatarLetter = String(displayName || userHandle || "D").slice(0, 1).toUpperCase();

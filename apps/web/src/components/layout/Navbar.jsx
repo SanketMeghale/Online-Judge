@@ -38,7 +38,7 @@ export default function Navbar({ onToggleSidebar = () => {} }) {
   const [isScrolled, setIsScrolled] = useState(false);
 
   const currentUserId = user?.id || user?._id || "";
-  const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
+  const liveUser = { ...(currentUserId ? getUserById(currentUserId) : {}), ...(user || {}) };
 
   const fullName = getUserDisplayName(liveUser);
   const username = String(liveUser?.username || "").trim();

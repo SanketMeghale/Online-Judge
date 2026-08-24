@@ -10,14 +10,18 @@ const userSchema = new mongoose.Schema(
     firebaseUid: { type: String, unique: true, sparse: true, index: true },
     photoURL: { type: String, default: "" },
     avatarUrl: { type: String, default: "" },
+    avatar: { type: String, default: "" },
     provider: { type: String, default: "password" },
     lastLoginAt: { type: Date, default: null },
     passwordHash: { type: String, default: "" },
     bio: { type: String, default: "" },
     location: { type: String, default: "" },
     github: { type: String, default: "" },
+    githubProfile: { type: String, default: "" },
     linkedin: { type: String, default: "" },
+    linkedinProfile: { type: String, default: "" },
     website: { type: String, default: "" },
+    personalWebsite: { type: String, default: "" },
     language: { type: String, default: "en-US" },
     timezone: { type: String, default: "UTC-5 (Eastern Time)" },
     preferences: {
@@ -63,7 +67,12 @@ const userSchema = new mongoose.Schema(
       tleCount: { type: Number, default: 0 }
     }
   },
-  { timestamps: true, collection: "users" }
+  {
+    timestamps: true,
+    collection: "users",
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
 
 // Compound index for search and sorting

@@ -424,37 +424,43 @@ export async function updateUserProfile(userId, updateData) {
   await connectDatabase().catch(() => {});
 
   const allowedFields = {};
-  if (typeof updateData.name === "string" && updateData.name.trim()) {
-    allowedFields.name = updateData.name.trim();
-  }
   if (typeof updateData.displayName === "string" && updateData.displayName.trim()) {
+    allowedFields.displayName = updateData.displayName.trim();
     allowedFields.name = updateData.displayName.trim();
+  } else if (typeof updateData.name === "string" && updateData.name.trim()) {
+    allowedFields.name = updateData.name.trim();
+    allowedFields.displayName = updateData.name.trim();
   }
+
   if (typeof updateData.username === "string" && updateData.username.trim()) {
-    allowedFields.username = updateData.username.trim();
+    allowedFields.username = updateData.username.trim().toLowerCase();
   }
   if (typeof updateData.bio === "string") {
     allowedFields.bio = updateData.bio.slice(0, 300);
   }
-  if (typeof updateData.photoURL === "string") {
-    allowedFields.photoURL = updateData.photoURL.trim();
-    allowedFields.avatarUrl = updateData.photoURL.trim();
-  }
-  if (typeof updateData.avatarUrl === "string") {
-    allowedFields.avatarUrl = updateData.avatarUrl.trim();
-    allowedFields.photoURL = updateData.avatarUrl.trim();
+  if (typeof updateData.photoURL === "string" || typeof updateData.avatarUrl === "string" || typeof updateData.avatar === "string") {
+    const avatarVal = String(updateData.avatar || updateData.avatarUrl || updateData.photoURL || "").trim();
+    allowedFields.photoURL = avatarVal;
+    allowedFields.avatarUrl = avatarVal;
+    allowedFields.avatar = avatarVal;
   }
   if (typeof updateData.location === "string") {
     allowedFields.location = updateData.location.trim().slice(0, 100);
   }
-  if (typeof updateData.github === "string") {
-    allowedFields.github = updateData.github.trim().slice(0, 200);
+  if (typeof updateData.github === "string" || typeof updateData.githubProfile === "string") {
+    const ghVal = String(updateData.github ?? updateData.githubProfile).trim().slice(0, 200);
+    allowedFields.github = ghVal;
+    allowedFields.githubProfile = ghVal;
   }
-  if (typeof updateData.linkedin === "string") {
-    allowedFields.linkedin = updateData.linkedin.trim().slice(0, 200);
+  if (typeof updateData.linkedin === "string" || typeof updateData.linkedinProfile === "string") {
+    const liVal = String(updateData.linkedin ?? updateData.linkedinProfile).trim().slice(0, 200);
+    allowedFields.linkedin = liVal;
+    allowedFields.linkedinProfile = liVal;
   }
-  if (typeof updateData.website === "string") {
-    allowedFields.website = updateData.website.trim().slice(0, 200);
+  if (typeof updateData.website === "string" || typeof updateData.personalWebsite === "string") {
+    const webVal = String(updateData.website ?? updateData.personalWebsite).trim().slice(0, 200);
+    allowedFields.website = webVal;
+    allowedFields.personalWebsite = webVal;
   }
   if (typeof updateData.language === "string") {
     allowedFields.language = updateData.language;
@@ -799,22 +805,38 @@ export function sanitizeUser(user) {
   const { passwordHash, _id, __v, ...safeUser } = user;
   const primaryId = String(user.id || _id || "");
   const mongoId = _id ? String(_id) : primaryId;
+  const displayName = safeUser.displayName || safeUser.name || "";
+  const name = safeUser.name || safeUser.displayName || getEmailDerivedName(safeUser.email) || "User";
+  const avatar = safeUser.avatar || safeUser.avatarUrl || safeUser.photoURL || "";
+  const github = safeUser.github || safeUser.githubProfile || "";
+  const linkedin = safeUser.linkedin || safeUser.linkedinProfile || "";
+  const website = safeUser.website || safeUser.personalWebsite || "";
+
   return {
     ...safeUser,
     id: primaryId,
     _id: mongoId,
-    name: safeUser.name || safeUser.displayName || safeUser.username || getEmailDerivedName(safeUser.email) || "User",
-    displayName: safeUser.displayName || safeUser.name || "",
+    name,
+    displayName: displayName || name,
     username: safeUser.username || "",
     email: safeUser.email || "",
-    photoURL: safeUser.photoURL || "",
+    photoURL: avatar,
+    avatarUrl: avatar,
+    avatar: avatar,
     firebaseUid: safeUser.firebaseUid || "",
     provider: safeUser.provider || "password",
     bio: safeUser.bio || "",
+    location: safeUser.location || "",
+    github,
+    githubProfile: github,
+    linkedin,
+    linkedinProfile: linkedin,
+    website,
+    personalWebsite: website,
     language: safeUser.language || "en-US",
     timezone: safeUser.timezone || "UTC-5 (Eastern Time)",
     preferences: safeUser.preferences || {
-      theme: "dark",
+      theme: "light",
       accentColor: "indigo",
       density: "comfortable",
       fontSize: 14,
@@ -827,6 +849,10 @@ export function sanitizeUser(user) {
       submissionResults: true,
       achievementAlerts: true,
       dailyStreakReminders: true,
+      aiCoachNotifications: true,
+      publicProfile: true,
+      showSolvedProblems: true,
+      showActivity: true,
       showContestRanking: true
     },
     role: safeUser.role || "user",
@@ -837,13 +863,18 @@ export function sanitizeUser(user) {
     lastActiveDate: safeUser.lastActiveDate || null,
     activeDates: Array.isArray(safeUser.activeDates) ? safeUser.activeDates : [],
     solved: safeUser.solvedProblemIds?.length || 0,
+    solvedProblemIds: Array.isArray(safeUser.solvedProblemIds) ? safeUser.solvedProblemIds : [],
+    attemptedProblemIds: Array.isArray(safeUser.attemptedProblemIds) ? safeUser.attemptedProblemIds : [],
+    bookmarkedProblemIds: Array.isArray(safeUser.bookmarkedProblemIds) ? safeUser.bookmarkedProblemIds : [],
     stats: safeUser.stats || {
       totalSubmissions: 0,
       acceptedSubmissions: 0,
       waCount: 0,
       reCount: 0,
       tleCount: 0
-    }
+    },
+    createdAt: safeUser.createdAt || new Date(),
+    updatedAt: safeUser.updatedAt || new Date()
   };
 }
 

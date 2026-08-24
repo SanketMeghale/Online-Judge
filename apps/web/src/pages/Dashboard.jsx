@@ -27,7 +27,7 @@ export default function Dashboard() {
 
   // Stable userId to use as the primary effect dependency
   const userId = user?.id || user?._id || null;
-  const liveUser = (userId ? getUserById(userId) : null) || user;
+  const liveUser = { ...(userId ? getUserById(userId) : {}), ...(user || {}) };
 
   // Fetch dashboard data — stable: only depends on userId (not liveUser or functions)
   const fetchDashboardData = useCallback(async () => {

@@ -22,14 +22,17 @@ async function request(endpoint, options = {}) {
 }
 
 export const api = {
-  // Auth
+  // Auth & User Profile (MongoDB Persisted)
   register: (body) => request("/auth/register", { method: "POST", body: JSON.stringify(body) }),
   login: (body) => request("/auth/login", { method: "POST", body: JSON.stringify(body) }),
   loginGoogle: (body) => request("/auth/google", { method: "POST", body: JSON.stringify(body) }),
   logout: () => request("/auth/logout", { method: "POST" }),
-  getMe: () => request("/auth/me"),
-  updateSettings: (body) => request("/auth/settings", { method: "PATCH", body: JSON.stringify(body) }),
-  checkUsername: (username) => request(`/auth/check-username?username=${encodeURIComponent(username)}`),
+  getMe: () => request("/users/me"),
+  getProfile: () => request("/users/me"),
+  updateProfile: (body) => request("/users/me", { method: "PATCH", body: JSON.stringify(body) }),
+  updateSettings: (body) => request("/users/me", { method: "PATCH", body: JSON.stringify(body) }),
+  checkUsername: (username) => request(`/users/check-username?username=${encodeURIComponent(username)}`),
+  getPublicProfile: (username) => request(`/users/${encodeURIComponent(username)}`),
   changePassword: (body) => request("/auth/change-password", { method: "POST", body: JSON.stringify(body) }),
   deleteAccount: (body) => request("/auth/account", { method: "DELETE", body: JSON.stringify(body) }),
 

@@ -12,23 +12,23 @@ export function getEmailDerivedName(email) {
  * 2. user.name
  * 3. user.username
  * 4. email-derived name
- * 5. "User"
+ * 5. fallback
  */
 export function getUserDisplayName(user, { short = false, fallback = "User" } = {}) {
   if (!user || typeof user !== "object") return fallback;
 
   const displayName = typeof user.displayName === "string" ? user.displayName.trim() : "";
-  if (displayName && displayName !== "User" && displayName !== "Coder" && displayName !== "Judgo Coder") {
+  if (displayName) {
     return short ? displayName.split(" ")[0] : displayName;
   }
 
   const name = typeof user.name === "string" ? user.name.trim() : "";
-  if (name && name !== "User" && name !== "Coder" && name !== "Judgo Coder") {
+  if (name) {
     return short ? name.split(" ")[0] : name;
   }
 
   const username = typeof user.username === "string" ? user.username.trim() : "";
-  if (username && username !== "demouser" && username !== "guest_coder") {
+  if (username) {
     return short ? username.split(" ")[0] : username;
   }
 

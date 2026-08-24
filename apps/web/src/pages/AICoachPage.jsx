@@ -135,7 +135,7 @@ export default function AICoachPage() {
   const { isLight } = useTheme();
 
   const currentUserId = user?.id || user?._id || "";
-  const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
+  const liveUser = { ...(currentUserId ? getUserById(currentUserId) : {}), ...(user || {}) };
   const displayName = String(getUserDisplayName(liveUser)).trim().split(" ")[0] || "User";
 
   // Tab State: "mentor" | "interview" | "weak" | "companies"

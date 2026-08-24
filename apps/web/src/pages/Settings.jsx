@@ -74,7 +74,7 @@ def two_sum(nums: list[int], target: int) -> list[int]:
 `;
 
 export default function Settings() {
-  const { user, logout } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const { getUserById, updateDatabase } = useAppData();
   const {
     theme,
@@ -90,7 +90,7 @@ export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const currentUserId = user?.id || user?._id || "";
-  const liveUser = (currentUserId ? getUserById(currentUserId) : null) || user || {};
+  const liveUser = { ...(currentUserId ? getUserById(currentUserId) : {}), ...(user || {}) };
 
   const initialTab = searchParams.get("tab") || "general";
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -320,87 +320,43 @@ export default function Settings() {
         showContestRanking: formData.showContestRanking
       };
 
-      // 1. Send update to Backend API
-      let updatedUser = null;
-      try {
-        const apiRes = await api.updateSettings({
-          displayName: formData.displayName.trim(),
-          name: formData.displayName.trim(),
-          username: formData.username.trim(),
-          bio: formData.bio.trim(),
-          location: formData.location.trim(),
-          github: formData.github.trim(),
-          linkedin: formData.linkedin.trim(),
-          website: formData.website.trim(),
-          language: formData.language,
-          timezone: formData.timezone,
-          preferences
-        });
-        if (apiRes?.user) {
-          updatedUser = apiRes.user;
-        }
-      } catch (apiErr) {
-        console.warn("[Settings API Update Notice]:", apiErr);
+      // 1. Send update to Backend MongoDB API
+      const apiRes = await api.updateProfile({
+        displayName: formData.displayName.trim(),
+        name: formData.displayName.trim(),
+        username: formData.username.trim(),
+        bio: formData.bio.trim(),
+        location: formData.location.trim(),
+        github: formData.github.trim(),
+        githubProfile: formData.github.trim(),
+        linkedin: formData.linkedin.trim(),
+        linkedinProfile: formData.linkedin.trim(),
+        website: formData.website.trim(),
+        personalWebsite: formData.website.trim(),
+        language: formData.language,
+        timezone: formData.timezone,
+        preferences
+      });
+
+      if (!apiRes?.user) {
+        throw new Error(apiRes?.error || "Failed to save profile changes to MongoDB.");
       }
 
-      // 2. Persist to localStorage & trigger live preferences
+      const updatedUser = apiRes.user;
+
+      // 2. Update global AuthContext user (instantly updates Navbar, Dashboard, Profile, AICoach, etc.)
+      updateUser(updatedUser);
+
+      // 3. Update theme & appearance preferences
       updatePreferences(preferences);
 
-      // 3. Update session storage
-      const currentSession = readStoredSession();
-      if (currentSession && currentSession.user) {
-        const nextUser = {
-          ...currentSession.user,
-          name: formData.displayName.trim(),
-          displayName: formData.displayName.trim(),
-          username: formData.username.trim(),
-          bio: formData.bio.trim(),
-          location: formData.location.trim(),
-          github: formData.github.trim(),
-          linkedin: formData.linkedin.trim(),
-          website: formData.website.trim(),
-          language: formData.language,
-          timezone: formData.timezone,
-          preferences,
-          ...(updatedUser || {})
-        };
-        writeStoredSession({ ...currentSession, user: nextUser });
-      }
-
-      // 4. Update AppDataContext global database
-      if (currentUserId) {
-        updateDatabase((current) => ({
-          ...current,
-          users: (current.users || []).map((u) => {
-            if (String(u.id) === String(currentUserId) || String(u._id) === String(currentUserId)) {
-              return {
-                ...u,
-                name: formData.displayName.trim(),
-                displayName: formData.displayName.trim(),
-                username: formData.username.trim(),
-                bio: formData.bio.trim(),
-                location: formData.location.trim(),
-                github: formData.github.trim(),
-                linkedin: formData.linkedin.trim(),
-                website: formData.website.trim(),
-                language: formData.language,
-                timezone: formData.timezone,
-                preferences,
-                ...(updatedUser || {})
-              };
-            }
-            return u;
-          })
-        }));
-      }
-
-      // 5. Update local state baseline
+      // 4. Update local state baseline
       setSavedBaseline(formData);
       setSaveSuccessMsg("✓ Changes saved successfully");
       setTimeout(() => setSaveSuccessMsg(""), 3500);
     } catch (err) {
       console.error("[Save Settings Error]:", err);
-      setSaveErrorMsg(err?.message || "Unable to save preferences. Please try again.");
+      setSaveErrorMsg(err?.message || "Unable to save profile to MongoDB. Please try again.");
     } finally {
       setIsSaving(false);
     }

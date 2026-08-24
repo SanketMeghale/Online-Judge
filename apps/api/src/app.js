@@ -14,6 +14,7 @@ import aiRoutes from "./routes/ai.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import evaluationRoutes from "./routes/evaluation.routes.js";
 import companyRoutes from "./routes/company.routes.js";
+import userRoutes from "./routes/user.routes.js";
 
 function parseCookies(cookieHeader = "") {
   const list = {};
@@ -80,6 +81,9 @@ export function createApp() {
 
   app.use("/api/auth", authRoutes);
   app.use("/auth", authRoutes);
+
+  app.use("/api/users", userRoutes);
+  app.use("/users", userRoutes);
 
   app.use("/api/problems", problemsRoutes);
   app.use("/problems", problemsRoutes);

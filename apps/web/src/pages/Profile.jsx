@@ -73,8 +73,7 @@ export default function Profile() {
 
   // Current User ID
   const currentUserId = user?.id || user?._id || "";
-  const foundInDb = currentUserId ? getUserById(currentUserId) : null;
-  const liveUser = foundInDb || user || {};
+  const liveUser = { ...(currentUserId ? getUserById(currentUserId) : {}), ...(user || {}) };
 
   // Initialize edit form when user loads
   useEffect(() => {
@@ -328,26 +327,31 @@ export default function Profile() {
     setEditSuccess("");
 
     try {
-      const res = await api.updateSettings({
-        displayName: editForm.name,
-        name: editForm.name,
-        username: editForm.username,
-        bio: editForm.bio,
-        avatarUrl: editForm.avatarUrl,
-        photoURL: editForm.avatarUrl,
-        location: editForm.location,
-        github: editForm.github,
-        linkedin: editForm.linkedin,
-        website: editForm.website
+      const res = await api.updateProfile({
+        displayName: editForm.name.trim(),
+        name: editForm.name.trim(),
+        username: editForm.username.trim(),
+        bio: editForm.bio.trim(),
+        avatarUrl: editForm.avatarUrl.trim(),
+        photoURL: editForm.avatarUrl.trim(),
+        location: editForm.location.trim(),
+        github: editForm.github.trim(),
+        githubProfile: editForm.github.trim(),
+        linkedin: editForm.linkedin.trim(),
+        linkedinProfile: editForm.linkedin.trim(),
+        website: editForm.website.trim(),
+        personalWebsite: editForm.website.trim()
       });
 
       if (res?.user) {
         updateUser(res.user);
-        setEditSuccess("Profile updated successfully!");
+        setEditSuccess("✓ Profile updated successfully!");
         setTimeout(() => {
           setIsEditModalOpen(false);
           setEditSuccess("");
-        }, 800);
+        }, 900);
+      } else {
+        throw new Error(res?.error || "Failed to update profile.");
       }
     } catch (err) {
       setEditError(err.message || "Failed to update profile. Please try again.");
