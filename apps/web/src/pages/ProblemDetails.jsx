@@ -635,39 +635,44 @@ function ProblemDetailsInner() {
                 --------------------------------------------------------------- */}
             {activeLeftTab === "description" && (
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {/* Title & Difficulty Headline */}
-                <div>
-                  <h1 style={{ fontSize: "1.05rem", fontWeight: "800", color: isLight ? "#0f172a" : "#ffffff", margin: "0 0 6px 0", letterSpacing: "-0.01em" }}>
+                {/* Problem Title & Inline Modern Tags */}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                  <h1 style={{ fontSize: "1.05rem", fontWeight: "800", color: isLight ? "#0f172a" : "#ffffff", margin: 0, letterSpacing: "-0.01em", lineHeight: "1.3" }}>
                     {problemWithStatus.title}
                   </h1>
 
-                  {/* Compact Inline Tags Row */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "5px", flexWrap: "wrap" }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: "5px", flexWrap: "wrap" }}>
+                    {/* Difficulty Badge */}
                     <span
                       className={`difficulty difficulty-${problemWithStatus.difficulty.toLowerCase()}`}
-                      style={{ fontSize: "0.68rem", padding: "1px 6px", borderRadius: "4px", fontWeight: "700" }}
+                      style={{ fontSize: "0.66rem", padding: "2px 7px", borderRadius: "4px", fontWeight: "700", lineHeight: "1.2" }}
                     >
                       {problemWithStatus.difficulty}
                     </span>
 
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "3px",
-                        background: isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.05)",
-                        border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
-                        color: isLight ? "#475569" : "#cbd5e1",
-                        fontSize: "0.68rem",
-                        padding: "1px 6px",
-                        borderRadius: "4px",
-                        fontWeight: "600"
-                      }}
-                    >
-                      <span>🏷️</span>
-                      <span>{problemWithStatus.topic}</span>
-                    </span>
+                    {/* Topic Badge */}
+                    {problemWithStatus.topic && (
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "3px",
+                          background: isLight ? "#f1f5f9" : "rgba(255, 255, 255, 0.05)",
+                          border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.08)",
+                          color: isLight ? "#475569" : "#cbd5e1",
+                          fontSize: "0.66rem",
+                          padding: "2px 7px",
+                          borderRadius: "4px",
+                          fontWeight: "600",
+                          lineHeight: "1.2"
+                        }}
+                      >
+                        <span style={{ fontSize: "0.68rem" }}>🏷️</span>
+                        <span>{problemWithStatus.topic}</span>
+                      </span>
+                    )}
 
+                    {/* Company Badge */}
                     {Array.isArray(problemWithStatus.companyTags) && problemWithStatus.companyTags.length > 0 && (
                       <span
                         style={{
@@ -677,55 +682,18 @@ function ProblemDetailsInner() {
                           background: isLight ? "#f5f3ff" : "rgba(124, 58, 237, 0.12)",
                           border: isLight ? "1px solid #ddd6fe" : "1px solid rgba(124, 58, 237, 0.25)",
                           color: isLight ? "#6d28d9" : "#c084fc",
-                          fontSize: "0.68rem",
-                          padding: "1px 6px",
+                          fontSize: "0.66rem",
+                          padding: "2px 7px",
                           borderRadius: "4px",
-                          fontWeight: "600"
+                          fontWeight: "600",
+                          lineHeight: "1.2"
                         }}
                         title="Target Company"
                       >
-                        <span>🏢</span>
+                        <span style={{ fontSize: "0.68rem" }}>🏢</span>
                         <span>{problemWithStatus.companyTags[0]}</span>
                       </span>
                     )}
-
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "3px",
-                        background: isLight ? "#f8fafc" : "rgba(255, 255, 255, 0.04)",
-                        border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
-                        color: isLight ? "#64748b" : "#94a3b8",
-                        fontSize: "0.68rem",
-                        padding: "1px 6px",
-                        borderRadius: "4px",
-                        fontWeight: "600"
-                      }}
-                      title="Global acceptance rate"
-                    >
-                      <Zap size={10} style={{ color: "#eab308", fill: "#eab308" }} />
-                      <span>{problemWithStatus.acceptance}%</span>
-                    </span>
-
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "3px",
-                        background: isLight ? "#f8fafc" : "rgba(255, 255, 255, 0.04)",
-                        border: isLight ? "1px solid #e2e8f0" : "1px solid rgba(255, 255, 255, 0.06)",
-                        color: isLight ? "#64748b" : "#94a3b8",
-                        fontSize: "0.68rem",
-                        padding: "1px 6px",
-                        borderRadius: "4px",
-                        fontWeight: "600"
-                      }}
-                      title="Points for solving"
-                    >
-                      <Sparkles size={10} style={{ color: "#a855f7" }} />
-                      <span>{problemWithStatus.points} pts</span>
-                    </span>
                   </div>
                 </div>
 
