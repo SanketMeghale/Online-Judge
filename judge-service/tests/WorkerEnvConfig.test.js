@@ -27,4 +27,11 @@ describe("worker production environment validation", () => {
       ALLOW_INSECURE_REDIS: "true"
     })).toEqual({ production: true });
   });
+
+  test("accepts Redis Cloud .db.redis.io URI even with redis:// scheme", () => {
+    expect(validateWorkerEnvironment({
+      ...validProduction,
+      REDIS_URL: "redis://default:X53oSGrcpzJ6YPU5WEd085EcHHkF6AG3@ants-velvet-satin-43185.db.redis.io:15879"
+    })).toEqual({ production: true });
+  });
 });

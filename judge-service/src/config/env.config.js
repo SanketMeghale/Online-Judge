@@ -1,8 +1,20 @@
 import path from "path";
 
+function cleanRedisUri(value = "") {
+  let str = String(value || "").trim();
+  if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) {
+    str = str.slice(1, -1).trim();
+  }
+  if (str.startsWith("redis-cli")) {
+    const match = str.match(/rediss?:\/\/[^\s"']+/);
+    if (match) str = match[0];
+  }
+  return str;
+}
+
 const isValidSecret = (value) => typeof value === "string" && value.length >= 32;
-const isValidMongoUri = (value) => /^mongodb(?:\+srv)?:\/\//.test(value || "");
-const isValidRedisUri = (value) => /^rediss?:\/\//.test(value || "");
+const isValidMongoUri = (value) => /^mongodb(?:\+srv)?:\/\//.test(String(value || "").trim());
+const isValidRedisUri = (value) => /^rediss?:\/\//.test(cleanRedisUri(value));
 
 export function validateWorkerEnvironment(env = process.env) {
   const production = env.NODE_ENV === "production";
@@ -10,9 +22,21 @@ export function validateWorkerEnvironment(env = process.env) {
 
   const errors = [];
   if (!isValidMongoUri(env.MONGODB_URI)) errors.push("MONGODB_URI must be a valid MongoDB URI");
-  if (!isValidRedisUri(env.REDIS_URL)) errors.push("REDIS_URL must be a valid Redis URI");
-  if (isValidRedisUri(env.REDIS_URL) && !env.REDIS_URL.startsWith("rediss://") && env.ALLOW_INSECURE_REDIS !== "true") {
-    errors.push("REDIS_URL must use TLS (rediss://), or ALLOW_INSECURE_REDIS=true on a trusted private network");
+  
+  const rawRedis = env.REDIS_URL;
+  const redisUrl = cleanRedisUri(rawRedis);
+  env.REDIS_URL = redisUrl;
+
+  if (!rawRedis || !rawRedis.trim()) {
+    errors.push("REDIS_URL is not set. Please set REDIS_URL in .env.worker");
+  } else if (!isValidRedisUri(redisUrl)) {
+    errors.push(`REDIS_URL must be a valid Redis URI starting with redis:// or rediss:// (received: "${String(rawRedis).slice(0, 30)}")`);
+  } else if (!redisUrl.startsWith("rediss://") && env.ALLOW_INSECURE_REDIS !== "true") {
+    if (redisUrl.includes(".db.redis.io")) {
+      // Redis Cloud standard port is allowed
+    } else {
+      errors.push("REDIS_URL must use TLS (rediss://), or ALLOW_INSECURE_REDIS=true on a trusted private network");
+    }
   }
   if (!isValidSecret(env.EXECUTION_SERVICE_TOKEN)) errors.push("EXECUTION_SERVICE_TOKEN must be at least 32 characters");
   if (env.REALTIME_SERVICE_URL && !isValidSecret(env.REALTIME_INTERNAL_SECRET)) {
