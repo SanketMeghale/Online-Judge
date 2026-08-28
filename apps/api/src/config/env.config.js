@@ -44,7 +44,11 @@ export function validateApiEnvironment(environment = process.env) {
       String(environment.REDIS_URL || "").startsWith("redis://") &&
       environment.ALLOW_INSECURE_REDIS !== "true"
     ) {
-      errors.push("REDIS_URL must use rediss:// in production unless ALLOW_INSECURE_REDIS=true for a private network");
+      if (String(environment.REDIS_URL).includes(".db.redis.io")) {
+        warnings.push("REDIS_URL uses Redis Cloud standard port. rediss:// TLS is not required.");
+      } else {
+        errors.push("REDIS_URL must use rediss:// in production unless ALLOW_INSECURE_REDIS=true for a private network");
+      }
     }
     if (!validSecret(environment.JWT_SECRET)) errors.push("JWT_SECRET must contain at least 32 characters");
     if (!validSecret(environment.REALTIME_JWT_SECRET)) errors.push("REALTIME_JWT_SECRET must contain at least 32 characters");

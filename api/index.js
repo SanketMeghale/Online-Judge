@@ -17,7 +17,13 @@ export default async function handler(req, res) {
     if (configurationError) {
       res.statusCode = 503;
       res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({ success: false, error: "Service configuration is incomplete." }));
+      res.end(
+        JSON.stringify({
+          success: false,
+          error: "Service configuration is incomplete.",
+          details: configurationError.message
+        })
+      );
       return;
     }
     if (!app) {
