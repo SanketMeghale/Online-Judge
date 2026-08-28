@@ -209,12 +209,56 @@ function ProblemDetailsInner() {
   const execPanelRef = useRef(null);
 
   const scrollToExec = useCallback(() => {
-    if (execPanelRef.current) {
-      execPanelRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    const doScroll = () => {
+      // 1. Direct scroll on the right pane container (the element with overflow-y: auto)
+      if (rightPaneRef.current) {
+        const targetTop = execPanelRef.current
+          ? Math.max(0, execPanelRef.current.offsetTop - 10)
+          : rightPaneRef.current.scrollHeight;
+
+        rightPaneRef.current.scrollTo({
+          top: targetTop,
+          behavior: "smooth"
+        });
+      }
+
+      // 2. Standard smooth scrollIntoView on the execution panel
+      if (execPanelRef.current) {
+        execPanelRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+          inline: "nearest"
+        });
+        // Move focus/cursor to execution result block
+        if (!execPanelRef.current.hasAttribute("tabIndex")) {
+          execPanelRef.current.setAttribute("tabIndex", "-1");
+        }
+        execPanelRef.current.focus({ preventScroll: true });
+      }
+
+      // 3. Fallback for mobile / window layout
+      if (execPanelRef.current) {
+        const rect = execPanelRef.current.getBoundingClientRect();
+        if (rect.top > window.innerHeight - 80 || rect.bottom < 0) {
+          window.scrollTo({
+            top: window.scrollY + rect.top - 60,
+            behavior: "smooth"
+          });
+        }
+      }
+    };
+
+    doScroll();
+    requestAnimationFrame(doScroll);
+    setTimeout(doScroll, 80);
+    setTimeout(doScroll, 220);
+    setTimeout(doScroll, 450);
   }, []);
 
   const scrollToEditor = useCallback(() => {
+    if (rightPaneRef.current) {
+      rightPaneRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    }
     if (editorWrapperRef.current) {
       editorWrapperRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
@@ -417,9 +461,11 @@ function ProblemDetailsInner() {
         ...nextResult,
         type: "run"
       });
+      scrollToExec();
     } catch (runError) {
       console.error("[handleRun error]:", runError);
       setError(runError?.message || "Failed to execute code. Please check your syntax.");
+      scrollToExec();
     } finally {
       setIsRunning(false);
     }
@@ -454,9 +500,11 @@ function ProblemDetailsInner() {
         ...nextResult,
         type: "submit"
       });
+      scrollToExec();
     } catch (submitError) {
       console.error("[handleSubmit error]:", submitError);
       setError(submitError?.message || "Failed to submit code for evaluation. Please try again.");
+      scrollToExec();
     } finally {
       setIsSubmitting(false);
     }
@@ -1084,8 +1132,11 @@ function ProblemDetailsInner() {
 
           {/* Bottom Execution Panel - Always rendered directly below Code Editor */}
           <div
+            id="execution-result-block"
             ref={execPanelRef}
             className="judgo-ide-exec-panel"
+            tabIndex={-1}
+            style={{ outline: "none" }}
           >
             {/* Execution Panel Header Tabs */}
             <div className="judgo-ide-exec-nav">
