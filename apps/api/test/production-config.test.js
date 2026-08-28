@@ -33,3 +33,11 @@ test("user text index does not use the profile language field as MongoDB languag
   assert.ok(textIndex);
   assert.equal(textIndex[1].language_override, "searchLanguage");
 });
+
+test("production API accepts Redis Cloud .db.redis.io URI even with redis:// scheme", () => {
+  const result = validateApiEnvironment({
+    ...validProduction,
+    REDIS_URL: "redis://default:X53oSGrcpzJ6YPU5WEd085EcHHkF6AG3@ants-velvet-satin-43185.db.redis.io:15879"
+  });
+  assert.equal(result.production, true);
+});

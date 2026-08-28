@@ -9,12 +9,25 @@ export function isProductionEnvironment(environment = process.env) {
   return environment.NODE_ENV === "production" || Boolean(environment.VERCEL_ENV);
 }
 
+export function cleanRedisUri(value = "") {
+  let str = String(value || "").trim();
+  if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) {
+    str = str.slice(1, -1).trim();
+  }
+  if (str.startsWith("redis-cli")) {
+    const match = str.match(/rediss?:\/\/[^\s"']+/);
+    if (match) str = match[0];
+  }
+  return str;
+}
+
 function validMongoUri(value = "") {
-  return /^mongodb(?:\+srv)?:\/\//.test(String(value));
+  return /^mongodb(?:\+srv)?:\/\//.test(String(value).trim());
 }
 
 function validRedisUri(value = "") {
-  return /^rediss?:\/\//.test(String(value));
+  const cleaned = cleanRedisUri(value);
+  return /^rediss?:\/\//.test(cleaned);
 }
 
 function validSecret(value = "") {
@@ -25,7 +38,7 @@ export const envConfig = {
   port: Number(process.env.PORT || 4000),
   nodeEnv: process.env.NODE_ENV || "development",
   mongoUri: process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/online-judge",
-  redisUrl: process.env.REDIS_URL || "redis://127.0.0.1:6379",
+  redisUrl: cleanRedisUri(process.env.REDIS_URL) || "redis://127.0.0.1:6379",
   jwtSecret: validSecret(process.env.JWT_SECRET)
     ? process.env.JWT_SECRET.trim()
     : DEVELOPMENT_JWT_SECRET,
@@ -39,12 +52,14 @@ export function validateApiEnvironment(environment = process.env) {
 
   if (production) {
     if (!validMongoUri(environment.MONGODB_URI)) errors.push("MONGODB_URI must be a valid MongoDB connection URI");
-    if (!validRedisUri(environment.REDIS_URL)) errors.push("REDIS_URL must be a valid Redis connection URI");
-    if (
-      String(environment.REDIS_URL || "").startsWith("redis://") &&
-      environment.ALLOW_INSECURE_REDIS !== "true"
-    ) {
-      if (String(environment.REDIS_URL).includes(".db.redis.io")) {
+    const rawRedis = environment.REDIS_URL;
+    const redisUrl = cleanRedisUri(rawRedis);
+    if (!rawRedis || !rawRedis.trim()) {
+      errors.push("REDIS_URL is not set. Ensure REDIS_URL is added to Production in Vercel Environment Variables.");
+    } else if (!validRedisUri(redisUrl)) {
+      errors.push(`REDIS_URL must be a valid Redis connection URI starting with redis:// or rediss:// (received: "${String(rawRedis).slice(0, 30)}")`);
+    } else if (redisUrl.startsWith("redis://") && environment.ALLOW_INSECURE_REDIS !== "true") {
+      if (redisUrl.includes(".db.redis.io")) {
         warnings.push("REDIS_URL uses Redis Cloud standard port. rediss:// TLS is not required.");
       } else {
         errors.push("REDIS_URL must use rediss:// in production unless ALLOW_INSECURE_REDIS=true for a private network");

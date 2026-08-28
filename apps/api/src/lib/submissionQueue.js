@@ -1,13 +1,14 @@
 import { Queue } from "bullmq";
 import IORedis from "ioredis";
 import { JUDGE_QUEUE } from "@online-judge/shared";
+import { cleanRedisUri } from "../config/env.config.js";
 
 let redis;
 let queue;
 
 function getRedis() {
   if (!redis) {
-    const url = process.env.REDIS_URL || "redis://127.0.0.1:6379";
+    const url = cleanRedisUri(process.env.REDIS_URL) || "redis://127.0.0.1:6379";
     redis = new IORedis(url, {
       connectTimeout: Number(process.env.REDIS_CONNECT_TIMEOUT_MS || 3000),
       enableReadyCheck: true,
