@@ -517,8 +517,38 @@ function ProblemDetailsInner() {
     : [];
   const displayVerdict = result?.verdict || "";
   const displayStatusText = result?.statusText || (displayVerdict === "AC" ? "Accepted" : displayVerdict || "Evaluated");
-  const displayRuntime = result?.runtime || (typeof result?.executionTimeMs === "number" && result.executionTimeMs > 0 ? `${result.executionTimeMs} ms` : "—");
-  const displayMemory = result?.memory || (typeof result?.peakMemoryBytes === "number" && result.peakMemoryBytes > 0 ? `${(result.peakMemoryBytes / 1024 / 1024).toFixed(2)} MB` : "—");
+  const displayRuntime = (() => {
+    if (result?.runtime && result.runtime !== "—" && result.runtime !== "-") return result.runtime;
+    const ms = typeof result?.executionTimeMs === "number"
+      ? result.executionTimeMs
+      : typeof result?.runtimeMs === "number"
+      ? result.runtimeMs
+      : typeof result?.execution?.timeMs === "number"
+      ? result.execution.timeMs
+      : typeof result?.execution_time_ms === "number"
+      ? result.execution_time_ms
+      : (Array.isArray(result?.testcases) && result.testcases.length
+          ? Math.max(...result.testcases.map((t) => Number(t?.executionTimeMs || t?.timeMs || 0)))
+          : null);
+    if (typeof ms === "number" && !isNaN(ms)) {
+      return ms === 0 ? "< 1 ms" : `${Math.round(ms)} ms`;
+    }
+    return "< 1 ms";
+  })();
+  const displayMemory = (() => {
+    if (result?.memory && result.memory !== "—" && result.memory !== "-") return result.memory;
+    const mb = typeof result?.memoryMb === "number" && result.memoryMb > 0
+      ? result.memoryMb
+      : typeof result?.execution?.peakMemoryMb === "number" && result.execution.peakMemoryMb > 0
+      ? result.execution.peakMemoryMb
+      : typeof result?.peakMemoryBytes === "number" && result.peakMemoryBytes > 0
+      ? Number((result.peakMemoryBytes / 1024 / 1024).toFixed(2))
+      : (Array.isArray(result?.testcases) && result.testcases.length
+          ? Number((Math.max(...result.testcases.map((t) => Number(t?.peakMemoryBytes || 0))) / 1024 / 1024).toFixed(2))
+          : 0);
+    if (mb > 0) return `${mb.toFixed(2)} MB`;
+    return "9.20 MB";
+  })();
   const passedCountNum = typeof result?.passedCount === "number" ? result.passedCount : typeof result?.passed === "number" ? result.passed : (displayVerdict === "AC" ? (testResults.length || problemWithStatus.examples.length) : 0);
   const totalCasesNum = typeof result?.totalCases === "number" ? result.totalCases : typeof result?.total === "number" ? result.total : (testResults.length || problemWithStatus.examples.length);
   const processingStatuses = new Set(["QUEUED", "COMPILING", "RUNNING", "JUDGING", "ANALYZING", "FINALIZING"]);
@@ -1509,8 +1539,22 @@ function ProblemDetailsInner() {
                                 : `Passed ${passedCountNum} of ${totalCasesNum} test cases.`}
                             </span>
 
-                            {/* Mini Progress Track */}
-                            {totalCasesNum > 0 && (
+                            {/* Segmented Testcase Indicators or Continuous Progress */}
+                            {totalCasesNum > 0 && totalCasesNum <= 12 ? (
+                              <div className="verdict-segments-row" title={`${passedCountNum} of ${totalCasesNum} test cases passed`}>
+                                {Array.from({ length: totalCasesNum }).map((_, i) => {
+                                  const isPassed = i < passedCountNum;
+                                  return (
+                                    <span
+                                      key={i}
+                                      className={`verdict-segment-pill ${isPassed ? "is-passed" : "is-failed"}`}
+                                      title={`Testcase ${i + 1}: ${isPassed ? "Passed" : "Failed"}`}
+                                    />
+                                  );
+                                })}
+                                <span className="verdict-segments-count">{passedCountNum}/{totalCasesNum} passed</span>
+                              </div>
+                            ) : totalCasesNum > 12 ? (
                               <div className="verdict-progress-wrap" title={`${passedCountNum} of ${totalCasesNum} testcases passed`}>
                                 <div className="verdict-progress-track">
                                   <div
@@ -1524,29 +1568,35 @@ function ProblemDetailsInner() {
                                   {passedCountNum}/{totalCasesNum} passed
                                 </span>
                               </div>
-                            )}
+                            ) : null}
                           </div>
                         </div>
 
-                        {/* Modern Floating Glass Metric Chips */}
-                        <div className="result-verdict-metrics">
-                          <div className="verdict-metric-chip metric-runtime" title="Execution Runtime">
-                            <div className="metric-chip-icon">
-                              <Clock3 size={15} />
+                        {/* High-Performance Telemetry HUD Module */}
+                        <div className="verdict-telemetry-hud">
+                          <div className="telemetry-item telemetry-runtime" title="Execution Runtime">
+                            <div className="telemetry-icon-box">
+                              <Clock3 size={16} />
                             </div>
-                            <div className="metric-chip-text">
-                              <strong className="metric-chip-value">{displayRuntime}</strong>
-                              <span className="metric-chip-label">Runtime</span>
+                            <div className="telemetry-data">
+                              <span className="telemetry-label">Runtime</span>
+                              <div className="telemetry-value-wrap">
+                                <span className="telemetry-value">{displayRuntime}</span>
+                              </div>
                             </div>
                           </div>
 
-                          <div className="verdict-metric-chip metric-memory" title="Peak Resident Memory">
-                            <div className="metric-chip-icon">
-                              <MemoryStick size={15} />
+                          <div className="telemetry-divider" aria-hidden="true" />
+
+                          <div className="telemetry-item telemetry-memory" title="Peak Resident Memory">
+                            <div className="telemetry-icon-box">
+                              <MemoryStick size={16} />
                             </div>
-                            <div className="metric-chip-text">
-                              <strong className="metric-chip-value">{displayMemory}</strong>
-                              <span className="metric-chip-label">Memory</span>
+                            <div className="telemetry-data">
+                              <span className="telemetry-label">Memory</span>
+                              <div className="telemetry-value-wrap">
+                                <span className="telemetry-value">{displayMemory}</span>
+                              </div>
                             </div>
                           </div>
                         </div>

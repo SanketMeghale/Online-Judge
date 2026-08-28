@@ -4088,12 +4088,49 @@ body[data-theme="light"],
   color: #64748b;
 }
 
-/* Progress Track */
+/* Progress Track & Segmented Indicators */
+.verdict-segments-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.verdict-segment-pill {
+  height: 6px;
+  width: 26px;
+  border-radius: 99px;
+  transition: transform 0.2s ease, background 0.3s ease;
+  position: relative;
+}
+
+.verdict-segment-pill.is-passed {
+  background: linear-gradient(90deg, #10b981, #34d399);
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.45);
+}
+
+.verdict-segment-pill.is-failed {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.45);
+}
+
+.verdict-segments-count {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #64748b;
+  margin-left: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+[data-theme="dark"] .verdict-segments-count {
+  color: #94a3b8;
+}
+
 .verdict-progress-wrap {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 6px;
+  margin-top: 8px;
 }
 .verdict-progress-track {
   width: 150px;
@@ -4130,107 +4167,116 @@ body[data-theme="light"],
   color: #64748b;
 }
 
-/* Right Section: Modern Glass Floating Metric Chips */
-.result-verdict-metrics {
+/* Right Section: High-Performance Unified Telemetry HUD Pod */
+.verdict-telemetry-hud {
   position: relative;
   z-index: 2;
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex: 0 0 auto;
-}
-
-.verdict-metric-chip {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 8px 16px;
-  border-radius: 12px;
+  gap: 16px;
+  padding: 10px 18px;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-.verdict-metric-chip:hover {
-  transform: translateY(-2px);
-}
-[data-theme="light"] .verdict-metric-chip {
-  background: rgba(255, 255, 255, 0.85);
-  border-color: rgba(203, 213, 225, 0.8);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
-}
-.verdict-metric-chip.metric-runtime:hover {
-  border-color: rgba(6, 182, 212, 0.45);
-  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.2);
-}
-.verdict-metric-chip.metric-memory:hover {
-  border-color: rgba(168, 85, 247, 0.45);
-  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.2);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  flex: 0 0 auto;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.metric-chip-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
+[data-theme="light"] .verdict-telemetry-hud {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04), inset 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.telemetry-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 2px 6px;
+}
+
+.telemetry-icon-box {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
   transition: transform 0.2s ease;
 }
-.verdict-metric-chip:hover .metric-chip-icon {
-  transform: scale(1.1);
+.telemetry-item:hover .telemetry-icon-box {
+  transform: scale(1.08);
 }
-.metric-runtime .metric-chip-icon {
+
+.telemetry-runtime .telemetry-icon-box {
   background: rgba(6, 182, 212, 0.14);
   color: #22d3ee;
   border: 1px solid rgba(6, 182, 212, 0.3);
 }
-[data-theme="light"] .metric-runtime .metric-chip-icon {
+[data-theme="light"] .telemetry-runtime .telemetry-icon-box {
   background: #e0f2fe;
   color: #0284c7;
   border-color: #bae6fd;
 }
-.metric-memory .metric-chip-icon {
+
+.telemetry-memory .telemetry-icon-box {
   background: rgba(168, 85, 247, 0.14);
   color: #c084fc;
   border: 1px solid rgba(168, 85, 247, 0.3);
 }
-[data-theme="light"] .metric-memory .metric-chip-icon {
+[data-theme="light"] .telemetry-memory .telemetry-icon-box {
   background: #f3e8ff;
   color: #9333ea;
   border-color: #e9d5ff;
 }
 
-.metric-chip-text {
+.telemetry-data {
   display: flex;
   flex-direction: column;
 }
-.metric-chip-value {
-  display: block;
-  font-size: 0.96rem;
-  font-weight: 800;
-  color: #f8fafc;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
-}
-[data-theme="light"] .metric-chip-value {
-  color: #0f172a;
-}
-.metric-chip-label {
+
+.telemetry-label {
   display: block;
   font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #94a3b8;
-  margin-top: 2px;
 }
-[data-theme="light"] .metric-chip-label {
+[data-theme="light"] .telemetry-label {
   color: #64748b;
+}
+
+.telemetry-value-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 3px;
+  margin-top: 1px;
+}
+
+.telemetry-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+[data-theme="light"] .telemetry-value {
+  color: #0f172a;
+}
+
+.telemetry-divider {
+  width: 1px;
+  height: 32px;
+  background: rgba(148, 163, 184, 0.22);
+}
+[data-theme="light"] .telemetry-divider {
+  background: #cbd5e1;
 }
 
 @media (max-width: 768px) {
@@ -4240,13 +4286,9 @@ body[data-theme="light"],
     gap: 16px;
     padding: 16px;
   }
-  .result-verdict-metrics {
+  .verdict-telemetry-hud {
     width: 100%;
-    justify-content: stretch;
-  }
-  .verdict-metric-chip {
-    flex: 1;
-    justify-content: center;
+    justify-content: space-around;
   }
 }
 

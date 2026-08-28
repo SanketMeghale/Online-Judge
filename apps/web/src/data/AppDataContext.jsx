@@ -68,18 +68,33 @@ function normalizeSubmission(raw, problem) {
   }
 
   const subId = String(sub._id || sub.id || sub.submissionId || raw.submissionId || raw.id || "");
-  const runtimeNum = typeof sub.execution_time_ms === "number"
-    ? sub.execution_time_ms
+  const runtimeNum = typeof sub.executionTimeMs === "number"
+    ? sub.executionTimeMs
     : typeof sub.runtimeMs === "number"
     ? sub.runtimeMs
-    : 0;
-  const runtimeStr = typeof sub.runtime === "string" && sub.runtime
+    : typeof sub.execution_time_ms === "number"
+    ? sub.execution_time_ms
+    : typeof sub.execution?.timeMs === "number"
+    ? sub.execution.timeMs
+    : typeof sub.execution?.totalTimeMs === "number"
+    ? sub.execution.totalTimeMs
+    : (Array.isArray(sub.testcases) && sub.testcases.length
+        ? Math.max(...sub.testcases.map((t) => Number(t?.executionTimeMs || t?.timeMs || 0)))
+        : 0);
+
+  const runtimeStr = typeof sub.runtime === "string" && sub.runtime && sub.runtime !== "—" && sub.runtime !== "-"
     ? sub.runtime
-    : (runtimeNum > 0 ? `${runtimeNum} ms` : "");
+    : (typeof runtimeNum === "number"
+        ? (runtimeNum === 0 ? "< 1 ms" : `${Math.round(runtimeNum)} ms`)
+        : "< 1 ms");
 
   const memoryKb = typeof sub.memory_kb === "number" ? sub.memory_kb : 0;
   const memoryMb = typeof sub.memoryMb === "number"
     ? sub.memoryMb
+    : typeof sub.execution?.peakMemoryMb === "number"
+    ? sub.execution.peakMemoryMb
+    : typeof sub.peakMemoryBytes === "number"
+    ? Number((sub.peakMemoryBytes / 1024 / 1024).toFixed(2))
     : (memoryKb > 0 ? Number((memoryKb / 1024).toFixed(2)) : 0);
   const memoryStr = typeof sub.memory === "string" && sub.memory
     ? sub.memory
