@@ -1449,19 +1449,36 @@ function ProblemDetailsInner() {
                     </div>
                   ) : result ? (
                     <div className="compact-result-view" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                      {/* Verdict Card */}
-                      <div className={`result-verdict-card ${displayVerdict === "AC" ? "is-accepted" : "is-error"}`}>
+                      {/* Modern Stylish Animated Verdict Card */}
+                      <div className={`result-verdict-card ${displayVerdict === "AC" ? "is-accepted" : "is-error"} is-${(displayVerdict || "error").toLowerCase()}`}>
+                        {/* Animated Shimmer Ray */}
+                        <div className="verdict-sheen-beam" aria-hidden="true" />
+
+                        {/* Ambient Glow Orb */}
+                        <div className="verdict-glow-orb" aria-hidden="true" />
+
                         <div className="result-verdict-main">
-                          <span className="result-verdict-icon" aria-hidden="true">
-                            {displayVerdict === "AC" ? (
-                              <CheckCircle2 size={22} />
-                            ) : displayVerdict === "CE" ? (
-                              <AlertTriangle size={22} />
-                            ) : (
-                              <XCircle size={22} />
-                            )}
-                          </span>
-                          <div>
+                          {/* 3D Glass Icon Badge with Pulsing Aura */}
+                          <div className="result-verdict-icon-wrap">
+                            <span className="result-verdict-icon-aura" aria-hidden="true" />
+                            <span className="result-verdict-icon" aria-hidden="true">
+                              {displayVerdict === "AC" ? (
+                                <CheckCircle2 size={24} strokeWidth={2.4} />
+                              ) : displayVerdict === "CE" ? (
+                                <AlertTriangle size={24} strokeWidth={2.4} />
+                              ) : (
+                                <XCircle size={24} strokeWidth={2.4} />
+                              )}
+                            </span>
+                          </div>
+
+                          <div className="result-verdict-content">
+                            {/* High-tech Status Pill */}
+                            <div className="result-verdict-badge">
+                              <span className="result-verdict-pulse-dot" />
+                              <span>{displayVerdict === "AC" ? "ALL TESTS PASSED" : (displayVerdict || "FAILED")}</span>
+                            </div>
+
                             <strong className="result-verdict-title">
                               {displayVerdict === "AC"
                                 ? "Accepted"
@@ -1477,6 +1494,7 @@ function ProblemDetailsInner() {
                                 ? "System Error"
                                 : displayStatusText}
                             </strong>
+
                             <span className="result-verdict-subtitle">
                               {displayVerdict === "AC"
                                 ? `Your solution passed all ${totalCasesNum} test cases.`
@@ -1490,17 +1508,46 @@ function ProblemDetailsInner() {
                                 ? "The sandbox service encountered an issue."
                                 : `Passed ${passedCountNum} of ${totalCasesNum} test cases.`}
                             </span>
+
+                            {/* Mini Progress Track */}
+                            {totalCasesNum > 0 && (
+                              <div className="verdict-progress-wrap" title={`${passedCountNum} of ${totalCasesNum} testcases passed`}>
+                                <div className="verdict-progress-track">
+                                  <div
+                                    className="verdict-progress-fill"
+                                    style={{
+                                      width: `${Math.min(100, Math.max(0, (passedCountNum / totalCasesNum) * 100))}%`
+                                    }}
+                                  />
+                                </div>
+                                <span className="verdict-progress-label">
+                                  {passedCountNum}/{totalCasesNum} passed
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
+                        {/* Modern Floating Glass Metric Chips */}
                         <div className="result-verdict-metrics">
-                          <div>
-                            <Clock3 size={14} />
-                            <span><strong>{displayRuntime}</strong><small>Runtime</small></span>
+                          <div className="verdict-metric-chip metric-runtime" title="Execution Runtime">
+                            <div className="metric-chip-icon">
+                              <Clock3 size={15} />
+                            </div>
+                            <div className="metric-chip-text">
+                              <strong className="metric-chip-value">{displayRuntime}</strong>
+                              <span className="metric-chip-label">Runtime</span>
+                            </div>
                           </div>
-                          <div>
-                            <MemoryStick size={14} />
-                            <span><strong>{displayMemory}</strong><small>Memory</small></span>
+
+                          <div className="verdict-metric-chip metric-memory" title="Peak Resident Memory">
+                            <div className="metric-chip-icon">
+                              <MemoryStick size={15} />
+                            </div>
+                            <div className="metric-chip-text">
+                              <strong className="metric-chip-value">{displayMemory}</strong>
+                              <span className="metric-chip-label">Memory</span>
+                            </div>
                           </div>
                         </div>
                       </div>
