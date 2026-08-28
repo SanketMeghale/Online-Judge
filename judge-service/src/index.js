@@ -38,6 +38,43 @@ app.get("/health", async (req, res) => {
   }
 });
 
+app.post(["/jobs", "/execute"], async (req, res) => {
+  const healthToken = process.env.EXECUTION_SERVICE_TOKEN;
+  if (healthToken && req.headers.authorization !== `Bearer ${healthToken}`) {
+    res.status(401).json({ status: "UNAUTHORIZED" });
+    return;
+  }
+
+  const { submissionId } = req.body || {};
+  if (!submissionId) {
+    res.status(400).json({ error: "submissionId is required" });
+    return;
+  }
+
+  res.status(202).json({
+    status: "ACCEPTED",
+    submissionId: String(submissionId),
+    dispatchedAt: new Date().toISOString()
+  });
+
+  setImmediate(async () => {
+    try {
+      console.log(`[Judge Worker] HTTP direct execution started for submission: ${submissionId}`);
+      await judgeWorker.processJob(
+        { submissionId: String(submissionId) },
+        { jobId: `http-${submissionId}`, attempt: 1, maxAttempts: 1 }
+      );
+    } catch (err) {
+      console.error(`[Judge Worker] HTTP execution error for ${submissionId}: ${err.message}`);
+      try {
+        await judgeWorker.markSystemError({ submissionId: String(submissionId) }, err);
+      } catch (persistErr) {
+        console.error(`[Judge Worker] Failed to mark system error: ${persistErr.message}`);
+      }
+    }
+  });
+});
+
 let httpServer;
 let shuttingDown = false;
 
@@ -47,24 +84,29 @@ async function startJudgeService() {
   await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
   console.log("[MongoDB] Connected.");
 
-  const queue = await queueProducer.connect();
-  if (!queue) throw new Error("Redis is unavailable; refusing to start the execution worker.");
-  console.log("[BullMQ] Connected.");
-
   await dockerService.assertReady(SANDBOX_IMAGE);
   console.log(`[Docker] Sandbox image ready: ${SANDBOX_IMAGE}`);
 
-  await queueConsumer.startJudgeWorker(
-    (jobData) => judgeWorker.processJob(jobData),
-    {
-      concurrency: WORKER_CONCURRENCY,
-      onExhausted: (jobData, error) => judgeWorker.markSystemError(jobData, error)
-    }
-  );
-
   httpServer = app.listen(MONITORING_PORT, "0.0.0.0", () => {
-    console.log(`[Judge Worker] Ready on port ${MONITORING_PORT}; concurrency=${WORKER_CONCURRENCY}`);
+    console.log(`[Judge Worker] HTTP API listening on port ${MONITORING_PORT}`);
   });
+
+  try {
+    const queue = await queueProducer.connect();
+    if (queue) {
+      console.log("[BullMQ] Connected.");
+      await queueConsumer.startJudgeWorker(
+        (jobData) => judgeWorker.processJob(jobData),
+        {
+          concurrency: WORKER_CONCURRENCY,
+          onExhausted: (jobData, error) => judgeWorker.markSystemError(jobData, error)
+        }
+      );
+      console.log(`[Judge Worker] BullMQ Consumer listening with concurrency=${WORKER_CONCURRENCY}`);
+    }
+  } catch (queueErr) {
+    console.warn(`[Judge Worker] Redis queue unavailable (${queueErr.message}). Operating in direct HTTP execution mode.`);
+  }
 }
 
 async function shutdown(reason, exitCode = 0) {

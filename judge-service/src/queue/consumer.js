@@ -29,8 +29,8 @@ export class QueueConsumer {
   async startHeartbeat() {
     await this.publishHeartbeat();
     const intervalMs = Math.max(
-      1_000,
-      Number(process.env.WORKER_HEARTBEAT_INTERVAL_MS || 30_000)
+      5_000,
+      Number(process.env.WORKER_HEARTBEAT_INTERVAL_MS || 60_000)
     );
     this.heartbeatTimer = setInterval(() => {
       void this.publishHeartbeat().catch((error) => {
@@ -59,6 +59,9 @@ export class QueueConsumer {
         connection: this.connection,
         concurrency,
         lockDuration: Number(process.env.JOB_LOCK_DURATION_MS || 120_000),
+        drainDelay: Number(process.env.WORKER_DRAIN_DELAY_SEC || 15),
+        stalledInterval: Number(process.env.WORKER_STALLED_INTERVAL_MS || 60_000),
+        maxStalledCount: 2,
         limiter: {
           max: Math.max(1, Number(process.env.WORKER_RATE_LIMIT_MAX || concurrency * 30)),
           duration: 60_000

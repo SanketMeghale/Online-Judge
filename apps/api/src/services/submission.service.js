@@ -184,19 +184,20 @@ async function enqueueExecution({ userId, problemId, language, code, mode, custo
     await updateSubmissionRecord(submissionId, { jobId: job.id });
     return sanitizeSubmissionForUser({ ...record, id: submissionId, submissionId, jobId: job.id });
   } catch (cause) {
+    const errorMsg = cause?.message || "The execution queue is currently unavailable. Please retry shortly.";
     await updateSubmissionRecord(submissionId, {
       status: "SYSTEM_ERROR",
       verdict: "SYSTEM_ERROR",
       statusText: "Execution queue unavailable",
-      errorMessage: "The execution queue could not accept this job.",
+      errorMessage: errorMsg,
       statusHistory: [
         { status: "QUEUED", at: now },
         { status: "SYSTEM_ERROR", at: new Date() }
       ],
       completedAt: new Date()
     });
-    const error = new Error("The execution queue is currently unavailable. Please retry shortly.", { cause });
-    error.statusCode = 503;
+    const error = new Error(errorMsg, { cause });
+    error.statusCode = cause?.statusCode || 503;
     throw error;
   }
 }
