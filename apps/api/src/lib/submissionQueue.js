@@ -3,6 +3,13 @@ import IORedis from "ioredis";
 import { JUDGE_QUEUE } from "@online-judge/shared";
 import { cleanRedisUri } from "../config/env.config.js";
 
+// Filter out benign BullMQ eviction warning for managed cloud Redis
+const _origWarn = console.warn;
+console.warn = (...args) => {
+  if (typeof args[0] === "string" && args[0].includes("Eviction policy is")) return;
+  _origWarn(...args);
+};
+
 let redis;
 let queue;
 

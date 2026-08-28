@@ -9,6 +9,13 @@ import { monitoringService } from "./services/MonitoringService.js";
 import { dockerService } from "./services/DockerService.js";
 import { validateWorkerEnvironment } from "./config/env.config.js";
 
+// Filter out benign BullMQ eviction warning for managed cloud Redis
+const _origConsoleWarn = console.warn;
+console.warn = (...args) => {
+  if (typeof args[0] === "string" && args[0].includes("Eviction policy is")) return;
+  _origConsoleWarn(...args);
+};
+
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/online-judge";
 const SANDBOX_IMAGE = process.env.SANDBOX_IMAGE || "online-judge-sandbox:latest";
 const WORKER_CONCURRENCY = Math.max(1, Number(process.env.WORKER_CONCURRENCY || 2));
